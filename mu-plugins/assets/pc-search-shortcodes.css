@@ -1,0 +1,540 @@
+/* PC Search – v4
+   - Desktop: tout sur une ligne (largeurs réduites)
+   - Tablet/Mobile: layout demandé
+   - Zones Arrivée/Départ = même fond/rayon que Destination/Invités
+   - Option: légère extension du calque 1 pour cas de conteneur étroit
+*/
+
+/* ---------- Calque 1 : conteneur ---------- */
+.pc-search-shell{
+  background:#fff;
+  border-radius:15px;
+  box-shadow:0 8px 24px rgba(0,0,0,.06);
+  padding:8px;                    /* gouttière 8px */
+  width:100%;
+}
+/* Option (décommente si besoin d'étirer un peu le calque au-delà du padding parent)
+.pc-search-shell{ width:calc(100% + 40px); margin-left:-20px; margin-right:-20px; }
+*/
+
+/* ---------- Calque 2 : ligne d'inputs ---------- */
+.pc-search-form{
+  display:flex;
+  flex-wrap:wrap;                 /* passe à la ligne si manque d'espace */
+  gap:5px;                        /* gouttière 5px entre champs */
+  align-items:stretch;
+}
+
+/* Champs génériques */
+.pc-search-field{ flex:1 1 160px; }
+.pc-search-field--location{ min-width:200px; }
+.pc-search-field--date{     min-width:150px; }
+.pc-search-field--guests{   min-width:180px; position:relative; }
+
+/* Zones homogènes (fond & rayon identiques partout) */
+.pc-input{
+  width:100%;
+  height:52px;
+  padding:0 14px;
+  border:1px solid #E5E7EB;
+  border-radius:12px;              /* même rayon */
+  background:#fff;                 /* même fond (pas de gris) */
+  font-size:16px; line-height:1; color:#111827;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+/* Renforcer l'uniformité sur les dates au cas où le thème surcharge */
+.pc-search-field--date .pc-input{ background:#fff !important; border-color:#E5E7EB; border-radius:12px !important; }
+
+.pc-input::placeholder{ color:#9CA3AF; }
+.pc-input:focus{ outline:none; border-color:#93C5FD; box-shadow:0 0 0 3px rgba(59,130,246,.25); }
+
+select.pc-input{ appearance:none; background-position:right 12px center; background-repeat:no-repeat; }
+
+/* Bouton rechercher */
+.pc-search-submit{
+  padding:0 20px; height:52px; border-radius:12px; white-space:nowrap; flex:0 0 auto; }
+
+/* Popover invités */
+.pc-guests-popover{
+  z-index:30; background:#fff; border:1px solid #E5E7EB; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.08);
+  width:300px; padding:12px; position:absolute; top:56px; right:0;
+}
+.pc-guests-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:6px 0; }
+.guest-stepper{ width:32px; height:32px; border-radius:8px; border:1px solid #E5E7EB; background:#fff; }
+.guest-stepper:active{ transform:translateY(1px); }
+
+/* Utilitaires */
+.pc-search-wrapper [hidden]{ display:none !important; }
+.muted{ color:#6B7280; font-size:12px; }
+
+/* ---------- Desktop (>=1024px): forcer tout sur une ligne ---------- */
+@media (min-width: 1024px){
+  .pc-search-form{ 
+    flex-wrap: nowrap; /* On garde tout sur une ligne */
+  }
+  .pc-search-field {
+    flex-grow: 1; /* Permet aux champs de prendre l'espace disponible */
+    flex-shrink: 1; /* Permet aux champs de se rétrécir si besoin */
+    flex-basis: 0; /* Base de calcul flexible */
+  }
+  .pc-search-field--location{ 
+    min-width: 220px; 
+  }
+  .pc-search-field--date{
+    min-width: 160px; 
+  }
+  .pc-search-field--guests{
+    min-width: 190px;
+  }
+  /* On s'assure que le bouton ne grandit pas mais peut rétrécir */
+  .pc-search-field--submit {
+    flex-grow: 0;
+    flex-shrink: 1;
+  }
+}
+
+/* ---------- Tablette (641–1023px) ---------- */
+@media (min-width: 641px) and (max-width: 1023px){
+  .pc-search-form{ flex-wrap:wrap; }
+  .pc-search-field--location{ flex:1 1 240px; }
+  .pc-search-field--date{     flex:1 1 180px; }
+  .pc-search-field--guests{   flex:1 1 200px; }
+  .pc-search-submit{          flex:0 0 200px; }
+}
+
+/* ---------- Mobile (<=640px) ---------- */
+@media (max-width: 640px){
+  /* Structure demandée : Destination / (Arrivée,Départ) / Invités / Bouton */
+  .pc-search-field--location{ flex:1 1 100%; }
+  .pc-search-field--date{     flex:1 1 calc(50% - 2.5px); } /* 2 colonnes dates */
+  .pc-search-field--guests{   flex:1 1 100%; }
+  .pc-search-submit{          width:100%; flex:1 1 100%; }
+}
+
+/* Overrides to append after v4 (safe, minimal) */
+
+
+  /* Conserver l'alignement sur une seule ligne et centrer légèrement le contenu */
+  .pc-search-form{
+    flex-wrap:nowrap;       /* déjà dans v4, on renforce ici */
+    justify-content:flex-start; /* laisse à gauche; mets 'center' si tu veux tout centrer */
+  }
+
+
+/* Tablette & mobile : aucun changement */
+
+
+/* À ajouter APRÈS ta v4 (et v4.3 si utilisée). Styles pour panneau "Plus de filtres" */
+
+/* Bouton toggle "Plus de filtres" (même gabarit que le bouton invité) */
+.pc-adv-toggle{ height:52px; border-radius:12px; padding:0 16px; white-space:nowrap; }
+
+/* Panneau */
+.pc-advanced{ width:100%; margin-top:10px; padding:12px; border:1px solid #E5E7EB; border-radius:12px; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,.04); }
+.pc-advanced__grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+.pc-adv-field .pc-adv-label{ font-size:13px; color:#374151; margin-bottom:6px; }
+.pc-adv-inline{ display:flex; gap:8px; }
+
+/* Équipements en "chips" */
+.pc-adv-group{ margin-top:10px; }
+.pc-adv-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.pc-chip{ display:inline-flex; align-items:center; gap:8px; border:1px solid #E5E7EB; border-radius:999px; padding:6px 10px; cursor:pointer; user-select:none; }
+.pc-chip input{ display:none; }
+.pc-chip input:checked + span{ font-weight:600; }
+
+/* Actions */
+.pc-adv-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+
+/* Responsive panneau */
+@media (max-width: 1023px){
+  .pc-advanced__grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 640px){
+  .pc-advanced__grid{ grid-template-columns:1fr; }
+  .pc-adv-actions{ flex-direction:column; align-items:stretch; }
+}
+
+/* Ligne 2 : conteneur du bouton */
+.pc-row-adv-toggle{ margin-top:8px; display:flex; justify-content:flex-start; }
+.pc-adv-toggle{ height:48px; border-radius:10px; padding:0 14px; }
+
+
+/* Panneau avancé (réutilise v4.4 si déjà en place) */
+.pc-advanced{ width:100%; margin-top:10px; padding:12px; border:1px solid #E5E7EB; border-radius:12px; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,.04); }
+.pc-advanced__grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+.pc-adv-field .pc-adv-label{ font-size:13px; color:#374151; margin-bottom:6px; }
+
+
+/* Prix : double range + inputs */
+.pc-price-range{ position:relative; height:28px; display:flex; align-items:center; gap:10px; }
+.pc-price-range input[type=range]{ width:100%; -webkit-appearance:none; appearance:none; background:transparent; pointer-events:auto; }
+.pc-price-values{ display:flex; gap:8px; margin-top:8px; }
+.pc-price-values .pc-input{ height:44px; }
+
+
+/* Thumb + track basiques (compat larges) */
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:#2563EB; cursor:pointer; border:none; }
+input[type=range]::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:#2563EB; cursor:pointer; border:none; }
+input[type=range]::-webkit-slider-runnable-track{ height:4px; background:#E5E7EB; border-radius:999px; }
+input[type=range]::-moz-range-track{ height:4px; background:#E5E7EB; border-radius:999px; }
+
+
+/* Steppers numériques (chambres/sdb) */
+.pc-num-step{ display:inline-flex; align-items:center; gap:10px; }
+.pc-num-step .num-stepper{ width:32px; height:32px; border-radius:8px; border:1px solid #E5E7EB; background:#fff; }
+.pc-num-step .pc-num-display{ min-width:24px; text-align:center; font-weight:600; }
+
+
+/* Responsive panneau */
+@media (max-width: 1023px){ .pc-advanced__grid{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+@media (max-width: 640px){ .pc-advanced__grid{ grid-template-columns:1fr; } .pc-row-adv-toggle{ justify-content:stretch; } .pc-adv-toggle{ width:100%; } }
+
+/* Patch minimal à ajouter en bas de ton CSS (après v4.x) */
+
+/* Steppers numériques */
+.pc-num-step{ display:inline-flex; align-items:center; gap:10px; }
+.pc-num-step .num-stepper{ width:32px; height:32px; border-radius:8px; border:1px solid #E5E7EB; background:#fff; cursor:pointer; }
+.pc-num-step .num-stepper:active{ transform:translateY(1px); }
+
+/* Input numérique compact au centre */
+.pc-num-input{ width:72px; height:44px; text-align:center; padding:0 10px; }
+
+/* Alignement responsive du panneau (inchangé) */
+@media (max-width: 1023px){ .pc-advanced__grid{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+@media (max-width: 640px){ .pc-advanced__grid{ grid-template-columns:1fr; } }
+
+/* Ligne 2 : espace entre "Plus de filtres" (gauche) et "Réinitialiser" (droite) */
+.pc-row-adv-toggle{ margin-top:8px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.pc-adv-toggle{ height:48px; border-radius:10px; padding:0 14px; }
+.pc-adv-reset{ height:48px; border-radius:10px; padding:0 14px; }
+
+
+/* Option: style léger du reset (rouge doux) — commente si tu veux rester neutre */
+.pc-adv-reset{ border-color:#FEE2E2; background:#FFF; }
+.pc-adv-reset:hover{ background:#FEF2F2; }
+
+/* Carte: taille + esthétique */
+#pc-map-container{ width:100%; background:#f8fafc; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.06); }
+
+
+/* Desktop: plein écran (colonne sticky) */
+@media (min-width:1024px){
+.pc-map-sticky{ position:sticky; top:100px; }
+#pc-map-container{ height:calc(100vh - 160px); min-height:520px; }
+}
+
+
+/* Tablette/Mobile: hauteur fixe */
+@media (max-width:1023px){
+#pc-map-container{ height:380px; }
+}
+
+/* ===========================================================
+   STYLE DES VIGNETTES DE RÉSULTAT
+   =========================================================== */
+.pc-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+.pc-vignette {
+    background: #fff;
+    border-radius: var(--pc-radius);
+    box-shadow: 0 0 10px 0 rgba(0,0,0,0.1); /* Modifié pour correspondre à votre demande */
+    overflow: hidden; /* Pour que l'image respecte les coins arrondis */
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+}
+.pc-vignette:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px 0 rgba(0,0,0,0.12);
+}
+/* [PC START] Ajout pour stabiliser le CLS */
+/* =========================================================== */
+.pc-vignette__image {
+    aspect-ratio: 376 / 230; /* Force le ratio de l'image pour réserver l'espace */
+    background-color: #f0f0f0; /* Met un fond gris clair en attendant l'image */
+}
+/* =========================================================== */
+/* [PC END] */
+.pc-vignette__image img {
+    width: 100%;
+    height: 14.4rem;
+    object-fit: cover;
+    display: block;
+}
+.pc-vignette__content {
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* Écart entre les lignes de texte */
+}
+.pc-vignette__title {
+    /* Utilise le style h3 de votre pc-base.css */
+    font-size: var(--pc-h3-size);
+    font-weight: var(--pc-h3-weight);
+    line-height: var(--pc-h3-lh);
+    font-family: var(--pc-font-title);
+    color: var(--pc-color-heading);
+    margin: 0;
+}
+.pc-vignette__location {
+    /* Utilise le style de texte de votre pc-base.css */
+    font-size: var(--pc-text-size);
+    font-family: var(--pc-font-body);
+    color: var(--pc-color-text);
+}
+.pc-vignette__rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--pc-text-size);
+    font-family: var(--pc-font-body);
+    color: var(--pc-color-text);
+}
+.pc-vignette__stars svg {
+    width: 18px;
+    height: 18px;
+}
+.pc-vignette__price {
+    font-size: var(--pc-text-size);
+    font-family: var(--pc-font-body);
+    color: var(--pc-color-text);
+    font-weight: 700; /* Texte en gras */
+}
+
+/* ===========================================================
+   FINITIONS : Grille 3 colonnes + Pagination
+   =========================================================== */
+
+/* Grille de 3 colonnes sur ordinateur */
+@media (min-width: 992px) {
+    .pc-results-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+/* Grille de 2 colonnes sur tablette */
+@media (min-width: 600px) and (max-width: 991px) {
+    .pc-results-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Style de la pagination */
+.pc-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+.pc-pagination a,
+.pc-pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    text-decoration: none;
+    font-family: var(--pc-font-title);
+    font-weight: 600;
+    color: var(--pc-color-heading);
+    background-color: #fff;
+    border: 1px solid #ddd;
+}
+.pc-pagination a:hover {
+    background-color: #f5f5f5;
+    border-color: #ccc;
+}
+.pc-pagination span.current {
+    background-color: var(--pc-color-heading);
+    color: #fff;
+    border-color: var(--pc-color-heading);
+}
+
+/* ===========================================================
+   FINITIONS FINALES (V2)
+   =========================================================== */
+
+/* 1. Augmenter l'espacement des vignettes */
+.pc-vignette__content {
+    gap: 0.75rem !important; /* 0.5rem * 1.5 */
+}
+
+/* 2. Empêcher la carte de passer sur le footer */
+.elementor-location-footer {
+    position: relative;
+    z-index: 10; /* Le footer passe au-dessus de la carte */
+}
+#pc-map-container.sticky {
+    z-index: 5; /* La carte reste en-dessous */
+}
+
+/* 3. Amélioration du design des étoiles */
+.pc-vignette__stars { display: flex; }
+.pc-vignette__stars .star { color: #E5E7EB; /* Couleur des étoiles vides */ }
+.pc-vignette__stars .star.filled { color: #FBBF24; /* Couleur des étoiles pleines */ }
+.pc-vignette__stars svg {
+    stroke-width: 0 !important; /* On enlève la bordure pour un look plus plat et moderne */
+    fill: currentColor !important;
+}
+
+/* 4. Style pour les messages (chargement, pas de résultats) */
+.pc-results-grid + .pc-pagination { margin-top: 2rem; }
+.is-loading { opacity: 0.5; transition: opacity .3s ease; }
+.pc-no-results {
+    text-align: center;
+    padding: 3rem 1rem;
+    font-family: var(--pc-font-body);
+}
+.pc-no-results h3 {
+    font-family: var(--pc-font-title);
+    color: var(--pc-color-heading);
+}
+/* ===========================================================
+   CORRECTIF ULTIME : Carte Sticky (avec !important)
+   =========================================================== */
+
+/* On force la priorité du footer à être la plus haute */
+footer.elementor-location-footer {
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+/* On force notre colonne personnalisée épinglée
+   à avoir une priorité plus basse. */
+.elementor-column.map-column-wrapper.elementor-sticky {
+    z-index: 5 !important;
+}
+
+/* On cible la carte à l'intérieur de notre colonne personnalisée
+   pour lui appliquer les marges avec un sélecteur puissant. */
+body .map-column-wrapper #pc-map-container {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+/* Et on ajuste pour le mobile */
+@media (max-width: 767px) {
+    body .map-column-wrapper #pc-map-container {
+        margin-left: 2px;
+        margin-right: 2px;
+    }
+}
+
+/* v5.0 — Layout PRO 100% Grid (pas de flex fallback)
+   - Desktop ≥ 1024px : 5 colonnes (loc | arr | dep | gst | btn)
+   - Tablet 768–1023px : 4 colonnes sur 2 lignes
+   - Mobile < 768px : 2 colonnes, 4 lignes
+   Place ce bloc APRÈS tes anciens styles pour qu'il prenne le dessus. */
+
+/* Utilitaires */
+.pc-search-form > * { min-width: 0; }
+.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* Base: Desktop (≥1024px) */
+.pc-search-form{
+  display:grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1.2fr auto; /* bouton auto s'ajuste */
+  grid-template-areas: "loc arr dep gst btn";
+  gap: var(--pc-gap, 8px);
+  align-items: stretch;
+}
+.pc-area-loc{ grid-area: loc; }
+.pc-area-arr{ grid-area: arr; }
+.pc-area-dep{ grid-area: dep; }
+.pc-area-gst{ grid-area: gst; }
+.pc-area-btn{ grid-area: btn; }
+
+/* Bouton: pas de largeur fixe pour éviter les débordements */
+.pc-search-submit{ height:52px; padding:0 18px; border-radius:12px; white-space:nowrap; }
+
+/* Champs visuels harmonisés */
+.pc-input{ height:52px; border-radius:12px; padding:0 14px; background:#fff; border:1px solid #E5E7EB; }
+.pc-search-field--date .pc-input{ cursor:pointer; }
+
+/* Tablet (768–1023px) : 2 lignes */
+@media (max-width: 1023.98px){
+  .pc-search-form{
+    grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+    grid-template-areas:
+      "loc loc arr dep"
+      "gst btn btn btn";
+  }
+}
+
+/* Mobile (<768px) : 4 lignes / 2 colonnes */
+@media (max-width: 767.98px){
+  .pc-search-form{
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "loc loc"
+      "arr dep"
+      "gst gst"
+      "btn btn";
+  }
+}
+
+/* Ligne 2: Plus de filtres / Réinitialiser */
+.pc-row-adv-toggle{ margin-top:8px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.pc-adv-toggle,.pc-adv-reset{ height:48px; border-radius:10px; padding:0 14px; }
+
+/* Panneau filtres (déjà en v4.x, rappel minimal) */
+.pc-advanced{ width:100%; margin-top:10px; padding:12px; border:1px solid #E5E7EB; border-radius:12px; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,.04); }
+.pc-advanced__grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+@media (max-width: 1023.98px){ .pc-advanced__grid{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+@media (max-width: 640px){ .pc-advanced__grid{ grid-template-columns:1fr; } }
+
+/* Price sliders / numeric inputs (déjà livrés) */
+.pc-price-values{ display:flex; gap:8px; margin-top:8px; }
+.pc-num-input{ width:72px; height:44px; text-align:center; padding:0 10px; }
+
+/* ... (tout le code existant) ... */
+.pc-num-input{ width:72px; height:44px; text-align:center; padding:0 10px; }
+
+/* ... (tout le code existant) ... */
+.pc-num-input{ width:72px; height:44px; text-align:center; padding:0 10px; }
+
+
+/* ===========================================================
+   CORRECTIF COULEUR BOUTONS (v2 - Force Brute)
+   Force les couleurs avec !important pour écraser les styles du thème.
+   =========================================================== */
+.pc-search-form .pc-search-submit.pc-btn--primary {
+  /* On force les couleurs brutes */
+  background: #007A92 !important;
+  color: #FFFFFF !important; /* Couleur du texte */
+  border: 1px solid transparent !important;
+}
+
+.pc-search-form .pc-search-submit.pc-btn--primary:hover {
+  /* On force les couleurs brutes au survol */
+  background: #005F73 !important;
+  color: #FFFFFF !important;
+}
+
+/* ... (tout le code existant, y compris le correctif v2) ... */
+
+
+/* ===========================================================
+   CORRECTIF COULEUR BOUTONS (v3 - Mobile Force Brute)
+   Force les couleurs !important DANS la media query mobile
+   pour écraser les styles du thème mobile.
+   =========================================================== */
+@media (max-width: 767.98px) {
+  .pc-search-form .pc-search-submit.pc-btn--primary {
+    /* On force les couleurs brutes */
+    background: #007A92 !important;
+    color: #FFFFFF !important;
+    border: 1px solid transparent !important;
+  }
+
+  .pc-search-form .pc-search-submit.pc-btn--primary:hover {
+    /* On force les couleurs brutes au survol */
+    background: #005F73 !important;
+    color: #FFFFFF !important;
+  }
+}

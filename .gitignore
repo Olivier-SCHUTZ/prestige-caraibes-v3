@@ -1,0 +1,52 @@
+# =========================================================
+# .gitignore pour Prestige Caraïbes (Racine: /wp-content/)
+# =========================================================
+
+# Fichiers système et IDE
+.DS_Store
+.cache
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Fichiers de log et de configuration temporaires
+debug.log
+error.log
+*.log
+*.swp
+
+# Fichiers de dépendances
+node_modules/
+
+# --- WordPress & Plugins (Contenu Généré) ---
+
+# 1. Ignorer TOUT le contenu généré par l'utilisateur
+# (Médias, etc. Doit être synchronisé depuis la Prod, jamais via Git)
+uploads/
+
+# 2. Ignorer les sauvegardes et exports (uniquement à la racine)
+# (Updraft, All-in-One, etc.)
+updraft/
+ai1wm-backups/
+/*.sql
+/*.zip
+/*.gz
+
+# 3. Ignorer les caches
+# (WP Rocket, Elementor, Litespeed, etc.)
+cache/
+wp-rocket-config/
+litespeed/
+et-cache/
+wflogs/
+*-cache/
+tmp/
+
+# 4. Ignorer les dossiers de mise à jour
+upgrade/
+temp/
+
+# 5. Ignorer les fichiers de langue générés par WordPress (à la racine)
+# Ceci n'ignorera PAS les dossiers de langue des thèmes/plugins.
+/languages/

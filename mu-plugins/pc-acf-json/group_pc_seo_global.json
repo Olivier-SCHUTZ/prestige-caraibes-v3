@@ -1,0 +1,303 @@
+{
+    "key": "group_pc_seo_global",
+    "title": "PC — SEO Global",
+    "fields": [
+        {
+            "key": "field_pc_org_name",
+            "label": "Nom public",
+            "name": "pc_org_name",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Nom de votre marque tel qu'affiché au public (ex: Prestige Caraïbes).",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_pc_org_legal_name",
+            "label": "Nom légal (optionnel)",
+            "name": "pc_org_legal_name",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Raison sociale si différente du nom public.",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_pc_org_url",
+            "label": "URL du site",
+            "name": "pc_org_url",
+            "aria-label": "",
+            "type": "url",
+            "instructions": "Laissez vide pour utiliser l'URL du site (home_url).",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "placeholder": ""
+        },
+        {
+            "key": "field_pc_org_logo",
+            "label": "Logo (retour URL)",
+            "name": "pc_org_logo",
+            "aria-label": "",
+            "type": "image",
+            "instructions": "Logo principal en PNG\/SVG (fond clair). Format de retour = URL.",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "return_format": "url",
+            "preview_size": "medium",
+            "library": "all",
+            "min_width": 0,
+            "min_height": 0,
+            "min_size": 0,
+            "max_width": 0,
+            "max_height": 0,
+            "max_size": 0,
+            "mime_types": ""
+        },
+        {
+            "key": "field_pc_org_phone",
+            "label": "Téléphone",
+            "name": "pc_org_phone",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Format international recommandé (ex: +590 590 xx xx xx).",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_pc_org_email",
+            "label": "Email",
+            "name": "pc_org_email",
+            "aria-label": "",
+            "type": "email",
+            "instructions": "Adresse de contact officielle.",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_pc_org_vat_id",
+            "label": "TVA \/ SIREN (optionnel)",
+            "name": "pc_org_vat_id",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Ex: FRXXXXXXXXXXX.",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_pc_org_sameas",
+            "label": "Réseaux sociaux (1 URL \/ ligne)",
+            "name": "pc_org_sameas",
+            "aria-label": "",
+            "type": "textarea",
+            "instructions": "Collez une URL par ligne: Facebook, Instagram, etc.",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "new_lines": "",
+            "maxlength": "",
+            "placeholder": "",
+            "rows": ""
+        },
+        {
+            "key": "field_pc_org_address_street",
+            "label": "Rue",
+            "name": "pc_org_address_street",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Rue et numéro.",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_pc_org_address_locality",
+            "label": "Ville",
+            "name": "pc_org_address_locality",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Ville \/ Localité.",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_pc_org_address_region",
+            "label": "Région",
+            "name": "pc_org_address_region",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Ex: Guadeloupe.",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_pc_org_address_postal",
+            "label": "Code postal",
+            "name": "pc_org_address_postal",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Ex: 97111.",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_pc_org_address_country",
+            "label": "Pays (code ISO ou libellé)",
+            "name": "pc_org_address_country",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Ex: GP ou France.",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_pc_site_search_target",
+            "label": "URL de recherche (avec {search_term_string})",
+            "name": "pc_site_search_target",
+            "aria-label": "",
+            "type": "url",
+            "instructions": "Ex: https:\/\/votresite.com\/recherche\/?q={search_term_string}. Laissez vide pour fallback \/?s={search_term_string}",
+            "required": 0,
+            "conditional_logic": false,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "placeholder": ""
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "options_page",
+                "operator": "==",
+                "value": "pc-seo-global"
+            }
+        ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "seamless",
+    "label_placement": "top",
+    "instruction_placement": "field",
+    "hide_on_screen": [],
+    "active": true,
+    "description": "Champs utilisés par le JSON-LD Organization & WebSite.",
+    "show_in_rest": false,
+    "modified": 1757413921
+}

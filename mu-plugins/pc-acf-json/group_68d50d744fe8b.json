@@ -1,0 +1,157 @@
+{
+    "key": "group_68d50d744fe8b",
+    "title": "SEO articles blog",
+    "fields": [
+        {
+            "key": "field_68db83b1c5616",
+            "label": "Exclure du sitemap",
+            "name": "post_exclude_sitemap",
+            "aria-label": "",
+            "type": "true_false",
+            "instructions": "Cochez pour retirer cette page du sitemap. Un meta robots noindex,follow sera appliqué automatiquement si aucun autre robots n'est défini.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "50",
+                "class": "",
+                "id": ""
+            },
+            "message": "",
+            "default_value": 0,
+            "allow_in_bindings": 1,
+            "ui_on_text": "",
+            "ui_off_text": "",
+            "ui": 1
+        },
+        {
+            "key": "field_68db83fbc5617",
+            "label": "Servir un 410 Gone",
+            "name": "post_http_410",
+            "aria-label": "",
+            "type": "true_false",
+            "instructions": "Optionnel. Cochez si le contenu est définitivement supprimé (sans remplacement). Accélère la désindexation.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "50",
+                "class": "",
+                "id": ""
+            },
+            "message": "",
+            "default_value": 0,
+            "allow_in_bindings": 1,
+            "ui_on_text": "",
+            "ui_off_text": "",
+            "ui": 1
+        },
+        {
+            "key": "field_68d50d7430696",
+            "label": "Méta titre",
+            "name": "post_og_title",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "Title personnalisé (50–60 caractères). Laissez vide pour utiliser le modèle automatique.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 1,
+            "placeholder": "",
+            "prepend": "",
+            "append": ""
+        },
+        {
+            "key": "field_68d50de630697",
+            "label": "Meta description",
+            "name": "post_og_description",
+            "aria-label": "",
+            "type": "textarea",
+            "instructions": "Résumé engageant (140–160 caractères) décrivant précisément le contenu de la page.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "maxlength": "",
+            "allow_in_bindings": 1,
+            "rows": "",
+            "placeholder": "",
+            "new_lines": "wpautop"
+        },
+        {
+            "key": "field_68db848fc5618",
+            "label": "URL canonique (facultatif)",
+            "name": "post_meta_canonical",
+            "aria-label": "",
+            "type": "url",
+            "instructions": "Laissez vide pour utiliser l’URL de cette page. À renseigner uniquement en cas de duplication maîtrisée.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "allow_in_bindings": 1,
+            "placeholder": ""
+        },
+        {
+            "key": "field_68db84c0c5619",
+            "label": "Meta robots",
+            "name": "post_meta_robots",
+            "aria-label": "",
+            "type": "select",
+            "instructions": "Contrôle l’indexation de la page.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "choices": {
+                "index,follow": "index,follow",
+                "noindex,follow": "noindex,follow",
+                "noindex,nofollow": "noindex,nofollow"
+            },
+            "default_value": "index,follow",
+            "return_format": "value",
+            "multiple": 0,
+            "allow_null": 0,
+            "allow_in_bindings": 1,
+            "ui": 1,
+            "ajax": 0,
+            "placeholder": "",
+            "create_options": 0,
+            "save_options": 0
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "post_type",
+                "operator": "==",
+                "value": "post"
+            }
+        ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "hide_on_screen": "",
+    "active": true,
+    "description": "",
+    "show_in_rest": 0,
+    "modified": 1759216941
+}

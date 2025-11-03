@@ -1,0 +1,57 @@
+/* pc-faq-capture.css */
+.pc-faq-accordion { margin: 1rem 0; }
+
+.pc-faq-accordion details.pc-faq-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: .5rem 0;
+  background: #fff;
+}
+
+.pc-faq-accordion details.pc-faq-item[open] {
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+
+.pc-faq-accordion summary.pc-faq-q {
+  display: block !important;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  list-style: none;
+  position: relative;
+  padding-right: 1.25rem;
+}
+
+/* Retire le triangle natif de <summary> */
+.pc-faq-accordion summary.pc-faq-q::-webkit-details-marker { display: none !important; }
+.pc-faq-accordion summary.pc-faq-q::marker { content: ""; }
+
+/* Icône + / – */
+.pc-faq-accordion summary.pc-faq-q::after {
+  content: "+";
+  position: absolute;
+  right: 0;
+  top: 0;
+  line-height: 1;
+}
+.pc-faq-accordion details[open] > summary.pc-faq-q::after { content: "–"; }
+
+.pc-faq-accordion .pc-faq-a { margin-top: .5rem; line-height: 1.6; }
+
+/* --------- Typo FAQ forcée --------- */
+.pc-faq-accordion,
+.pc-faq-accordion summary.pc-faq-q,
+.pc-faq-accordion .pc-faq-a {
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 1024px) {
+  .pc-faq-accordion,
+  .pc-faq-accordion summary.pc-faq-q,
+  .pc-faq-accordion .pc-faq-a {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+}

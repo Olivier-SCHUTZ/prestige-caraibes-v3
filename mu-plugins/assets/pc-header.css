@@ -1,0 +1,420 @@
+/* ===== HOTFIX PRIORITAIRE – Nouveau widget "Menu" ===== */
+/* ID + classe pour battre les styles globaux et le pointer background */
+#pc-header {
+  --pc-menu: #1B3B5F;       /* repos */
+  --pc-menu-hover: #D4AF37; /* survol */
+  --pc-menu-active: #D4AF37;/* actif */
+}
+
+/* Couleurs des liens */
+#pc-header .pc-menu .e-n-menu a,
+#pc-header .pc-menu a {
+  color: var(--pc-menu);
+  text-decoration: none;
+}
+
+/* Survol / focus */
+#pc-header .pc-menu li:hover > a,
+#pc-header .pc-menu a:hover,
+#pc-header .pc-menu a:focus,
+#pc-header .pc-menu a:focus-visible {
+  color: var(--pc-menu-hover);
+}
+
+/* Actif */
+#pc-header .pc-menu .current-menu-item > a,
+#pc-header .pc-menu a[aria-current="page"] {
+  color: var(--pc-menu-active);
+}
+
+/* Pointer: Background neutralisé proprement */
+#pc-header .pc-menu .e-background-pointer { background: transparent; }
+#pc-header .pc-menu .e-background-pointer * { color: inherit; }
+
+/* ====== MEGA MENUS (Locations / Expériences) ====== */
+#pc-header .pc-mega {
+  --pc-mm-maxw: 1100px;
+  --pc-mm-gap: 24px;
+  --pc-mm-bg: var(--pc-dd-bg, #fff);
+  --pc-mm-col: currentColor;
+  --pc-mm-muted: rgba(0,0,0,.55);
+  --pc-mm-accent: var(--pc-menu-hover, #D4AF37);
+  --pc-mm-radius: 14px;
+  --pc-mm-shadow: 0 10px 30px rgba(0,0,0,.10);
+  background: var(--pc-mm-bg);
+  color: var(--pc-mm-col);
+  border-radius: var(--pc-mm-radius);
+  box-shadow: var(--pc-mm-shadow);
+  max-width: var(--pc-mm-maxw);
+  padding: 20px;
+}
+
+/* Grilles internes (au cas où) */
+#pc-header .pc-mega__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pc-mm-gap);
+}
+
+/* Titres colonnes */
+#pc-header .pc-mega__title {
+  font-weight: 600;
+  font-size: .82rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin: 0 0 2px 0;
+  color: var(--pc-mm-muted);
+}
+
+#pc-header .pc-mega .pc-mega__list a:hover { color: var(--pc-mm-accent); }
+
+/* ====== Cartes EXPÉRIENCES ====== */
+#pc-header .pc-mega--experiences .pc-card {
+  flex: 0 1 calc((100% - 2*var(--pc-mm-gap))/3);
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+}
+#pc-header .pc-mega--experiences .pc-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.10);
+}
+
+/* En-tête (icône + titre) */
+#pc-header .pc-card__head { display: flex; align-items: center; gap: 10px; }
+#pc-header .pc-card__icon {
+  font-size: 20px;
+  line-height: 1;
+  color: currentColor;
+}
+#pc-header .pc-card__title {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Vignette (carré propre même si source 500×333) */
+#pc-header .pc-card__thumb img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 10px;
+  display: block;
+  filter: saturate(.98);
+}
+
+/* Liens “top picks” */
+#pc-header .pc-card__links .elementor-icon-list-items { gap: 6px; margin-top: 10px; }
+#pc-header .pc-card__links .elementor-icon-list-icon { font-size: 12px; }
+#pc-header .pc-card__links a { color: inherit; text-decoration: none; }
+#pc-header .pc-card__links a:hover { color: var(--pc-mm-accent); }
+
+/* Lien “Voir tout …” (discret) */
+#pc-header .pc-card__more {
+  margin-top: 10px;
+  font-size: .9rem;
+  opacity: .85;
+}
+#pc-header .pc-card__more a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+#pc-header .pc-card__more a:hover { color: var(--pc-mm-accent); }
+
+/* CTA global du panneau Expériences */
+#pc-header .pc-mega__cta {
+  margin-top: 14px;
+  display: inline-block;
+}
+
+/* Responsive tweaks */
+@media (max-width: 1024px) {
+  #pc-header .pc-mega { padding: 16px; }
+  #pc-header .pc-mega--experiences .pc-card { flex-basis: calc(50% - var(--pc-mm-gap)); }
+}
+@media (max-width: 767px) {
+  #pc-header .pc-mega--experiences .pc-card { flex-basis: 100%; }
+}
+
+/* ===== Fix 4 colonnes Locations (pas de retour à la ligne) + look "carte" ===== */
+#pc-header .pc-mega--locations .pc-mega__grid { display: flex; flex-wrap: wrap; gap: var(--pc-mm-gap); }
+
+#pc-header .pc-mega--locations .pc-mega__col {
+  flex: 0 1 calc((100% - 3*var(--pc-mm-gap))/4);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+#pc-header .pc-mega--locations .pc-mega__col:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.10);
+}
+
+@media (max-width: 1024px) {
+  #pc-header .pc-mega--locations .pc-mega__col {
+    flex-basis: calc((100% - var(--pc-mm-gap))/2); /* 2 colonnes */
+  }
+}
+@media (max-width: 767px) {
+  #pc-header .pc-mega--locations .pc-mega__col { flex-basis: 100%; } /* 1 colonne */
+}
+
+/* ===== Expériences : titres comme Locations + hauteurs équilibrées ===== */
+#pc-header .pc-mega--experiences .pc-card__title {
+  font-weight: 600;
+  font-size: .82rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+#pc-header .pc-mega--experiences .pc-mega__grid { align-items: stretch; }
+#pc-header .pc-mega--experiences .pc-card {
+  flex: 0 1 calc((100% - 2*var(--pc-mm-gap))/3);
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+}
+#pc-header .pc-mega--experiences .pc-card__more { margin-top: auto; padding-top: 8px; }
+
+@media (max-width: 1024px) {
+  #pc-header .pc-mega--experiences .pc-card {
+    flex-basis: calc((100% - var(--pc-mm-gap))/2); /* 2 colonnes */
+  }
+}
+@media (max-width: 767px) {
+  #pc-header .pc-mega--experiences .pc-card { flex-basis: 100%; } /* 1 colonne */
+}
+
+/* ===== Locations : colonnes hauteur égale + grille stretch ===== */
+#pc-header .pc-mega--locations .pc-mega__grid { align-items: stretch; }
+#pc-header .pc-mega--locations .pc-mega__col { align-self: stretch; }
+
+#pc-header .pc-mega--experiences .pc-card__thumb img {
+  width: 108px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* A→Z : titres de lettres + taille des liens (évite l’énorme typo) */
+#pc-header .pc-az__list a {
+  font-size: .95rem;
+  line-height: 1.35;
+  text-decoration: none;
+}
+#pc-header .pc-az__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 6px 14px;
+}
+#pc-header .pc-az__list a:hover { color: var(--pc-mm-accent); }
+
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd__btn {
+  color: #1B3B5F;
+  border-color: #1B3B5F;
+}
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd[aria-expanded="true"] .pc-dd__btn,
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd__btn:hover {
+  color: #D4AF37;
+  border-color: #D4AF37;
+}
+
+/* === Panneau Col.4 : Liste logements (overflow + typo) === */
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd,
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd__panel {
+  overflow: visible;
+}
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd {
+  position: relative; /* parent d’ancrage */
+}
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd__panel {
+  z-index: 10050; /* au-dessus du méga-menu */
+}
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd,
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd__panel {
+  font-size: 16px;
+  line-height: 1.45;
+  font-family: var(--pc-font-body, inherit);
+}
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd__filter,
+#pc-header .pc-mega--locations .pc-mega__col--names .pc-dd__list a {
+  font-size: inherit;
+  line-height: inherit;
+  font-family: inherit;
+}
+
+/* Le contenu du popup = ta section Elementor principale */
+.elementor-popup-modal .elementor-section-wrap > .elementor-section {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  max-height: calc(100vh - 12px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.elementor-popup-modal { z-index: 10050; }
+
+/* === Header : couleurs par défaut (plus de blanc forcé) === */
+#pc-header { color: var(--pc-menu, #1B3B5F); }
+#pc-header a:not(.elementor-button):not(.elementor-social-icon) { color: inherit; }
+
+/* Logo (SVG) piloté par la hauteur */
+#pc-header { --pc-logo-h: 46px; } /* Desktop par défaut */
+#pc-header a.pc-logo {
+  display: inline-flex;
+  align-items: center;
+  height: var(--pc-logo-h);
+  line-height: 0;
+}
+#pc-header a.pc-logo svg {
+  height: 100%;
+  width: auto;
+  display: block;
+}
+@media (min-width: 768px) and (max-width: 1024px) {
+  #pc-header { --pc-logo-h: 40px; } /* Tablet */
+}
+@media (max-width: 767px) {
+  #pc-header { --pc-logo-h: 42.5px; } /* Mobile */
+}
+
+/* Burger (style seulement) */
+#pc-header .pc-burger .elementor-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid currentColor;
+  border-radius: 12px;
+}
+#pc-header .pc-burger .elementor-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  line-height: 1;
+}
+
+/* Popup bottom-sheet (visuel) */
+.elementor-popup-modal .dialog-widget-content { background: transparent; box-shadow: none; }
+
+/* Bouton Elementor dans le header */
+#pc-header .elementor-widget-button .elementor-button {
+  background: var(--pc-color-primary);
+  color: var(--pc-color-btn-text);
+  border-radius: var(--pc-radius);
+  padding: var(--pc-btn-pt) var(--pc-btn-pr);
+  font-weight: var(--pc-btn-text-weight);
+  line-height: var(--pc-btn-text-lh);
+}
+#pc-header .elementor-widget-button .elementor-button:hover {
+  background: var(--pc-color-primary-hover);
+}
+
+/* ===========================================================
+   BASE FONCTIONNELLE MINIMALE POUR LE HEADER SMART
+   =========================================================== */
+
+/* 1. Positionnement et préparation du header
+   --------------------------------------------------- */
+/* Cible le conteneur principal du header Elementor */
+header.elementor-location-header {
+  /* On le fixe en haut de la page pour qu'il reste visible */
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000 !important;
+
+  /* --- VOTRE DEMANDE --- */
+  /* État initial : fond blanc semi-transparent et texte en bleu */
+  background: rgba(255, 255, 255, 0.7) !important; /* Modifiez 0.9 pour plus ou moins de transparence */
+  color: #1B3B5F !important; /* Le bleu de votre charte, dès le départ */
+  box-shadow: none !important; /* Pas d'ombre au début */
+  
+  /* Préparation pour des transitions fluides */
+  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  will-change: transform, background;
+}
+
+
+/* 2. État "solide" (quand on scrolle)
+   --------------------------------------------------- */
+/* Quand le JavaScript ajoute la classe .pc-solid */
+header.elementor-location-header.pc-solid {
+  /* Le fond devient 100% blanc opaque */
+  background: #fff !important;
+  /* Une ombre apparaît pour donner du relief */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+}
+
+
+/* 3. État "caché" (la mécanique principale)
+   --------------------------------------------------- */
+/* Quand le JavaScript ajoute la classe .pc-hidden */
+header.elementor-location-header.pc-hidden {
+  /* Fait glisser le header entièrement vers le haut pour le cacher */
+  transform: translateY(-100%);
+}
+
+
+
+
+/* ===========================================================
+   CENTRAGE DU CONTENU DU POPUP MENU SUR MOBILE
+   =========================================================== */
+/*
+   VERSION MISE À JOUR POUR LE CONTENEUR PRINCIPAL
+   ET AJOUT POUR LE BOUTON RETOUR
+*/
+@media (max-width: 767px) {
+
+    .mobile-menu-popup .pc-menu {
+        position: relative; /* Étape cruciale : devient le parent de référence pour le bouton */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start; /* Aligne le contenu en HAUT au lieu du centre */
+        height: 100%;
+        text-align: center;
+        overflow-y: auto; /* Permet de scroller si le contenu est trop long */
+        padding-top: 70px; /* Espace en haut pour ne pas être collé au bord et laisser de la place au bouton retour */
+        /* Espace de sécurité en bas pour la barre Safari et autres UI mobiles */
+        padding-bottom: calc(100px + env(safe-area-inset-bottom)); 
+    }
+
+    /* NOUVELLE RÈGLE pour positionner le bouton retour */
+    .mobile-menu-popup .popup-back-button {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
+    
+    /* Le reste de vos règles ... */
+    .mobile-menu-popup .pc-mega__col {
+        flex-basis: auto !important;
+        width: 90%;
+        min-width: unset;
+        margin-bottom: 30px;
+    }
+
+    .mobile-menu-popup .pc-mega__col:last-child {
+        margin-bottom: 0;
+    }
+
+    .mobile-menu-popup .pc-mega__list .elementor-icon-list-items {
+        justify-content: center;
+    }
+}

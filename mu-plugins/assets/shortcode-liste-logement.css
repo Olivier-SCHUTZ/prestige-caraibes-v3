@@ -1,0 +1,123 @@
+/* ===============================================================
+   Style du Dropdown [liste_logements_dropdown]
+   =============================================================== */
+
+/* --- Conteneur global du dropdown --- */
+.pc-dd {
+  position: relative;
+}
+
+/* --- Le bouton --- */
+.pc-dd__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: 10px 16px;
+  border: 1px solid #1B3B5F; /* La couleur sera héritée du header */
+  border-radius: var(--pc-radius, 10px);
+  background: #FFFFFF;
+  color: #1B3B5F;
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-btn-text-size);
+  font-weight: var(--pc-btn-text-weight);
+  cursor: pointer;
+}
+.pc-dd__chev {
+  width: 14px;
+  height: 14px;
+}
+.pc-dd__btn .pc-dd__chev {
+  transition: transform .2s ease;
+}
+.pc-dd[aria-expanded="true"] .pc-dd__btn .pc-dd__chev {
+  transform: rotate(180deg);
+}
+
+
+/* --- Le panneau déroulant --- */
+.pc-dd__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 280px;
+  max-width: min(92vw, 360px);
+  background: #fff;
+  color: var(--pc-color-heading, #1B3B5F);
+  border-radius: 12px;
+  padding: 8px;
+  border: 1px solid #EAEAEA;
+  box-shadow: 0 20px 40px rgba(0,0,0,.18);
+  z-index: 10050;
+}
+.pc-dd__panel[hidden] {
+  display: none;
+}
+
+/* --- Contenu du panneau --- */
+.pc-dd__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: calc(48px * 5 + 2px); /* Affiche 5 éléments avant de scroller */
+  overflow: auto;
+}
+.pc-dd__item a {
+  display: block;
+  padding: 12px 10px;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pc-dd__item a:hover {
+  background: #f5f6f8;
+}
+.pc-dd__footer {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #eee;
+}
+.pc-dd__search {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  font-weight: 600;
+}
+
+/* --- Style du bouton au survol ou quand le panel est ouvert --- */
+/* (Réagit aux couleurs du header : blanc/bleu -> or) */
+header.pc-solid .pc-dd[aria-expanded="true"] .pc-dd__btn,
+header.pc-solid .pc-dd__btn:hover {
+    color: #D4AF37;
+    border-color: #D4AF37;
+}
+header:not(.pc-solid) .pc-dd[aria-expanded="true"] .pc-dd__btn,
+header:not(.pc-solid) .pc-dd__btn:hover {
+    color: #F1F1F1;
+    border-color: #F1F1F1;
+}
+
+/* Champ de recherche du dropdown */
+.pc-dd__search input.pc-dd__filter{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid #E0E0E0;
+  border-radius:10px;
+  font: inherit;
+  outline:0;
+  margin: 4px 0 8px;
+}
+.pc-dd__search input.pc-dd__filter:focus{
+  border-color:#D4AF37;
+  box-shadow:0 0 0 3px rgba(212,175,55,.18);
+}
+
+/* Filtrage / sélection clavier */
+.pc-dd__item[hidden]{ display:none !important; }
+.pc-dd__item.is-sel a{ background:#f5f6f8; }

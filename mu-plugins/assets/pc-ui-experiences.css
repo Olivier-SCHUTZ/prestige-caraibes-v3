@@ -1,0 +1,1106 @@
+/* ============================================================
+   [experience_description] — Texte avec "Voir plus"
+   ============================================================ */
+
+.exp-desc-box {
+  /* Variables par défaut, peuvent être surchargées par le shortcode */
+  --exp-desc-max: 250px;
+  --exp-desc-bg: #F9F9F9; /* Couleur de fond de la page/section */
+  --exp-desc-fsize: 1.125rem;
+  --exp-desc-lh: 1.6em;
+  --exp-desc-btn-h: 40px;
+  --exp-desc-btn-gap: 12px;
+  
+  position: relative;
+  font-family: var(--pc-font-body);
+  color: var(--pc-color-text);
+}
+
+/* Le conteneur du contenu */
+.exp-desc__content {
+  max-height: var(--exp-desc-max);
+  overflow: hidden;
+  font-size: var(--exp-desc-fsize);
+  line-height: var(--exp-desc-lh);
+  transition: max-height 0.4s ease-in-out;
+}
+
+.exp-desc__content > *:first-child {
+    margin-top: 0;
+}
+
+/* Le dégradé pour l'effet de fondu */
+.exp-desc__fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--exp-desc-btn-h) + var(--exp-desc-btn-gap));
+  height: 72px;
+  background: linear-gradient(to bottom, transparent 0%, var(--exp-desc-bg) 95%);
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+/* Le bouton "Voir plus / Voir moins" */
+.exp-desc__toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--exp-desc-btn-h);
+  margin-top: var(--exp-desc-btn-gap);
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-weight: 700;
+  font-family: var(--pc-font-title);
+  color: var(--pc-color-primary, #007a92);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+}
+
+.exp-desc__toggle:hover {
+  color: var(--pc-color-primary-hover, #005f73);
+}
+
+/* Styles quand le bloc est ouvert */
+.exp-desc-box.is-open .exp-desc__content {
+  max-height: 10000px; /* Valeur suffisamment grande pour tout afficher */
+}
+
+.exp-desc-box.is-open .exp-desc__fade {
+  opacity: 0;
+}
+
+.exp-desc-box.is-open .exp-desc__toggle {
+  text-decoration: none;
+}
+
+/* ============================================================
+   [experience_gallery] — Galerie Photos Expériences
+   ============================================================ */
+
+.exp-gallery-grid {
+  display: grid;
+  gap: 1rem;
+  /* Grille explicite : 3 colonnes sur desktop */
+  grid-template-columns: repeat(3, 1fr); 
+}
+
+/* Sur tablette, on passe à 2 colonnes */
+@media (max-width: 1024px) {
+  .exp-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Sur mobile, on passe à 1 colonne */
+@media (max-width: 640px) {
+  .exp-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.exp-gallery-item {
+  margin: 0;
+  border-radius: var(--pc-radius, 10px);
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+  aspect-ratio: 16/10; /* Garde un format 16:9 ou similaire */
+}
+
+.exp-gallery-item a {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.exp-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.exp-gallery-item a:hover img {
+  transform: scale(1.05);
+}
+
+/* ============================================================
+   [experience_map] — Carte des lieux de départ
+   ============================================================ */
+
+.exp-map-wrap {
+  border-radius: var(--pc-radius, 10px);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,.06);
+  position: relative;
+  z-index: 1; /* Pour s'assurer qu'elle est bien positionnée par rapport aux autres éléments */
+}
+
+.exp-map {
+  width: 100%;
+  height: 450px; /* Hauteur par défaut, ajustable */
+  background-color: #f0f0f0;
+}
+
+@media (max-width: 767px) {
+  .exp-map {
+    height: 350px;
+  }
+}
+
+/* ============================================================
+   [experience_summary] — Tableau de résumé
+   ============================================================ */
+
+.exp-summary {
+  font-family: var(--pc-font-body);
+  color: var(--pc-color-text);
+  border-top: 1px solid #e0e0e0;
+}
+
+.exp-summary-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr; /* 1/3 pour le label, 2/3 pour les données */
+  gap: 2rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid #e0e0e0;
+  align-items: start;
+}
+
+.exp-summary-label {
+  font-weight: 600;
+  color: var(--pc-color-heading);
+  font-size: 1.1rem;
+}
+
+.exp-summary-data {
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* Style pour la liste à puces (lieux de départ) */
+.exp-summary-data ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.exp-summary-data li {
+  position: relative;
+  padding-left: 1.5em;
+}
+.exp-summary-data li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--pc-color-primary);
+  font-weight: bold;
+}
+
+/* Style pour les paragraphes (horaires) */
+.exp-summary-data p {
+  margin: 0 0 1em 0;
+}
+.exp-summary-data p:last-child {
+  margin-bottom: 0;
+}
+
+
+/* Responsive pour les mobiles */
+@media (max-width: 767px) {
+  .exp-summary-row {
+    grid-template-columns: 1fr; /* Une seule colonne sur mobile */
+    gap: 0.75rem;
+    padding: 1rem 0;
+  }
+  .exp-summary-label {
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* ============================================================
+   [experience_pricing] — Cartes de tarifs
+   ============================================================ */
+
+.exp-pricing-section {
+  display: grid;
+  /* Crée une grille responsive pour les cartes de tarifs */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.exp-pricing-card {
+  background: #FFFFFF;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--pc-radius, 10px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.05);
+  overflow: hidden; /* Pour que le header respecte le border-radius */
+}
+
+.exp-pricing-title {
+  font-family: var(--pc-font-title);
+  background: var(--pc-bg-page, #f9f9f9);
+  padding: 1rem 1.5rem;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--pc-color-heading);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.exp-pricing-body {
+  padding: 1.5rem;
+}
+
+.exp-pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.exp-pricing-body > .exp-pricing-row:last-child {
+  border-bottom: none;
+}
+
+.exp-pricing-label {
+  font-weight: 500;
+}
+.exp-pricing-label small {
+  display: block;
+  font-weight: 400;
+  opacity: 0.7;
+  font-size: 0.85em;
+}
+
+.exp-pricing-amount {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--pc-color-primary);
+  white-space: nowrap;
+}
+
+.exp-pricing-row.on-demand {
+    justify-content: center;
+    font-style: italic;
+    font-size: 1.1rem;
+    padding: 1rem 0;
+}
+
+.exp-pricing-options {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--pc-color-primary);
+}
+
+.exp-options-title {
+  margin: 0 0 0.5rem 0;
+  font-family: var(--pc-font-title);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.exp-pricing-amount.not-allowed {
+  font-style: italic;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #c0392b; /* Une couleur rouge sobre */
+}
+
+/* ============================================================
+   [experience_devis] — Calculateur de devis
+   ============================================================ */
+.exp-devis-section {
+  padding: 2rem 0;
+}
+
+.exp-devis-wrap {
+  background: var(--pc-bg-page, #f9f9f9);
+  border: 1px solid #e0e0e0;
+  border-radius: var(--pc-radius, 10px);
+  padding: 2rem;
+}
+
+.exp-devis-title {
+  margin: 0 0 1.5rem 0;
+  font-family: var(--pc-font-title);
+  text-align: left;
+}
+
+.exp-devis-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.exp-devis-field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.exp-devis-field input,
+.exp-devis-field select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px !important;
+}
+
+.exp-devis-options {
+  margin-bottom: 1.5rem;
+}
+
+.exp-options-title {
+  margin: 0 0 1rem 0;
+  font-family: var(--pc-font-title);
+  font-weight: 600;
+}
+
+.exp-devis-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.exp-devis-checkbox input {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.exp-devis-result {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+}
+.exp-devis-result .exp-result-title {
+  margin: 0 0 1rem 0;
+  font-family: var(--pc-font-title);
+  font-weight: 600;
+}
+.exp-devis-result ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.exp-devis-result li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.exp-devis-result li.separator {
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+.exp-devis-result li.error {
+    color: #c0392b;
+}
+
+.exp-devis-result .exp-result-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1.2rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--pc-color-heading);
+  color: var(--pc-color-heading);
+}
+
+/* Style pour le bouton "Télécharger le devis" */
+.exp-devis-actions {
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.exp-devis-actions .pc-btn i {
+    margin-right: 0.5rem; /* Espace entre l'icône et le texte */
+}
+
+/* ============================================================
+   [experience_inclusions] — Grille de détails
+   ============================================================ */
+
+.exp-inclusions-section {
+  padding: 2rem 0;
+}
+
+.exp-inclusions-grid {
+  display: grid;
+  gap: 2.5rem;
+  /* Desktop : 3 colonnes */
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* Tablette : 2 colonnes */
+@media (max-width: 1024px) {
+  .exp-inclusions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile : 1 colonne */
+@media (max-width: 767px) {
+  .exp-inclusions-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+.exp-inclusions-col .exp-inclusions-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* Espace entre l'icône et le texte */
+  font-family: var(--pc-font-title);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--pc-color-heading);
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.exp-inclusions-col .exp-inclusions-title i {
+  color: var(--pc-color-primary);
+  font-size: 1.1em; /* Icône légèrement plus grande que le texte */
+}
+
+.exp-inclusions-content {
+  font-family: var(--pc-font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.exp-inclusions-content p {
+    margin: 0 0 0.5em 0;
+}
+.exp-inclusions-content p:last-child {
+    margin-bottom: 0;
+}
+
+.exp-inclusions-content ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.exp-inclusions-content li {
+  padding-left: 1.75em;
+  position: relative;
+  margin-bottom: 0.5em;
+}
+
+.exp-inclusions-content li::before {
+  content: '✓'; /* Vous pouvez changer l'icône ici, ex: '→' ou '•' */
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--pc-color-primary);
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+/* ============================================================
+   [experience_logements_recommandes]
+   ============================================================ */
+
+.exp-reco-section {
+  padding: 2rem 0;
+}
+
+.exp-reco-title {
+  font-family: var(--pc-font-title);
+  font-size: 1.8rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--pc-color-heading);
+}
+
+.exp-reco-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.exp-reco-card {
+  background: #FFFFFF;
+  border-radius: var(--pc-radius, 10px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.exp-reco-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0,0,0,.12);
+}
+
+.exp-reco-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.exp-reco-card-image {
+  aspect-ratio: 16/10;
+}
+
+.exp-reco-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.exp-reco-card-content {
+  padding: 1.25rem;
+}
+
+.exp-reco-card-title {
+  font-family: var(--pc-font-title);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--pc-color-heading);
+}
+
+.exp-reco-card-price {
+  font-size: 1rem;
+  color: var(--pc-color-primary);
+  font-weight: 500;
+}
+
+/* pc-ui-experiences.css */
+
+/* ============================================================
+   Fenêtre Modale de Réservation
+   ============================================================ */
+.exp-booking-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.exp-booking-modal.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.exp-booking-modal__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  cursor: pointer;
+}
+
+.exp-booking-modal__content {
+  position: relative;
+  background: #fff;
+  border-radius: var(--pc-radius, 10px);
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 1;
+}
+
+.exp-booking-modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #888;
+}
+.exp-booking-modal__close:hover { color: #333; }
+
+.exp-booking-modal__title {
+  font-family: var(--pc-font-title);
+  margin: 0 0 1.5rem 0;
+}
+
+.exp-booking-fieldset {
+  border: 1px solid #e0e0e0;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+.exp-booking-fieldset legend {
+  font-weight: 600;
+  padding: 0 0.5rem;
+  margin-left: -0.5rem;
+}
+
+#modal-quote-summary ul { list-style: none; padding: 0; margin: 0; }
+#modal-quote-summary li { display: flex; justify-content: space-between; padding: 0.25rem 0; }
+
+.exp-booking-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.exp-booking-field { display: flex; flex-direction: column; }
+.exp-booking-field label { font-weight: 500; margin-bottom: 0.25rem; font-size: 0.9rem; }
+.exp-booking-field input,
+.exp-booking-field textarea { 
+  width: 100%; 
+  padding: 0.6rem; 
+  border: 1px solid #ccc; 
+  border-radius: 6px;
+  font-family: var(--pc-font-body);
+  font-size: 16px !important;
+}
+
+.exp-booking-radio-group { display: flex; gap: 1.5rem; }
+.exp-booking-radio-group label { display: flex; align-items: center; gap: 0.5rem; }
+
+.exp-booking-modal__actions { margin-top: 1.5rem; }
+.exp-booking-disclaimer { font-size: 0.85rem; opacity: 0.7; margin: 0 0 1rem 0; text-align: center; }
+.exp-booking-modal__actions .pc-btn { width: 100%; }
+
+@media (max-width: 767px) {
+  .exp-booking-modal__content { padding: 1.5rem; }
+  .exp-booking-form-grid { grid-template-columns: 1fr; }
+}
+
+
+/* Mise en page des boutons d'action du devis */
+.exp-devis-actions {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+/* Style pour un bouton secondaire (contour) */
+.pc-btn.pc-btn--secondary {
+  background: transparent;
+  color: var(--pc-color-primary);
+  border-color: var(--pc-color-primary);
+}
+.pc-btn.pc-btn--secondary:hover {
+  background: var(--pc-color-primary-hover, #005f73);
+  color: #fff;
+  border-color: var(--pc-color-primary-hover, #005f73);
+}
+
+/* Message d'erreur pour le devis vide */
+.exp-devis-error {
+  color: #c0392b; /* Rouge d'erreur */
+  font-weight: 500;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e74c3c;
+  border-radius: 8px;
+  background: #fdecea;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+}
+.exp-devis-error.is-visible {
+  max-height: 100px;
+  opacity: 1;
+}
+
+/* Force la couleur primaire sur le bouton d'envoi de la modale */
+.exp-booking-modal__actions button[type="submit"].pc-btn--primary {
+  background-color: var(--pc-color-primary);
+  border-color: var(--pc-color-primary);
+  color: var(--pc-color-btn-text, #fff);
+}
+
+.exp-booking-modal__actions button[type="submit"].pc-btn--primary:hover {
+  background-color: var(--pc-color-primary-hover);
+  border-color: var(--pc-color-primary-hover);
+}
+
+/* ============================================================
+   Fix Apparence du Sélecteur (Chrome & Safari)
+   ============================================================ */
+
+/* Restaure l'apparence native du sélecteur de prestation (Version Robuste) */
+.exp-devis-form select[name="devis_type"] {
+  /* On annule toutes les customisations pour revenir au style natif du navigateur */
+  -webkit-appearance: revert;
+  -moz-appearance: revert;
+  appearance: revert;
+  background: revert;
+  border: revert;
+  border-radius: revert;
+  padding: revert;
+  color: revert;
+  font: revert;
+}
+
+/* ==========================================================
+   Menu d'ancres sticky (Version utilisant les variables de pc-base.css)
+   ========================================================== */
+
+/* Conteneur principal */
+.exp-anchor-menu {
+  position: sticky;
+  top: 68px; /* Ajuste cette valeur si besoin (hauteur de ton header) */
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #eaeaea;
+  padding: 4px 8px;
+}
+
+/* Flèches de navigation */
+.exp-anchor-arrow {
+  flex-shrink: 0;
+  background: transparent;
+  border: 0;
+  color: #0e2b5c;
+  /* La taille des icônes est maintenant relative pour une meilleure cohérence */
+  font-size: 1.5rem; 
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.exp-anchor-arrow:hover {
+  background: rgba(0,0,0,0.06);
+}
+.exp-anchor-arrow[disabled] {
+  opacity: 0.3;
+  cursor: default;
+  background: transparent;
+}
+
+/* Zone de défilement */
+.exp-anchor-scroller {
+  flex-grow: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.exp-anchor-scroller::-webkit-scrollbar { 
+  display: none;
+}
+
+/* Liste des liens */
+.exp-anchor-nav {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.5rem 0.25rem;
+  white-space: nowrap;
+}
+.exp-anchor-nav a {
+  display: inline-flex;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #0e2b5c;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  
+  /* === MODIFICATIONS CLÉS === */
+  /* On utilise tes variables globales pour la police et la taille */
+  font-family: var(--pc-font-title);
+  font-size: var(--pc-btn-text-size);
+  font-weight: 500; /* On garde un poids medium pour la lisibilité */
+}
+.exp-anchor-nav a:hover {
+  background: rgba(0,0,0,0.06);
+}
+.exp-anchor-nav a.is-active {
+  background: #0e2b5c;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* État "sur devis" */
+.exp-price--pending {
+  font-style: italic;
+  opacity: .85;
+}
+
+/* ============================================================
+   NOUVEAU : Bouton "Pilule" Flottant (FAB)
+   ============================================================ */
+.exp-booking-fab {
+  position: fixed;
+  /* Centré en bas de l'écran */
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  
+  /* Apparence "Pilule" */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.56rem;
+  /* Ajout de la zone de sécurité iOS */
+  padding-bottom: calc(0.9rem + env(safe-area-inset-bottom));
+  
+  border: none;
+  border-radius: 50px; /* Bords très arrondis */
+  cursor: pointer;
+  user-select: none;
+  
+  /* Couleurs et typo (basées sur .pc-btn--primary) */
+  background: var(--pc-color-primary, #007A92);
+  color: var(--pc-color-btn-text, #FFFFFF);
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-btn-text-size, 1.125rem);
+  font-weight: var(--pc-btn-text-weight, 600);
+  line-height: var(--pc-btn-text-lh, 1.3);
+  text-decoration: none;
+  
+  /* Ombre et transitions */
+  box-shadow: 0 8px 24px rgba(0,0,0,.15);
+  transition: background-color .15s ease, 
+              box-shadow .2s ease, 
+              transform .3s ease-in-out,
+              opacity .3s ease-in-out;
+  
+  /* État caché par défaut */
+  opacity: 0;
+  transform: translateX(-50%) translateY(150%); /* Caché en bas */
+  pointer-events: none;
+}
+
+.exp-booking-fab:hover {
+  background: var(--pc-color-primary-hover, #005f73);
+  box-shadow: 0 10px 30px rgba(0,0,0,.2);
+}
+
+/* État visible (contrôlé par JS) */
+.exp-booking-fab.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* Version mobile plus compacte */
+@media (max-width: 767.98px) {
+  .exp-booking-fab {
+    font-size: var(--pc-btn-text-size, 1rem);
+    padding: 0.8rem 1.25rem;
+    padding-bottom: calc(0.8rem + env(safe-area-inset-bottom));
+  }
+}
+
+
+/* ============================================================
+   NOUVEAU : Bottom-Sheet / Modale (Calculateur Devis)
+   ============================================================ */
+
+/* Conteneur principal (overlay + panneau) */
+.exp-devis-sheet {
+  position: fixed;
+  inset: 0; /* Équivaut à top/left/right/bottom: 0 */
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Caché par défaut */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Fond grisé (overlay) */
+.exp-devis-sheet__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  cursor: pointer;
+}
+
+/* Panneau de contenu (la sheet elle-même) */
+.exp-devis-sheet__content {
+  position: relative;
+  z-index: 1;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  
+  /* --- Style MOBILE (Bottom-Sheet par défaut) --- */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-height: 85vh; /* 85% de la hauteur de l'écran */
+  border-radius: var(--pc-radius, 10px) var(--pc-radius, 10px) 0 0;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+  overflow: hidden; /* Pour les coins arrondis */
+
+  /* Animation (caché en bas par défaut) */
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* En-tête de la sheet */
+.exp-devis-sheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0; /* Empêche l'en-tête de rétrécir */
+}
+
+.exp-devis-sheet__title {
+  font-family: var(--pc-font-title);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--pc-color-heading);
+  margin: 0;
+}
+
+.exp-devis-sheet__close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #888;
+  padding: 0.25rem;
+}
+.exp-devis-sheet__close:hover { color: #333; }
+
+/* Corps de la sheet (avec scroll) */
+.exp-devis-sheet__body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1.5rem;
+}
+
+/* --- État Ouvert --- */
+.exp-devis-sheet.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.exp-devis-sheet.is-open .exp-devis-sheet__content {
+  transform: translateY(0);
+}
+
+
+/* --- Style DESKTOP (Modale centrée > 1024px) --- */
+@media (min-width: 1024px) {
+  .exp-devis-sheet__content {
+    /* Annule le style "bottom-sheet" */
+    position: relative; 
+    bottom: auto;
+    left: auto;
+    transform: translateY(0);
+    
+    /* Style "modale" */
+    width: 90%;
+    max-width: 600px; /* Identique à la modale de contact */
+    max-height: 90vh;
+    border-radius: var(--pc-radius, 10px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  }
+  
+  .exp-devis-sheet__body {
+     padding: 2rem;
+  }
+  
+  /* Animation de la modale desktop (fondu + léger zoom) */
+  .exp-devis-sheet__content {
+      transform: scale(0.95);
+      opacity: 0;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  .exp-devis-sheet.is-open .exp-devis-sheet__content {
+      transform: scale(1);
+      opacity: 1;
+  }
+}
+
+
+/* ============================================================
+   AJUSTEMENTS : Formulaire de devis (dans la sheet)
+   ============================================================ */
+
+/* On annule les styles du conteneur .exp-devis-wrap 
+car la sheet .exp-devis-sheet__content gère maintenant 
+l'arrière-plan, les bordures et le padding.
+*/
+.exp-devis-sheet__body .exp-devis-wrap {
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 0;
+}
+
+/* S'assurer que le titre est masqué (géré par l'en-tête de la sheet) */
+.exp-devis-sheet__body .exp-devis-title {
+  display: none;
+}
+
+/* Optimisation de la grille pour les petits écrans */
+@media (max-width: 480px) {
+  .exp-devis-sheet__body .exp-devis-form {
+    grid-template-columns: 1fr 1fr; /* 2 colonnes sur petit mobile */
+    gap: 1rem;
+  }
+  .exp-devis-sheet__body .exp-devis-form .exp-devis-field:first-child {
+    grid-column: 1 / -1; /* Le sélecteur prend toute la largeur */
+  }
+  
+  .exp-devis-sheet__body {
+    padding: 1rem;
+  }
+  
+  .exp-devis-sheet__header {
+    padding: 1rem;
+  }
+  
+  .exp-devis-sheet__title {
+    font-size: 1.1rem;
+  }
+}
+
+/* ============================================================
+   AJUSTEMENT : Position du FAB sur Desktop (Corrigé v3 - Spécificité)
+   ============================================================ */
+
+@media (min-width: 1024px) {
+  
+  /* 1. On définit la position de base sur desktop (quand il est caché) */
+  .exp-booking-fab {
+    left: 2rem;
+    bottom: 2rem;
+    padding-bottom: 0.9rem;
+    
+    /* Annule le centrage (X) mais garde le masquage (Y) */
+    transform: translateX(0) translateY(150%);
+  }
+  
+  /* 2. On définit la position VISIBLE avec la bonne spécificité */
+  .exp-booking-fab.is-visible {
+    /* Annule le centrage (X) ET le masquage (Y) */
+    transform: translateX(0) translateY(0);
+  }
+}

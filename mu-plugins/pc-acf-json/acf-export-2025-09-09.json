@@ -1,0 +1,2203 @@
+[
+    {
+        "key": "group_66dcc7e9c5a16",
+        "title": "Détails de l'Expérience",
+        "fields": [
+            {
+                "key": "field_66dcc813d111a",
+                "label": "SEO & Liaisons",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_66dcc831d111b",
+                "label": "Méta Titre",
+                "name": "exp_meta_titre",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Le titre qui apparaîtra dans les résultats de recherche Google (environ 60 caractères). S'il est vide, le titre de l'expérience sera utilisé.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": 65,
+                "allow_in_bindings": 1,
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_66dcc867d111c",
+                "label": "Méta Description",
+                "name": "exp_meta_description",
+                "aria-label": "",
+                "type": "textarea",
+                "instructions": "Le texte descriptif qui apparaîtra sous le titre dans Google (environ 160 caractères).",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": 160,
+                "allow_in_bindings": 1,
+                "rows": 3,
+                "placeholder": "",
+                "new_lines": ""
+            },
+            {
+                "key": "field_66dcc8a4d111d",
+                "label": "Logements Recommandés",
+                "name": "exp_logements_recommandes",
+                "aria-label": "",
+                "type": "relationship",
+                "instructions": "Sélectionnez les villas ou appartements géographiquement proches ou particulièrement adaptés à cette expérience. Crucial pour le maillage interne.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "post_type": [
+                    "villa",
+                    "appartement"
+                ],
+                "post_status": "",
+                "taxonomy": "",
+                "filters": [
+                    "search",
+                    "post_type"
+                ],
+                "return_format": "id",
+                "min": "",
+                "max": "",
+                "allow_in_bindings": 1,
+                "elements": [
+                    "featured_image"
+                ],
+                "bidirectional": 0,
+                "bidirectional_target": []
+            },
+            {
+                "key": "field_66dcc92ad111e",
+                "label": "Détails de l'expérience",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_68beb1671e633",
+                "label": "H1 (optionnel)",
+                "name": "exp_h1_custom",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Titre principal (h1) de la page pour le SEO",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "allow_in_bindings": 0,
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_68beb1cd1e634",
+                "label": "Photo principale (Desktop)",
+                "name": "exp_hero_desktop",
+                "aria-label": "",
+                "type": "image",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "return_format": "url",
+                "library": "all",
+                "min_width": "",
+                "min_height": "",
+                "min_size": "",
+                "max_width": "",
+                "max_height": "",
+                "max_size": "",
+                "mime_types": "",
+                "allow_in_bindings": 0,
+                "preview_size": "medium"
+            },
+            {
+                "key": "field_68beb2221e635",
+                "label": "Photo principale (mobile)",
+                "name": "exp_hero_mobile",
+                "aria-label": "",
+                "type": "image",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "return_format": "url",
+                "library": "all",
+                "min_width": "",
+                "min_height": "",
+                "min_size": "",
+                "max_width": "",
+                "max_height": "",
+                "max_size": "",
+                "mime_types": "",
+                "allow_in_bindings": 0,
+                "preview_size": "medium"
+            },
+            {
+                "key": "field_66dcc94cd111f",
+                "label": "Durée",
+                "name": "exp_duree",
+                "aria-label": "",
+                "type": "number",
+                "instructions": "Indiquez la durée de l'expérience en heures.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "min": "",
+                "max": "",
+                "allow_in_bindings": 1,
+                "placeholder": "",
+                "step": "0.5",
+                "prepend": "",
+                "append": "heure(s)"
+            },
+            {
+                "key": "field_66dcc9a3d1120",
+                "label": "Capacité",
+                "name": "exp_capacite",
+                "aria-label": "",
+                "type": "number",
+                "instructions": "Nombre maximum de participants pour cette expérience.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "min": 1,
+                "max": "",
+                "allow_in_bindings": 1,
+                "placeholder": "",
+                "step": 1,
+                "prepend": "",
+                "append": "personne(s)"
+            },
+            {
+                "key": "field_66dcc9f9d1121",
+                "label": "Âge minimum",
+                "name": "exp_age_minimum",
+                "aria-label": "",
+                "type": "number",
+                "instructions": "Si un âge minimum est requis pour participer.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "min": 0,
+                "max": "",
+                "allow_in_bindings": 1,
+                "placeholder": "",
+                "step": 1,
+                "prepend": "",
+                "append": "ans"
+            },
+            {
+                "key": "field_66dcca37d1122",
+                "label": "Accessibilité",
+                "name": "exp_accessibilite",
+                "aria-label": "",
+                "type": "checkbox",
+                "instructions": "Cochez les options d'accessibilité correspondantes.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "choices": {
+                    "accessible_pmr": "Accessible aux personnes âgées ou mobilité réduite",
+                    "accessible_pmr_f": "Non accessible aux fauteuils roulants",
+                    "poussettes": "Accessible en poussette",
+                    "animaux_admis": "Animaux de compagnie admis",
+                    "accessible_enfants": "Accessible aux enfants",
+                    "activité_physique": "Activité physique ou sportive intense",
+                    "activité_physique_m": "Activité physique ou sportive moyenne",
+                    "activité_physique_l": "Activité physique ou sportive légère"
+                },
+                "default_value": [],
+                "return_format": "value",
+                "allow_custom": 0,
+                "allow_in_bindings": 1,
+                "layout": "vertical",
+                "toggle": 0,
+                "save_custom": 0,
+                "custom_choice_button_text": "Ajouter un nouveau choix"
+            },
+            {
+                "key": "field_68bec10e3bc0f",
+                "label": "Période",
+                "name": "exp_periode",
+                "aria-label": "",
+                "type": "checkbox",
+                "instructions": "Cochez les options d'accessibilité correspondantes.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "choices": {
+                    "année": "toute l'année",
+                    "saison": "en saison",
+                    "réservation": "sur réservation"
+                },
+                "default_value": [],
+                "return_format": "value",
+                "allow_custom": 0,
+                "allow_in_bindings": 1,
+                "layout": "vertical",
+                "toggle": 0,
+                "save_custom": 0,
+                "custom_choice_button_text": "Ajouter un nouveau choix"
+            },
+            {
+                "key": "field_68bf09049c6ae",
+                "label": "Jour de départ",
+                "name": "exp_jour",
+                "aria-label": "",
+                "type": "checkbox",
+                "instructions": "Cochez les les jours ou l'excursion est accessible",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "50",
+                    "class": "",
+                    "id": ""
+                },
+                "choices": {
+                    "tous": "tous les jours",
+                    "lundi": "lundi",
+                    "mardi": "mardi",
+                    "mercredi": "mercredi",
+                    "jeudi": "jeudi",
+                    "vendredi": "vendredi",
+                    "samedi": "samedi",
+                    "dimanche": "dimanche"
+                },
+                "default_value": [],
+                "return_format": "value",
+                "allow_custom": 0,
+                "allow_in_bindings": 1,
+                "layout": "vertical",
+                "toggle": 0,
+                "save_custom": 0,
+                "custom_choice_button_text": "Ajouter un nouveau choix"
+            },
+            {
+                "key": "field_66dccab9d1123",
+                "label": "Périodes de fermeture",
+                "name": "exp_periodes_fermeture",
+                "aria-label": "",
+                "type": "repeater",
+                "instructions": "Ajoutez des périodes durant lesquelles l'expérience n'est pas disponible (ex: saison des pluies, fermeture annuelle...).",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "layout": "table",
+                "pagination": 0,
+                "min": 0,
+                "max": 0,
+                "collapsed": "",
+                "button_label": "Ajouter une période",
+                "rows_per_page": 20,
+                "sub_fields": [
+                    {
+                        "key": "field_66dccb00d1124",
+                        "label": "Début de fermeture",
+                        "name": "debut_fermeture",
+                        "aria-label": "",
+                        "type": "date_picker",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "50",
+                            "class": "",
+                            "id": ""
+                        },
+                        "display_format": "d\/m\/Y",
+                        "return_format": "Y-m-d",
+                        "first_day": 1,
+                        "parent_repeater": "field_66dccab9d1123",
+                        "default_to_current_date": 0
+                    },
+                    {
+                        "key": "field_66dccb31d1125",
+                        "label": "Fin de fermeture",
+                        "name": "fin_fermeture",
+                        "aria-label": "",
+                        "type": "date_picker",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "50",
+                            "class": "",
+                            "id": ""
+                        },
+                        "display_format": "d\/m\/Y",
+                        "return_format": "Y-m-d",
+                        "first_day": 1,
+                        "parent_repeater": "field_66dccab9d1123",
+                        "default_to_current_date": 0
+                    }
+                ]
+            },
+            {
+                "key": "field_66dccb67d1126",
+                "label": "Lieux et Horaires de départ",
+                "name": "exp_lieux_horaires_depart",
+                "aria-label": "",
+                "type": "repeater",
+                "instructions": "Ajoutez un ou plusieurs points de départ possibles pour l'expérience.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "layout": "block",
+                "pagination": 0,
+                "min": 0,
+                "max": 0,
+                "collapsed": "field_66dccb99d1127",
+                "button_label": "Ajouter un lieu",
+                "rows_per_page": 20,
+                "sub_fields": [
+                    {
+                        "key": "field_66dccb99d1127",
+                        "label": "Lieu de départ",
+                        "name": "exp_lieu_depart",
+                        "aria-label": "",
+                        "type": "text",
+                        "instructions": "Ex: Marina de Saint-François",
+                        "required": 1,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "",
+                        "maxlength": "",
+                        "allow_in_bindings": 1,
+                        "placeholder": "",
+                        "prepend": "",
+                        "append": "",
+                        "parent_repeater": "field_66dccb67d1126"
+                    },
+                    {
+                        "key": "field_68beab879029c",
+                        "label": "Latitude",
+                        "name": "lat_exp",
+                        "aria-label": "",
+                        "type": "number",
+                        "instructions": "Latitude du point de départ",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "50",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "",
+                        "min": "",
+                        "max": "",
+                        "allow_in_bindings": 0,
+                        "placeholder": "",
+                        "step": "",
+                        "prepend": "",
+                        "append": "",
+                        "parent_repeater": "field_66dccb67d1126"
+                    },
+                    {
+                        "key": "field_68beac099029d",
+                        "label": "Longitude",
+                        "name": "longitude",
+                        "aria-label": "",
+                        "type": "number",
+                        "instructions": "Longitude du point de départ",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "50",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "lon_exp",
+                        "min": "",
+                        "max": "",
+                        "allow_in_bindings": 0,
+                        "placeholder": "",
+                        "step": "",
+                        "prepend": "",
+                        "append": "",
+                        "parent_repeater": "field_66dccb67d1126"
+                    },
+                    {
+                        "key": "field_66dccc32d1129",
+                        "label": "Heure de départ",
+                        "name": "exp_heure_depart",
+                        "aria-label": "",
+                        "type": "time_picker",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "50",
+                            "class": "",
+                            "id": ""
+                        },
+                        "display_format": "H:i",
+                        "return_format": "H:i:s",
+                        "allow_in_bindings": 1,
+                        "parent_repeater": "field_66dccb67d1126"
+                    },
+                    {
+                        "key": "field_66dccc58d112a",
+                        "label": "Heure de retour",
+                        "name": "exp_heure_retour",
+                        "aria-label": "",
+                        "type": "time_picker",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "50",
+                            "class": "",
+                            "id": ""
+                        },
+                        "display_format": "H:i",
+                        "return_format": "H:i:s",
+                        "allow_in_bindings": 1,
+                        "parent_repeater": "field_66dccb67d1126"
+                    }
+                ]
+            },
+            {
+                "key": "field_66dccca9d112b",
+                "label": "Inclusions & Pré-requis",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_66dcccc2d112c",
+                "label": "Le prix comprend",
+                "name": "exp_prix_comprend",
+                "aria-label": "",
+                "type": "textarea",
+                "instructions": "Utilisez des listes à puces pour plus de clarté (ex: Repas du midi, Boissons, Matériel de snorkeling...).",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "allow_in_bindings": 1,
+                "rows": "",
+                "placeholder": "",
+                "new_lines": ""
+            },
+            {
+                "key": "field_66dccd1cd112d",
+                "label": "Le prix ne comprend pas",
+                "name": "exp_prix_ne_comprend_pas",
+                "aria-label": "",
+                "type": "textarea",
+                "instructions": "Listez ce qui n'est pas inclus (ex: Pourboires, Dépenses personnelles...).",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "allow_in_bindings": 1,
+                "rows": "",
+                "placeholder": "",
+                "new_lines": ""
+            },
+            {
+                "key": "field_66dccd4dd112e",
+                "label": "À prévoir",
+                "name": "exp_a_prevoir",
+                "aria-label": "",
+                "type": "checkbox",
+                "instructions": "Listez les affaires que le client doit apporter (ex: Crème solaire, Serviette, Lunettes de soleil...).",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "choices": {
+                    "creme_solaire": "Crème solaire minérale",
+                    "serviette": "Serviette de bain",
+                    "maillot_de_bain": "Maillot de bain",
+                    "eau_collations": "Une bouteille d'eau et collations",
+                    "appareil_photo": "Appareil photo",
+                    "chaussures_marche": "Chaussures de marche",
+                    "Chaussons_eau  Chaussons d'eau": "Chaussons_eau  Chaussons d'eau",
+                    "Imperméable": "Imperméable\/coupe vent",
+                    "Vêtements": "Vêtements de rechange"
+                },
+                "default_value": [],
+                "return_format": "value",
+                "allow_custom": 0,
+                "allow_in_bindings": 1,
+                "layout": "vertical",
+                "toggle": 0,
+                "save_custom": 0,
+                "custom_choice_button_text": "Ajouter un nouveau choix"
+            },
+            {
+                "key": "field_66dccd90d112f",
+                "label": "Galerie Photos",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_66dccda9d1130",
+                "label": "Photos de l'expérience",
+                "name": "photos_experience",
+                "aria-label": "",
+                "type": "gallery",
+                "instructions": "Ajoutez jusqu'à 5 photos pour illustrer l'expérience. L'image principale doit être définie dans \"Image mise en avant\".",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "return_format": "array",
+                "library": "all",
+                "min": "",
+                "max": 5,
+                "min_width": "",
+                "min_height": "",
+                "min_size": "",
+                "max_width": "",
+                "max_height": "",
+                "max_size": "",
+                "mime_types": "",
+                "insert": "append",
+                "preview_size": "medium"
+            },
+            {
+                "key": "field_66dcce0bd1131",
+                "label": "FAQ",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_66dcce25d1132",
+                "label": "Questions \/ Réponses",
+                "name": "exp_faq",
+                "aria-label": "",
+                "type": "repeater",
+                "instructions": "Ajoutez les questions fréquemment posées pour cette expérience.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "layout": "block",
+                "pagination": 0,
+                "min": 0,
+                "max": 0,
+                "collapsed": "field_66dcce59d1133",
+                "button_label": "Ajouter une question",
+                "rows_per_page": 20,
+                "sub_fields": [
+                    {
+                        "key": "field_66dcce59d1133",
+                        "label": "Question",
+                        "name": "exp_question",
+                        "aria-label": "",
+                        "type": "text",
+                        "instructions": "",
+                        "required": 1,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "",
+                        "maxlength": "",
+                        "allow_in_bindings": 1,
+                        "placeholder": "",
+                        "prepend": "",
+                        "append": "",
+                        "parent_repeater": "field_66dcce25d1132"
+                    },
+                    {
+                        "key": "field_66dcce7ed1134",
+                        "label": "Réponse",
+                        "name": "exp_reponse",
+                        "aria-label": "",
+                        "type": "textarea",
+                        "instructions": "",
+                        "required": 1,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "",
+                        "maxlength": "",
+                        "allow_in_bindings": 1,
+                        "rows": 4,
+                        "placeholder": "",
+                        "new_lines": "wpautop",
+                        "parent_repeater": "field_66dcce25d1132"
+                    }
+                ]
+            },
+            {
+                "key": "field_66dccec4d1135",
+                "label": "Tarifs",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_66dcceddd1136",
+                "label": "Types de tarifs",
+                "name": "exp_types_de_tarifs",
+                "aria-label": "",
+                "type": "repeater",
+                "instructions": "Définissez un ou plusieurs types de tarifs (ex: un tarif pour la journée, un autre pour la demi-journée).",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "layout": "block",
+                "pagination": 0,
+                "min": 1,
+                "max": 0,
+                "collapsed": "field_66dccf34d1137",
+                "button_label": "Ajouter un type de tarif",
+                "rows_per_page": 20,
+                "sub_fields": [
+                    {
+                        "key": "field_66dccf34d1137",
+                        "label": "Type",
+                        "name": "exp_type",
+                        "aria-label": "",
+                        "type": "select",
+                        "instructions": "Choisissez le format du tarif.",
+                        "required": 1,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "choices": {
+                            "journee": "Journée",
+                            "demi-journee": "Demi-journée",
+                            "unique": "Unique \/ Forfaitaire",
+                            "sur-devis": "Sur devis"
+                        },
+                        "default_value": false,
+                        "return_format": "value",
+                        "multiple": 0,
+                        "allow_null": 0,
+                        "allow_in_bindings": 1,
+                        "ui": 0,
+                        "ajax": 0,
+                        "placeholder": "",
+                        "create_options": 0,
+                        "save_options": 0,
+                        "parent_repeater": "field_66dcceddd1136"
+                    },
+                    {
+                        "key": "field_66dccfe4d1138",
+                        "label": "Tarif Adulte",
+                        "name": "exp_tarif_adulte",
+                        "aria-label": "",
+                        "type": "number",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": [
+                            [
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                },
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                },
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                }
+                            ]
+                        ],
+                        "wrapper": {
+                            "width": "25",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "",
+                        "min": 0,
+                        "max": "",
+                        "allow_in_bindings": 1,
+                        "placeholder": "",
+                        "step": "0.01",
+                        "prepend": "€",
+                        "append": "",
+                        "parent_repeater": "field_66dcceddd1136"
+                    },
+                    {
+                        "key": "field_66dcd033d1139",
+                        "label": "Tarif Enfant",
+                        "name": "exp_tarif_enfant",
+                        "aria-label": "",
+                        "type": "number",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": [
+                            [
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                },
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                },
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                }
+                            ]
+                        ],
+                        "wrapper": {
+                            "width": "25",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "",
+                        "min": 0,
+                        "max": "",
+                        "allow_in_bindings": 1,
+                        "placeholder": "",
+                        "step": "0.01",
+                        "prepend": "€",
+                        "append": "",
+                        "parent_repeater": "field_66dcceddd1136"
+                    },
+                    {
+                        "key": "field_66dcd07bd113a",
+                        "label": "Précision Âge Enfant",
+                        "name": "exp_precision_age_enfant",
+                        "aria-label": "",
+                        "type": "text",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": [
+                            [
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                },
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                }
+                            ]
+                        ],
+                        "wrapper": {
+                            "width": "25",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "3 à 12 ans",
+                        "maxlength": "",
+                        "allow_in_bindings": 1,
+                        "placeholder": "Ex: 3 à 12 ans",
+                        "prepend": "",
+                        "append": "",
+                        "parent_repeater": "field_66dcceddd1136"
+                    },
+                    {
+                        "key": "field_66dcd0f9d113b",
+                        "label": "Tarif Bébé",
+                        "name": "exp_tarif_bebe",
+                        "aria-label": "",
+                        "type": "number",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": [
+                            [
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                },
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                },
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                }
+                            ]
+                        ],
+                        "wrapper": {
+                            "width": "25",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": 0,
+                        "min": 0,
+                        "max": "",
+                        "allow_in_bindings": 1,
+                        "placeholder": "",
+                        "step": "0.01",
+                        "prepend": "€",
+                        "append": "",
+                        "parent_repeater": "field_66dcceddd1136"
+                    },
+                    {
+                        "key": "field_66dcd14ad113c",
+                        "label": "Précision Âge Bébé",
+                        "name": "exp_precision_age_bebe",
+                        "aria-label": "",
+                        "type": "text",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "25",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "Moins de 3 ans",
+                        "maxlength": "",
+                        "allow_in_bindings": 1,
+                        "placeholder": "Ex: Moins de 3 ans",
+                        "prepend": "",
+                        "append": "",
+                        "parent_repeater": "field_66dcceddd1136"
+                    },
+                    {
+                        "key": "field_66dcd1a0d113d",
+                        "label": "Options Tarifaires",
+                        "name": "exp_options_tarifaires",
+                        "aria-label": "",
+                        "type": "repeater",
+                        "instructions": "Ajoutez des options payantes (ex: privatisation, assurance annulation, location de matériel spécifique...).",
+                        "required": 0,
+                        "conditional_logic": [
+                            [
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                },
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                },
+                                {
+                                    "field": "field_66dcc831d111b",
+                                    "operator": "!=empty"
+                                }
+                            ]
+                        ],
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "layout": "table",
+                        "min": 0,
+                        "max": 0,
+                        "collapsed": "",
+                        "button_label": "Ajouter une option",
+                        "rows_per_page": 20,
+                        "sub_fields": [
+                            {
+                                "key": "field_66dcd20ad113e",
+                                "label": "Description de l'option",
+                                "name": "exp_description_option",
+                                "aria-label": "",
+                                "type": "text",
+                                "instructions": "",
+                                "required": 1,
+                                "conditional_logic": 0,
+                                "wrapper": {
+                                    "width": "70",
+                                    "class": "",
+                                    "id": ""
+                                },
+                                "default_value": "",
+                                "maxlength": "",
+                                "allow_in_bindings": 1,
+                                "placeholder": "Ex: Skipper professionnel",
+                                "prepend": "",
+                                "append": "",
+                                "parent_repeater": "field_66dcd1a0d113d"
+                            },
+                            {
+                                "key": "field_66dcd250d113f",
+                                "label": "Tarif de l'option",
+                                "name": "exp_tarif_option",
+                                "aria-label": "",
+                                "type": "number",
+                                "instructions": "",
+                                "required": 1,
+                                "conditional_logic": 0,
+                                "wrapper": {
+                                    "width": "30",
+                                    "class": "",
+                                    "id": ""
+                                },
+                                "default_value": "",
+                                "min": 0,
+                                "max": "",
+                                "allow_in_bindings": 1,
+                                "placeholder": "",
+                                "step": "0.01",
+                                "prepend": "€",
+                                "append": "",
+                                "parent_repeater": "field_66dcd1a0d113d"
+                            }
+                        ],
+                        "parent_repeater": "field_66dcceddd1136"
+                    }
+                ]
+            }
+        ],
+        "location": [
+            [
+                {
+                    "param": "post_type",
+                    "operator": "==",
+                    "value": "experience"
+                }
+            ]
+        ],
+        "menu_order": 0,
+        "position": "normal",
+        "style": "default",
+        "label_placement": "top",
+        "instruction_placement": "label",
+        "hide_on_screen": [
+            "the_content"
+        ],
+        "active": true,
+        "description": "",
+        "show_in_rest": 0
+    },
+    {
+        "key": "group_pc-pages-seo-structure",
+        "title": "PC — Pages (SEO & Structure)",
+        "fields": [
+            {
+                "key": "tab_pc_indexation",
+                "label": "Indexation",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_pc_exclude_sitemap",
+                "label": "Exclure du sitemap",
+                "name": "pc_exclude_sitemap",
+                "aria-label": "",
+                "type": "true_false",
+                "instructions": "Cochez pour retirer cette page du sitemap. Un meta robots noindex,follow sera appliqué automatiquement si aucun autre robots n'est défini.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "ui": 1,
+                "default_value": 0,
+                "message": "",
+                "ui_on_text": "",
+                "ui_off_text": ""
+            },
+            {
+                "key": "field_pc_redirect_to",
+                "label": "Rediriger en 301 vers…",
+                "name": "pc_redirect_to",
+                "aria-label": "",
+                "type": "url",
+                "instructions": "Optionnel. Si rempli, cette page redirigera en 301 vers cette URL (à utiliser si la page a un remplaçant clair).",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": ""
+            },
+            {
+                "key": "field_pc_http_410",
+                "label": "Servir un 410 Gone",
+                "name": "pc_http_410",
+                "aria-label": "",
+                "type": "true_false",
+                "instructions": "Optionnel. Cochez si le contenu est définitivement supprimé (sans remplacement). Accélère la désindexation.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "ui": 1,
+                "default_value": 0,
+                "message": "",
+                "ui_on_text": "",
+                "ui_off_text": ""
+            },
+            {
+                "key": "tab_pc_common",
+                "label": "Commun (Meta \/ QCM \/ FAQ)",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_pc_meta_title",
+                "label": "Titre SEO (facultatif)",
+                "name": "pc_meta_title",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Title personnalisé (50–60 caractères). Laissez vide pour utiliser le modèle automatique.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_meta_description",
+                "label": "Meta description (facultatif)",
+                "name": "pc_meta_description",
+                "aria-label": "",
+                "type": "textarea",
+                "instructions": "Résumé engageant (140–160 caractères) décrivant précisément le contenu de la page.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "new_lines": "wpautop",
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "rows": ""
+            },
+            {
+                "key": "field_pc_meta_canonical",
+                "label": "URL canonique (facultatif)",
+                "name": "pc_meta_canonical",
+                "aria-label": "",
+                "type": "url",
+                "instructions": "Laissez vide pour utiliser l’URL de cette page. À renseigner uniquement en cas de duplication maîtrisée.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": ""
+            },
+            {
+                "key": "field_pc_meta_robots",
+                "label": "Meta robots",
+                "name": "pc_meta_robots",
+                "aria-label": "",
+                "type": "select",
+                "instructions": "Contrôle l’indexation de la page.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "choices": {
+                    "index,follow": "index,follow",
+                    "noindex,follow": "noindex,follow",
+                    "noindex,nofollow": "noindex,nofollow"
+                },
+                "default_value": "index,follow",
+                "ui": 1,
+                "return_format": "value",
+                "multiple": 0,
+                "allow_null": 0,
+                "ajax": 0,
+                "placeholder": "",
+                "create_options": 0,
+                "save_options": 0
+            },
+            {
+                "key": "field_pc_qcm_enabled",
+                "label": "Activer un QCM\/bloc filtre",
+                "name": "pc_qcm_enabled",
+                "aria-label": "",
+                "type": "true_false",
+                "instructions": "Active un bloc QCM\/filtre sur la page (si votre template le supporte).",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "ui": 1,
+                "default_value": 0,
+                "message": "",
+                "ui_on_text": "",
+                "ui_off_text": ""
+            },
+            {
+                "key": "field_pc_qcm_shortcode",
+                "label": "Shortcode QCM (optionnel)",
+                "name": "pc_qcm_shortcode",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Collez ici le shortcode (ex: [elementor-template id=\"123\"]).",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_qcm_enabled",
+                            "operator": "==",
+                            "value": "1"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_faq_items",
+                "label": "FAQ (réutilisable)",
+                "name": "pc_faq_items",
+                "aria-label": "",
+                "type": "repeater",
+                "instructions": "Q\/R visibles ; génère un FAQPage si non vide. Migration douce : fallback anciens champs si vide.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "layout": "row",
+                "button_label": "+ Ajouter une Q\/R",
+                "min": 0,
+                "max": 0,
+                "rows_per_page": 20,
+                "collapsed": "",
+                "sub_fields": [
+                    {
+                        "key": "field_pc_faq_q",
+                        "label": "Question",
+                        "name": "question",
+                        "aria-label": "",
+                        "type": "text",
+                        "instructions": "",
+                        "required": 1,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "default_value": "",
+                        "maxlength": "",
+                        "placeholder": "",
+                        "prepend": "",
+                        "append": "",
+                        "parent_repeater": "field_pc_faq_items"
+                    },
+                    {
+                        "key": "field_pc_faq_a",
+                        "label": "Réponse",
+                        "name": "answer",
+                        "aria-label": "",
+                        "type": "wysiwyg",
+                        "instructions": "",
+                        "required": 1,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "tabs": "all",
+                        "toolbar": "basic",
+                        "media_upload": 0,
+                        "default_value": "",
+                        "delay": 0,
+                        "parent_repeater": "field_pc_faq_items"
+                    }
+                ]
+            },
+            {
+                "key": "tab_pc_type",
+                "label": "Type de page (schéma)",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_pc_schema_kind",
+                "label": "Type de page (schéma)",
+                "name": "pc_schema_kind",
+                "aria-label": "",
+                "type": "select",
+                "instructions": "Choisissez la nature de cette page pour générer le bon balisage JSON‑LD.",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "choices": {
+                    "category": "category",
+                    "city": "city",
+                    "search": "search",
+                    "about": "about",
+                    "service": "service",
+                    "contact": "contact",
+                    "terms": "terms",
+                    "generic": "generic"
+                },
+                "default_value": "generic",
+                "ui": 1,
+                "return_format": "value",
+                "multiple": 0,
+                "allow_null": 0,
+                "ajax": 0,
+                "placeholder": "",
+                "create_options": 0,
+                "save_options": 0
+            },
+            {
+                "key": "tab_pc_category",
+                "label": "Catégorie (liste de logements)",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "category"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_pc_cat_intro",
+                "label": "Introduction SEO (300–500 mots)",
+                "name": "pc_cat_intro",
+                "aria-label": "",
+                "type": "textarea",
+                "instructions": "Texte unique présentant la catégorie (bénéfices, types de biens, conseils).",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "category"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "new_lines": "wpautop",
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "rows": ""
+            },
+            {
+                "key": "field_pc_cat_mode",
+                "label": "Mode de liste",
+                "name": "pc_cat_mode",
+                "aria-label": "",
+                "type": "select",
+                "instructions": "auto : liste alimentée automatiquement ; manual : sélection ci-dessous.",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "category"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "choices": {
+                    "auto": "auto",
+                    "manual": "manual"
+                },
+                "default_value": "auto",
+                "ui": 1,
+                "return_format": "value",
+                "multiple": 0,
+                "allow_null": 0,
+                "ajax": 0,
+                "placeholder": "",
+                "create_options": 0,
+                "save_options": 0
+            },
+            {
+                "key": "field_pc_cat_manual_items",
+                "label": "Sélection manuelle de logements",
+                "name": "pc_cat_manual_items",
+                "aria-label": "",
+                "type": "relationship",
+                "instructions": "Si ‘manual’, choisissez les logements à lister (ordre = affichage).",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_cat_mode",
+                            "operator": "==",
+                            "value": "manual"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "post_type": [
+                    "villa",
+                    "appartement"
+                ],
+                "filters": [
+                    "search",
+                    "post_type"
+                ],
+                "elements": [
+                    "featured_image"
+                ],
+                "return_format": "id",
+                "taxonomy": [],
+                "min": 0,
+                "max": 0,
+                "bidirectional_target": []
+            },
+            {
+                "key": "tab_pc_city",
+                "label": "Ville \/ Destination",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "city"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_pc_city_intro",
+                "label": "Présentation de la destination (300–600 mots)",
+                "name": "pc_city_intro",
+                "aria-label": "",
+                "type": "textarea",
+                "instructions": "Texte unique sur la ville (plages, activités, pourquoi séjourner).",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "city"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "new_lines": "wpautop",
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "rows": ""
+            },
+            {
+                "key": "field_pc_city_mode",
+                "label": "Mode de liste",
+                "name": "pc_city_mode",
+                "aria-label": "",
+                "type": "select",
+                "instructions": "auto : liste par ville ; manual : sélection ci-dessous.",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "city"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "choices": {
+                    "auto": "auto",
+                    "manual": "manual"
+                },
+                "default_value": "auto",
+                "ui": 1,
+                "return_format": "value",
+                "multiple": 0,
+                "allow_null": 0,
+                "ajax": 0,
+                "placeholder": "",
+                "create_options": 0,
+                "save_options": 0
+            },
+            {
+                "key": "field_pc_city_manual_items",
+                "label": "Sélection manuelle de logements",
+                "name": "pc_city_manual_items",
+                "aria-label": "",
+                "type": "relationship",
+                "instructions": "Si ‘manual’, choisissez les logements à afficher (ordre = affichage).",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_city_mode",
+                            "operator": "==",
+                            "value": "manual"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "post_type": [
+                    "villa",
+                    "appartement"
+                ],
+                "filters": [
+                    "search",
+                    "post_type"
+                ],
+                "elements": [
+                    "featured_image"
+                ],
+                "return_format": "id",
+                "taxonomy": [],
+                "min": 0,
+                "max": 0,
+                "bidirectional_target": []
+            },
+            {
+                "key": "field_pc_city_themes_links",
+                "label": "Liens vers thèmes populaires",
+                "name": "pc_city_themes_links",
+                "aria-label": "",
+                "type": "relationship",
+                "instructions": "Sélectionnez 2–5 pages de thèmes pertinents (ex. Piscine, Front de mer, Famille). Sert au maillage interne.",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "city"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "post_type": [
+                    "page"
+                ],
+                "filters": [
+                    "search",
+                    "post_type"
+                ],
+                "elements": [
+                    "featured_image"
+                ],
+                "return_format": "id",
+                "min": 0,
+                "max": 5,
+                "taxonomy": [],
+                "bidirectional_target": []
+            },
+            {
+                "key": "tab_pc_search",
+                "label": "Recherche \/ Résultats",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "search"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            },
+            {
+                "key": "field_pc_search_emit_itemlist",
+                "label": "Schéma des résultats (ItemList)",
+                "name": "pc_search_emit_itemlist",
+                "aria-label": "",
+                "type": "true_false",
+                "instructions": "Si activé, génère un ItemList avec les résultats réellement affichés (après filtres\/QCM).",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "search"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "ui": 1,
+                "default_value": 1,
+                "message": "",
+                "ui_on_text": "",
+                "ui_off_text": ""
+            },
+            {
+                "key": "tab_pc_static",
+                "label": "Pages statiques",
+                "name": "",
+                "aria-label": "",
+                "type": "tab",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "about"
+                        }
+                    ],
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "service"
+                        }
+                    ],
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "contact"
+                        }
+                    ],
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "terms"
+                        }
+                    ],
+                    [
+                        {
+                            "field": "field_pc_schema_kind",
+                            "operator": "==",
+                            "value": "generic"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "placement": "top",
+                "endpoint": 0,
+                "selected": 0
+            }
+        ],
+        "location": [
+            [
+                {
+                    "param": "post_type",
+                    "operator": "==",
+                    "value": "page"
+                }
+            ]
+        ],
+        "menu_order": 0,
+        "position": "normal",
+        "style": "seamless",
+        "label_placement": "top",
+        "instruction_placement": "field",
+        "hide_on_screen": [],
+        "active": true,
+        "description": "Ordre logique : Indexation → Commun → Type de page → Bloc spécifique.",
+        "show_in_rest": false
+    },
+    {
+        "key": "group_pc_seo_global",
+        "title": "PC — SEO Global",
+        "fields": [
+            {
+                "key": "field_pc_org_name",
+                "label": "Nom public",
+                "name": "pc_org_name",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Nom de votre marque tel qu'affiché au public (ex: Prestige Caraïbes).",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_org_legal_name",
+                "label": "Nom légal (optionnel)",
+                "name": "pc_org_legal_name",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Raison sociale si différente du nom public.",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_org_url",
+                "label": "URL du site",
+                "name": "pc_org_url",
+                "aria-label": "",
+                "type": "url",
+                "instructions": "Laissez vide pour utiliser l'URL du site (home_url).",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": ""
+            },
+            {
+                "key": "field_pc_org_logo",
+                "label": "Logo (retour URL)",
+                "name": "pc_org_logo",
+                "aria-label": "",
+                "type": "image",
+                "instructions": "Logo principal en PNG\/SVG (fond clair). Format de retour = URL.",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "return_format": "url",
+                "preview_size": "medium",
+                "library": "all",
+                "min_width": 0,
+                "min_height": 0,
+                "min_size": 0,
+                "max_width": 0,
+                "max_height": 0,
+                "max_size": 0,
+                "mime_types": ""
+            },
+            {
+                "key": "field_pc_org_phone",
+                "label": "Téléphone",
+                "name": "pc_org_phone",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Format international recommandé (ex: +590 590 xx xx xx).",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_org_email",
+                "label": "Email",
+                "name": "pc_org_email",
+                "aria-label": "",
+                "type": "email",
+                "instructions": "Adresse de contact officielle.",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_org_vat_id",
+                "label": "TVA \/ SIREN (optionnel)",
+                "name": "pc_org_vat_id",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Ex: FRXXXXXXXXXXX.",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_org_sameas",
+                "label": "Réseaux sociaux (1 URL \/ ligne)",
+                "name": "pc_org_sameas",
+                "aria-label": "",
+                "type": "textarea",
+                "instructions": "Collez une URL par ligne: Facebook, Instagram, etc.",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "new_lines": "",
+                "maxlength": "",
+                "placeholder": "",
+                "rows": ""
+            },
+            {
+                "key": "field_pc_org_address_street",
+                "label": "Rue",
+                "name": "pc_org_address_street",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Rue et numéro.",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_org_address_locality",
+                "label": "Ville",
+                "name": "pc_org_address_locality",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Ville \/ Localité.",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_org_address_region",
+                "label": "Région",
+                "name": "pc_org_address_region",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Ex: Guadeloupe.",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_org_address_postal",
+                "label": "Code postal",
+                "name": "pc_org_address_postal",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Ex: 97111.",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_org_address_country",
+                "label": "Pays (code ISO ou libellé)",
+                "name": "pc_org_address_country",
+                "aria-label": "",
+                "type": "text",
+                "instructions": "Ex: GP ou France.",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_pc_site_search_target",
+                "label": "URL de recherche (avec {search_term_string})",
+                "name": "pc_site_search_target",
+                "aria-label": "",
+                "type": "url",
+                "instructions": "Ex: https:\/\/votresite.com\/recherche\/?q={search_term_string}. Laissez vide pour fallback \/?s={search_term_string}",
+                "required": 0,
+                "conditional_logic": false,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": ""
+            }
+        ],
+        "location": [
+            [
+                {
+                    "param": "options_page",
+                    "operator": "==",
+                    "value": "pc-seo-global"
+                }
+            ]
+        ],
+        "menu_order": 0,
+        "position": "normal",
+        "style": "seamless",
+        "label_placement": "top",
+        "instruction_placement": "field",
+        "hide_on_screen": [],
+        "active": true,
+        "description": "Champs utilisés par le JSON-LD Organization & WebSite.",
+        "show_in_rest": false
+    }
+]

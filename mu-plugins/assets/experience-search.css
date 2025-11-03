@@ -1,0 +1,248 @@
+/* ==========================================
+   PC - Styles pour la recherche d'expériences
+   ========================================== */
+
+/* --- Conteneur principal --- */
+.pc-exp-search-shell {
+    background: #fff;
+    border-radius: var(--pc-radius, 10px);
+    box-shadow: var(--pc-shadow-soft, 0 8px 24px rgba(0,0,0,.08));
+    padding: 8px;
+    width: 100%;
+}
+
+/* --- Grille du formulaire --- */
+.pc-exp-search-form {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1.5fr 1.5fr 2fr auto; /* 3 champs + bouton */
+}
+
+.pc-exp-search-field {
+    min-width: 0;
+}
+
+/* --- Champs et boutons génériques (hérités de pc-search-shortcodes.css pour la cohérence) --- */
+.pc-exp-search-wrapper .pc-input {
+    width: 100%;
+    height: 52px;
+    padding: 0 14px;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    background: #fff;
+    font-size: 16px;
+    line-height: 1;
+    color: #111827;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.pc-exp-search-wrapper .pc-input:focus {
+    outline: none;
+    border-color: #93C5FD;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .25);
+}
+.pc-exp-search-wrapper select.pc-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right .7rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em;
+    padding-right: 2.5rem;
+}
+
+.pc-exp-search-submit {
+    padding: 0 24px;
+    height: 52px;
+    white-space: nowrap;
+}
+
+/* --- Ligne 2 : Filtres avancés --- */
+.pc-exp-row-adv-toggle {
+    margin-top: 8px;
+    display: flex;
+}
+.pc-exp-adv-toggle {
+    height: 48px;
+}
+
+/* --- Panneau avancé --- */
+.pc-exp-advanced {
+    margin-top: 10px;
+    padding: 16px;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    background: #fff;
+}
+.pc-exp-advanced__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+.pc-exp-adv-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--pc-color-heading, #1B3B5F);
+    margin-bottom: 8px;
+}
+.pc-num-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+.pc-num-step .num-stepper {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+    background: #fff;
+    cursor: pointer;
+}
+.pc-num-input {
+    width: 72px;
+    height: 44px;
+    text-align: center;
+    padding: 0 10px;
+}
+.pc-price-values {
+    display: flex;
+    gap: 8px;
+}
+
+/* --- Conteneur de résultats --- */
+.pc-exp-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+/* --- Vignettes (classes réutilisées de pc-search-shortcodes.css pour style identique) --- */
+/* Ces classes sont dans votre fichier global, pas besoin de les dupliquer si elles sont déjà chargées */
+.pc-vignette {
+    background: #fff;
+    border-radius: var(--pc-radius);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.pc-vignette:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+.pc-vignette__image img {
+    width: 100%;
+    height: 200px; /* Hauteur ajustée pour expériences */
+    object-fit: cover;
+    display: block;
+}
+.pc-vignette__content {
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.pc-vignette__title {
+    font-size: var(--pc-h3-size);
+    font-weight: var(--pc-h3-weight);
+    line-height: var(--pc-h3-lh);
+    font-family: var(--pc-font-title);
+    color: var(--pc-color-heading);
+    margin: 0;
+}
+.pc-vignette__location {
+    font-size: var(--pc-text-size);
+    font-family: var(--pc-font-body);
+    color: var(--pc-color-text);
+}
+.pc-vignette__price {
+    font-size: var(--pc-text-size);
+    font-family: var(--pc-font-body);
+    color: var(--pc-color-text);
+    font-weight: 700;
+    margin-top: auto; /* Pousse le prix en bas */
+    padding-top: 0.5rem;
+}
+
+/* --- Messages et Pagination --- */
+.is-loading { opacity: 0.5; transition: opacity .3s ease; }
+.pc-no-results { text-align: center; padding: 3rem 1rem; }
+.pc-pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee; }
+.pc-pagination a, .pc-pagination span { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; text-decoration: none; font-family: var(--pc-font-title); font-weight: 600; color: var(--pc-color-heading); background-color: #fff; border: 1px solid #ddd; }
+.pc-pagination a:hover { background-color: #f5f5f5; border-color: #ccc; }
+.pc-pagination span.current { background-color: var(--pc-color-heading); color: #fff; border-color: var(--pc-color-heading); }
+
+/* Correction CLS et Stabilité Visuelle */
+#pc-map-container {
+    min-height: 400px; /* Réserve l'espace pour la carte */
+}
+.pc-exp-results-grid {
+    min-height: 500px; /* Réserve l'espace pour les vignettes pendant le chargement AJAX */
+}
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+    .pc-exp-search-form {
+        grid-template-columns: 1fr 1fr; /* 2 colonnes */
+    }
+    .pc-exp-search-field--keyword {
+        grid-column: 1 / 3; /* Le mot-clé prend toute la largeur */
+    }
+    .pc-exp-search-submit {
+        grid-column: 1 / 3; /* Le bouton aussi */
+    }
+}
+
+@media (max-width: 640px) {
+    .pc-exp-search-form {
+        grid-template-columns: 1fr; /* 1 colonne */
+    }
+    .pc-exp-search-field--keyword,
+    .pc-exp-search-submit {
+        grid-column: auto; /* Rétablir le comportement normal */
+    }
+}
+
+/* ... (tout le code existant) ... */
+@media (max-width: 640px) {
+    .pc-exp-search-form {
+        grid-template-columns: 1fr; /* 1 colonne */
+    }
+    .pc-exp-search-field--keyword,
+    .pc-exp-search-submit {
+        grid-column: auto; /* Rétablir le comportement normal */
+    }
+}
+
+
+/* ===========================================================
+   CORRECTIF COULEUR BOUTON EXPÉRIENCES (Force Brute)
+   Force les couleurs de pc-base.css avec !important
+   =========================================================== */
+
+/* --- Desktop & Tablette --- */
+.pc-exp-search-form .pc-exp-search-submit.pc-btn--primary {
+  /* On force les couleurs brutes */
+  background: #007A92 !important;
+  color: #FFFFFF !important;
+  border: 1px solid transparent !important;
+}
+
+.pc-exp-search-form .pc-exp-search-submit.pc-btn--primary:hover {
+  /* On force les couleurs brutes au survol */
+  background: #005F73 !important;
+  color: #FFFFFF !important;
+}
+
+/* --- Mobile (pour gagner la guerre de spécificité) --- */
+@media (max-width: 767.98px) {
+  .pc-exp-search-form .pc-exp-search-submit.pc-btn--primary {
+    background: #007A92 !important;
+    color: #FFFFFF !important;
+  }
+
+  .pc-exp-search-form .pc-exp-search-submit.pc-btn--primary:hover {
+    background: #005F73 !important;
+    color: #FFFFFF !important;
+  }
+}

@@ -1,0 +1,214 @@
+/* PC — Destination minimal UI */
+.pc-grid{display:grid;gap:20px}
+.pc-grid--cards{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.pc-card{background:#fff;border-radius:16px;box-shadow:0 1px 6px rgba(0,0,0,.06);overflow:hidden;display:flex;flex-direction:column}
+.pc-card__img{width:100%;height:auto;display:block;aspect-ratio:4/3;object-fit:cover}
+.pc-card__body{padding:14px}
+.pc-card__title{margin:0 0 6px;font-size:1.1rem;line-height:1.3}
+.pc-btn{display:inline-block;padding:.6rem 1rem;border-radius:999px;border:1px solid #e5e7eb;text-decoration:none}
+.pc-empty{opacity:.7}
+
+.pc-dest-hero{position:relative}
+.pc-dest-hero picture img{width:100%;height:auto;display:block}
+.pc-dest-hero__inner{position:absolute;left:0;right:0;bottom:0;padding:24px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.pc-container{width:min(1100px,calc(100% - 32px));margin:0 auto}
+.pc-section{padding:32px 0}
+.pc-center{text-align:center}
+.pc-faq__item{border-bottom:1px solid #eee;padding:10px 0}
+.pc-info{margin-bottom:16px}
+
+/* ===========================
+   Destination — Reco logements
+   (3 colonnes desktop, 2 tablette, 1 mobile)
+   Carte blanche + léger relief + lift au hover
+   =========================== */
+
+.dest-reco-section{
+  padding: 2rem 0;
+}
+
+/* Titre de section */
+.dest-reco-title{
+  font-family: var(--pc-font-title);
+  font-size: clamp(1.6rem, 1.2rem + 1vw, 2rem);
+  text-align: left;
+  margin: 0 0 2rem 0;
+  color: var(--pc-color-heading);
+}
+
+/* Grille responsive : 1 / 2 / 3 colonnes */
+.dest-reco-grid{
+  display: grid;
+  grid-template-columns: 1fr;     /* mobile */
+  gap: 24px;
+}
+
+@media (min-width: 768px){        /* tablette */
+  .dest-reco-grid{
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px){       /* desktop */
+  .dest-reco-grid{
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Carte blanche avec relief doux */
+.dest-reco-card{
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+  transition: transform .22s ease, box-shadow .22s ease;
+  will-change: transform;
+}
+
+/* Effet “remonter” au survol — uniquement sur pointeur fin */
+@media (hover: hover) and (pointer: fine){
+  .dest-reco-card:hover{
+    transform: translateY(-6px);
+    box-shadow: 0 14px 32px rgba(0,0,0,.14);
+  }
+}
+
+/* Lien clickable intégral */
+.dest-reco-card-link{
+  display:block;
+  color:inherit;
+  text-decoration:none;
+}
+
+/* Image : ratio stable + recadrage */
+.dest-reco-card-image{
+  aspect-ratio: 16/10;            /* ajuste à 4/3 si tu préfères */
+  background:#f6f7f9;
+}
+.dest-reco-card-image img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+/* Corps de carte */
+.dest-reco-card-content{
+  padding: 1.25rem 1.25rem 1.35rem;
+}
+
+.dest-reco-card-title{
+  font-family: var(--pc-font-title);
+  color: var(--pc-color-heading);
+  font-size: clamp(1.15rem, 1rem + .6vw, 1.5rem);
+  line-height: 1.25;
+  margin: 0 0 .5rem 0;
+}
+
+.dest-reco-card-price{
+  font-size: 1rem;
+  color: var(--pc-color-primary);
+  font-weight: 600;
+  opacity: .92;
+}
+
+/* ===========================
+   Destination — Infos pratiques
+   (grille 1/2/3 colonnes + cartes blanches)
+   =========================== */
+.dest-infos-section{
+  padding: 2rem 0;
+}
+
+.dest-infos-title{
+  font-family: var(--pc-font-title);
+  font-size: clamp(1.6rem, 1.2rem + 1vw, 2rem);
+  text-align: left; /* aligné à gauche comme demandé */
+  margin: 0 0 1.5rem 0;
+  color: var(--pc-color-heading);
+}
+
+.elementor .dest-infos-section .dest-infos-grid{
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr; /* mobile */
+}
+
+/* tablette */
+@media (min-width: 768px){
+  .elementor .dest-infos-section .dest-infos-grid{
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+/* desktop */
+@media (min-width: 1024px){
+  .elementor .dest-infos-section .dest-infos-grid{
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.elementor .dest-infos-section .dest-infos-card{
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+  padding: 1.25rem 1.25rem 1.35rem;
+  transition: transform .22s ease, box-shadow .22s ease;
+  will-change: transform;
+}
+@media (hover:hover) and (pointer:fine){
+  .elementor .dest-infos-section .dest-infos-card:hover{
+    transform: translateY(-6px);
+    box-shadow: 0 14px 32px rgba(0,0,0,.14);
+  }
+}
+
+.elementor .dest-infos-section .dest-infos-icon i{
+  margin-bottom: .75rem;
+  color: var(--pc-color-primary);
+}
+.elementor .dest-infos-section .dest-infos-icon i{
+  display:inline-block;
+  font-size: 26px; /* taille de l’icône */
+  line-height: 1;
+}
+
+.dest-infos-card-title{
+  font-family: var(--pc-font-title);
+  color: var(--pc-color-heading);
+  font-size: 1.15rem;
+  line-height: 1.25;
+  margin: 0 0 .5rem 0;
+}
+
+.dest-infos-card-content{
+  color: var(--pc-color-text, #333);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ===== Anchor menu — Destination (miroir) ===== */
+.dest-anchor-menu{
+  position: sticky; top: 68px; z-index: 50;
+  display:flex; align-items:center; gap:6px;
+  background:#f9f9f9; border-bottom:1px solid #eaeaea; padding:4px 8px;
+}
+.dest-anchor-arrow{
+  flex-shrink:0; background:transparent; border:0; color:#0e2b5c;
+  font-size:1.5rem; line-height:1; padding:6px 8px; border-radius:8px;
+  cursor:pointer; user-select:none;
+}
+.dest-anchor-arrow:hover{ background:rgba(0,0,0,.06); }
+.dest-anchor-arrow[disabled]{ opacity:.3; cursor:default; background:transparent; }
+.dest-anchor-scroller{
+  flex-grow:1; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;
+}
+.dest-anchor-scroller::-webkit-scrollbar{ display:none; }
+.dest-anchor-nav{ display:inline-flex; gap:.25rem; padding:.5rem .25rem; white-space:nowrap; }
+.dest-anchor-nav a{
+  display:inline-flex; padding:10px 14px; border-radius:12px; text-decoration:none;
+  color:#0e2b5c; transition:background-color .2s,color .2s;
+  font-family:var(--pc-font-title); font-size:var(--pc-btn-text-size); font-weight:500;
+}
+.dest-anchor-nav a:hover{ background:rgba(0,0,0,.06); }
+.dest-anchor-nav a.is-active{ background:#0e2b5c; color:#fff; font-weight:600; }
+

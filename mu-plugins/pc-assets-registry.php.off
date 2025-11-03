@@ -1,0 +1,143 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+/**
+ * PC — Assets Registry (component-driven)
+ * - Enregistre une fois tous les bundles CSS/JS (pas d'enqueue ici).
+ * - Fournit pc_enqueue_bundle($bundle) à utiliser côté composants.
+ */
+
+function pc_assets_paths(){
+  // Répertoires
+  $mu_base_dir  = WP_CONTENT_DIR . '/mu-plugins';
+  $mu_base_url  = content_url('/mu-plugins');
+
+  return [
+    // fichier global (hors /assets)
+    'base_css_path' => $mu_base_dir . '/pc-base.css',
+    'base_css_url'  => $mu_base_url . '/pc-base.css',
+
+    // répertoire /assets pour tous les autres
+    'assets_dir'    => $mu_base_dir . '/assets',
+    'assets_url'    => $mu_base_url . '/assets',
+  ];
+}
+
+/** Map des bundles (un bundle = un composant) */
+function pc_assets_bundles_map(){
+  return [
+    'pc-destination' => [
+      'css' => ['pc-destination.css'],
+      'js'  => [],
+    ],
+    'pc-experience-search' => [
+      'css' => ['experience-search.css'],
+      'js'  => ['pc-experience-search.js'],
+    ],
+    'pc-faq-capture' => [
+      'css' => ['pc-faq-capture.css'],
+      'js'  => [],
+    ],
+    'pc-header' => [
+      'css' => ['pc-header.css'],
+      'js'  => ['pc-header-smart.js'],
+    ],
+    'pc-loop-card' => [
+      'css' => ['pc-loop-card.css'],
+      'js'  => [],
+    ],
+    'pc-ss' => [ // pc-search-shortcodes
+      'css' => ['pc-search-shortcodes.css'],
+      'js'  => ['pc-search-shortcodes.js'],
+    ],
+    'pc-sll' => [ // shortcode-liste-logement
+      'css' => ['shortcode-liste-logement.css'],
+      'js'  => ['shortcode-liste-logement-v2.js'],
+    ],
+    'pc-fiche-experiences' => [
+      'css' => ['pc-ui-experiences.css'],
+      'js'  => ['pc-fiche-experiences.js'],
+    ],
+    'pc-fiche-logement' => [
+      'css' => ['pc-ui.css'],
+      'js'  => ['pc-devis.js', 'pc-fiche-logement.js'],
+    ],
+  ];
+}
+
+/** Enregistrement global (aucun enqueue ici) */
+add_action('init', function(){
+  $p = pc_assets_paths();
+
+  // 1) CSS global — chargé partout, mais on l’enregistre ici
+  if (file_exists($p['base_css_path'])) {
+    wp_register_style(
+      'pc-base',
+      $p['base_css_url'],
+      [],
+      @filemtime($p['base_css_path'])
+    );
+  }
+
+  // 2) Bundles en /assets
+  $map = pc_assets_bundles_map();
+  foreach ($map as $bundle => $files){
+    // CSS
+    foreach (($files['css'] ?? []) as $fname){
+      $path = $p['assets_dir'].'/'.$fname;
+      $url  = $p['assets_url'].'/'.$fname;
+      if (file_exists($path)){
+        wp_register_style(
+          $bundle.'-css',
+          $url,
+          [],
+          @filemtime($path)
+        );
+      }
+    }
+    // JS
+    foreach (($files['js'] ?? []) as $fname){
+      $path = $p['assets_dir'].'/'.$fname;
+      $url  = $p['assets_url'].'/'.$fname;
+      if (file_exists($path)){
+        wp_register_script(
+          $bundle.'-js-'.sanitize_key($fname), // handle unique par fichier
+          $url,
+          [], // <- ajoute des dépendances si besoin, ex. ['jquery']
+          @filemtime($path),
+          true // in footer
+        );
+      }
+    }
+  }
+}, 5);
+
+/** Enqueue global du CSS de base (partout) */
+add_action('wp_enqueue_scripts', function(){
+  if (!is_admin() && wp_style_is('pc-base','registered')) {
+    wp_enqueue_style('pc-base');
+  }
+}, 5);
+
+/**
+ * Utilitaire : enqueuer un bundle (depuis un composant)
+ * @param string $bundle Nom du bundle (clé du map)
+ */
+function pc_enqueue_bundle($bundle){
+  $map = pc_assets_bundles_map();
+
+  if (empty($map[$bundle])) return;
+
+  // CSS (un seul fichier par bundle dans ton mapping actuel → handle: "{$bundle}-css")
+  if (wp_style_is($bundle.'-css','registered') && !wp_style_is($bundle.'-css','enqueued')){
+    wp_enqueue_style($bundle.'-css');
+  }
+
+  // JS (un handle par fichier, pattern "{$bundle}-js-{filename}")
+  foreach (($map[$bundle]['js'] ?? []) as $fname){
+    $h = $bundle.'-js-'.sanitize_key($fname);
+    if (wp_script_is($h,'registered') && !wp_script_is($h,'enqueued')){
+      wp_enqueue_script($h);
+    }
+  }
+}

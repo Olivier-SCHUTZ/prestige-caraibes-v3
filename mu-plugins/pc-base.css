@@ -1,0 +1,226 @@
+/* ==========================================
+   Prestige Caraïbes — BASE (fondations v1)
+   Global tokens + bases + utilitaires
+   ========================================== */
+   
+@font-face{
+  font-family:'Poppins';
+  src:url('/wp-content/uploads/2025/08/Poppins-SemiBold.woff2') format('woff2');
+  font-weight:600; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:'Lora';
+  src:url('/wp-content/uploads/2025/08/Lora-Regular.woff2') format('woff2');
+  font-weight:400; font-style:normal; font-display:swap;
+}
+
+/* usage explicite + fallback système rapides */
+:root{
+  --font-heading: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  --font-body: "Lora", Georgia, "Times New Roman", serif;
+}
+h1,h2,h3,h4{ font-family: var(--font-heading); }
+body{ font-family: var(--font-body); }
+
+/* ---------- Tokens (root) ---------- */
+:root{
+  /* Layout */
+  --pc-container: clamp(320px, 92vw, 1200px);
+
+  /* Couleurs marque */
+  --pc-bg-page: #F9F9F9;
+  --pc-color-heading: #1B3B5F;
+  --pc-color-text: #3A3A3A;
+  --pc-color-muted: #6f6f6f;
+
+  --pc-color-primary: #007A92;
+  --pc-color-primary-hover: #005f73;
+  --pc-color-primary-active: #005F73;
+  --pc-color-btn-text: #FFFFFF;
+
+  /* Typo (doivent exister côté thème/Elementor) */
+  --pc-font-title: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --pc-font-body:  "Lora", ui-serif, Georgia, serif;
+
+  /* Rythme & radius */
+  --pc-radius: 10px;
+
+  /* Échelles texte */
+  --pc-h1-size: 2.25rem;   --pc-h1-weight: 600; --pc-h1-lh: 1.2;
+  --pc-h2-size: 1.975rem;  --pc-h2-weight: 700; --pc-h2-lh: 1.3;
+  --pc-h3-size: 1.5rem;    --pc-h3-weight: 500; --pc-h3-lh: 1.4;
+  --pc-h4-size: 1.25rem;   --pc-h4-weight: 500; --pc-h4-lh: 1.4;
+
+  --pc-text-size: 1.125rem; --pc-text-weight: 400; --pc-text-lh: 1.6;
+
+  /* Boutons */
+  --pc-btn-text-size: 1.125rem; --pc-btn-text-weight: 600; --pc-btn-text-lh: 1.3;
+  --pc-btn-pt: 0.9rem; --pc-btn-pr: 1.56rem; --pc-btn-pb: 0.9rem; --pc-btn-pl: 1.56rem;
+
+  /* Ombres (facultatif) */
+  --pc-shadow-soft: 0 8px 24px rgba(0,0,0,.08);
+}
+
+/* Tablette */
+@media (max-width: 1024px){
+  :root{
+    --pc-h1-size: 2rem;
+    --pc-h2-size: 1.75rem;
+    --pc-h3-size: 1.25rem;
+    --pc-h4-size: 1.125rem;
+    --pc-text-size: 1rem;
+    --pc-btn-text-size: 1rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 767.98px){
+  :root{
+    --pc-h1-size: 1.75rem;
+    --pc-h2-size: 1.25rem;
+    --pc-h3-size: 1.125rem;
+    --pc-h4-size: 1rem;
+    --pc-text-size: 1rem;
+    --pc-btn-text-size: 0.9375rem;
+  }
+}
+
+/* ---------- Bases page ---------- */
+html{ box-sizing:border-box; }
+*,*::before,*::after{ box-sizing:inherit; }
+html, body{ background: var(--pc-bg-page); overflow-x: hidden; }
+body{
+  color: var(--pc-color-text);
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-text-size);
+  line-height: var(--pc-text-lh);
+  margin: 0;
+}
+
+/* Liens basiques */
+a{ color: var(--pc-color-primary); text-decoration: none; }
+a:hover{ text-decoration: underline; text-underline-offset: 2px; }
+
+/* Titres */
+h1,h2,h3,h4,.pc-h1,.pc-h2,.pc-h3,.pc-h4{
+  margin: 0 0 0.8rem 0; color: var(--pc-color-heading);
+  font-family: var(--pc-font-title);
+}
+h1,.pc-h1{ font-size: var(--pc-h1-size); font-weight: var(--pc-h1-weight); line-height: var(--pc-h1-lh); }
+h2,.pc-h2{ font-size: var(--pc-h2-size); font-weight: var(--pc-h2-weight); line-height: var(--pc-h2-lh); }
+h3,.pc-h3{ font-size: var(--pc-h3-size); font-weight: var(--pc-h3-weight); line-height: var(--pc-h3-lh); }
+h4,.pc-h4{ font-size: var(--pc-h4-size); font-weight: var(--pc-h4-weight); line-height: var(--pc-h4-lh); }
+
+/* Paragraphe utilitaire */
+.pc-text{ font-size: var(--pc-text-size); line-height: var(--pc-text-lh); }
+
+/* ---------- Boutons génériques ---------- */
+.pc-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  padding: var(--pc-btn-pt) var(--pc-btn-pr) var(--pc-btn-pb) var(--pc-btn-pl);
+  border-radius: var(--pc-radius);
+  border: 1px solid transparent;
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-btn-text-size);
+  font-weight: var(--pc-btn-text-weight);
+  line-height: var(--pc-btn-text-lh);
+  text-decoration:none; cursor:pointer; user-select:none;
+  transition: background-color .15s ease, box-shadow .2s ease, transform .08s ease;
+}
+.pc-btn:active{ transform: translateY(1px); }
+.pc-btn:focus-visible{
+  outline: 3px solid color-mix(in oklab, var(--pc-color-primary) 40%, white);
+  outline-offset: 2px;
+}
+.pc-btn--primary{ background: var(--pc-color-primary); color: var(--pc-color-btn-text); }
+.pc-btn--primary:hover,
+.pc-btn--primary:focus-visible,
+.pc-btn--primary[aria-pressed="true"]{
+  background: var(--pc-color-primary-hover); color: var(--pc-color-btn-text);
+}
+.pc-btn--line{ border:1px solid currentColor; background: transparent; color: inherit; }
+.pc-btn--line:hover{ background: rgba(0,0,0,.06); }
+
+/* ---------- Accessibilité / préférences ---------- */
+:focus:not(:focus-visible){ outline: none; }
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{ animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- Utilitaires légers ---------- */
+.pc-container{ max-width: var(--pc-container); margin-inline: auto; padding-inline: 16px; }
+.sr-only{ position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.flow > * + *{ margin-top: clamp(.5rem, 1.5vw, 1rem); }
+.muted{ color: var(--pc-color-muted); }
+.radius{ border-radius: var(--pc-radius); }
+.shadow-soft{ box-shadow: var(--pc-shadow-soft); }
+
+
+
+/* Fin BASE */
+
+.pc-html-sitemap { margin: 2rem 0; }
+.pc-html-sitemap__grid { display: grid; gap: 1rem 2rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.pc-html-sitemap__section h3 { margin: 0 0 .5rem; font-size: 1.1rem; }
+.pc-html-sitemap__section ul { margin: 0; padding-left: 1rem; }
+.pc-html-sitemap__section li { margin: .25rem 0; }
+
+/* === PLAN DU SITE (sitemap HTML) === */
+.page-slug-plan-du-site .pc-html-sitemap a {
+  color: var(--pc-color-primary);
+  text-decoration: none;
+}
+.page-slug-plan-du-site .pc-html-sitemap a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.page-slug-plan-du-site .pc-html-sitemap ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+.page-slug-plan-du-site .pc-html-sitemap li::before {
+  content: "• ";
+  color: var(--pc-color-primary);
+}
+
+/* PLAN DU SITE — version qui matche la page ID 5364 */
+body.page-id-5364 .pc-html-sitemap { max-width: var(--pc-container); margin: 3rem auto; padding: 0 1rem; }
+body.page-id-5364 .pc-html-sitemap__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem 3rem; }
+body.page-id-5364 .pc-html-sitemap__section h2 { font-family: var(--pc-font-title);
+  font-size: var(--pc-h3-size);   /* visuel doux tout en restant H2 sémantiquement */
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--pc-color-heading);
+  margin-bottom: 0.75rem;
+  border-bottom: 2px solid var(--pc-color-primary);
+  padding-bottom: 0.25rem; }
+body.page-id-5364 .pc-html-sitemap__section ul { list-style: none; margin: 0; padding-left: 0; }
+body.page-id-5364 .pc-html-sitemap__section li { margin: .3rem 0; padding-left: 1rem; position: relative; }
+body.page-id-5364 .pc-html-sitemap__section li::before { content: "•"; position: absolute; left: 0; top: .2rem; color: var(--pc-color-primary); font-weight: 700; }
+body.page-id-5364 .pc-html-sitemap a { color: var(--pc-color-primary); text-decoration: none; transition: color .15s ease; }
+body.page-id-5364 .pc-html-sitemap a:hover { color: var(--pc-color-primary-hover); text-decoration: underline; text-underline-offset: 2px; }
+
+@media (max-width: 1024px){
+  body.page-id-5364 .pc-html-sitemap { margin: 2.5rem auto; }
+  body.page-id-5364 .pc-html-sitemap__grid { gap: 1.5rem 2rem; }
+}
+@media (max-width: 767.98px){
+  body.page-id-5364 .pc-html-sitemap { margin: 2rem auto; }
+  body.page-id-5364 .pc-html-sitemap__section h2{ font-size: 1.2rem; }
+  body.page-id-5364 .pc-html-sitemap__grid { grid-template-columns: 1fr; gap: 1.25rem; }
+}
+
+/* Plan du site — typo uniforme */
+body.page-id-5364 .pc-html-sitemap {
+  font-size: var(--pc-text-size);
+  line-height: var(--pc-text-lh);
+}
+body.page-id-5364 .pc-html-sitemap a,
+body.page-id-5364 .pc-html-sitemap li {
+  font-size: var(--pc-text-size);
+  line-height: var(--pc-text-lh);
+}
+
+
+
