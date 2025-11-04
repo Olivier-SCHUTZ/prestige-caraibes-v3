@@ -76,19 +76,20 @@
             "name": "gallery_urls",
             "aria-label": "",
             "type": "textarea",
-            "instructions": "1 URL d’image par ligne (utilisé par [pc_gallery]).",
-            "required": false,
-            "conditional_logic": false,
+            "instructions": "1 URL d’image par ligne (utilisé par [pc_gallery]) uniquement si les images sont transmises par Urls sinon laissez vide.",
+            "required": 0,
+            "conditional_logic": 0,
             "wrapper": {
                 "width": "",
                 "class": "",
                 "id": ""
             },
-            "rows": 8,
             "default_value": "",
-            "new_lines": "",
             "maxlength": "",
-            "placeholder": ""
+            "allow_in_bindings": 1,
+            "rows": 8,
+            "placeholder": "",
+            "new_lines": ""
         },
         {
             "key": "field_pc_video_urls",
@@ -109,6 +110,155 @@
             "new_lines": "",
             "maxlength": "",
             "placeholder": ""
+        },
+        {
+            "key": "field_6909eb9fcc805",
+            "label": "Gestionnaire d'images Logement",
+            "name": "",
+            "aria-label": "",
+            "type": "tab",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "placement": "top",
+            "endpoint": 0,
+            "selected": 0
+        },
+        {
+            "key": "field_6909f9f6495a0",
+            "label": "Groupes d'images",
+            "name": "groupes_images",
+            "aria-label": "",
+            "type": "repeater",
+            "instructions": "Ajoutez un \"groupe\" pour chaque catégorie d'image (ex: Salon, Piscine, Chambres). Vous pourrez ensuite ajouter toutes les images de ce groupe en une seule fois.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "layout": "block",
+            "pagination": 0,
+            "min": 0,
+            "max": 0,
+            "collapsed": "field_6909faa8495a1",
+            "button_label": "Ajouter un groupe d'images",
+            "rows_per_page": 20,
+            "sub_fields": [
+                {
+                    "key": "field_6909faa8495a1",
+                    "label": "Catégorie",
+                    "name": "categorie",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "Sélectionnez la catégorie principale. Si elle n'existe pas, choisissez \"-- Autre --\" pour saisir un nom personnalisé.",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "exterieur": "Extérieur",
+                        "terrasse": "Terrasse",
+                        "piscine": "Piscine",
+                        "alentours": "Alentours",
+                        "salon": "Salon",
+                        "cuisine": "Cuisine",
+                        "bureau": "Bureau",
+                        "buanderie": "Buanderie",
+                        "suite_parentale": "Suite parentale",
+                        "chambre_1": "Chambre 1",
+                        "chambre_2": "Chambre 2",
+                        "chambre_3": "Chambre 3",
+                        "chambre_4": "Chambre 4",
+                        "chambre_5": "Chambre 5",
+                        "salle_eau_1": "Salle d'eau 1",
+                        "salle_eau_2": "Salle d'eau 2",
+                        "salle_eau_3": "Salle d'eau 3",
+                        "salle_eau_4": "Salle d'eau 4",
+                        "salle_bain_1": "Salle de bain 1",
+                        "autre": "-- Autre (Préciser ci-dessous) --"
+                    },
+                    "default_value": false,
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 1,
+                    "allow_in_bindings": 0,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0,
+                    "parent_repeater": "field_6909f9f6495a0"
+                },
+                {
+                    "key": "field_6909fefe495a2",
+                    "label": "Nom de la catégorie personnalisée",
+                    "name": "categorie_personnalisee",
+                    "aria-label": "",
+                    "type": "text",
+                    "instructions": "Saisissez le nom de votre nouvelle catégorie (ex: \"Cave à vin\", \"Salle de sport\").",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_6909faa8495a1",
+                                "operator": "==",
+                                "value": "autre"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "prepend": "",
+                    "append": "",
+                    "parent_repeater": "field_6909f9f6495a0"
+                },
+                {
+                    "key": "field_6909ff75495a3",
+                    "label": "Images du groupe",
+                    "name": "images_du_groupe",
+                    "aria-label": "",
+                    "type": "gallery",
+                    "instructions": "Multi-sélection : Ajoutez toutes les images pour cette catégorie en une seule fois.",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "return_format": "array",
+                    "library": "all",
+                    "min": "",
+                    "max": "",
+                    "min_width": "",
+                    "min_height": "",
+                    "min_size": "",
+                    "max_width": "",
+                    "max_height": "",
+                    "max_size": "",
+                    "mime_types": "",
+                    "insert": "append",
+                    "preview_size": "thumbnail",
+                    "parent_repeater": "field_6909f9f6495a0"
+                }
+            ]
         },
         {
             "key": "tab_seo_long",
@@ -2004,5 +2154,6 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1760461160
+    "display_title": "",
+    "modified": 1762263248
 }
