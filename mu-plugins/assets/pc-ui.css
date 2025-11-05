@@ -2082,3 +2082,35 @@
   outline: 2px solid var(--pc-color-primary, #007a92);
   outline-offset: 2px;
 }
+
+/* Vignettes galerie : cadre 16:9, crop centré */
+.pc-gallery .pc-grid .pc-item {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9; /* réserve l'espace, évite le CLS */
+  overflow: hidden;
+  border-radius: var(--pc-radius, 0.75rem);
+}
+
+/* L'image remplit le cadre et est recadrée proprement */
+.pc-gallery .pc-grid .pc-item > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* crop (portrait/paysage) */
+  object-position: center;
+  display: block;
+}
+
+/* Fallback anciens Safari (si aspect-ratio non supporté) */
+@supports not (aspect-ratio: 16 / 9) {
+  .pc-gallery .pc-grid .pc-item::before {
+    content: "";
+    display: block;
+    padding-top: 56.25%; /* 16:9 */
+  }
+  .pc-gallery .pc-grid .pc-item > img {
+    position: absolute;
+    inset: 0;
+  }
+}
