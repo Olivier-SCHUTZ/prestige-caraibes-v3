@@ -22,6 +22,18 @@ add_action('wp_enqueue_scripts', function () {
     wp_enqueue_style('pc-ui', $ui_css_url, ['pc-base'], $ui_css_ver);
   }
 
+  // >> Chargement du script de la galerie filtrable
+  $pc_gallery_js_path = WP_CONTENT_DIR . '/mu-plugins/assets/pc-gallerie.js';
+  if (file_exists($pc_gallery_js_path)) {
+    wp_enqueue_script(
+      'pc-gallerie',
+      content_url('mu-plugins/assets/pc-gallerie.js'),
+      ['glightbox-js'],                   // dépend GLightbox si dispo (déjà enfileté chez vous)
+      filemtime($pc_gallery_js_path),
+      true
+    );
+  }
+
   // Chargement du script du devis
   $devis_js_path = WP_CONTENT_DIR . '/mu-plugins/assets/pc-devis.js';
   if (file_exists($devis_js_path)) {
@@ -224,50 +236,200 @@ add_shortcode('pc_highlights', function ($atts = []) {
       </span>
     <?php endforeach; ?>
   </div>
-<?php return ob_get_clean();
+  <?php return ob_get_clean();
 });
 
 
-// [pc_gallery]
+// [pc_gallery] — v2 (hérité + nouveau filtrable)
 add_shortcode('pc_gallery', function ($atts = []) {
-  $a = shortcode_atts(['field' => 'gallery_urls', 'limit' => 6, 'cols'  => 3, 'btn'   => 'Voir toutes les photos', 'class' => ''], $atts, 'pc_gallery');
+  $a = shortcode_atts([
+    'limit'   => 6,                 // n images visibles (grille)
+    'class'   => '',
+    'field'   => 'gallery_urls',    // champ texte (Mode A existant)
+  ], $atts, 'pc_gallery');
+
   $post = get_post();
   if (!$post || !function_exists('get_field')) return '';
+
+  // === MODE A (héritage) : si field "gallery_urls" rempli ===
   $raw = get_field($a['field'], $post->ID, false);
-  if (!$raw) return '';
-  $lines  = preg_split('/\R+/', trim($raw));
-  $items  = [];
-  foreach ($lines as $line) {
-    if (trim($line) === '') continue;
-    $parts = array_map('trim', explode('##', $line, 2));
-    $url   = esc_url($parts[0]);
-    if (!$url) continue;
-    $cap   = isset($parts[1]) ? esc_attr(wp_strip_all_tags($parts[1])) : '';
-    $items[] = ['href' => $url, 'title' => $cap];
+  $urls = [];
+  if (!empty($raw)) {
+    // Support lignes (retours) et/ou virgules, et repeater éventuel
+    if (is_string($raw)) {
+      $parts = preg_split('~[\r\n,]+~', trim($raw));
+      foreach ($parts as $p) {
+        $p = trim($p);
+        if ($p) $urls[] = esc_url_raw($p);
+      }
+    } elseif (is_array($raw)) {
+      foreach ($raw as $row) {
+        if (is_array($row) && !empty($row['url'])) {
+          $urls[] = esc_url_raw($row['url']);
+        } elseif (is_string($row)) {
+          $urls[] = esc_url_raw($row);
+        }
+      }
+    }
+    $urls = array_values(array_unique(array_filter($urls)));
   }
-  if (empty($items)) return '';
-  $gallery_id = 'pcgal-' . $post->ID;
-  $visible_items = array_slice($items, 0, (int)$a['limit']);
-  ob_start(); ?>
-  <section id="<?php echo esc_attr($gallery_id); ?>" class="pc-gallery <?php echo esc_attr($a['class']); ?>">
-    <div class="pc-grid pc-cols-<?php echo intval($a['cols']); ?>">
-      <?php foreach ($visible_items as $it): ?>
-        <figure class="pc-item">
-          <a href="<?php echo $it['href']; ?>" class="pc-gb-item glightbox" data-gallery="logement-gallery-<?php echo (int) $post->ID; ?>" data-title="<?php echo $it['title']; ?>">
-            <img src="<?php echo $it['href']; ?>" alt="<?php echo $it['title'] ?: 'Photo'; ?>" loading="lazy" />
+
+  // Si on a des URLs → garder le rendu existant (grille + bouton)
+  if (!empty($urls)) {
+    $gallery_id = 'pcg-extern-' . $post->ID;
+    $visible = $a['limit'] ? array_slice($urls, 0, (int)$a['limit']) : $urls;
+    ob_start(); ?>
+    <section class="pc-gallery <?php echo esc_attr($a['class']); ?>"
+      data-mode="external"
+      data-gallery-id="<?php echo esc_attr($gallery_id); ?>">
+      <div class="pc-grid">
+        <?php foreach ($visible as $i => $href): ?>
+          <a class="pc-item pc-glink" href="<?php echo esc_url($href); ?>"
+            data-gallery="<?php echo esc_attr($gallery_id); ?>"
+            aria-label="<?php echo esc_attr(sprintf('Voir la photo %d', $i + 1)); ?>">
+            <img src="<?php echo esc_url($href); ?>" loading="lazy" decoding="async" alt="" />
           </a>
-        </figure>
+        <?php endforeach; ?>
+      </div>
+
+      <div class="pc-morewrap">
+        <button class="pc-more" type="button"
+          data-gallery-id="<?php echo esc_attr($gallery_id); ?>"
+          data-mode="external"
+          data-total="<?php echo esc_attr(count($urls)); ?>">
+          <?php echo esc_html(sprintf('Voir les %d photos', count($urls))); ?>
+        </button>
+      </div>
+
+      <!-- Sources Lightbox (cachées) -->
+      <div class="pc-lightbox-src" hidden>
+        <?php foreach ($urls as $href): ?>
+          <a href="<?php echo esc_url($href); ?>"
+            class="pc-glightbox"
+            data-group="<?php echo esc_attr($gallery_id); ?>"></a>
+        <?php endforeach; ?>
+      </div>
+    </section>
+  <?php
+    return ob_get_clean();
+  }
+
+  // === MODE B (nouveau) : ACF groupes_images (catégories + images) ===
+  $groups = get_field('groupes_images', $post->ID); // répéteur
+  $slugify = function ($s) {
+    $s = remove_accents(mb_strtolower((string)$s, 'UTF-8'));
+    $s = preg_replace('~[^a-z0-9]+~u', '-', $s);
+    return trim($s, '-') ?: 'autre';
+  };
+
+  $cats = []; // [ ['label'=>..., 'slug'=>..., 'items'=>[['id'=>, 'src'=>, 'alt'=>, 'title'=>], ...]] ]
+
+  // Fonction pour transformer une valeur machine en libellé humain (ex: chambre_1 → Chambre 1)
+  $humanize = function ($v) {
+    $v = trim((string)$v);
+    if ($v === '') return '';
+    $v = str_replace('_', ' ', $v);
+    return mb_convert_case($v, MB_CASE_TITLE, 'UTF-8');
+  };
+
+  if (is_array($groups)) {
+    foreach ($groups as $g) {
+      if (empty($g)) continue;
+
+      // Définition du label humain
+      if (!empty($g['categorie']) && $g['categorie'] !== 'autre') {
+        $label = $humanize($g['categorie']); // ex: chambre_1 → Chambre 1
+      } else {
+        $label = trim((string)($g['categorie_personnalisee'] ?? ''));
+      }
+      if ($label === '') $label = 'Autre';
+
+      // Slug basé sur le label
+      $slug = $slugify($label);
+
+      // Images du groupe
+      $images = [];
+      if (!empty($g['images_du_groupe']) && is_array($g['images_du_groupe'])) {
+        foreach ($g['images_du_groupe'] as $img) {
+          $id = is_array($img) && isset($img['ID']) ? (int)$img['ID'] : (is_numeric($img) ? (int)$img : 0);
+          if (!$id) continue;
+          $src = wp_get_attachment_image_url($id, 'large');
+          if (!$src) continue;
+          $alt   = get_post_meta($id, '_wp_attachment_image_alt', true);
+          $title = get_the_title($id);
+          $images[] = ['id' => $id, 'src' => $src, 'alt' => $alt ?: $title, 'title' => $title];
+        }
+      }
+
+      // Catégorie sans images → ignorée
+      if (empty($images)) continue;
+
+      $cats[] = ['label' => $label, 'slug' => $slug, 'items' => $images];
+    }
+  }
+
+  // Aucune image au total → message
+  $total_all = 0;
+  foreach ($cats as $c) {
+    $total_all += count($c['items']);
+  }
+  if ($total_all === 0) {
+    return '<div class="pc-gallery"><p class="pc-empty">Aucune photo pour ce logement</p></div>';
+  }
+
+  $gallery_id = 'pcg-acf-' . $post->ID;
+
+  ob_start(); ?>
+  <section class="pc-gallery <?php echo esc_attr($a['class']); ?>"
+    data-mode="acf"
+    data-gallery-id="<?php echo esc_attr($gallery_id); ?>"
+    data-i18n-all="<?php echo esc_attr('Toutes les photos'); ?>"
+    data-i18n-see-all="<?php echo esc_attr('Voir les %d photos'); ?>"
+    data-i18n-see-cat="<?php echo esc_attr('Voir les %d photos (%s)'); ?>">
+
+    <div class="pc-gallery-toolbar">
+      <label class="pc-gallery-label" for="<?php echo esc_attr($gallery_id . '-select'); ?>">Catégorie</label>
+      <select id="<?php echo esc_attr($gallery_id . '-select'); ?>"
+        class="pc-gallery-select"
+        aria-label="Filtrer les photos par catégorie">
+        <option value="all" selected>Toutes les photos</option>
+        <?php foreach ($cats as $c): ?>
+          <option value="<?php echo esc_attr($c['slug']); ?>"><?php echo esc_html($c['label']); ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+
+    <div class="pc-grid" data-limit="<?php echo esc_attr((int)$a['limit']); ?>">
+      <!-- Remplie par JS au chargement (ordre ACF respecté) -->
+    </div>
+
+    <div class="pc-morewrap">
+      <button class="pc-more" type="button"
+        data-gallery-id="<?php echo esc_attr($gallery_id); ?>"
+        data-mode="acf"
+        data-total-all="<?php echo esc_attr($total_all); ?>"
+        data-cats="<?php echo esc_attr(wp_json_encode(array_map(function ($c) {
+                      return ['slug' => $c['slug'], 'label' => $c['label'], 'count' => count($c['items'])];
+                    }, $cats))); ?>">
+        <?php echo esc_html(sprintf('Voir les %d photos', $total_all)); ?>
+      </button>
+    </div>
+
+    <!-- Sources Lightbox (cachées), en ordre ACF strict -->
+    <div class="pc-lightbox-src" hidden>
+      <?php foreach ($cats as $c): ?>
+        <?php foreach ($c['items'] as $img): ?>
+          <a href="<?php echo esc_url($img['src']); ?>"
+            class="pc-glightbox"
+            data-group="<?php echo esc_attr($gallery_id); ?>"
+            data-cat="<?php echo esc_attr($c['slug']); ?>"
+            data-title="<?php echo esc_attr($img['title']); ?>"></a>
+        <?php endforeach; ?>
       <?php endforeach; ?>
     </div>
-    <?php if (count($items) > (int)$a['limit']): ?>
-      <div class="pc-morewrap">
-        <a href="<?php echo $items[0]['href']; ?>" class="pc-more glightbox" data-gallery="logement-gallery-<?php echo (int)$post->ID; ?>">
-          <?php echo esc_html($a['btn']); ?>
-        </a>
-      </div>
-    <?php endif; ?>
   </section>
-<?php return ob_get_clean();
+<?php
+  return ob_get_clean();
 });
 
 // [pc_location_map]
