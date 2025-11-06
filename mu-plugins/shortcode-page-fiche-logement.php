@@ -1579,6 +1579,7 @@ add_shortcode('pc_devis', function ($atts = []) {
   $unit_is_week = (stripos($unit, 'semaine') !== false);
   $seasons_raw = (array) get_field('pc_season_blocks', $post_id);
   $seasons = [];
+  $manual = (bool) get_field('pc_manual_quote', $post->ID);
   foreach ($seasons_raw as $s) {
     $price = isset($s['season_price']) ? (float)$s['season_price'] : 0.0;
     if ($unit_is_week && $price > 0) $price = $price / 7.0;
@@ -1635,11 +1636,12 @@ add_shortcode('pc_devis', function ($atts = []) {
     'icsDisable'  => $ics_disable,
     'lodgifyId'      => get_field('identifiant_lodgify', $post_id) ?: '',
     'lodgifyAccount' => 'marine-schutz-431222',
+    'manualQuote' => $manual,
   ];
   $id = 'pc-devis-' . $post_id;
   $data = esc_attr(wp_json_encode($cfg));
   ob_start(); ?>
-  <section id="<?php echo esc_attr($id); ?>" class="pc-devis-section" data-pc-devis="<?php echo $data; ?>">
+  <section id="<?php echo esc_attr($id); ?>" class="pc-devis-section" data-pc-devis="<?php echo $data; ?>" data-manual-quote="<?php echo $manual ? '1' : '0'; ?>">
     <div class="exp-devis-wrap">
       <h3 class="exp-devis-title">Estimez le coût de votre séjour</h3>
       <div class="exp-devis-form">
