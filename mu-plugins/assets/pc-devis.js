@@ -50,7 +50,6 @@
         for (var j = 0; j < s.periods.length; j++) {
           var p = s.periods[j];
           if (p && p.from && p.to && inRange(day, p.from, p.to)) {
-            // Retourne le prix saisonnier s'il est défini et > 0, sinon le prix de base
             return Number(s.price) > 0
               ? Number(s.price)
               : Number(cfg.basePrice) || 0;
@@ -63,8 +62,7 @@
   function requiredMinNights(cfg, nights) {
     var req = Number(cfg && (cfg.minNights || cfg.min)) || 0;
     if (!cfg || !Array.isArray(cfg.seasons) || nights.length === 0)
-      return req > 0 ? req : 1; // Minimum 1 nuit par défaut
-    // Trouve le minimum le plus élevé parmi toutes les nuits sélectionnées
+      return req > 0 ? req : 1;
     for (var i = 0; i < nights.length; i++) {
       var d = nights[i];
       for (var s = 0; s < cfg.seasons.length; s++) {
@@ -78,7 +76,7 @@
         }
       }
     }
-    return req > 0 ? req : 1; // Retourne au moins 1
+    return req > 0 ? req : 1;
   }
   function extraParamsFor(cfg, day) {
     if (cfg && Array.isArray(cfg.seasons)) {
@@ -88,7 +86,6 @@
         for (var j = 0; j < s.periods.length; j++) {
           var p = s.periods[j];
           if (p && p.from && p.to && inRange(day, p.from, p.to)) {
-            // Utilise les params saisonniers s'ils existent, sinon ceux de base
             return {
               fee:
                 (s.extra_fee !== null && s.extra_fee !== ""
@@ -103,7 +100,6 @@
         }
       }
     }
-    // Retourne les params de base par défaut
     return {
       fee: Number(cfg && cfg.extraFee) || 0,
       from: Number(cfg && cfg.extraFrom) || 0,
@@ -137,7 +133,7 @@
     var input = document.getElementById(id + "-dates");
     var adults = document.getElementById(id + "-adults");
     var children = document.getElementById(id + "-children");
-    var infants = document.getElementById(id + "-infants"); // <-- SÉLECTION BÉBÉS
+    var infants = document.getElementById(id + "-infants");
     var msgBox = document.getElementById(id + "-msg");
     var out = document.getElementById(id + "-result");
     var lines = document.getElementById(id + "-lines");
@@ -170,21 +166,21 @@
 
     var fp = window.flatpickr(input, {
       mode: "range",
-      dateFormat: "d/m/Y", // Format d'affichage
-      altInput: true, // Crée un champ visible avec le bon format
-      altFormat: "j M Y", // Format pour le champ visible (ex: 1 Nov 2025)
+      dateFormat: "d/m/Y",
+      altInput: true,
+      altFormat: "j M Y",
       minDate: "today",
       locale:
         window.flatpickr.l10ns && window.flatpickr.l10ns.fr ? "fr" : undefined,
       disable: disableRules,
-      appendTo: document.body, // Pour éviter les problèmes de z-index
+      appendTo: document.body,
       onReady: function (sel, str, inst) {
         try {
           inst.calendarContainer.classList.add("pcq-cal");
         } catch (e) {}
       },
-      onChange: compute, // Appelle compute quand la date change
-      conjunction: " au ", // Séparateur pour l'affichage de la plage
+      onChange: compute,
+      conjunction: " au ",
     });
     console.log(
       "[pc-devis] flatpickr prêt pour",
@@ -199,17 +195,15 @@
       return isFinite(v) && v > 0 ? v : 0;
     }
 
-    // --- Fonction clampCapacity MODIFIÉE ---
     function clampCapacity(sourceField) {
-      if (!CAP || CAP <= 0) return; // Ne rien faire si pas de capacité définie
+      if (!CAP || CAP <= 0) return;
 
       var a = parseIntSafe(adults);
       var c = parseIntSafe(children);
-      var i = parseIntSafe(infants); // <-- Récupère la valeur des bébés
-      var totalGuests = a + c + i; // <-- Calcule le total
+      var i = parseIntSafe(infants);
+      var totalGuests = a + c + i;
 
       if (totalGuests > CAP) {
-        // Affiche le message d'erreur
         if (msgBox) {
           msgBox.textContent =
             "Capacité max : " +
@@ -219,7 +213,6 @@
             " sélectionnés).";
         }
 
-        // Optionnel mais recommandé : Réduire la valeur qui vient d'être augmentée
         var currentVal = 0;
         var inputElement = null;
 
@@ -234,33 +227,29 @@
           currentVal = i;
         }
 
-        // Réduire si nécessaire
         if (inputElement && currentVal > 0) {
           var reductionNeeded = totalGuests - CAP;
           var newValue = currentVal - reductionNeeded;
           newValue = Math.max(parseInt(inputElement.min) || 0, newValue);
           inputElement.value = newValue;
-          totalGuests = CAP; // Met à jour le total pour le message
+          totalGuests = CAP;
           if (msgBox)
             msgBox.textContent =
               "Capacité max atteinte : " + CAP + " personnes.";
         }
       } else {
-        // Efface le message d'erreur si le total est maintenant correct
         if (msgBox && msgBox.textContent.startsWith("Capacité max")) {
           msgBox.textContent = "";
         }
       }
     }
 
-    // --- Fonction compute MODIFIÉE ---
     function compute() {
       try {
-        // Le clamp est maintenant appelé par les écouteurs 'input', pas besoin ici directement
         var a = parseIntSafe(adults),
           c = parseIntSafe(children),
           i = parseIntSafe(infants),
-          g = a + c + i; // <-- MODIFIÉ: inclut bébés dans g
+          g = a + c + i;
         var fpi = input._flatpickr;
         if (!fpi || fpi.selectedDates.length < 2) {
           if (msgBox) msgBox.textContent = "Choisissez vos dates";
@@ -285,6 +274,7 @@
         }
         var start = fpi.selectedDates[0],
           end = fpi.selectedDates[1];
+        if (msgBox) msgBox.textContent = "";
         var nights = [];
         for (var d = new Date(start); d < end; d = addDays(d, 1))
           nights.push(ymd(d));
@@ -298,7 +288,7 @@
             new CustomEvent("devisLogementUpdated", { bubbles: true })
           );
           return;
-        } // Reset si 0 nuits
+        }
 
         var reqMin = requiredMinNights(cfg, nights);
         if (reqMin && nN < reqMin) {
@@ -317,7 +307,7 @@
             new CustomEvent("devisLogementUpdated", { bubbles: true })
           );
           return;
-        } // Reset si min nuits
+        }
         var maxN = Number(cfg.maxNights) || 0;
         if (maxN && nN > maxN) {
           if (out) out.hidden = true;
@@ -335,18 +325,12 @@
             new CustomEvent("devisLogementUpdated", { bubbles: true })
           );
           return;
-        } // Reset si max nuits
-        // Efface le message d'erreur de capacité si on est arrivé ici
-        if (msgBox && msgBox.textContent.startsWith("Capacité max"))
+        }
+        if (msgBox && msgBox.textContent.startsWith("Séjour minimum"))
           msgBox.textContent = "";
-        // Efface les messages min/max nuits
-        if (
-          msgBox &&
-          (msgBox.textContent.startsWith("Séjour minimum") ||
-            msgBox.textContent.startsWith("Séjour maximum"))
-        )
+        if (msgBox && msgBox.textContent.startsWith("Séjour maximum"))
           msgBox.textContent = "";
-        // --- MODE MANUEL : pas de calcul des montants ---
+
         if (isManual) {
           var a = parseIntSafe(adults),
             c = parseIntSafe(children),
@@ -377,7 +361,7 @@
               detail: { manual: true },
             })
           );
-          return; // on quitte compute() ici
+          return;
         }
 
         var lodging = 0;
@@ -398,7 +382,7 @@
         if (Array.isArray(taxRaw)) taxRaw = taxRaw[0] != null ? taxRaw[0] : "";
         if (typeof taxRaw === "object" && taxRaw !== null && taxRaw.value) {
           taxRaw = taxRaw.value;
-        } // Compat ACF
+        }
         var taxKey = normKey(taxRaw);
         var isPct5 =
           taxKey &&
@@ -409,7 +393,6 @@
         var m = taxKey.match(/([1-5])_?etoile/);
         var stars = m ? parseInt(m[1], 10) : null;
         var classRates = { 1: 0.8, 2: 0.9, 3: 1.5, 4: 2.3, 5: 3.0 };
-        // Calcul taxe : 5% OU basée sur classement étoiles (si adultes > 0)
         if (isPct5 && nN > 0 && g > 0 && a > 0) {
           var A = lodging / nN / g;
           var B = 0.05 * A;
@@ -419,8 +402,8 @@
         }
 
         var grand = lodging + extras + cleaning + other + taxe;
-        currentTotal = grand; // Sauvegarde pour PDF
-        currentLines = []; // Réinitialise pour PDF
+        currentTotal = grand;
+        currentLines = [];
         function dateFR(d) {
           return d.toLocaleDateString("fr-FR", {
             day: "2-digit",
@@ -450,10 +433,10 @@
           currentLines.push({ label: "Taxe de séjour", price: eur(taxe) });
 
         if (lines) {
-          lines.innerHTML = ""; // Vide les anciennes lignes
+          lines.innerHTML = "";
           currentLines.forEach(function (line) {
             var li = document.createElement("li");
-            li.classList.add("pcq-line"); // Ajoute la classe pour le style si besoin
+            li.classList.add("pcq-line");
             var s1 = document.createElement("span");
             s1.textContent = line.label;
             var s2 = document.createElement("span");
@@ -463,14 +446,15 @@
             lines.appendChild(li);
           });
         }
-        if (total) total.textContent = eur(grand);
-        if (out) out.hidden = false; // Affiche le résultat
+        if (total) {
+          total.textContent = eur(grand);
+          total.hidden = false;
+        }
+        if (out) out.hidden = false;
 
-        // --- Stockage pour URL Lodgify et export ---
         window.currentLogementTotal = grand;
         window.currentLogementLines = currentLines;
         window.currentLogementSelection = {
-          // <-- MODIFIÉ: Stocke les sélections
           arrival: ymd(start),
           departure: ymd(end),
           adults: a,
@@ -478,7 +462,6 @@
           infants: i,
         };
 
-        // Déclenche l'événement pour mettre à jour le FAB etc.
         section.dispatchEvent(
           new CustomEvent("devisLogementUpdated", { bubbles: true })
         );
@@ -486,7 +469,6 @@
         console.error("[pc-devis] Erreur de calcul:", e);
         if (msgBox) msgBox.textContent = "Erreur lors du calcul.";
         if (out) out.hidden = true;
-        // Réinitialise les exports en cas d'erreur
         window.currentLogementTotal = 0;
         window.currentLogementLines = [];
         window.currentLogementSelection = null;
@@ -510,7 +492,7 @@
       const date = new Date().toLocaleDateString("fr-FR");
       const a = parseIntSafe(adults),
         c = parseIntSafe(children),
-        i = parseIntSafe(infants); // Récupère bébés pour le PDF aussi
+        i = parseIntSafe(infants);
 
       doc.setFontSize(20);
       doc.text(companyInfo.name || "Estimation", 105, 20, { align: "center" });
@@ -526,7 +508,7 @@
       doc.text(`Estimation pour : ${logementTitle}`, 15, 50);
       doc.text(`Date : ${date}`, 195, 50, { align: "right" });
       doc.setFontSize(10);
-      doc.text(`Pour ${a} adulte(s), ${c} enfant(s) et ${i} bébé(s)`, 15, 58); // Ajoute bébés
+      doc.text(`Pour ${a} adulte(s), ${c} enfant(s) et ${i} bébé(s)`, 15, 58);
       let y = 70;
       doc.setFont("helvetica", "bold");
       doc.text("Description", 15, y);
@@ -537,7 +519,6 @@
       currentLines.forEach((line) => {
         doc.setFont("helvetica", "normal");
         doc.text(line.label, 15, y);
-        // Utilise une police à chasse fixe (monospace) pour aligner les prix
         doc.setFont("courier", "normal");
         doc.text(line.price, 195, y, { align: "right" });
         y += 7;
@@ -549,9 +530,9 @@
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.text("Total Estimé (TTC)", 15, y);
-      doc.setFont("courier", "bold"); // Total en gras monospace
+      doc.setFont("courier", "bold");
       doc.text(eur(currentTotal), 195, y, { align: "right" });
-      y = 270; // Position du pied de page
+      y = 270;
       doc.line(15, y, 195, y);
       y += 8;
       doc.setFont("helvetica", "normal");
@@ -572,43 +553,34 @@
       );
     }
 
-    // --- LOGIQUE POUR LES BOUTONS +/- (STEPPER) - VERSION UNIFIÉE ---
     section.querySelectorAll(".exp-stepper-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var input = this.parentElement.querySelector(".pcq-input");
         if (!input) return;
 
-        var stepDirection = this.dataset.step; // 'plus' ou 'minus'
+        var stepDirection = this.dataset.step;
         var currentVal = parseInt(input.value, 10) || 0;
         var min = parseInt(input.min, 10);
-        // var max = parseInt(input.max, 10); // Utile si on veut bloquer au max ici
         var step = 1;
-        var inputName = input.getAttribute("name"); // Pour identifier le champ dans clampCapacity
+        var inputName = input.getAttribute("name");
 
         var newVal;
         if (stepDirection === "plus") {
           newVal = currentVal + step;
-          // Optionnel: Vérification MAX ici, mais clampCapacity s'en charge aussi
-          // if (!isNaN(max) && newVal > max) {
-          //   newVal = max;
-          // }
         } else {
           newVal = currentVal - step;
         }
 
-        // Vérification MIN
         if (!isNaN(min) && newVal < min) {
           newVal = min;
         }
 
         input.value = newVal;
 
-        // Déclenche l'événement "input" pour recalculer et vérifier la capacité
         input.dispatchEvent(new Event("input", { bubbles: true }));
       });
     });
 
-    // --- Écouteurs MODIFIÉS ---
     if (adults)
       adults.addEventListener("input", function () {
         clampCapacity("adults");
@@ -623,19 +595,17 @@
       infants.addEventListener("input", function () {
         clampCapacity("infants");
         compute();
-      }); // <-- AJOUTÉ
+      });
     if (pdfBtn) pdfBtn.addEventListener("click", generatePDF);
 
-    compute(); // Calcul initial
-  } // Fin de initOne
+    compute();
+  }
 
-  // --- Lancement de l'initialisation ---
   function boot() {
     var sections = document.querySelectorAll(
       ".pc-devis-section[data-pc-devis]"
     );
     if (!sections.length) return;
-    // Charge Flatpickr locale FR si disponible
     if (
       window.flatpickr &&
       window.flatpickr.l10ns &&
@@ -650,4 +620,4 @@
   } else {
     boot();
   }
-})(); // Fin de l'IIFE
+})();

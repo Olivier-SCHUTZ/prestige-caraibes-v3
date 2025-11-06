@@ -10,14 +10,9 @@ document.addEventListener("DOMContentLoaded", function () {
   if (devisSource && devisTarget) {
     devisTarget.appendChild(devisSource);
     devisMoved = true;
-  } else {
-    // Optionnel: Afficher un message si le devis n'est pas trouvé
-    // console.warn('[Logement JS] Calculateur [pc_devis] ou cible introuvable.');
   }
 
-  // --- Fonction d'initialisation (appelée après délai si déménagement) ---
   function initializeBookingLogic() {
-    // --- PARTIE 2 : SÉLECTION DES ÉLÉMENTS ---
     const fab = document.getElementById("logement-open-devis-sheet-btn");
     const fabPriceDisplay = document.getElementById(
       "fab-logement-price-display"
@@ -39,23 +34,21 @@ document.addEventListener("DOMContentLoaded", function () {
     const devisErrorMsg = devisSource
       ? devisSource.querySelector("#logement-devis-error-msg")
       : null;
-    // lire la config + flag manuel
+
     const cfg = devisSource
       ? JSON.parse(devisSource.dataset.pcDevis || "{}")
       : {};
     const isManualQuote =
       devisSource && devisSource.dataset.manualQuote === "1";
 
-    // renommer le bouton de la popup si manuel
     if (isManualQuote && openContactModalBtn) {
       openContactModalBtn.textContent = "Demander votre devis";
     }
-    // (optionnel) si tu affiches aussi un bouton Lodgify, renomme-le pareil :
     if (isManualQuote && openLodgifyBtn) {
       openLodgifyBtn.textContent = "Demander votre devis";
     }
 
-    if (!fab || !devisSheet) return; // Sécurité minimale
+    if (!fab || !devisSheet) return;
 
     const eur = (n) => {
       const t = new Intl.NumberFormat("fr-FR", {
@@ -65,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return t.endsWith(",00") ? t.slice(0, -3) + " €" : t;
     };
     const base = Number((cfg && cfg.basePrice) || 0);
-    let quoteSubmitted = false; // passera à true après envoi du formulaire
+    let quoteSubmitted = false;
 
     const baseDesk =
       base > 0 ? `À partir de ${eur(base)} sur devis` : "Sur devis";
@@ -88,11 +81,10 @@ document.addEventListener("DOMContentLoaded", function () {
         const mob = base > 0 ? `Dès ${eur(base)} — sur devis` : "Sur devis";
         return window.innerWidth <= 480 ? mob : desk;
       }
-      return fabPriceDisplay.innerHTML; // mode normal inchangé
+      return fabPriceDisplay.innerHTML;
     })();
     if (isManualQuote) setFabBaseLabel();
 
-    // --- PARTIE 3 : LOGIQUE D'APPARITION DU FAB ---
     function showFab() {
       if (fab) fab.classList.add("is-visible");
     }
@@ -111,14 +103,12 @@ document.addEventListener("DOMContentLoaded", function () {
       window.addEventListener("scroll", checkScroll, { passive: true });
     }
 
-    // --- PARTIE 4 : OUVERTURE/FERMETURE DES PANNEAUX ---
     function openDevisSheet() {
       if (!devisSheet) return;
       devisSheet.setAttribute("aria-hidden", "false");
       devisSheet.classList.add("is-open");
       document.body.style.overflow = "hidden";
       sessionStorage.setItem("logementSheetOpened", "true");
-
       if (
         fabPriceDisplay &&
         (fabPriceDisplay.textContent === "Merci ! 🌴" ||
@@ -126,38 +116,20 @@ document.addEventListener("DOMContentLoaded", function () {
       ) {
         fabPriceDisplay.innerHTML = initialFabHTML;
       }
-
       if (devisSource) {
         const dateInput = devisSource.querySelector('input[name="dates"]');
-        if (dateInput) {
-          setTimeout(() => dateInput.focus(), 50);
-        }
+        if (dateInput) setTimeout(() => dateInput.focus(), 50);
       }
     }
     function closeDevisSheet() {
       if (!devisSheet) return;
-
-      // Ferme la sheet
       devisSheet.classList.remove("is-open");
-
-      // --- FAB états (mode manuel) ---
       if (isManualQuote && !quoteSubmitted) {
         const sel = window.currentLogementSelection;
-        if (sel && sel.arrival && sel.departure) {
-          // L’utilisateur a choisi des dates puis refermé → confirmer
-          setFabConfirmLabel();
-        } else {
-          // Aucune plage choisie → label de base
-          setFabBaseLabel();
-        }
+        if (sel && sel.arrival && sel.departure) setFabConfirmLabel();
+        else setFabBaseLabel();
       }
-
-      // Débloque le scroll
       document.body.style.overflow = "";
-
-      // Nettoyages optionnels si présents dans ton code
-      if (devisBackdrop) devisBackdrop.classList.add("is-hidden");
-      if (devisTrigger) devisTrigger.setAttribute("aria-expanded", "false");
     }
     function openContactModal() {
       if (!contactModal) return;
@@ -165,9 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
       contactModal.classList.remove("is-hidden");
       document.body.style.overflow = "hidden";
       const prenomInput = contactModal.querySelector('input[name="prenom"]');
-      if (prenomInput) {
-        setTimeout(() => prenomInput.focus(), 50);
-      }
+      if (prenomInput) setTimeout(() => prenomInput.focus(), 50);
     }
     function closeContactModal() {
       if (!contactModal || !form) return;
@@ -183,7 +153,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    // --- PARTIE 5 : MISE À JOUR DES PRIX ET INFOS ---
     function formatCurrency(num) {
       num = Number(num) || 0;
       const formatted = new Intl.NumberFormat("fr-FR", {
@@ -195,16 +164,13 @@ document.addEventListener("DOMContentLoaded", function () {
         : formatted;
     }
     function updateFabText() {
-      // En mode manuel, on n’écrase pas le label depuis ici.
       if (isManualQuote) return;
-
       if (!fabPriceDisplay) return;
       if (
         fabPriceDisplay.textContent === "Merci ! 🌴" ||
         fabPriceDisplay.textContent === "Redirection..."
       )
         return;
-
       const total = window.currentLogementTotal;
       if (typeof total !== "undefined" && total > 0) {
         fabPriceDisplay.textContent =
@@ -213,6 +179,8 @@ document.addEventListener("DOMContentLoaded", function () {
         fabPriceDisplay.innerHTML = initialFabHTML;
       }
     }
+
+    // --------- CORRIGÉ : remplit toujours les inputs cachés + texte récap ----------
     function updateModalInfo() {
       if (!contactModal) return;
       const modalSummary = document.getElementById(
@@ -222,9 +190,54 @@ document.addEventListener("DOMContentLoaded", function () {
         "modal-quote-details-hidden-logement"
       );
       if (!modalSummary || !modalHiddenDetails) return;
+
+      const sel = window.currentLogementSelection || null;
       const total = window.currentLogementTotal;
       const lines = window.currentLogementLines;
+
+      const ensureHidden = (name) => {
+        let input = form ? form.querySelector(`input[name="${name}"]`) : null;
+        if (!input && form) {
+          input = document.createElement("input");
+          input.type = "hidden";
+          input.name = name;
+          form.appendChild(input);
+        }
+        return input;
+      };
+      const hArrival = ensureHidden("arrival");
+      const hDeparture = ensureHidden("departure");
+      const hNights = ensureHidden("nights");
+      const hAdults = ensureHidden("adults");
+      const hChildren = ensureHidden("children");
+      const hInfants = ensureHidden("infants");
+      const hManual = ensureHidden("manual_quote");
+
+      if (sel) {
+        const arrival = sel.arrival || "";
+        const departure = sel.departure || "";
+        const nights =
+          arrival && departure
+            ? Math.max(
+                0,
+                Math.ceil((new Date(departure) - new Date(arrival)) / 86400000)
+              )
+            : 0;
+        const adults = parseInt(sel.adults || 0, 10);
+        const children = parseInt(sel.children || 0, 10);
+        const infants = parseInt(sel.infants || 0, 10);
+
+        if (hArrival) hArrival.value = arrival;
+        if (hDeparture) hDeparture.value = departure;
+        if (hNights) hNights.value = String(nights);
+        if (hAdults) hAdults.value = String(adults);
+        if (hChildren) hChildren.value = String(children);
+        if (hInfants) hInfants.value = String(infants);
+        if (hManual) hManual.value = isManualQuote ? "1" : "0";
+      }
+
       if (
+        !isManualQuote &&
         typeof total !== "undefined" &&
         total > 0 &&
         lines &&
@@ -243,17 +256,37 @@ document.addEventListener("DOMContentLoaded", function () {
         modalSummary.innerHTML = summaryHTML;
         modalHiddenDetails.value = detailsText;
       } else {
-        modalSummary.innerHTML =
-          "<p>Veuillez d'abord faire une simulation avec le calculateur.</p>";
-        modalHiddenDetails.value =
-          "Aucune simulation de devis n'a été effectuée.";
+        if (sel && sel.arrival && sel.departure) {
+          const nights = hNights ? hNights.value : "";
+          const recap = [
+            "EN ATTENTE DE DEVIS PERSONNALISÉ",
+            `Période : ${sel.arrival
+              .split("-")
+              .reverse()
+              .join("/")} → ${sel.departure.split("-").reverse().join("/")}`,
+            `Voyageurs : ${sel.adults || 0} adultes, ${
+              sel.children || 0
+            } enfants, ${sel.infants || 0} bébés`,
+            nights ? `Nuits : ${nights}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n");
+          modalSummary.innerHTML = `<pre class="pcq-manual-recap">${recap.replace(
+            /\n/g,
+            "<br>"
+          )}</pre>`;
+          modalHiddenDetails.value = recap;
+        } else {
+          modalSummary.innerHTML = "<p>Choisissez vos dates</p>";
+          modalHiddenDetails.value =
+            "Aucune simulation de devis n'a été effectuée.";
+        }
       }
     }
+    // ------------------------------------------------------------------------------
 
-    // --- PARTIE 6 : GESTION DES FLUX DE RÉSERVATION ---
     function handleLodgifyRedirect() {
       if (isManualQuote) {
-        // Ouvre simplement la modale de contact locale
         closeDevisSheet();
         openContactModal();
         return;
@@ -281,7 +314,6 @@ document.addEventListener("DOMContentLoaded", function () {
           devisErrorMsg.textContent = errorMessage;
           devisErrorMsg.classList.add("is-visible");
           if (devisSource) {
-            /* Vibreur */
             devisSource.style.transition = "transform 0.1s ease-in-out";
             devisSource.style.transform = "translateX(-10px)";
             setTimeout(() => {
@@ -302,26 +334,21 @@ document.addEventListener("DOMContentLoaded", function () {
         const baseUrl = "https://checkout.lodgify.com/fr/";
         const adults = parseInt(selection.adults, 10) || 0;
         const children = parseInt(selection.children, 10) || 0;
-        // --- CORRECTION BUG BÉBÉ ---
-        // Assure-toi que selection.infants existe et est un nombre avant parseInt
         const infants =
-          selection.infants !== null && typeof selection.infants !== "undefined"
-            ? parseInt(selection.infants, 10) || 0
-            : 0;
+          selection.infants != null ? parseInt(selection.infants, 10) || 0 : 0;
 
         const url = `${baseUrl}${cfg.lodgifyAccount}/${cfg.lodgifyId}/contact?currency=EUR&arrival=${selection.arrival}&departure=${selection.departure}&adults=${adults}&children=${children}&infants=${infants}`;
 
         const newWindow = window.open(url, "_blank");
-        if (
-          !newWindow ||
-          newWindow.closed ||
-          typeof newWindow.closed == "undefined"
-        ) {
+        // N'affiche l'alerte qu'en cas d'échec manifeste (null)
+        if (!newWindow) {
           alert(
             "Votre navigateur a peut-être bloqué l'ouverture de la page de réservation. Veuillez autoriser les popups pour ce site."
           );
         }
+        // Ferme la sheet quelle que soit l'issue
         closeDevisSheet();
+
         if (fabPriceDisplay) {
           fabPriceDisplay.textContent = "Redirection...";
           setTimeout(() => {
@@ -334,7 +361,7 @@ document.addEventListener("DOMContentLoaded", function () {
           }, 4000);
         }
       } catch (e) {
-        console.error("[Logement JS] Erreur URL Lodgify:", e); // Garde ce log en cas d'erreur
+        console.error("[Logement JS] Erreur URL Lodgify:", e);
         alert(
           "Une erreur est survenue lors de la tentative de redirection vers la réservation."
         );
@@ -344,7 +371,6 @@ document.addEventListener("DOMContentLoaded", function () {
     function handleBookingRequest(ev) {
       if (ev) ev.preventDefault();
 
-      // Récupère la section de devis la plus proche du bouton (robuste si plusieurs blocs)
       const btn = ev && ev.currentTarget ? ev.currentTarget : null;
       const section = btn
         ? btn.closest(".pc-booking-sheet")?.querySelector(".pc-devis-section")
@@ -357,35 +383,28 @@ document.addEventListener("DOMContentLoaded", function () {
       const cfg = JSON.parse(section.getAttribute("data-pc-devis") || "{}");
       const isManual = !!cfg.manualQuote;
 
-      // Sélection actuelle (posée par pc-devis.js)
       const sel = window.currentLogementSelection;
 
-      // Localise la zone message de CE devis (id dynamique)
       const id = section.id || "pc-devis";
       const msgBox = document.getElementById(id + "-msg");
 
-      // Dates obligatoires dans tous les cas
       const hasRange = !!(sel && sel.arrival && sel.departure);
       if (!hasRange) {
         if (msgBox) {
           msgBox.textContent = "Choisissez vos dates";
           msgBox.classList.add("is-visible");
-        } else {
-          alert("Choisissez vos dates");
-        }
+        } else alert("Choisissez vos dates");
         return;
       }
 
-      // Mode manuel : on ouvre direct la modale interne
       if (isManual) {
         if (msgBox) msgBox.classList.remove("is-visible");
-        updateModalInfo(); // garde tes infos dates/voyageurs
+        updateModalInfo();
         closeDevisSheet();
         openContactModal();
         return;
       }
 
-      // Mode normal : il faut une simulation valide (total > 0)
       const hasValidSimulation =
         typeof window.currentLogementTotal !== "undefined" &&
         window.currentLogementTotal > 0;
@@ -400,9 +419,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (msgBox) {
           msgBox.textContent = errorMessage;
           msgBox.classList.add("is-visible");
-        } else {
-          alert(errorMessage);
-        }
+        } else alert(errorMessage);
       }
     }
 
@@ -435,6 +452,25 @@ document.addEventListener("DOMContentLoaded", function () {
           formData.append("adultes", adultsInput ? adultsInput.value : "0");
           formData.append("enfants", childrenInput ? childrenInput.value : "0");
           formData.append("bebes", infantsInput ? infantsInput.value : "0");
+
+          // Ajoute toujours les métadonnées de sélection pour le mail
+          const ss = window.currentLogementSelection || {};
+          if (ss.arrival) formData.append("arrival", ss.arrival);
+          if (ss.departure) formData.append("departure", ss.departure);
+          const nn =
+            ss.arrival && ss.departure
+              ? Math.max(
+                  0,
+                  Math.ceil(
+                    (new Date(ss.departure) - new Date(ss.arrival)) / 86400000
+                  )
+                )
+              : 0;
+          formData.append("nights", String(nn));
+          formData.append("adults", String(parseInt(ss.adults || 0, 10)));
+          formData.append("children", String(parseInt(ss.children || 0, 10)));
+          formData.append("infants", String(parseInt(ss.infants || 0, 10)));
+          formData.append("manual_quote", isManualQuote ? "1" : "0");
         }
 
         fetch(form.getAttribute("action"), { method: "POST", body: formData })
@@ -455,7 +491,10 @@ document.addEventListener("DOMContentLoaded", function () {
               const closeBtn =
                 successMessage.querySelector("[data-close-modal]");
               if (closeBtn)
-                closeBtn.addEventListener("click", closeContactModal);
+                closeBtn.addEventListener("click", function () {
+                  closeContactModal();
+                  closeDevisSheet();
+                });
             } else {
               alert(
                 "Erreur : " +
@@ -466,7 +505,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           })
           .catch((error) => {
-            console.error("Erreur Fetch:", error); // Garde ce log en cas d'erreur
+            console.error("Erreur Fetch:", error);
             alert("Une erreur technique est survenue.");
             submitBtn.textContent = originalBtnText;
             submitBtn.disabled = false;
@@ -479,7 +518,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    // --- PARTIE 7 : ÉCOUTEURS D'ÉVÉNEMENTS GLOBAUX ---
     if (fab) fab.addEventListener("click", openDevisSheet);
     if (closeSheetTriggers)
       closeSheetTriggers.forEach((trigger) =>
@@ -503,12 +541,11 @@ document.addEventListener("DOMContentLoaded", function () {
           closeDevisSheet();
       }
     });
-  } // Fin de initializeBookingLogic
+  }
 
-  // --- Lancer l'initialisation ---
   if (devisMoved) {
     setTimeout(initializeBookingLogic, 50);
   } else {
     initializeBookingLogic();
   }
-}); // Fin de DOMContentLoaded
+});
