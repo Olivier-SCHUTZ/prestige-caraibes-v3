@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Prestige Caraïbes — Types de Contenu (CPT)
  * Description: Déclare les CPT Logements (Villa/Appartement) et la taxonomie Catégories.
@@ -6,7 +7,7 @@
  * Version: 3.3
  */
 
-if ( ! defined('ABSPATH') ) exit;
+if (! defined('ABSPATH')) exit;
 
 /**
  * ==================================================================
@@ -29,7 +30,7 @@ add_action('init', function () {
         'new_item_name'     => 'Nouvelle catégorie',
         'menu_name'         => 'Catégories',
     ];
-    register_taxonomy('categorie_logement', ['villa','appartement'], [
+    register_taxonomy('categorie_logement', ['villa', 'appartement'], [
         'hierarchical'      => true,
         'labels'            => $tax_labels,
         'show_ui'           => true,
@@ -62,7 +63,7 @@ add_action('init', function () {
         'show_in_menu'       => true, // menu principal
         'menu_position'      => 25,
         'menu_icon'          => 'dashicons-admin-multisite',
-        'supports'           => ['title','editor','thumbnail','custom-fields','revisions'],
+        'supports'           => ['title', 'editor', 'thumbnail', 'custom-fields', 'revisions'],
         'has_archive'        => false,
         'rewrite'            => ['slug' => 'location-villa'],
         'taxonomies'         => ['categorie_logement'],
@@ -94,7 +95,7 @@ add_action('init', function () {
         'show_ui'            => true,
         // ➜ Sous le menu "Logements" (CPT villa)
         'show_in_menu'       => 'edit.php?post_type=villa',
-        'supports'           => ['title','editor','thumbnail','custom-fields','revisions'],
+        'supports'           => ['title', 'editor', 'thumbnail', 'custom-fields', 'revisions'],
         'has_archive'        => false,
         'rewrite'            => ['slug' => 'location-appartement'],
         'taxonomies'         => ['categorie_logement'],
@@ -126,7 +127,7 @@ add_action('init', function () {
         'show_in_menu'       => true, // Menu principal indépendant
         'menu_position'      => 26,   // Juste après "Logements"
         'menu_icon'          => 'dashicons-palmtree',
-        'supports'           => ['title','editor','thumbnail','custom-fields','revisions'],
+        'supports'           => ['title', 'editor', 'thumbnail', 'custom-fields', 'revisions'],
         'has_archive'        => true, // Utile pour une page listant toutes les expériences
         'rewrite'            => ['slug' => 'experience'],
         'taxonomies'         => ['categorie_experience'],
@@ -158,35 +159,34 @@ add_action('init', function () {
         'rewrite'           => ['slug' => 'categorie-experience'],
         'show_in_rest'      => true,
     ]);
-
 }, 0);
 
 // === CPT: destination (Ville) — AJOUTER sans supprimer le reste
-add_action('init', function(){
-  if (post_type_exists('destination')) return;
-  register_post_type('destination', [
-    'label' => 'Destinations',
-    'labels' => [
-      'singular_name' => 'Destination',
-      'add_new' => 'Ajouter',
-      'add_new_item' => 'Ajouter une destination',
-      'edit_item' => 'Modifier la destination',
-      'new_item' => 'Nouvelle destination',
-      'view_item' => 'Voir la destination',
-      'search_items' => 'Rechercher des destinations',
-      'not_found' => 'Aucune destination',
-      'not_found_in_trash' => 'Aucune destination dans la corbeille',
-      'all_items' => 'Toutes les destinations',
-      'menu_name' => 'Destinations',
-    ],
-    'public' => true,
-    'has_archive' => false, // Option A validée
-    'rewrite' => ['slug' => 'destinations', 'with_front' => false],
-    'show_in_rest' => true,
-    'supports' => ['title','editor','thumbnail','excerpt','revisions'],
-    'menu_position' => 20,
-    'menu_icon' => 'dashicons-location',
-  ]);
+add_action('init', function () {
+    if (post_type_exists('destination')) return;
+    register_post_type('destination', [
+        'label' => 'Destinations',
+        'labels' => [
+            'singular_name' => 'Destination',
+            'add_new' => 'Ajouter',
+            'add_new_item' => 'Ajouter une destination',
+            'edit_item' => 'Modifier la destination',
+            'new_item' => 'Nouvelle destination',
+            'view_item' => 'Voir la destination',
+            'search_items' => 'Rechercher des destinations',
+            'not_found' => 'Aucune destination',
+            'not_found_in_trash' => 'Aucune destination dans la corbeille',
+            'all_items' => 'Toutes les destinations',
+            'menu_name' => 'Destinations',
+        ],
+        'public' => true,
+        'has_archive' => false, // Option A validée
+        'rewrite' => ['slug' => 'destinations', 'with_front' => false],
+        'show_in_rest' => true,
+        'supports' => ['title', 'editor', 'thumbnail', 'excerpt', 'revisions'],
+        'menu_position' => 20,
+        'menu_icon' => 'dashicons-location',
+    ]);
 }, 9);
 
 
@@ -205,3 +205,98 @@ add_action('admin_menu', function () {
         'edit-tags.php?taxonomy=categorie_logement&post_type=villa'
     );
 }, 99);
+
+/* ==================================================================
+ * MIGRATION TARIFS -> exp_tarifs_lignes (one-shot, sécurisé)
+ * Lance via /wp-admin/?pc_migrate_tarifs=1&_wpnonce=xxxx
+ * ================================================================== */
+add_action('admin_init', function () {
+    if (! current_user_can('manage_options')) return;
+
+    // Déclenchement sécurisé (ex: /wp-admin/?pc_migrate_tarifs=1&_wpnonce=xxxxx)
+    $nonce_ok = isset($_GET['pc_migrate_tarifs']) && isset($_GET['_wpnonce']) && wp_verify_nonce($_GET['_wpnonce'], 'pc_migrate_tarifs');
+    if (! $nonce_ok) return;
+
+    $q = new WP_Query([
+        'post_type'      => 'experience',
+        'posts_per_page' => -1,
+        'post_status'    => ['publish', 'draft', 'pending', 'future', 'private']
+    ]);
+
+    $migrated = 0;
+    $skipped = 0;
+
+    if ($q->have_posts()) {
+        while ($q->have_posts()) {
+            $q->the_post();
+            $post_id = get_the_ID();
+
+            if (! function_exists('get_field') || ! have_rows('exp_types_de_tarifs', $post_id)) {
+                $skipped++;
+                continue;
+            }
+
+            $rows = (array) get_field('exp_types_de_tarifs', $post_id);
+            $updated_rows = [];
+
+            foreach ($rows as $row) {
+                // Si déjà migré (des lignes existent), on touche pas
+                if (! empty($row['exp_tarifs_lignes'])) {
+                    $updated_rows[] = $row;
+                    continue;
+                }
+
+                $new_lines = [];
+
+                // Adulte
+                if ($row['exp_tarif_adulte'] !== '' && $row['exp_tarif_adulte'] !== null) {
+                    $new_lines[] = [
+                        'type_ligne'           => 'adulte',
+                        'tarif_valeur'         => (float)$row['exp_tarif_adulte'],
+                        'precision_age_enfant' => '',
+                        'precision_age_bebe'   => '',
+                        'tarif_nom_perso'      => '',
+                        'tarif_observation'    => ''
+                    ];
+                }
+
+                // Enfant
+                if ($row['exp_tarif_enfant'] !== '' && $row['exp_tarif_enfant'] !== null) {
+                    $new_lines[] = [
+                        'type_ligne'           => 'enfant',
+                        'tarif_valeur'         => (float)$row['exp_tarif_enfant'],
+                        'precision_age_enfant' => (string)($row['exp_precision_age_enfant'] ?? ''),
+                        'precision_age_bebe'   => '',
+                        'tarif_nom_perso'      => '',
+                        'tarif_observation'    => ''
+                    ];
+                }
+
+                // Bébé
+                if ($row['exp_tarif_bebe'] !== '' && $row['exp_tarif_bebe'] !== null) {
+                    $new_lines[] = [
+                        'type_ligne'           => 'bebe',
+                        'tarif_valeur'         => (float)$row['exp_tarif_bebe'], // 0 = Gratuit
+                        'precision_age_enfant' => '',
+                        'precision_age_bebe'   => (string)($row['exp_precision_age_bebe'] ?? ''),
+                        'tarif_nom_perso'      => '',
+                        'tarif_observation'    => ''
+                    ];
+                }
+
+                $row['exp_tarifs_lignes'] = $new_lines;
+                $updated_rows[] = $row;
+            }
+
+            update_field('exp_types_de_tarifs', $updated_rows, $post_id);
+            $migrated++;
+        }
+        wp_reset_postdata();
+    }
+
+    add_action('admin_notices', function () use ($migrated, $skipped) {
+        echo '<div class="notice notice-success"><p><strong>Migration tarifs :</strong> '
+            . esc_html($migrated) . ' expérience(s) traitée(s), '
+            . esc_html($skipped) . ' sans lignes de tarifs.</p></div>';
+    });
+});

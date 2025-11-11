@@ -1138,7 +1138,8 @@
                         "journee": "Journée",
                         "demi-journee": "Demi-journée",
                         "unique": "Unique \/ Forfaitaire",
-                        "sur-devis": "Sur devis"
+                        "sur-devis": "Sur devis",
+                        "custom": "Autre (personnalisé)"
                     },
                     "default_value": false,
                     "return_format": "value",
@@ -1150,6 +1151,36 @@
                     "placeholder": "",
                     "create_options": 0,
                     "save_options": 0,
+                    "parent_repeater": "field_66dcceddd1136"
+                },
+                {
+                    "key": "field_690fbd8e6aff8",
+                    "label": "Libellé personnalisé",
+                    "name": "exp_type_custom",
+                    "aria-label": "",
+                    "type": "text",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_66dccf34d1137",
+                                "operator": "==",
+                                "value": "custom"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": 60,
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "prepend": "",
+                    "append": "",
                     "parent_repeater": "field_66dcceddd1136"
                 },
                 {
@@ -1288,6 +1319,7 @@
                     "collapsed": "",
                     "button_label": "Ajouter une option",
                     "rows_per_page": 20,
+                    "parent_repeater": "field_66dcceddd1136",
                     "sub_fields": [
                         {
                             "key": "field_66dcd20ad113e",
@@ -1334,6 +1366,249 @@
                             "prepend": "€",
                             "append": "",
                             "parent_repeater": "field_66dcd1a0d113d"
+                        },
+                        {
+                            "key": "field_6911dd3a636a5",
+                            "label": "Ajouter un champ Quantité ?",
+                            "name": "option_enable_qty",
+                            "aria-label": "",
+                            "type": "true_false",
+                            "instructions": "",
+                            "required": 0,
+                            "conditional_logic": 0,
+                            "wrapper": {
+                                "width": "20",
+                                "class": "",
+                                "id": ""
+                            },
+                            "message": "",
+                            "default_value": 0,
+                            "allow_in_bindings": 0,
+                            "ui_on_text": "Oui",
+                            "ui_off_text": "",
+                            "ui": 1,
+                            "parent_repeater": "field_66dcd1a0d113d"
+                        }
+                    ]
+                },
+                {
+                    "key": "field_6911d4141ac38",
+                    "label": "Lignes de tarifs",
+                    "name": "exp_tarifs_lignes",
+                    "aria-label": "",
+                    "type": "repeater",
+                    "instructions": "Définissez les lignes de tarifs pour ce type (ordre = affichage). Remplace les tarifs de base si renseigné.",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "layout": "row",
+                    "min": 0,
+                    "max": 0,
+                    "collapsed": "",
+                    "button_label": "+ Ajouter une ligne",
+                    "rows_per_page": 20,
+                    "sub_fields": [
+                        {
+                            "key": "field_6911d6131ac39",
+                            "label": "Type de ligne",
+                            "name": "type_ligne",
+                            "aria-label": "",
+                            "type": "select",
+                            "instructions": "",
+                            "required": 0,
+                            "conditional_logic": 0,
+                            "wrapper": {
+                                "width": "",
+                                "class": "",
+                                "id": ""
+                            },
+                            "choices": {
+                                "adulte": "Adulte",
+                                "enfant": "Enfant",
+                                "bebe": "Bébé",
+                                "personnalise": "Personnalisé \/ Forfait"
+                            },
+                            "default_value": "personnalise",
+                            "return_format": "value",
+                            "multiple": 0,
+                            "allow_null": 0,
+                            "allow_in_bindings": 0,
+                            "ui": 1,
+                            "ajax": 0,
+                            "placeholder": "",
+                            "create_options": 0,
+                            "save_options": 0,
+                            "parent_repeater": "field_6911d4141ac38"
+                        },
+                        {
+                            "key": "field_6911d7821ac3a",
+                            "label": "Tarif",
+                            "name": "tarif_valeur",
+                            "aria-label": "",
+                            "type": "number",
+                            "instructions": "Montant en € (0 = Gratuit).",
+                            "required": 1,
+                            "conditional_logic": 0,
+                            "wrapper": {
+                                "width": "25",
+                                "class": "",
+                                "id": ""
+                            },
+                            "default_value": "",
+                            "min": 0,
+                            "max": "",
+                            "allow_in_bindings": 0,
+                            "placeholder": "",
+                            "step": "0.01",
+                            "prepend": "€",
+                            "append": "",
+                            "parent_repeater": "field_6911d4141ac38"
+                        },
+                        {
+                            "key": "field_6911d9851ac3b",
+                            "label": "Ajouter un champ Quantité ?",
+                            "name": "tarif_enable_qty",
+                            "aria-label": "",
+                            "type": "true_false",
+                            "instructions": "",
+                            "required": 0,
+                            "conditional_logic": [
+                                [
+                                    {
+                                        "field": "field_6911d6131ac39",
+                                        "operator": "==",
+                                        "value": "personnalise"
+                                    }
+                                ]
+                            ],
+                            "wrapper": {
+                                "width": "25",
+                                "class": "",
+                                "id": ""
+                            },
+                            "message": "Cochez pour permettre de choisir une quantité pour ce tarif personnalisé dans la demande de devis.",
+                            "default_value": 0,
+                            "allow_in_bindings": 0,
+                            "ui_on_text": "Oui",
+                            "ui_off_text": "",
+                            "ui": 1,
+                            "parent_repeater": "field_6911d4141ac38"
+                        },
+                        {
+                            "key": "field_6911dae01ac3c",
+                            "label": "Précision Âge Enfant",
+                            "name": "precision_age_enfant",
+                            "aria-label": "",
+                            "type": "text",
+                            "instructions": "",
+                            "required": 0,
+                            "conditional_logic": [
+                                [
+                                    {
+                                        "field": "field_6911d6131ac39",
+                                        "operator": "==",
+                                        "value": "enfant"
+                                    }
+                                ]
+                            ],
+                            "wrapper": {
+                                "width": "25",
+                                "class": "",
+                                "id": ""
+                            },
+                            "default_value": "",
+                            "maxlength": "",
+                            "allow_in_bindings": 0,
+                            "placeholder": "Ex: 3 à 12 ans",
+                            "prepend": "",
+                            "append": "",
+                            "parent_repeater": "field_6911d4141ac38"
+                        },
+                        {
+                            "key": "field_6911dbb41ac3d",
+                            "label": "Précision Âge Bébé",
+                            "name": "precision_age_bebe",
+                            "aria-label": "",
+                            "type": "text",
+                            "instructions": "",
+                            "required": 0,
+                            "conditional_logic": [
+                                [
+                                    {
+                                        "field": "field_6911d6131ac39",
+                                        "operator": "==",
+                                        "value": "bebe"
+                                    }
+                                ]
+                            ],
+                            "wrapper": {
+                                "width": "25",
+                                "class": "",
+                                "id": ""
+                            },
+                            "default_value": "",
+                            "maxlength": "",
+                            "allow_in_bindings": 0,
+                            "placeholder": "Ex: Moins de 3 ans",
+                            "prepend": "",
+                            "append": "",
+                            "parent_repeater": "field_6911d4141ac38"
+                        },
+                        {
+                            "key": "field_6911dc051ac3e",
+                            "label": "Nom du tarif (perso)",
+                            "name": "tarif_nom_perso",
+                            "aria-label": "",
+                            "type": "text",
+                            "instructions": "",
+                            "required": 0,
+                            "conditional_logic": [
+                                [
+                                    {
+                                        "field": "field_6911d6131ac39",
+                                        "operator": "==",
+                                        "value": "personnalise"
+                                    }
+                                ]
+                            ],
+                            "wrapper": {
+                                "width": "50",
+                                "class": "",
+                                "id": ""
+                            },
+                            "default_value": "",
+                            "maxlength": 120,
+                            "allow_in_bindings": 0,
+                            "placeholder": "Ex : Privatisation, Photographe, etc.",
+                            "prepend": "",
+                            "append": "",
+                            "parent_repeater": "field_6911d4141ac38"
+                        },
+                        {
+                            "key": "field_6911dc931ac3f",
+                            "label": "Observation",
+                            "name": "tarif_observation",
+                            "aria-label": "",
+                            "type": "textarea",
+                            "instructions": "Note affichée sous la ligne (ex : jusqu’à 12 pers).",
+                            "required": 0,
+                            "conditional_logic": 0,
+                            "wrapper": {
+                                "width": "",
+                                "class": "",
+                                "id": ""
+                            },
+                            "default_value": "",
+                            "maxlength": "",
+                            "allow_in_bindings": 0,
+                            "rows": 2,
+                            "placeholder": "",
+                            "new_lines": "br",
+                            "parent_repeater": "field_6911d4141ac38"
                         }
                     ],
                     "parent_repeater": "field_66dcceddd1136"
@@ -1361,5 +1636,6 @@
     "active": true,
     "description": "",
     "show_in_rest": 0,
-    "modified": 1759336903
+    "display_title": "",
+    "modified": 1762780180
 }

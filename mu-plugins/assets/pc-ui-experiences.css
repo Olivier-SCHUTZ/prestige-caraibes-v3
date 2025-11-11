@@ -5,12 +5,12 @@
 .exp-desc-box {
   /* Variables par défaut, peuvent être surchargées par le shortcode */
   --exp-desc-max: 250px;
-  --exp-desc-bg: #F9F9F9; /* Couleur de fond de la page/section */
+  --exp-desc-bg: #f9f9f9; /* Couleur de fond de la page/section */
   --exp-desc-fsize: 1.125rem;
   --exp-desc-lh: 1.6em;
   --exp-desc-btn-h: 40px;
   --exp-desc-btn-gap: 12px;
-  
+
   position: relative;
   font-family: var(--pc-font-body);
   color: var(--pc-color-text);
@@ -26,7 +26,7 @@
 }
 
 .exp-desc__content > *:first-child {
-    margin-top: 0;
+  margin-top: 0;
 }
 
 /* Le dégradé pour l'effet de fondu */
@@ -36,7 +36,11 @@
   right: 0;
   bottom: calc(var(--exp-desc-btn-h) + var(--exp-desc-btn-gap));
   height: 72px;
-  background: linear-gradient(to bottom, transparent 0%, var(--exp-desc-bg) 95%);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--exp-desc-bg) 95%
+  );
   pointer-events: none;
   transition: opacity 0.3s;
 }
@@ -84,7 +88,7 @@
   display: grid;
   gap: 1rem;
   /* Grille explicite : 3 colonnes sur desktop */
-  grid-template-columns: repeat(3, 1fr); 
+  grid-template-columns: repeat(3, 1fr);
 }
 
 /* Sur tablette, on passe à 2 colonnes */
@@ -105,7 +109,7 @@
   margin: 0;
   border-radius: var(--pc-radius, 10px);
   overflow: hidden;
-  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   aspect-ratio: 16/10; /* Garde un format 16:9 ou similaire */
 }
 
@@ -134,7 +138,7 @@
 .exp-map-wrap {
   border-radius: var(--pc-radius, 10px);
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0,0,0,.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   position: relative;
   z-index: 1; /* Pour s'assurer qu'elle est bien positionnée par rapport aux autres éléments */
 }
@@ -192,7 +196,7 @@
   padding-left: 1.5em;
 }
 .exp-summary-data li::before {
-  content: '•';
+  content: "•";
   position: absolute;
   left: 0;
   color: var(--pc-color-primary);
@@ -206,7 +210,6 @@
 .exp-summary-data p:last-child {
   margin-bottom: 0;
 }
-
 
 /* Responsive pour les mobiles */
 @media (max-width: 767px) {
@@ -233,10 +236,10 @@
 }
 
 .exp-pricing-card {
-  background: #FFFFFF;
+  background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: var(--pc-radius, 10px);
-  box-shadow: 0 4px 12px rgba(0,0,0,.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   overflow: hidden; /* Pour que le header respecte le border-radius */
 }
 
@@ -285,10 +288,10 @@
 }
 
 .exp-pricing-row.on-demand {
-    justify-content: center;
-    font-style: italic;
-    font-size: 1.1rem;
-    padding: 1rem 0;
+  justify-content: center;
+  font-style: italic;
+  font-size: 1.1rem;
+  padding: 1rem 0;
 }
 
 .exp-pricing-options {
@@ -353,6 +356,20 @@
   font-size: 16px !important;
 }
 
+/* Champ quantité des options → même style que A/E/B */
+.exp-devis-checkbox input[type="number"] {
+  /* mêmes bases que .exp-devis-field input */
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px !important;
+
+  /* adaptés au contexte des options */
+  width: 80px; /* largeur compacte */
+  text-align: center;
+  margin-left: 0.5rem; /* petit espace après le label */
+}
+
 .exp-devis-options {
   margin-bottom: 1.5rem;
 }
@@ -369,7 +386,7 @@
   gap: 0.75rem;
   margin-bottom: 0.5rem;
 }
-.exp-devis-checkbox input {
+.exp-devis-checkbox input[type="checkbox"] {
   width: 1.25em;
   height: 1.25em;
 }
@@ -397,11 +414,11 @@
   border-bottom: 1px solid #f0f0f0;
 }
 .exp-devis-result li.separator {
-    font-weight: bold;
-    margin-top: 0.5rem;
+  font-weight: bold;
+  margin-top: 0.5rem;
 }
 .exp-devis-result li.error {
-    color: #c0392b;
+  color: #c0392b;
 }
 
 .exp-devis-result .exp-result-total {
@@ -422,7 +439,7 @@
 }
 
 .exp-devis-actions .pc-btn i {
-    margin-right: 0.5rem; /* Espace entre l'icône et le texte */
+  margin-right: 0.5rem; /* Espace entre l'icône et le texte */
 }
 
 /* ============================================================
@@ -479,10 +496,10 @@
 }
 
 .exp-inclusions-content p {
-    margin: 0 0 0.5em 0;
+  margin: 0 0 0.5em 0;
 }
 .exp-inclusions-content p:last-child {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 .exp-inclusions-content ul {
@@ -498,7 +515,7 @@
 }
 
 .exp-inclusions-content li::before {
-  content: '✓'; /* Vous pouvez changer l'icône ici, ex: '→' ou '•' */
+  content: "✓"; /* Vous pouvez changer l'icône ici, ex: '→' ou '•' */
   position: absolute;
   left: 0;
   top: 0;
@@ -530,16 +547,16 @@
 }
 
 .exp-reco-card {
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: var(--pc-radius, 10px);
-  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
 }
 
 .exp-reco-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 12px 30px rgba(0,0,0,.12);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
 }
 
 .exp-reco-card-link {
@@ -604,7 +621,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   cursor: pointer;
 }
 
@@ -631,7 +648,9 @@
   cursor: pointer;
   color: #888;
 }
-.exp-booking-modal__close:hover { color: #333; }
+.exp-booking-modal__close:hover {
+  color: #333;
+}
 
 .exp-booking-modal__title {
   font-family: var(--pc-font-title);
@@ -650,38 +669,72 @@
   margin-left: -0.5rem;
 }
 
-#modal-quote-summary ul { list-style: none; padding: 0; margin: 0; }
-#modal-quote-summary li { display: flex; justify-content: space-between; padding: 0.25rem 0; }
+#modal-quote-summary ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+#modal-quote-summary li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+}
 
 .exp-booking-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
-.exp-booking-field { display: flex; flex-direction: column; }
-.exp-booking-field label { font-weight: 500; margin-bottom: 0.25rem; font-size: 0.9rem; }
+.exp-booking-field {
+  display: flex;
+  flex-direction: column;
+}
+.exp-booking-field label {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
 .exp-booking-field input,
-.exp-booking-field textarea { 
-  width: 100%; 
-  padding: 0.6rem; 
-  border: 1px solid #ccc; 
+.exp-booking-field textarea {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
   border-radius: 6px;
   font-family: var(--pc-font-body);
   font-size: 16px !important;
 }
 
-.exp-booking-radio-group { display: flex; gap: 1.5rem; }
-.exp-booking-radio-group label { display: flex; align-items: center; gap: 0.5rem; }
-
-.exp-booking-modal__actions { margin-top: 1.5rem; }
-.exp-booking-disclaimer { font-size: 0.85rem; opacity: 0.7; margin: 0 0 1rem 0; text-align: center; }
-.exp-booking-modal__actions .pc-btn { width: 100%; }
-
-@media (max-width: 767px) {
-  .exp-booking-modal__content { padding: 1.5rem; }
-  .exp-booking-form-grid { grid-template-columns: 1fr; }
+.exp-booking-radio-group {
+  display: flex;
+  gap: 1.5rem;
+}
+.exp-booking-radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
+.exp-booking-modal__actions {
+  margin-top: 1.5rem;
+}
+.exp-booking-disclaimer {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+.exp-booking-modal__actions .pc-btn {
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .exp-booking-modal__content {
+    padding: 1.5rem;
+  }
+  .exp-booking-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* Mise en page des boutons d'action du devis */
 .exp-devis-actions {
@@ -777,7 +830,7 @@
   border: 0;
   color: #0e2b5c;
   /* La taille des icônes est maintenant relative pour une meilleure cohérence */
-  font-size: 1.5rem; 
+  font-size: 1.5rem;
   line-height: 1;
   padding: 6px 8px;
   border-radius: 8px;
@@ -785,7 +838,7 @@
   user-select: none;
 }
 .exp-anchor-arrow:hover {
-  background: rgba(0,0,0,0.06);
+  background: rgba(0, 0, 0, 0.06);
 }
 .exp-anchor-arrow[disabled] {
   opacity: 0.3;
@@ -800,7 +853,7 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-.exp-anchor-scroller::-webkit-scrollbar { 
+.exp-anchor-scroller::-webkit-scrollbar {
   display: none;
 }
 
@@ -818,7 +871,7 @@
   text-decoration: none;
   color: #0e2b5c;
   transition: background-color 0.2s ease, color 0.2s ease;
-  
+
   /* === MODIFICATIONS CLÉS === */
   /* On utilise tes variables globales pour la police et la taille */
   font-family: var(--pc-font-title);
@@ -826,7 +879,7 @@
   font-weight: 500; /* On garde un poids medium pour la lisibilité */
 }
 .exp-anchor-nav a:hover {
-  background: rgba(0,0,0,0.06);
+  background: rgba(0, 0, 0, 0.06);
 }
 .exp-anchor-nav a.is-active {
   background: #0e2b5c;
@@ -837,7 +890,7 @@
 /* État "sur devis" */
 .exp-price--pending {
   font-style: italic;
-  opacity: .85;
+  opacity: 0.85;
 }
 
 /* ============================================================
@@ -850,7 +903,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 900;
-  
+
   /* Apparence "Pilule" */
   display: inline-flex;
   align-items: center;
@@ -858,28 +911,26 @@
   padding: 0.9rem 1.56rem;
   /* Ajout de la zone de sécurité iOS */
   padding-bottom: calc(0.9rem + env(safe-area-inset-bottom));
-  
+
   border: none;
   border-radius: 50px; /* Bords très arrondis */
   cursor: pointer;
   user-select: none;
-  
+
   /* Couleurs et typo (basées sur .pc-btn--primary) */
-  background: var(--pc-color-primary, #007A92);
-  color: var(--pc-color-btn-text, #FFFFFF);
+  background: var(--pc-color-primary, #007a92);
+  color: var(--pc-color-btn-text, #ffffff);
   font-family: var(--pc-font-body);
   font-size: var(--pc-btn-text-size, 1.125rem);
   font-weight: var(--pc-btn-text-weight, 600);
   line-height: var(--pc-btn-text-lh, 1.3);
   text-decoration: none;
-  
+
   /* Ombre et transitions */
-  box-shadow: 0 8px 24px rgba(0,0,0,.15);
-  transition: background-color .15s ease, 
-              box-shadow .2s ease, 
-              transform .3s ease-in-out,
-              opacity .3s ease-in-out;
-  
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.15s ease, box-shadow 0.2s ease,
+    transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+
   /* État caché par défaut */
   opacity: 0;
   transform: translateX(-50%) translateY(150%); /* Caché en bas */
@@ -888,7 +939,7 @@
 
 .exp-booking-fab:hover {
   background: var(--pc-color-primary-hover, #005f73);
-  box-shadow: 0 10px 30px rgba(0,0,0,.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 /* État visible (contrôlé par JS) */
@@ -907,7 +958,6 @@
   }
 }
 
-
 /* ============================================================
    NOUVEAU : Bottom-Sheet / Modale (Calculateur Devis)
    ============================================================ */
@@ -920,7 +970,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   /* Caché par défaut */
   opacity: 0;
   visibility: hidden;
@@ -931,7 +981,7 @@
 .exp-devis-sheet__overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   cursor: pointer;
 }
 
@@ -939,10 +989,10 @@
 .exp-devis-sheet__content {
   position: relative;
   z-index: 1;
-  background: #FFFFFF;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
-  
+
   /* --- Style MOBILE (Bottom-Sheet par défaut) --- */
   position: absolute;
   bottom: 0;
@@ -950,7 +1000,7 @@
   width: 100%;
   max-height: 85vh; /* 85% de la hauteur de l'écran */
   border-radius: var(--pc-radius, 10px) var(--pc-radius, 10px) 0 0;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
   overflow: hidden; /* Pour les coins arrondis */
 
   /* Animation (caché en bas par défaut) */
@@ -985,7 +1035,9 @@
   color: #888;
   padding: 0.25rem;
 }
-.exp-devis-sheet__close:hover { color: #333; }
+.exp-devis-sheet__close:hover {
+  color: #333;
+}
 
 /* Corps de la sheet (avec scroll) */
 .exp-devis-sheet__body {
@@ -1004,40 +1056,38 @@
   transform: translateY(0);
 }
 
-
 /* --- Style DESKTOP (Modale centrée > 1024px) --- */
 @media (min-width: 1024px) {
   .exp-devis-sheet__content {
     /* Annule le style "bottom-sheet" */
-    position: relative; 
+    position: relative;
     bottom: auto;
     left: auto;
     transform: translateY(0);
-    
+
     /* Style "modale" */
     width: 90%;
     max-width: 600px; /* Identique à la modale de contact */
     max-height: 90vh;
     border-radius: var(--pc-radius, 10px);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   }
-  
+
   .exp-devis-sheet__body {
-     padding: 2rem;
+    padding: 2rem;
   }
-  
+
   /* Animation de la modale desktop (fondu + léger zoom) */
   .exp-devis-sheet__content {
-      transform: scale(0.95);
-      opacity: 0;
-      transition: transform 0.2s ease, opacity 0.2s ease;
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform 0.2s ease, opacity 0.2s ease;
   }
   .exp-devis-sheet.is-open .exp-devis-sheet__content {
-      transform: scale(1);
-      opacity: 1;
+    transform: scale(1);
+    opacity: 1;
   }
 }
-
 
 /* ============================================================
    AJUSTEMENTS : Formulaire de devis (dans la sheet)
@@ -1068,15 +1118,15 @@ l'arrière-plan, les bordures et le padding.
   .exp-devis-sheet__body .exp-devis-form .exp-devis-field:first-child {
     grid-column: 1 / -1; /* Le sélecteur prend toute la largeur */
   }
-  
+
   .exp-devis-sheet__body {
     padding: 1rem;
   }
-  
+
   .exp-devis-sheet__header {
     padding: 1rem;
   }
-  
+
   .exp-devis-sheet__title {
     font-size: 1.1rem;
   }
@@ -1087,17 +1137,16 @@ l'arrière-plan, les bordures et le padding.
    ============================================================ */
 
 @media (min-width: 1024px) {
-  
   /* 1. On définit la position de base sur desktop (quand il est caché) */
   .exp-booking-fab {
     left: 2rem;
     bottom: 2rem;
     padding-bottom: 0.9rem;
-    
+
     /* Annule le centrage (X) mais garde le masquage (Y) */
     transform: translateX(0) translateY(150%);
   }
-  
+
   /* 2. On définit la position VISIBLE avec la bonne spécificité */
   .exp-booking-fab.is-visible {
     /* Annule le centrage (X) ET le masquage (Y) */

@@ -9,6 +9,36 @@
 if (!defined('ABSPATH')) exit;
 
 /**
+ * Helper : résout le libellé du type de tarif (supporte "custom")
+ */
+if (!function_exists('pc_exp_type_label')) {
+    /**
+     * @param array $row     Ligne du répéteur exp_types_de_tarifs
+     * @param array $choices Choices ACF (value => label) du select exp_type
+     */
+    function pc_exp_type_label(array $row, array $choices = []): string
+    {
+        $type_value   = isset($row['exp_type']) ? (string)$row['exp_type'] : '';
+        $custom_label = isset($row['exp_type_custom']) ? trim((string)$row['exp_type_custom']) : '';
+
+        // Cas "Autre (personnalisé)" avec texte saisi
+        if ($type_value === 'custom' && $custom_label !== '') {
+            $label = wp_strip_all_tags($custom_label);
+            $label = mb_substr($label, 0, 100);
+            return $label !== '' ? $label : __('Type personnalisé', 'pc');
+        }
+
+        // Libellé depuis choices
+        if ($type_value !== '' && isset($choices[$type_value])) {
+            return (string)$choices[$type_value];
+        }
+
+        // Fallback lisible
+        return $type_value !== '' ? ucwords(str_replace(['_', '-'], ' ', $type_value)) : __('Type', 'pc');
+    }
+}
+
+/**
  * ===================================================================
  * 1. CHARGEMENT DES ASSETS (CSS & JS)
  * ===================================================================
@@ -289,101 +319,95 @@ add_shortcode('experience_summary', function () {
     return ob_get_clean();
 });
 
-/**
- * ===================================================================
+/* ============================================================
  * 7. SHORTCODE [experience_pricing]
- * ===================================================================
- */
+ * ============================================================ */
 add_shortcode('experience_pricing', function () {
-    if (!is_singular('experience') || !function_exists('get_field') || !have_rows('exp_types_de_tarifs')) {
-        return '';
-    }
-    ob_start();
-?>
-    <section id="tarifs" class="exp-pricing-section">
-        <?php
-        while (have_rows('exp_types_de_tarifs')) : the_row();
-            $type_field = get_sub_field_object('exp_type');
-            $type_value = $type_field['value'];
-            $type_label = isset($type_field['choices'][$type_value]) ? $type_field['choices'][$type_value] : ucfirst($type_value);
-            $tarif_adulte = get_sub_field('exp_tarif_adulte');
-            $tarif_enfant = get_sub_field('exp_tarif_enfant');
-            $precision_enfant = get_sub_field('exp_precision_age_enfant');
-            $tarif_bebe = get_sub_field('exp_tarif_bebe');
-            $precision_bebe = get_sub_field('exp_precision_age_bebe');
+    if (!function_exists('have_rows')) return '';
+    if (!have_rows('exp_types_de_tarifs')) return '';
+
+    ob_start(); ?>
+
+    <div class="exp-pricing-grid">
+        <?php while (have_rows('exp_types_de_tarifs')) : the_row();
+            // Type & label (support "custom")
+            $type_field  = get_sub_field_object('exp_type');
+            $type_value  = is_array($type_field) ? ($type_field['value'] ?? '') : '';
+            $choices     = is_array($type_field) ? ((array)($type_field['choices'] ?? [])) : [];
+            $row_payload = [
+                'exp_type'        => $type_value,
+                'exp_type_custom' => get_sub_field('exp_type_custom'),
+            ];
+            $type_label = function_exists('pc_exp_type_label')
+                ? pc_exp_type_label($row_payload, $choices)
+                : (isset($choices[$type_value]) ? $choices[$type_value] : ucfirst((string)$type_value));
         ?>
             <div class="exp-pricing-card">
                 <h3 class="exp-pricing-title"><?php echo esc_html($type_label); ?></h3>
                 <div class="exp-pricing-body">
                     <?php if ($type_value === 'sur-devis') : ?>
-                        <div class="exp-pricing-row on-demand">Sur devis</div>
-                    <?php else : ?>
-                        <?php if (is_numeric($tarif_adulte)) : ?>
-                            <div class="exp-pricing-row">
-                                <span class="exp-pricing-label">Tarif Adulte</span>
-                                <span class="exp-pricing-amount"><?php echo esc_html(number_format((float)$tarif_adulte, 2, ',', ' ')); ?> €</span>
-                            </div>
-                        <?php endif; ?>
-                        <?php if (is_numeric($tarif_enfant)) : ?>
-                            <div class="exp-pricing-row">
-                                <span class="exp-pricing-label">
-                                    Tarif Enfant
-                                    <?php if ($precision_enfant) : ?>
-                                        <small>(<?php echo esc_html($precision_enfant); ?>)</small>
-                                    <?php endif; ?>
-                                </span>
-                                <span class="exp-pricing-amount"><?php echo esc_html(number_format((float)$tarif_enfant, 2, ',', ' ')); ?> €</span>
-                            </div>
-                        <?php endif; ?>
-                        <?php
-                        $bebe_price_text = '';
-                        $bebe_css_class = '';
-                        if (is_numeric($tarif_bebe)) {
-                            if ((float)$tarif_bebe == 0) {
-                                $bebe_price_text = 'Gratuit';
-                            } else {
-                                $bebe_price_text = esc_html(number_format((float)$tarif_bebe, 2, ',', ' ')) . ' €';
-                            }
-                        } else {
-                            $bebe_price_text = 'Bébé non autorisé';
-                            $bebe_css_class = 'not-allowed';
-                        }
+                        <div class="exp-pricing-row on-demand"><?php echo esc_html__('Sur devis', 'pc'); ?></div>
+                        <?php else :
+                        $lines = (array) get_sub_field('exp_tarifs_lignes');
+                        if (!empty($lines)) :
+                            foreach ($lines as $ln) :
+                                $t     = $ln['type_ligne'] ?? 'personnalise';
+                                $price = (float)($ln['tarif_valeur'] ?? 0);
+                                $obs   = trim((string)($ln['tarif_observation'] ?? ''));
+                                // Libellé par type
+                                if ($t === 'adulte') {
+                                    $label = __('Adulte', 'pc');
+                                } elseif ($t === 'enfant') {
+                                    $p = trim((string)($ln['precision_age_enfant'] ?? ''));
+                                    $label = $p ? sprintf(__('Enfant (%s)', 'pc'), $p) : __('Enfant', 'pc');
+                                } elseif ($t === 'bebe') {
+                                    $p = trim((string)($ln['precision_age_bebe'] ?? ''));
+                                    $label = $p ? sprintf(__('Bébé (%s)', 'pc'), $p) : __('Bébé', 'pc');
+                                } else {
+                                    $label = trim((string)($ln['tarif_nom_perso'] ?? '')) ?: __('Forfait', 'pc');
+                                }
+                                // Prix affiché (bébé=0 => Gratuit)
+                                $price_html = ($price == 0 && $t === 'bebe')
+                                    ? __('Gratuit', 'pc')
+                                    : esc_html(number_format((float)$price, 2, ',', ' ')) . ' €';
                         ?>
-                        <div class="exp-pricing-row">
-                            <span class="exp-pricing-label">
-                                Tarif Bébé
-                                <?php if ($precision_bebe) : ?>
-                                    <small>(<?php echo esc_html($precision_bebe); ?>)</small>
+                                <div class="exp-pricing-row">
+                                    <span class="exp-pricing-label"><?php echo esc_html($label); ?></span>
+                                    <span class="exp-pricing-price"><?php echo $price_html; ?></span>
+                                </div>
+                                <?php if ($obs !== '') : ?>
+                                    <div class="exp-pricing-note"><?php echo esc_html($obs); ?></div>
                                 <?php endif; ?>
-                            </span>
-                            <span class="exp-pricing-amount <?php echo $bebe_css_class; ?>"><?php echo $bebe_price_text; ?></span>
-                        </div>
-                    <?php endif; ?>
-                    <?php
-                    if (have_rows('exp_options_tarifaires')) : ?>
-                        <div class="exp-pricing-options">
-                            <h4 class="exp-options-title">Options</h4>
-                            <?php while (have_rows('exp_options_tarifaires')) : the_row();
-                                $option_desc = get_sub_field('exp_description_option');
-                                $option_tarif = get_sub_field('exp_tarif_option');
-                            ?>
-                                <?php if (is_numeric($option_tarif)) : ?>
-                                    <div class="exp-pricing-row">
-                                        <span class="exp-pricing-label"><?php echo esc_html($option_desc); ?></span>
-                                        <span class="exp-pricing-amount"><?php echo esc_html(number_format((float)$option_tarif, 2, ',', ' ')); ?> €</span>
+                            <?php endforeach;
+                        else : ?>
+                            <?php /* Fallback de sécurité : aucune ligne — on n’affiche rien */ ?>
+                        <?php endif; ?>
+
+                        <?php // Options tarifaires (inchangé)
+                        if (have_rows('exp_options_tarifaires')) : ?>
+                            <div class="exp-pricing-options">
+                                <div class="exp-pricing-options-title"><?php echo esc_html__('Options', 'pc'); ?></div>
+                                <?php while (have_rows('exp_options_tarifaires')) : the_row();
+                                    $opt_label = (string) get_sub_field('exp_description_option');
+                                    $opt_price = (float) get_sub_field('exp_tarif_option'); ?>
+                                    <div class="exp-pricing-row option">
+                                        <span class="exp-pricing-label"><?php echo esc_html($opt_label); ?></span>
+                                        <span class="exp-pricing-price"><?php echo esc_html(number_format($opt_price, 2, ',', ' ')); ?> €</span>
                                     </div>
-                                <?php endif; ?>
-                            <?php endwhile; ?>
-                        </div>
-                    <?php endif; ?>
+                                <?php endwhile; ?>
+                            </div>
+                        <?php endif; ?>
+
+                    <?php endif; // fin sur-devis 
+                    ?>
                 </div>
             </div>
         <?php endwhile; ?>
-    </section>
+    </div>
+
 <?php
     return ob_get_clean();
 });
-
 
 /**
  * ===================================================================
@@ -564,27 +588,132 @@ add_shortcode('experience_booking_bar', function () {
         'phone'   => get_field('pc_org_phone', 'option'),
         'email'   => get_field('pc_org_email', 'option'),
         'vat'     => get_field('pc_org_vat_id', 'option'),
-        'logo'    => get_field('pc_org_logo', 'option'),
     ];
 
-    $pricing_data = [];
-    $field_object = get_field_object('exp_types_de_tarifs');
-    foreach ($field_object['value'] as $row) {
-        $type_value = $row['exp_type'];
+    // --- Logo PNG “bleu” (URL publique + base64 OPAQUE pour jsPDF) ---
+    $uploads  = wp_get_upload_dir();
+    $rel_path = '2025/06/Logo-Prestige-Caraibes-bleu.png';
+    $company_info['logo'] = trailingslashit($uploads['baseurl']) . $rel_path;
+
+    // Génère un PNG OPAQUE (fond blanc) en base64 pour éviter l'effet "délavé"
+    $company_info['logo_data'] = '';
+    $abs_path = trailingslashit($uploads['basedir']) . $rel_path;
+
+    if (is_readable($abs_path)) {
+        // 1) Charge le PNG source (avec alpha)
+        $src = @imagecreatefrompng($abs_path);
+        if ($src !== false) {
+            $w = imagesx($src);
+            $h = imagesy($src);
+
+            // 2) Crée une toile opaque blanche
+            $dst = imagecreatetruecolor($w, $h);
+            // active le mélange et désactive la conservation d'alpha pour un fond plein
+            imagealphablending($dst, true);
+            imagesavealpha($dst, false);
+
+            // blanc pur
+            $white = imagecolorallocate($dst, 255, 255, 255);
+            imagefilledrectangle($dst, 0, 0, $w, $h, $white);
+
+            // 3) Copie du logo par-dessus (l'alpha du logo est mixé sur le blanc)
+            imagecopy($dst, $src, 0, 0, 0, 0, $w, $h);
+
+            // 4) Encode en PNG (opaque) -> base64
+            ob_start();
+            imagepng($dst, null, 9);
+            $png_data = ob_get_clean();
+
+            if ($png_data !== false) {
+                $company_info['logo_data'] = 'data:image/png;base64,' . base64_encode($png_data);
+            }
+
+            imagedestroy($dst);
+            imagedestroy($src);
+        }
+    }
+
+    // --- CGV (texte nettoyé) ---
+    $terms_raw  = get_field('cgv_experience', 'option'); // WYSIWYG HTML
+    $terms_text = $terms_raw ? trim(wp_strip_all_tags(wp_kses_post($terms_raw))) : '';
+    $company_info['conditions_generales'] = $terms_text;
+
+    $pricing_data  = [];
+    $field_object  = get_field_object('exp_types_de_tarifs');
+
+    // Récup des choices du sous-champ select exp_type (si dispo)
+    $exp_type_choices = [];
+    if (!empty($field_object['sub_fields'])) {
+        foreach ($field_object['sub_fields'] as $sf) {
+            if (!empty($sf['name']) && $sf['name'] === 'exp_type' && !empty($sf['choices'])) {
+                $exp_type_choices = (array)$sf['choices'];
+                break;
+            }
+        }
+    }
+
+    foreach ((array)$field_object['value'] as $row) {
+        $type_value = $row['exp_type'] ?? '';
         if (!$type_value) continue;
-        $type_label = isset($field_object['sub_fields'][0]['choices'][$type_value]) ? $field_object['sub_fields'][0]['choices'][$type_value] : ucfirst($type_value);
+
+        // Label résolu (supporte "custom")
+        $type_label = pc_exp_type_label($row, $exp_type_choices);
+
+        // Options
         $options = [];
         if (!empty($row['exp_options_tarifaires'])) {
             foreach ($row['exp_options_tarifaires'] as $opt) {
-                $options[] = ['label' => $opt['exp_description_option'], 'price' => (float)$opt['exp_tarif_option']];
+                $options[] = [
+                    'label'       => (string)($opt['exp_description_option'] ?? ''),
+                    'price'       => (float)($opt['exp_tarif_option'] ?? 0),
+                    'enable_qty'  => !empty($opt['option_enable_qty']),
+                ];
             }
         }
+
+        // Nouvelles lignes tarifaires
+        $lines_raw = isset($row['exp_tarifs_lignes']) ? (array)$row['exp_tarifs_lignes'] : [];
+        $lines = [];
+        $has_counters = false; // A/E/B visibles si au moins une ligne A/E/B
+
+        foreach ($lines_raw as $ln) {
+            $t = $ln['type_ligne'] ?? 'personnalise';
+            $entry = [
+                'type'        => $t, // adulte | enfant | bebe | personnalise
+                'price'       => (float)($ln['tarif_valeur'] ?? 0),
+                'label'       => '',
+                'observation' => trim((string)($ln['tarif_observation'] ?? '')),
+                'precision'   => '',
+                'enable_qty'  => false, // par défaut
+            ];
+
+            if ($t === 'adulte') {
+                $entry['label'] = __('Adulte', 'pc');
+                $has_counters = true;
+            } elseif ($t === 'enfant') {
+                $p = trim((string)($ln['precision_age_enfant'] ?? ''));
+                $entry['label'] = $p ? sprintf(__('Enfant (%s)', 'pc'), $p) : __('Enfant', 'pc');
+                $entry['precision'] = $p;
+                $has_counters = true;
+            } elseif ($t === 'bebe') {
+                $p = trim((string)($ln['precision_age_bebe'] ?? ''));
+                $entry['label'] = $p ? sprintf(__('Bébé (%s)', 'pc'), $p) : __('Bébé', 'pc');
+                $entry['precision'] = $p;
+                $has_counters = true;
+            } else {
+                $entry['label'] = trim((string)($ln['tarif_nom_perso'] ?? '')) ?: __('Forfait', 'pc');
+                $entry['enable_qty'] = !empty($ln['tarif_enable_qty']);
+            }
+
+            $lines[] = $entry;
+        }
+
         $pricing_data[$type_value] = [
-            'label'    => $type_label,
-            'adulte'   => (float)($row['exp_tarif_adulte'] ?? 0),
-            'enfant'   => (float)($row['exp_tarif_enfant'] ?? 0),
-            'bebe'     => ($row['exp_tarif_bebe'] === '' || $row['exp_tarif_bebe'] === null) ? 'not_allowed' : (float)$row['exp_tarif_bebe'],
-            'options'  => $options,
+            'code'         => $type_value,
+            'label'        => $type_label,
+            'options'      => $options,
+            'lines'        => $lines,
+            'has_counters' => $has_counters,
         ];
     }
 
@@ -621,21 +750,25 @@ add_shortcode('experience_booking_bar', function () {
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="exp-devis-field">
-                            <label for="<?php echo esc_attr($devis_id); ?>-adults">Adultes</label>
-                            <input type="number" id="<?php echo esc_attr($devis_id); ?>-adults" name="devis_adults" min="0" value="" placeholder="1">
-                        </div>
-                        <div class="exp-devis-field">
-                            <label for="<?php echo esc_attr($devis_id); ?>-children">Enfants</label>
-                            <input type="number" id="<?php echo esc_attr($devis_id); ?>-children" name="devis_children" min="0" placeholder="0">
-                        </div>
-                        <div class="exp-devis-field">
-                            <label for="<?php echo esc_attr($devis_id); ?>-bebes">Bébés</label>
-                            <input type="number" id="<?php echo esc_attr($devis_id); ?>-bebes" name="devis_bebes" min="0" placeholder="0">
+                        <div class="exp-devis-counters" id="<?php echo esc_attr($devis_id); ?>-counters">
+                            <div class="exp-devis-field">
+                                <label for="<?php echo esc_attr($devis_id); ?>-adults">Adultes</label>
+                                <input type="number" id="<?php echo esc_attr($devis_id); ?>-adults" name="devis_adults" min="0" value="" placeholder="1">
+                            </div>
+                            <div class="exp-devis-field">
+                                <label for="<?php echo esc_attr($devis_id); ?>-children">Enfants</label>
+                                <input type="number" id="<?php echo esc_attr($devis_id); ?>-children" name="devis_children" min="0" placeholder="0">
+                            </div>
+                            <div class="exp-devis-field">
+                                <label for="<?php echo esc_attr($devis_id); ?>-bebes">Bébés</label>
+                                <input type="number" id="<?php echo esc_attr($devis_id); ?>-bebes" name="devis_bebes" min="0" placeholder="0">
+                            </div>
                         </div>
                     </div>
 
                     <div class="exp-devis-options" id="<?php echo esc_attr($devis_id); ?>-options"></div>
+
+                    <div class="exp-devis-customqty" id="<?php echo esc_attr($devis_id); ?>-customqty"></div>
 
                     <div class="exp-devis-result" id="<?php echo esc_attr($devis_id); ?>-result"></div>
 
