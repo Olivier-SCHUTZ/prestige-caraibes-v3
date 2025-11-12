@@ -160,7 +160,7 @@
         ]
       : [];
 
-    // ---- Résoudre une fonction flatpickr fiable + RETRY si non prêt ----
+    // ---- Résoudre une fonction flatpickr fiable (l'attente est gérée par l'orchestrateur) ----
     var FP =
       window.flatpickr && typeof window.flatpickr === "function"
         ? window.flatpickr
@@ -169,29 +169,15 @@
         : null;
 
     if (!FP) {
-      // Compteur + backoff progressif, max 10 essais
-      section.__pcqRetry = (section.__pcqRetry || 0) + 1;
-      var delay = Math.min(150 * Math.pow(1.6, section.__pcqRetry), 2000);
-      if (section.__pcqRetry <= 10) {
-        console.warn(
-          "[pc-devis] flatpickr non prêt, nouvel essai dans " +
-            Math.round(delay) +
-            "ms pour",
-          id
-        );
-        return setTimeout(function () {
-          initOne(section);
-        }, delay);
-      } else {
-        console.error(
-          "[pc-devis] flatpickr toujours indisponible après 10 essais pour",
-          id
-        );
-        return;
-      }
+      console.error(
+        "[pc-devis] flatpickr indisponible pour",
+        id,
+        "(attendu via l'orchestrateur)."
+      );
+      return;
     }
 
-    // => on ne marque comme initialisé qu'ici, quand FP est prêt :
+    // On marque la section comme initialisée uniquement ici
     section.__pcqInit = true;
 
     var fp = FP(input, {
@@ -669,22 +655,27 @@
     sections.forEach(initOne);
   }
 
-  // NOUVEAU: Logique d'attente explicite pour flatpickr (Corrige la race condition persistante)
+  // NOUVEAU: Logique d'attente explicite pour flatpickr (fallback autonome)
   function waitForFlatpickr() {
-    // Vérifie si Flatpickr est enfin chargé et exécuté.
     if (
       window.flatpickr &&
       (typeof window.flatpickr === "function" ||
         typeof window.Flatpickr === "function")
     ) {
-      // Flatpickr est prêt, on peut lancer l'initialisation sans retry.
       boot();
     } else {
-      // Toujours pas prêt, on réessaie après un court délai pour éviter la boucle infinie.
       setTimeout(waitForFlatpickr, 50);
     }
   }
 
-  // Démarre la boucle d'attente pour s'assurer que Flatpickr est là
-  waitForFlatpickr();
+  // Branche orchestrateur : si présent, on lui délègue l'init
+  if (
+    window.PCOrchestrator &&
+    typeof window.PCOrchestrator.registerDevisInit === "function"
+  ) {
+    window.PCOrchestrator.registerDevisInit(boot);
+  } else {
+    // Fallback : comportement actuel si l'orchestrateur n'est pas chargé
+    waitForFlatpickr();
+  }
 })();
