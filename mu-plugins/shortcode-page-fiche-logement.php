@@ -33,13 +33,17 @@ add_action('wp_enqueue_scripts', function () {
       true
     );
   }
+  // --- S'assurer que Flatpickr + locale FR sont chargés ---
+  wp_enqueue_style('flatpickr-css', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css');
+  wp_enqueue_script('flatpickr-js', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js', [], null, true);
+  wp_enqueue_script('flatpickr-fr', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js', ['flatpickr-js'], null, true);
 
   // Chargement du script du devis
   $devis_js_path = WP_CONTENT_DIR . '/mu-plugins/assets/pc-devis.js';
   if (file_exists($devis_js_path)) {
     $devis_js_url = content_url('mu-plugins/assets/pc-devis.js');
     $devis_js_ver = filemtime($devis_js_path);
-    wp_enqueue_script('pc-devis-js', $devis_js_url, ['flatpickr-js'], $devis_js_ver, true);
+    wp_enqueue_script('pc-devis-js', $devis_js_url, ['flatpickr-fr'], $devis_js_ver, true);
   }
 
   // Chargement du script de la barre/modale de réservation

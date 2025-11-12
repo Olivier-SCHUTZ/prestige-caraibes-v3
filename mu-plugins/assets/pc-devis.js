@@ -109,14 +109,10 @@
   // ---------- Initialisation d'une section de devis ----------
   function initOne(section) {
     if (!section || section.__pcqInit) return;
-    section.__pcqInit = true;
 
     var id = section.id;
     var cfg = JSON.parse(section.getAttribute("data-pc-devis") || "{}");
     var isManual = !!cfg.manualQuote;
-
-    console.log("[pc-devis] Configuration reçue par le calendrier :", cfg);
-    console.log("[pc-devis] Dates à désactiver :", cfg.icsDisable);
 
     const companyInfoEl = section.querySelector(".exp-devis-company-info");
     const logementTitleEl = section.querySelector(
@@ -164,24 +160,77 @@
         ]
       : [];
 
-    var fp = window.flatpickr(input, {
+    // ---- Résoudre une fonction flatpickr fiable + RETRY si non prêt ----
+    var FP =
+      window.flatpickr && typeof window.flatpickr === "function"
+        ? window.flatpickr
+        : window.Flatpickr && typeof window.Flatpickr === "function"
+        ? window.Flatpickr
+        : null;
+
+    if (!FP) {
+      // Compteur + backoff progressif, max 10 essais
+      section.__pcqRetry = (section.__pcqRetry || 0) + 1;
+      var delay = Math.min(150 * Math.pow(1.6, section.__pcqRetry), 2000);
+      if (section.__pcqRetry <= 10) {
+        console.warn(
+          "[pc-devis] flatpickr non prêt, nouvel essai dans " +
+            Math.round(delay) +
+            "ms pour",
+          id
+        );
+        return setTimeout(function () {
+          initOne(section);
+        }, delay);
+      } else {
+        console.error(
+          "[pc-devis] flatpickr toujours indisponible après 10 essais pour",
+          id
+        );
+        return;
+      }
+    }
+
+    // => on ne marque comme initialisé qu'ici, quand FP est prêt :
+    section.__pcqInit = true;
+
+    var fp = FP(input, {
       mode: "range",
       dateFormat: "d/m/Y",
       altInput: true,
       altFormat: "j M Y",
       minDate: "today",
       locale:
-        window.flatpickr.l10ns && window.flatpickr.l10ns.fr ? "fr" : undefined,
+        window.flatpickr && window.flatpickr.l10ns && window.flatpickr.l10ns.fr
+          ? "fr"
+          : undefined,
       disable: disableRules,
+
       appendTo: document.body,
       onReady: function (sel, str, inst) {
         try {
           inst.calendarContainer.classList.add("pcq-cal");
         } catch (e) {}
+
+        // NOUVEAU : Déclenche le calcul initial UNIQUEMENT APRÈS
+        // que l'instance `inst` (et donc `input._flatpickr`) soit entièrement disponible.
+        compute();
       },
       onChange: compute,
       conjunction: " au ",
     });
+
+    // Logs déplacés ici pour éviter le spam pendant les retries
+    console.log("[pc-devis] Configuration reçue par le calendrier :", cfg);
+    console.log("[pc-devis] Dates à désactiver :", cfg.icsDisable);
+    console.log(
+      "[pc-devis] flatpickr prêt pour " +
+        id +
+        " | " +
+        (cfg.icsDisable || []).length +
+        " plages désactivées."
+    );
+
     console.log(
       "[pc-devis] flatpickr prêt pour",
       id,
@@ -246,12 +295,20 @@
 
     function compute() {
       try {
-        var a = parseIntSafe(adults),
+        var fpi = input._flatpickr; // <-- LECTURE EN PREMIER (NOUVEAU)
+
+        // Ligne 336 : NOUVEAU : Sortie de sécurité immédiate si l'instance n'est pas attachée.
+        if (!fpi) {
+          return;
+        }
+
+        var a = parseIntSafe(adults), // <-- Déclarations déplacées APRES le garde
           c = parseIntSafe(children),
           i = parseIntSafe(infants),
           g = a + c + i;
-        var fpi = input._flatpickr;
-        if (!fpi || fpi.selectedDates.length < 2) {
+
+        // La ligne 341 (ancienne) est maintenant :
+        if (fpi.selectedDates.length < 2) {
           if (msgBox) msgBox.textContent = "Choisissez vos dates";
           if (out) out.hidden = !isManual ? true : false;
           if (lines)
@@ -597,8 +654,6 @@
         compute();
       });
     if (pdfBtn) pdfBtn.addEventListener("click", generatePDF);
-
-    compute();
   }
 
   function boot() {
@@ -606,18 +661,30 @@
       ".pc-devis-section[data-pc-devis]"
     );
     if (!sections.length) return;
-    if (
-      window.flatpickr &&
-      window.flatpickr.l10ns &&
-      window.flatpickr.l10ns.fr
-    ) {
-      window.flatpickr.localize(window.flatpickr.l10ns.fr);
-    }
+
+    // SUPPRESSION du bloc IF synchrone qui provoquait le TypeError.
+    // L'initialisation et la gestion des retries sont maintenant entièrement
+    // déléguées à la fonction initOne() pour chaque section.
+
     sections.forEach(initOne);
   }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
+
+  // NOUVEAU: Logique d'attente explicite pour flatpickr (Corrige la race condition persistante)
+  function waitForFlatpickr() {
+    // Vérifie si Flatpickr est enfin chargé et exécuté.
+    if (
+      window.flatpickr &&
+      (typeof window.flatpickr === "function" ||
+        typeof window.Flatpickr === "function")
+    ) {
+      // Flatpickr est prêt, on peut lancer l'initialisation sans retry.
+      boot();
+    } else {
+      // Toujours pas prêt, on réessaie après un court délai pour éviter la boucle infinie.
+      setTimeout(waitForFlatpickr, 50);
+    }
   }
+
+  // Démarre la boucle d'attente pour s'assurer que Flatpickr est là
+  waitForFlatpickr();
 })();
