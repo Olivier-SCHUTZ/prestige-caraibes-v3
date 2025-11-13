@@ -3,102 +3,137 @@
    (Version 2.2 - Ruban promotionnel diagonal et plus visible)
    =========================================================== */
 .pc-vignette {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 0 10px 0 rgba(0,0,0,0.1);
-    overflow: hidden; /* INDISPENSABLE pour couper le ruban qui dépasse */
-    text-decoration: none;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    position: relative; 
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* INDISPENSABLE pour couper le ruban qui dépasse */
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
 }
 
 /* --- NOUVEAU : Style du ruban promotionnel en travers --- */
 .pc-vignette__promo-ribbon {
-    position: absolute;
-    z-index: 2;
-    width: 160px; /* Largeur du ruban */
-    top: 22px;  /* Distance du haut */
-    left: -42px; /* Distance de la gauche (négative pour le décalage) */
-    
-    /* La magie de la rotation */
-    transform: rotate(-45deg);
-    
-    /* Style visuel */
-    background-color: #DC143C; /* Un rouge "Crimson" bien visible */
-    color: #fff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    
-    /* Texte */
-    text-align: center;
-    font-family: var(--pc-font-title);
-    font-size: 0.9rem; /* Légèrement plus grand */
-    font-weight: 700;
-    line-height: 1.3;
-    padding: 0.6rem 0; /* Plus d'espace vertical */
+  position: absolute;
+  z-index: 2;
+  width: 160px; /* Largeur du ruban */
+  top: 22px; /* Distance du haut */
+  left: -42px; /* Distance de la gauche (négative pour le décalage) */
+
+  /* La magie de la rotation */
+  transform: rotate(-45deg);
+
+  /* Style visuel */
+  background-color: #dc143c; /* Un rouge "Crimson" bien visible */
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+
+  /* Texte */
+  text-align: center;
+  font-family: var(--pc-font-title);
+  font-size: 0.9rem; /* Légèrement plus grand */
+  font-weight: 700;
+  line-height: 1.3;
+  padding: 0.6rem 0; /* Plus d'espace vertical */
 }
 
 .pc-vignette:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px 0 rgba(0,0,0,0.12);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px 0 rgba(0, 0, 0, 0.12);
 }
 
 .pc-vignette__image img {
-    width: 100%;
-    height: 14.4rem;
-    object-fit: cover;
-    display: block;
+  width: 100%;
+  height: 14.4rem;
+  object-fit: cover;
+  display: block;
 }
 
 .pc-vignette__content {
-    padding: 1rem 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    flex-grow: 1;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex-grow: 1;
 }
 
 .pc-vignette__title {
-    font-family: var(--pc-font-title);
-    font-size: var(--pc-h3-size);
-    font-weight: var(--pc-h3-weight);
-    line-height: var(--pc-h3-lh);
-    color: var(--pc-color-heading);
-    margin: 0;
+  font-family: var(--pc-font-title);
+  font-size: var(--pc-h3-size);
+  font-weight: var(--pc-h3-weight);
+  line-height: var(--pc-h3-lh);
+  color: var(--pc-color-heading);
+  margin: 0;
 }
 
 .pc-vignette__location,
 .pc-vignette__rating {
-    font-family: var(--pc-font-body);
-    font-size: var(--pc-text-size);
-    color: var(--pc-color-text);
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-text-size);
+  color: var(--pc-color-text);
 }
 
 .pc-vignette__rating {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .pc-vignette__stars {
-    display: flex;
+  display: flex;
 }
 .pc-vignette__stars svg {
-    width: 18px;
-    height: 18px;
-    stroke-width: 0;
-    fill: currentColor;
+  width: 18px;
+  height: 18px;
+  stroke-width: 0;
+  fill: currentColor;
 }
-.pc-vignette__stars .star { color: #E5E7EB; }
-.pc-vignette__stars .star.filled { color: #FBBF24; }
+.pc-vignette__stars .star {
+  color: #e5e7eb;
+}
+.pc-vignette__stars .star.filled {
+  color: #fbbf24;
+}
 
 .pc-vignette__price {
-    font-family: var(--pc-font-body);
-    font-size: var(--pc-text-size);
-    color: var(--pc-color-text);
-    font-weight: 700;
-    margin-top: auto;
-    padding-top: 0.5rem;
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-text-size);
+  color: var(--pc-color-text);
+  font-weight: 700;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+/* ================================
+   Ajustements mobile — vignettes
+   ================================ */
+@media (max-width: 767.98px) {
+  /* 1) Empêcher tout chevauchement image / contenu */
+  .pc-vignette__image img {
+    width: 100%;
+    height: auto; /* annule la hauteur fixe */
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+  }
+
+  .pc-vignette__content {
+    background: #fff;
+  }
+
+  /* 2) Sur mobile, la loop grid se comporte comme une liste verticale,
+       pleine largeur, avec une petite marge intérieure */
+  body.home .elementor-widget-loop-grid .elementor-loop-container {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* 3) Chaque carte : quasi pleine largeur + petite marge gauche/droite */
+  body.home .elementor-widget-loop-grid .pc-vignette {
+    width: auto;
+    margin: 0 1rem 1.5rem; /* marge horizontale + espace entre les cartes */
+    box-sizing: border-box;
+  }
 }
