@@ -14,6 +14,18 @@
     }).format(n);
   }
 
+  // --- Normalisation montants pour jsPDF (supprime "/" & espaces insécables) ---
+  function formatCurrencyPDF(input) {
+    if (typeof input !== "string") {
+      input = eur(input);
+    }
+    return String(input)
+      .replace(/\//g, " ")
+      .replace(/\u00A0|\u202F/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+
   // --- Fonctions utilitaires complètes ---
   function ymd(d) {
     if (!d || !(d instanceof Date)) return null; // Sécurité
@@ -526,74 +538,275 @@
         alert("La librairie PDF n'est pas chargée.");
         return;
       }
-      if (currentLines.length === 0 || currentTotal <= 0) {
+
+      // --- Récupération des lignes + total du devis logement
+      // Essaye d'abord les variables globales usuelles, sinon les alias.
+      const lines = Array.isArray(window.currentLogementLines)
+        ? window.currentLogementLines
+        : Array.isArray(window.currentLines)
+        ? window.currentLines
+        : [];
+      const total =
+        typeof window.currentLogementTotal === "number"
+          ? window.currentLogementTotal
+          : typeof window.currentTotal === "number"
+          ? window.currentTotal
+          : 0;
+
+      if (!lines || !lines.length || total <= 0) {
         alert("Veuillez d'abord effectuer une simulation valide.");
         return;
       }
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const date = new Date().toLocaleDateString("fr-FR");
-      const a = parseIntSafe(adults),
-        c = parseIntSafe(children),
-        i = parseIntSafe(infants);
 
-      doc.setFontSize(20);
-      doc.text(companyInfo.name || "Estimation", 105, 20, { align: "center" });
-      doc.setFontSize(10);
-      doc.text(
-        `${companyInfo.address || ""}\n${companyInfo.city || ""}`,
-        105,
-        30,
-        { align: "center" }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+      // --- Lecture des données injectées par le shortcode
+      function readCompanyInfo() {
+        try {
+          const el = document.querySelector(".exp-devis-company-info");
+          return el ? JSON.parse(el.textContent) : {};
+        } catch (e) {
+          return {};
+        }
+      }
+      const companyInfo = readCompanyInfo();
+
+      const logementTitle = (
+        document.querySelector(".exp-devis-experience-title")?.textContent ||
+        document.title ||
+        "Logement"
+      ).trim();
+      const date = new Date().toLocaleDateString("fr-FR");
+
+      // Adultes / Enfants (ton markup utilise name="devis_adults"/"devis_children")
+      const parseIntSafe = (v) => {
+        const n = parseInt(String(v ?? "").replace(/\D+/g, ""), 10);
+        return isNaN(n) ? 0 : n;
+      };
+      const a = parseIntSafe(
+        document.querySelector('[name="devis_adults"]')?.value ?? window.adults
       );
-      doc.line(15, 40, 195, 40);
+      const c = parseIntSafe(
+        document.querySelector('[name="devis_children"]')?.value ??
+          window.children
+      );
+
+      // --- Pied légal (3 lignes, centré, répété sur chaque page)
+      const footerLines = [
+        "SAS PRESTIGE CARAÏBES - 166C LOT. LES HAUTS DE JABRUN - 97111 MORNE A L'EAU, Guadeloupe",
+        "N°TVA FR74948081351 - SIREN 948 081 351 00017 - RCS 948 081 351 R.C.S. Pointe-a-pitre",
+        "Capital de 1 000,00 € - APE 96.09Z",
+      ];
+      function drawFooter(docInstance) {
+        const pageH = docInstance.internal.pageSize.getHeight();
+        docInstance.setFontSize(8);
+        const yStart = pageH - 14;
+        footerLines.forEach((txt, i) => {
+          docInstance.text(txt, 105, yStart + i * 4.5, { align: "center" });
+        });
+      }
+
+      // --- Header : cadre arrondi + logo (40mm) + coordonnées (wrapping)
+      function drawHeaderBox() {
+        const marginLeft = 12;
+        const marginTop = 12;
+        const frameX = marginLeft;
+        const frameY = marginTop;
+        const frameW = 90;
+        const radius = 3;
+
+        // Coordonnées (wrapping + shrink si long)
+        doc.setFontSize(10);
+        const rows = [];
+        if (companyInfo.address) rows.push(String(companyInfo.address));
+        if (companyInfo.city) rows.push(String(companyInfo.city));
+        if (companyInfo.phone) rows.push(String(companyInfo.phone));
+        if (companyInfo.email) rows.push(String(companyInfo.email));
+        const maxWidth = 90;
+        let wrapped = doc.splitTextToSize(rows.join("\n").trim(), maxWidth);
+        const textLineH = 4.5;
+        const textBlockH = wrapped.length * textLineH;
+
+        // Logo (après le texte pour rester au 1er plan)
+        const hasLogo = !!companyInfo.logo_data;
+        const logoW = 40;
+        const logoH = hasLogo ? 12 : 0; // ratio estimé
+
+        const pad = 5;
+        const gapLogoText = hasLogo ? 4 : 0;
+        const frameH = pad + logoH + gapLogoText + textBlockH + pad;
+
+        // Cadre
+        doc.setDrawColor(180, 180, 180);
+        doc.roundedRect(frameX, frameY, frameW, frameH, radius, radius);
+        // Petite ombre
+        doc.setDrawColor(210, 210, 210);
+        doc.line(
+          frameX + 1.5,
+          frameY + frameH,
+          frameX + frameW - 1.5,
+          frameY + frameH
+        );
+
+        // Logo (x=15,y=14 relatifs : approximés via frameX/frameY)
+        if (hasLogo) {
+          const logoX = frameX + 3;
+          const logoY = frameY + 2;
+          doc.addImage(
+            companyInfo.logo_data,
+            "PNG",
+            logoX,
+            logoY,
+            logoW,
+            logoH,
+            undefined,
+            "NONE"
+          );
+        }
+
+        // Coordonnées sous le logo
+        let textY = frameY + (hasLogo ? 2 + logoH + gapLogoText : 6);
+        doc.setFontSize(10);
+        wrapped.forEach((line, idx) => {
+          doc.text(line, frameX + 4, textY + idx * textLineH);
+        });
+
+        return frameY + frameH; // headerBottomY
+      }
+
+      const headerBottomY = drawHeaderBox();
+
+      // --- Séparateur + titres
+      const sepY = headerBottomY + 6;
+      doc.setDrawColor(0, 0, 0);
+      doc.line(15, sepY, 195, sepY);
+
+      let yCursor = sepY + 8;
       doc.setFontSize(12);
-      doc.text(`Estimation pour : ${logementTitle}`, 15, 50);
-      doc.text(`Date : ${date}`, 195, 50, { align: "right" });
+      doc.text(`Estimation pour : ${logementTitle}`, 15, yCursor);
+      doc.text(`Date : ${date}`, 195, yCursor, { align: "right" });
+
+      const gapAfterTitle = 6;
+      const peopleY = yCursor + gapAfterTitle;
       doc.setFontSize(10);
-      doc.text(`Pour ${a} adulte(s), ${c} enfant(s) et ${i} bébé(s)`, 15, 58);
-      let y = 70;
-      doc.setFont("helvetica", "bold");
-      doc.text("Description", 15, y);
+      doc.text(`Pour ${a} adulte(s) et ${c} enfant(s)`, 15, peopleY);
+
+      // --- Tableau devis
+      let y = peopleY + 12;
+      const pageH = doc.internal.pageSize.getHeight();
+      const bottomLimit = pageH - 22;
+
+      doc.setFontSize(11);
+      doc.text("Description", 15, y); // ← libellé corrigé
       doc.text("Montant", 195, y, { align: "right" });
+
+      // fine rule sous l’en-tête (même style que l’ancien PDF)
+      doc.setLineWidth(0.2);
+      doc.line(15, y + 2, 195, y + 2);
+
+      y += 6;
+
+      doc.setFontSize(10);
+      lines.forEach((line) => {
+        const description = (line?.label || line?.name || line?.title || "")
+          .toString()
+          .trim();
+        const price = formatCurrencyPDF(line?.price ?? line?.amount ?? 0);
+        const descWrapped = doc.splitTextToSize(description || "—", 150);
+
+        descWrapped.forEach((dLine, i) => {
+          if (y > bottomLimit) {
+            drawFooter(doc);
+            doc.addPage();
+            y = 20;
+          }
+          if (i === 0) {
+            doc.text(dLine, 15, y);
+            doc.text(price, 195, y, { align: "right" });
+          } else {
+            doc.text(dLine, 15, y);
+          }
+          y += 6;
+        });
+      });
+
+      // fine rule avant le total (comme l’ancien PDF)
+      doc.setLineWidth(0.2);
+      if (y + 4 > bottomLimit) {
+        drawFooter(doc);
+        doc.addPage();
+        y = 20;
+      }
       doc.line(15, y + 2, 195, y + 2);
       y += 8;
 
-      currentLines.forEach((line) => {
-        doc.setFont("helvetica", "normal");
-        doc.text(line.label, 15, y);
-        doc.setFont("courier", "normal");
-        doc.text(line.price, 195, y, { align: "right" });
-        y += 7;
-      });
-
-      y += 5;
-      doc.line(15, y, 195, y);
-      y += 8;
+      // Total
+      if (y + 10 > bottomLimit) {
+        drawFooter(doc);
+        doc.addPage();
+        y = 20;
+      }
+      // style total : gros + gras
+      doc.setFont(undefined, "bold");
       doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
       doc.text("Total Estimé (TTC)", 15, y);
-      doc.setFont("courier", "bold");
-      doc.text(eur(currentTotal), 195, y, { align: "right" });
-      y = 270;
-      doc.line(15, y, 195, y);
-      y += 8;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.text(
-        `${companyInfo.legal || companyInfo.name} - ${
-          companyInfo.phone || ""
-        } - ${companyInfo.email || ""}`,
-        105,
-        y,
-        { align: "center" }
-      );
+      doc.text(formatCurrencyPDF(total), 195, y, { align: "right" });
 
-      doc.save(
-        `estimation-${logementTitle
-          .replace(/[^a-z0-9]/gi, "_")
-          .toLowerCase()}.pdf`
-      );
+      // retour au style normal pour la suite éventuelle
+      doc.setFont(undefined, "normal");
+      doc.setFontSize(10);
+      y += 12;
+
+      // Pied légal page 1
+      drawFooter(doc);
+
+      // --- CGV (multi-pages) : priorité au champ Location
+      const termsRaw =
+        (companyInfo &&
+          (companyInfo.cgv_location ||
+            companyInfo.cgv_experience ||
+            companyInfo.cgv ||
+            companyInfo.terms ||
+            companyInfo.terms_text ||
+            companyInfo.conditions_generales)) ||
+        "";
+
+      const cgv = String(termsRaw).trim();
+      if (cgv) {
+        doc.addPage();
+        const left = 15,
+          right = 195,
+          width = right - left;
+        const top = 20,
+          lineH = 5;
+        doc.setFontSize(12);
+        doc.text("Conditions Générales de Location", left, top);
+        let yy = top + 8;
+
+        doc.setFontSize(10);
+        const paragraphs = cgv.split(/\n{2,}/);
+        paragraphs.forEach((p) => {
+          const wrapped = doc.splitTextToSize(p, width);
+          wrapped.forEach((ln) => {
+            if (yy > pageH - 22) {
+              drawFooter(doc);
+              doc.addPage();
+              yy = 20;
+            }
+            doc.text(ln, left, yy);
+            yy += lineH;
+          });
+          yy += 2;
+        });
+        drawFooter(doc);
+      }
+
+      // Nom de fichier
+      const file = `estimation-${(logementTitle || "logement")
+        .replace(/[^a-z0-9\u00C0-\u024F]+/gi, "_")
+        .toLowerCase()}.pdf`;
+      doc.save(file);
     }
 
     section.querySelectorAll(".exp-stepper-btn").forEach(function (btn) {

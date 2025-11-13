@@ -1575,6 +1575,44 @@ add_shortcode('pc_devis', function ($atts = []) {
     'vat'     => get_field('pc_org_vat_id', 'option'),
     'logo'    => get_field('pc_org_logo', 'option'),
   ];
+
+  // --- CGV Location (ACF option) -> texte nettoyé pour le PDF
+  $terms_raw  = get_field('cgv_location', 'option');
+  $terms_text = $terms_raw ? trim(wp_strip_all_tags(wp_kses_post($terms_raw))) : '';
+  $company_info['cgv_location'] = $terms_text;
+
+  // --- Logo bleu aplati (PNG rendu opaque sur fond blanc -> base64)
+  //     Remplace le transparent afin d'avoir un rendu net dans jsPDF
+  $uploads  = wp_get_upload_dir();
+  // ⚠️ adapte le chemin si ton logo est ailleurs dans ta médiathèque
+  $rel_path = '2025/06/Logo-Prestige-Caraibes-bleu.png';
+  $abs_path = trailingslashit($uploads['basedir']) . $rel_path;
+
+  if (is_readable($abs_path)) {
+    $src = imagecreatefrompng($abs_path);
+    if ($src) {
+      $w = imagesx($src);
+      $h = imagesy($src);
+      $dst = imagecreatetruecolor($w, $h);
+
+      // On dessine un fond blanc puis on colle le PNG par dessus
+      imagealphablending($dst, true);
+      imagesavealpha($dst, false);
+      $white = imagecolorallocate($dst, 255, 255, 255);
+      imagefilledrectangle($dst, 0, 0, $w, $h, $white);
+      imagecopy($dst, $src, 0, 0, 0, 0, $w, $h);
+
+      ob_start();
+      imagepng($dst, null, 9);
+      $png = ob_get_clean();
+
+      $company_info['logo_data'] = 'data:image/png;base64,' . base64_encode($png);
+
+      imagedestroy($dst);
+      imagedestroy($src);
+    }
+  }
+
   $base_price   = (float) get_field('base_price_from', $post_id);
   $unit         = (string) get_field('unite_de_prix',   $post_id);
   $min_nights   = (int)    get_field('min_nights',      $post_id);
