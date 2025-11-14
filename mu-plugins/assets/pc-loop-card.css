@@ -125,15 +125,15 @@
 
   /* 2) Sur mobile, la loop grid se comporte comme une liste verticale,
        pleine largeur, avec une petite marge intérieure */
-  body.home .elementor-widget-loop-grid .elementor-loop-container {
+  .elementor-widget-loop-grid .elementor-loop-container {
     display: block !important;
     width: 100% !important;
   }
 
   /* 3) Chaque carte : quasi pleine largeur + petite marge gauche/droite */
-  body.home .elementor-widget-loop-grid .pc-vignette {
+  .elementor-widget-loop-grid .pc-vignette {
     width: auto;
-    margin: 0 1rem 1.5rem; /* marge horizontale + espace entre les cartes */
+    margin: 0 1rem 1.5rem;
     box-sizing: border-box;
   }
 }
