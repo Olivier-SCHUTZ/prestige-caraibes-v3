@@ -22,17 +22,6 @@ function oceanwp_child_enqueue_styles()
 }
 
 /**
- * Ajouter le script Iubenda pour la bannière de consentement dans le <head>.
- * Il est nécessaire de le placer ici pour s'assurer qu'il s'exécute en premier.
- */
-function pc_add_iubenda_consent_banner()
-{
-    // Le script Iubenda, sans les balises PHP de début/fin
-    echo '<script type="text/javascript" src="https://embeds.iubenda.com/widgets/6009e7fe-1ae3-4fc1-8bc0-08c908991e29.js"></script>' . "\n";
-}
-add_action('wp_head', 'pc_add_iubenda_consent_banner');
-
-/**
  * =========================================
  * SEO & PERFORMANCE
  * =========================================

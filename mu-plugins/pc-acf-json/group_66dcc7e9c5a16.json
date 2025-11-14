@@ -1184,122 +1184,6 @@
                     "parent_repeater": "field_66dcceddd1136"
                 },
                 {
-                    "key": "field_66dccfe4d1138",
-                    "label": "Tarif Adulte",
-                    "name": "exp_tarif_adulte",
-                    "aria-label": "",
-                    "type": "number",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "25",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "min": 0,
-                    "max": "",
-                    "allow_in_bindings": 1,
-                    "placeholder": "",
-                    "step": "0.01",
-                    "prepend": "€",
-                    "append": "",
-                    "parent_repeater": "field_66dcceddd1136"
-                },
-                {
-                    "key": "field_66dcd033d1139",
-                    "label": "Tarif Enfant",
-                    "name": "exp_tarif_enfant",
-                    "aria-label": "",
-                    "type": "number",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "25",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "min": 0,
-                    "max": "",
-                    "allow_in_bindings": 1,
-                    "placeholder": "",
-                    "step": "0.01",
-                    "prepend": "€",
-                    "append": "",
-                    "parent_repeater": "field_66dcceddd1136"
-                },
-                {
-                    "key": "field_66dcd07bd113a",
-                    "label": "Précision Âge Enfant",
-                    "name": "exp_precision_age_enfant",
-                    "aria-label": "",
-                    "type": "text",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "25",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "3 à 12 ans",
-                    "maxlength": "",
-                    "allow_in_bindings": 1,
-                    "placeholder": "Ex: 3 à 12 ans",
-                    "prepend": "",
-                    "append": "",
-                    "parent_repeater": "field_66dcceddd1136"
-                },
-                {
-                    "key": "field_66dcd0f9d113b",
-                    "label": "Tarif Bébé",
-                    "name": "exp_tarif_bebe",
-                    "aria-label": "",
-                    "type": "number",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "25",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": 0,
-                    "min": 0,
-                    "max": "",
-                    "allow_in_bindings": 1,
-                    "placeholder": "",
-                    "step": "0.01",
-                    "prepend": "€",
-                    "append": "",
-                    "parent_repeater": "field_66dcceddd1136"
-                },
-                {
-                    "key": "field_66dcd14ad113c",
-                    "label": "Précision Âge Bébé",
-                    "name": "exp_precision_age_bebe",
-                    "aria-label": "",
-                    "type": "text",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "25",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "Moins de 3 ans",
-                    "maxlength": "",
-                    "allow_in_bindings": 1,
-                    "placeholder": "Ex: Moins de 3 ans",
-                    "prepend": "",
-                    "append": "",
-                    "parent_repeater": "field_66dcceddd1136"
-                },
-                {
                     "key": "field_66dcd1a0d113d",
                     "label": "Options Tarifaires",
                     "name": "exp_options_tarifaires",
@@ -1637,5 +1521,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1762780180
+    "modified": 1763123815
 }
