@@ -1276,12 +1276,83 @@
                     ]
                 },
                 {
+                    "key": "field_69189c9dfcb64",
+                    "label": "frais fixes",
+                    "name": "exp-frais-fixes",
+                    "aria-label": "",
+                    "type": "repeater",
+                    "instructions": "Ajoutez des frais fixe (ex: privatisation, assurance annulation, dépacement...).",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "layout": "table",
+                    "pagination": 0,
+                    "min": 0,
+                    "max": 0,
+                    "collapsed": "",
+                    "button_label": "Ajouter un frais fixe",
+                    "rows_per_page": 20,
+                    "sub_fields": [
+                        {
+                            "key": "field_69189d65fcb65",
+                            "label": "Description du frais fixe",
+                            "name": "exp_description_frais_fixe",
+                            "aria-label": "",
+                            "type": "text",
+                            "instructions": "",
+                            "required": 1,
+                            "conditional_logic": 0,
+                            "wrapper": {
+                                "width": "70",
+                                "class": "",
+                                "id": ""
+                            },
+                            "default_value": "",
+                            "maxlength": "",
+                            "allow_in_bindings": 1,
+                            "placeholder": "ex : Déplacement",
+                            "prepend": "",
+                            "append": "",
+                            "parent_repeater": "field_69189c9dfcb64"
+                        },
+                        {
+                            "key": "field_69189de5fcb66",
+                            "label": "Tarif de l'option",
+                            "name": "exp_tarif_frais_fixe",
+                            "aria-label": "",
+                            "type": "number",
+                            "instructions": "",
+                            "required": 1,
+                            "conditional_logic": 0,
+                            "wrapper": {
+                                "width": "30",
+                                "class": "",
+                                "id": ""
+                            },
+                            "default_value": "",
+                            "min": "",
+                            "max": "",
+                            "allow_in_bindings": 1,
+                            "placeholder": "",
+                            "step": "",
+                            "prepend": "€",
+                            "append": "",
+                            "parent_repeater": "field_69189c9dfcb64"
+                        }
+                    ],
+                    "parent_repeater": "field_66dcceddd1136"
+                },
+                {
                     "key": "field_6911d4141ac38",
                     "label": "Lignes de tarifs",
                     "name": "exp_tarifs_lignes",
                     "aria-label": "",
                     "type": "repeater",
-                    "instructions": "Définissez les lignes de tarifs pour ce type (ordre = affichage). Remplace les tarifs de base si renseigné.",
+                    "instructions": "Définissez les lignes de tarifs pour ce type (ordre = affichage).",
                     "required": 0,
                     "conditional_logic": 0,
                     "wrapper": {
@@ -1295,6 +1366,7 @@
                     "collapsed": "",
                     "button_label": "+ Ajouter une ligne",
                     "rows_per_page": 20,
+                    "parent_repeater": "field_66dcceddd1136",
                     "sub_fields": [
                         {
                             "key": "field_6911d6131ac39",
@@ -1494,8 +1566,7 @@
                             "new_lines": "br",
                             "parent_repeater": "field_6911d4141ac38"
                         }
-                    ],
-                    "parent_repeater": "field_66dcceddd1136"
+                    ]
                 }
             ]
         }
@@ -1521,5 +1592,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1763123815
+    "modified": 1763221093
 }

@@ -187,6 +187,34 @@ document.addEventListener("DOMContentLoaded", function () {
         // (fallback rare si pas migré) — laisser vide
       }
 
+      // 🔹 NOUVEAU : Frais fixes (toujours appliqués si présents)
+      const fixedFees = Array.isArray(typeConfig.fixed_fees)
+        ? typeConfig.fixed_fees
+        : [];
+
+      if (fixedFees.length > 0) {
+        // séparateur visuel dans le résumé
+        lines.push({ label: "Frais fixes", price: "", isSeparator: true });
+        resultHTML += `<li class="separator"><strong>Frais fixes</strong></li>`;
+
+        fixedFees.forEach((fee) => {
+          const label = fee.label || "Frais fixe";
+          const price = Number(fee.price) || 0;
+
+          if (isSurDevis) {
+            // Sur devis : on n'ajoute pas au total, on affiche "En attente de devis"
+            lines.push({ label, price: pendingLabel });
+            resultHTML += `<li><span>${label}</span><span class="exp-price--pending">${pendingLabel}</span></li>`;
+          } else {
+            total += price;
+            lines.push({ label, price: formatCurrency(price) });
+            resultHTML += `<li><span>${label}</span><span>${formatCurrency(
+              price
+            )}</span></li>`;
+          }
+        });
+      }
+
       // Options cochées
       const checkedOptions = optionsDiv.querySelectorAll("input:checked");
       if (checkedOptions.length) {

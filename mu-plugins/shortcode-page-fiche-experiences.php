@@ -398,6 +398,29 @@ add_shortcode('experience_pricing', function () {
                             </div>
                         <?php endif; ?>
 
+                        <?php
+                        // Frais fixes (nouveau répéteur exp-frais-fixes)
+                        if (have_rows('exp-frais-fixes')) : ?>
+                            <div class="exp-pricing-fixedfees">
+                                <div class="exp-pricing-options-title">
+                                    <?php echo esc_html__('Frais fixes', 'pc'); ?>
+                                </div>
+                                <?php while (have_rows('exp-frais-fixes')) : the_row();
+                                    $fee_label = (string) get_sub_field('exp_description_frais_fixe');
+                                    $fee_price = (float) get_sub_field('exp_tarif_frais_fixe');
+                                    if ($fee_label === '' || $fee_price == 0) {
+                                        continue;
+                                    } ?>
+                                    <div class="exp-pricing-row fixed-fee">
+                                        <span class="exp-pricing-label"><?php echo esc_html($fee_label); ?></span>
+                                        <span class="exp-pricing-price">
+                                            <?php echo esc_html(number_format($fee_price, 2, ',', ' ')); ?> €
+                                        </span>
+                                    </div>
+                                <?php endwhile; ?>
+                            </div>
+                        <?php endif; ?>
+
                     <?php endif; // fin sur-devis 
                     ?>
                 </div>
@@ -708,6 +731,20 @@ add_shortcode('experience_booking_bar', function () {
             $lines[] = $entry;
         }
 
+        $fixed_fees = [];
+        if (!empty($row['exp-frais-fixes'])) {
+            foreach ((array)$row['exp-frais-fixes'] as $fee_row) {
+                $fee_label = trim((string)($fee_row['exp_description_frais_fixe'] ?? ''));
+                $fee_price = (float)($fee_row['exp_tarif_frais_fixe'] ?? 0);
+                if ($fee_label !== '' && $fee_price != 0) {
+                    $fixed_fees[] = [
+                        'label' => $fee_label,
+                        'price' => $fee_price,
+                    ];
+                }
+            }
+        }
+
         $pricing_key = $type_value . '_' . $index;
 
         $pricing_data[$pricing_key] = [
@@ -715,6 +752,7 @@ add_shortcode('experience_booking_bar', function () {
             'label'        => $type_label,
             'options'      => $options,
             'lines'        => $lines,
+            'fixed_fees'   => $fixed_fees,
             'has_counters' => $has_counters,
         ];
     }
