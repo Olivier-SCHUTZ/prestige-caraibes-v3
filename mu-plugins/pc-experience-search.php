@@ -357,23 +357,24 @@ function pc_get_filtered_experiences(array $filters): array
     $posts_for_current_page = array_slice($final_posts, ($page - 1) * $posts_per_page, $posts_per_page);
 
     $vignettes_data = [];
-    $map_data = [];
+    $map_data       = [];
+
     foreach ($posts_for_current_page as $post) {
         $post_id = $post->ID;
 
-        // Tarifs -> texte déjà formaté pour vignette / carte
+        // Tarifs -> texte déjà formaté (notre helper)
         $tarifs      = get_field('exp_types_de_tarifs', $post_id);
         $price_label = pc_exp_get_vignette_price_label($tarifs);
 
-        // Lieu de départ (pour la ville + coordonnées)
+        // Lieu de départ (ville + coordonnées)
         $lieux     = get_field('exp_lieux_horaires_depart', $post_id);
         $lat       = null;
         $lng       = null;
         $city_name = '';
 
-        if ($lieux && !empty($lieux[0])) {
-            $lat       = $lieux[0]['lat']  ?? null;
-            $lng       = $lieux[0]['lng']  ?? null;
+        if (!empty($lieux) && !empty($lieux[0])) {
+            $lat       = isset($lieux[0]['lat_exp']) ? (float) $lieux[0]['lat_exp'] : null;
+            $lng       = isset($lieux[0]['longitude']) ? (float) $lieux[0]['longitude'] : null;
             $city_name = $lieux[0]['exp_lieu_depart'] ?? '';
         }
 
@@ -382,22 +383,27 @@ function pc_get_filtered_experiences(array $filters): array
             'title' => get_the_title($post_id),
             'link'  => get_permalink($post_id),
             'thumb' => get_the_post_thumbnail_url($post_id, 'medium_large'),
-            'price' => $price_label, // <<--- texte déjà prêt ("À partir de XX €", "Tarif sur devis", etc.)
+            'price' => $price_label,
             'city'  => $city_name,
             'lat'   => $lat,
             'lng'   => $lng,
         ];
 
         $vignettes_data[] = $vignette_data;
-        if ($lat && $lng) {
+
+        // Important : alimente la carte uniquement si coordonnées présentes
+        if ($lat !== null && $lng !== null) {
             $map_data[] = $vignette_data;
         }
     }
 
     return [
-        'vignettes' => $vignettes_data,
-        'map_data' => $map_data,
-        'pagination' => ['current_page' => $page, 'total_pages' => $total_pages]
+        'vignettes'   => $vignettes_data,
+        'map_data'    => $map_data,
+        'pagination'  => [
+            'current_page' => $page,
+            'total_pages'  => $total_pages,
+        ],
     ];
 }
 
