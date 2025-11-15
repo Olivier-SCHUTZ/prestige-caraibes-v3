@@ -227,7 +227,8 @@
    [experience_pricing] — Cartes de tarifs
    ============================================================ */
 
-.exp-pricing-section {
+.exp-pricing-section,
+.exp-pricing-grid {
   display: grid;
   /* Crée une grille responsive pour les cartes de tarifs */
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -280,11 +281,16 @@
   font-size: 0.85em;
 }
 
-.exp-pricing-amount {
-  font-weight: 700;
+.exp-pricing-amount,
+.exp-pricing-price {
+  font-weight: 400;
   font-size: 1.1rem;
   color: var(--pc-color-primary);
   white-space: nowrap;
+}
+
+.exp-pricing-label {
+  font-size: 1.1rem;
 }
 
 .exp-pricing-row.on-demand {

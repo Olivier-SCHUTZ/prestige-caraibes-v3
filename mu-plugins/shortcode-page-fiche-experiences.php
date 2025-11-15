@@ -652,7 +652,7 @@ add_shortcode('experience_booking_bar', function () {
         }
     }
 
-    foreach ((array)$field_object['value'] as $row) {
+    foreach ((array)$field_object['value'] as $index => $row) {
         $type_value = $row['exp_type'] ?? '';
         if (!$type_value) continue;
 
@@ -708,8 +708,10 @@ add_shortcode('experience_booking_bar', function () {
             $lines[] = $entry;
         }
 
-        $pricing_data[$type_value] = [
-            'code'         => $type_value,
+        $pricing_key = $type_value . '_' . $index;
+
+        $pricing_data[$pricing_key] = [
+            'code'         => $type_value,   // type logique (journee, custom, sur-devis...)
             'label'        => $type_label,
             'options'      => $options,
             'lines'        => $lines,

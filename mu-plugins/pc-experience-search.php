@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: PC - Recherche d'Expériences
  * Description: Fournit un shortcode [barre_recherche_experiences] pour afficher un formulaire de recherche AJAX pour les expériences.
@@ -8,6 +9,82 @@
 
 if (!defined('ABSPATH')) exit;
 
+/**
+ * Retourne le texte de tarif pour une expérience (vignette / carte)
+ * en fonction des grilles ACF exp_types_de_tarifs.
+ */
+function pc_exp_get_vignette_price_label($tarifs): string
+{
+    if (empty($tarifs) || !is_array($tarifs)) {
+        return '';
+    }
+
+    // 1) Cas "sur devis" : priorité absolue
+    foreach ($tarifs as $tarif) {
+        $type = $tarif['exp_type'] ?? '';
+        if ($type === 'sur-devis') {
+            return 'Tarif sur devis';
+        }
+    }
+
+    // Helper interne pour formatter une valeur
+    $format_price = function ($value): string {
+        $value = floatval($value);
+        // format simple, sans prise de tête
+        return rtrim(rtrim(number_format($value, 2, ',', ' '), '0'), ',') . ' €';
+    };
+
+    // 2) Demi-journée -> Adulte
+    foreach ($tarifs as $tarif) {
+        if (($tarif['exp_type'] ?? '') !== 'demi-journee') continue;
+        if (empty($tarif['exp_tarifs_lignes']) || !is_array($tarif['exp_tarifs_lignes'])) continue;
+
+        foreach ($tarif['exp_tarifs_lignes'] as $ligne) {
+            if (($ligne['type_ligne'] ?? '') === 'adulte' && isset($ligne['tarif_valeur']) && is_numeric($ligne['tarif_valeur'])) {
+                return 'À partir de ' . $format_price($ligne['tarif_valeur']);
+            }
+        }
+    }
+
+    // 3) Journée -> Adulte
+    foreach ($tarifs as $tarif) {
+        if (($tarif['exp_type'] ?? '') !== 'journee') continue;
+        if (empty($tarif['exp_tarifs_lignes']) || !is_array($tarif['exp_tarifs_lignes'])) continue;
+
+        foreach ($tarif['exp_tarifs_lignes'] as $ligne) {
+            if (($ligne['type_ligne'] ?? '') === 'adulte' && isset($ligne['tarif_valeur']) && is_numeric($ligne['tarif_valeur'])) {
+                return 'À partir de ' . $format_price($ligne['tarif_valeur']);
+            }
+        }
+    }
+
+    // 4) Unique -> première ligne avec une valeur
+    foreach ($tarifs as $tarif) {
+        if (($tarif['exp_type'] ?? '') !== 'unique') continue;
+        if (empty($tarif['exp_tarifs_lignes']) || !is_array($tarif['exp_tarifs_lignes'])) continue;
+
+        foreach ($tarif['exp_tarifs_lignes'] as $ligne) {
+            if (isset($ligne['tarif_valeur']) && is_numeric($ligne['tarif_valeur'])) {
+                return 'Tarif unique de ' . $format_price($ligne['tarif_valeur']);
+            }
+        }
+    }
+
+    // 5) Custom uniquement -> type_ligne "personnalise" de la première grille
+    foreach ($tarifs as $tarif) {
+        if (($tarif['exp_type'] ?? '') !== 'custom') continue;
+        if (empty($tarif['exp_tarifs_lignes']) || !is_array($tarif['exp_tarifs_lignes'])) continue;
+
+        foreach ($tarif['exp_tarifs_lignes'] as $ligne) {
+            if (($ligne['type_ligne'] ?? '') === 'personnalise' && isset($ligne['tarif_valeur']) && is_numeric($ligne['tarif_valeur'])) {
+                return 'À partir de ' . $format_price($ligne['tarif_valeur']);
+            }
+        }
+    }
+
+    return '';
+}
+
 // --- Enregistrement du shortcode et des assets (inchangé) ---
 add_action('init', function () {
     add_shortcode('barre_recherche_experiences', 'pc_exp_render_search_bar');
@@ -15,7 +92,8 @@ add_action('init', function () {
 add_action('wp_ajax_pc_filter_experiences', 'pc_exp_ajax_filter_handler');
 add_action('wp_ajax_nopriv_pc_filter_experiences', 'pc_exp_ajax_filter_handler');
 
-function pc_exp_enqueue_assets() {
+function pc_exp_enqueue_assets()
+{
     // ... (code de la fonction inchangé) ...
     $version = '2.0.0';
     wp_enqueue_style('pc-experience-search-css', plugins_url('assets/experience-search.css', __FILE__), [], $version);
@@ -24,18 +102,26 @@ function pc_exp_enqueue_assets() {
 }
 
 // --- Fonctions de récupération des données (inchangé) ---
-function pc_exp_get_categories(): array {
+function pc_exp_get_categories(): array
+{
     // ... (code de la fonction inchangé) ...
     $categories = [];
     $terms = get_terms(['taxonomy' => 'categorie_experience', 'hide_empty' => true]);
-    if (!is_wp_error($terms) && !empty($terms)) { foreach ($terms as $term) { $categories[$term->slug] = $term->name; } }
+    if (!is_wp_error($terms) && !empty($terms)) {
+        foreach ($terms as $term) {
+            $categories[$term->slug] = $term->name;
+        }
+    }
     return $categories;
 }
 
-function pc_exp_get_villes(): array {
+function pc_exp_get_villes(): array
+{
     // ... (code de la fonction inchangé) ...
     $villes_cache = get_transient('pc_exp_villes_list');
-    if ($villes_cache !== false) { return $villes_cache; }
+    if ($villes_cache !== false) {
+        return $villes_cache;
+    }
     $villes = [];
     $experience_ids = new WP_Query(['post_type' => 'experience', 'posts_per_page' => -1, 'fields' => 'ids']);
     if ($experience_ids->have_posts()) {
@@ -44,7 +130,9 @@ function pc_exp_get_villes(): array {
                 while (have_rows('exp_lieux_horaires_depart', $post_id)) {
                     the_row();
                     $lieu = get_sub_field('exp_lieu_depart');
-                    if (!empty($lieu) && !in_array($lieu, $villes)) { $villes[] = trim($lieu); }
+                    if (!empty($lieu) && !in_array($lieu, $villes)) {
+                        $villes[] = trim($lieu);
+                    }
                 }
             }
         }
@@ -57,7 +145,8 @@ function pc_exp_get_villes(): array {
 
 // --- Affichage de la barre de recherche (inchangé) ---
 // Modification pour SSR + rendu initial des vignettes
-function pc_exp_render_search_bar($atts = []) {
+function pc_exp_render_search_bar($atts = [])
+{
     pc_exp_enqueue_assets();
     $categories = pc_exp_get_categories();
     $villes = pc_exp_get_villes();
@@ -73,23 +162,38 @@ function pc_exp_render_search_bar($atts = []) {
 
     $options_villes = '';
     foreach ($villes as $ville_name) {
-        $options_villes .= '<option value="'.esc_attr($ville_name).'">'.esc_html($ville_name).'</option>';
+        $options_villes .= '<option value="' . esc_attr($ville_name) . '">' . esc_html($ville_name) . '</option>';
     }
 
     ob_start();
-    ?>
+?>
     <div class="pc-exp-search-wrapper" role="search" aria-label="Recherche d'expériences">
         <div class="pc-exp-search-shell">
             <form id="pc-exp-filters-form" class="pc-exp-search-form" action="#" method="post" autocomplete="off">
-                <div class="pc-exp-search-field"><label for="filter-exp-category" class="sr-only">Catégorie</label><select id="filter-exp-category" name="exp_category" class="pc-input"><option value="">Toutes les catégories</option><?php echo $options_categories; ?></select></div>
-                <div class="pc-exp-search-field"><label for="filter-exp-ville" class="sr-only">Destination</label><select id="filter-exp-ville" name="exp_ville" class="pc-input"><option value="">Toute la Guadeloupe</option><?php echo $options_villes; ?></select></div>
+                <div class="pc-exp-search-field"><label for="filter-exp-category" class="sr-only">Catégorie</label><select id="filter-exp-category" name="exp_category" class="pc-input">
+                        <option value="">Toutes les catégories</option><?php echo $options_categories; ?>
+                    </select></div>
+                <div class="pc-exp-search-field"><label for="filter-exp-ville" class="sr-only">Destination</label><select id="filter-exp-ville" name="exp_ville" class="pc-input">
+                        <option value="">Toute la Guadeloupe</option><?php echo $options_villes; ?>
+                    </select></div>
                 <div class="pc-exp-search-field pc-exp-search-field--keyword"><label for="filter-exp-keyword" class="sr-only">Mot-clé</label><input type="text" id="filter-exp-keyword" name="exp_keyword" class="pc-input" placeholder="Ex: kayak, randonnée..."></div>
                 <button class="pc-exp-search-submit pc-btn pc-btn--primary" type="submit">Rechercher</button>
             </form>
             <div class="pc-exp-row-adv-toggle"><button type="button" class="pc-exp-adv-toggle pc-btn pc-btn--line" aria-controls="pc-exp-advanced" aria-expanded="false">Plus de filtres</button></div>
-            <div id="pc-exp-advanced" class="pc-exp-advanced" hidden><div class="pc-exp-advanced__grid"><div class="pc-exp-adv-field"><div class="pc-exp-adv-label">Participants (min)</div><div class="pc-num-step"><button type="button" class="num-stepper" data-target="participants" data-step="-1" aria-label="Moins de participants">−</button><input type="number" class="pc-input pc-num-input" id="filter-exp-participants" name="exp_participants" min="1" step="1" value="1"><button type="button" class="num-stepper" data-target="participants" data-step="1" aria-label="Plus de participants">+</button></div></div><div class="pc-exp-adv-field"><div class="pc-exp-adv-label">Prix (€ / personne)</div><div class="pc-price-values"><input type="number" id="filter-exp-prix-min" name="exp_prix_min" class="pc-input" placeholder="Min" min="0" step="10"><input type="number" id="filter-exp-prix-max" name="exp_prix_max" class="pc-input" placeholder="Max" min="0" step="10"></div></div></div></div>
+            <div id="pc-exp-advanced" class="pc-exp-advanced" hidden>
+                <div class="pc-exp-advanced__grid">
+                    <div class="pc-exp-adv-field">
+                        <div class="pc-exp-adv-label">Participants (min)</div>
+                        <div class="pc-num-step"><button type="button" class="num-stepper" data-target="participants" data-step="-1" aria-label="Moins de participants">−</button><input type="number" class="pc-input pc-num-input" id="filter-exp-participants" name="exp_participants" min="1" step="1" value="1"><button type="button" class="num-stepper" data-target="participants" data-step="1" aria-label="Plus de participants">+</button></div>
+                    </div>
+                    <div class="pc-exp-adv-field">
+                        <div class="pc-exp-adv-label">Prix (€ / personne)</div>
+                        <div class="pc-price-values"><input type="number" id="filter-exp-prix-min" name="exp_prix_min" class="pc-input" placeholder="Min" min="0" step="10"><input type="number" id="filter-exp-prix-max" name="exp_prix_max" class="pc-input" placeholder="Max" min="0" step="10"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
+
         <div id="pc-exp-results-container" class="flow" style="margin-top:2rem;">
             <?php
             // On exécute la recherche initiale côté serveur
@@ -98,7 +202,7 @@ function pc_exp_render_search_bar($atts = []) {
 
             // On passe les données de la carte au JS pour l'initialisation
             wp_localize_script('pc-experience-search-js', 'pc_exp_initial_data', ['map_data' => $initial_results['map_data']]);
-            
+
             // On affiche les vignettes initiales
             echo pc_exp_render_vignettes_html($initial_results['vignettes'], true); // true pour marquer la 1ère image LCP
 
@@ -107,7 +211,7 @@ function pc_exp_render_search_bar($atts = []) {
             ?>
         </div>
     </div>
-    <?php
+<?php
     return ob_get_clean();
 }
 
@@ -117,7 +221,8 @@ function pc_exp_render_search_bar($atts = []) {
  * @param bool $is_first_load - Indique si c'est le premier chargement de la page (pour le LCP).
  * @return string - Le HTML des vignettes.
  */
-function pc_exp_render_vignettes_html(array $vignettes, bool $is_first_load = false): string {
+function pc_exp_render_vignettes_html(array $vignettes, bool $is_first_load = false): string
+{
     if (empty($vignettes)) {
         return '<div class="pc-no-results"><h3>Aucune expérience ne correspond à votre recherche.</h3><p>Essayez d\'ajuster vos filtres.</p></div>';
     }
@@ -126,9 +231,9 @@ function pc_exp_render_vignettes_html(array $vignettes, bool $is_first_load = fa
     $first = true;
 
     foreach ($vignettes as $item) {
-        $price_html = $item['price'] ? '<div class="pc-vignette__price">À partir de ' . esc_html($item['price']) . '€</div>' : '';
+        $price_html = $item['price'] ? '<div class="pc-vignette__price">' . esc_html($item['price']) . '</div>' : '';
         $location_html = $item['city'] ? '<div class="pc-vignette__location">' . esc_html($item['city']) . '</div>' : '';
-        
+
         $image_attrs = 'src="' . esc_url($item['thumb']) . '" alt="' . esc_attr($item['title']) . '" width="300" height="200"';
 
         // Attributs spéciaux pour l'image LCP
@@ -165,7 +270,8 @@ function pc_exp_render_vignettes_html(array $vignettes, bool $is_first_load = fa
  * NOUVEAU : Fonction dédiée au rendu HTML de la pagination
  * @return string - Le HTML de la pagination.
  */
-function pc_exp_render_pagination_html(int $current, int $total): string {
+function pc_exp_render_pagination_html(int $current, int $total): string
+{
     if ($total <= 1) return '';
 
     $html = '<div class="pc-pagination">';
@@ -182,7 +288,8 @@ function pc_exp_render_pagination_html(int $current, int $total): string {
  * ===================================================================
  * Cette fonction contient toute la logique de recherche et retourne les résultats.
  */
-function pc_get_filtered_experiences(array $filters): array {
+function pc_get_filtered_experiences(array $filters): array
+{
     $category     = isset($filters['category']) ? sanitize_text_field($filters['category']) : '';
     $ville        = isset($filters['ville']) ? sanitize_text_field($filters['ville']) : '';
     $keyword      = isset($filters['keyword']) ? sanitize_text_field($filters['keyword']) : '';
@@ -192,10 +299,16 @@ function pc_get_filtered_experiences(array $filters): array {
     $page         = isset($filters['page']) ? intval($filters['page']) : 1;
 
     $args = ['post_type' => 'experience', 'posts_per_page' => -1, 's' => $keyword];
-    if (!empty($category)) { $args['tax_query'] = [['taxonomy' => 'categorie_experience', 'field' => 'slug', 'terms' => $category]]; }
+    if (!empty($category)) {
+        $args['tax_query'] = [['taxonomy' => 'categorie_experience', 'field' => 'slug', 'terms' => $category]];
+    }
     $meta_query = ['relation' => 'AND'];
-    if ($participants > 1) { $meta_query[] = ['key' => 'exp_capacite', 'value' => $participants, 'compare' => '>=', 'type' => 'NUMERIC']; }
-    if (count($meta_query) > 1) { $args['meta_query'] = $meta_query; }
+    if ($participants > 1) {
+        $meta_query[] = ['key' => 'exp_capacite', 'value' => $participants, 'compare' => '>=', 'type' => 'NUMERIC'];
+    }
+    if (count($meta_query) > 1) {
+        $args['meta_query'] = $meta_query;
+    }
 
     $query = new WP_Query($args);
     $final_posts = [];
@@ -210,7 +323,10 @@ function pc_get_filtered_experiences(array $filters): array {
                 if (have_rows('exp_lieux_horaires_depart', $post_id)) {
                     while (have_rows('exp_lieux_horaires_depart', $post_id)) {
                         the_row();
-                        if (get_sub_field('exp_lieu_depart') === $ville) { $ville_trouvee = true; break; }
+                        if (get_sub_field('exp_lieu_depart') === $ville) {
+                            $ville_trouvee = true;
+                            break;
+                        }
                     }
                 }
                 if (!$ville_trouvee) continue;
@@ -218,33 +334,66 @@ function pc_get_filtered_experiences(array $filters): array {
 
             $tarifs = get_field('exp_types_de_tarifs', $post_id);
             $base_price = null;
-            if ($tarifs) { foreach ($tarifs as $tarif) { $prix_adulte = !empty($tarif['exp_tarif_adulte']) ? floatval($tarif['exp_tarif_adulte']) : null; if ($prix_adulte !== null && ($base_price === null || $prix_adulte < $base_price)) { if($prix_adulte > 0) $base_price = $prix_adulte; } } }
-            if (($prix_min > 0 || $prix_max < 99999) && ($base_price === null || $base_price < $prix_min || $base_price > $prix_max)) { continue; }
-            
+            if ($tarifs) {
+                foreach ($tarifs as $tarif) {
+                    $prix_adulte = !empty($tarif['exp_tarif_adulte']) ? floatval($tarif['exp_tarif_adulte']) : null;
+                    if ($prix_adulte !== null && ($base_price === null || $prix_adulte < $base_price)) {
+                        if ($prix_adulte > 0) $base_price = $prix_adulte;
+                    }
+                }
+            }
+            if (($prix_min > 0 || $prix_max < 99999) && ($base_price === null || $base_price < $prix_min || $base_price > $prix_max)) {
+                continue;
+            }
+
             $final_posts[] = get_post();
         }
     }
     wp_reset_postdata();
-    
-    $posts_per_page = 9;
+
+    $posts_per_page = 6;
     $total_results = count($final_posts);
     $total_pages = ceil($total_results / $posts_per_page);
     $posts_for_current_page = array_slice($final_posts, ($page - 1) * $posts_per_page, $posts_per_page);
-    
-    $vignettes_data = []; $map_data = [];
-    foreach($posts_for_current_page as $post) {
+
+    $vignettes_data = [];
+    $map_data = [];
+    foreach ($posts_for_current_page as $post) {
         $post_id = $post->ID;
-        $tarifs = get_field('exp_types_de_tarifs', $post_id);
-        $base_price = null;
-        if ($tarifs) { foreach ($tarifs as $tarif) { $prix_adulte = !empty($tarif['exp_tarif_adulte']) ? floatval($tarif['exp_tarif_adulte']) : null; if ($prix_adulte !== null && ($base_price === null || $prix_adulte < $base_price)) { if($prix_adulte > 0) $base_price = $prix_adulte; } } }
-        $lieux = get_field('exp_lieux_horaires_depart', $post_id);
-        $lat = null; $lng = null; $city_name = '';
-        if ($lieux && !empty($lieux[0])) { $lat = $lieux[0]['lat_exp'] ?? null; $lng = $lieux[0]['longitude'] ?? null; $city_name = $lieux[0]['exp_lieu_depart'] ?? ''; }
-        $vignette_data = ['id' => $post_id, 'title' => get_the_title($post), 'link' => get_permalink($post), 'thumb' => get_the_post_thumbnail_url($post_id, 'medium_large'), 'price' => $base_price, 'city' => $city_name, 'lat' => $lat, 'lng' => $lng];
+
+        // Tarifs -> texte déjà formaté pour vignette / carte
+        $tarifs      = get_field('exp_types_de_tarifs', $post_id);
+        $price_label = pc_exp_get_vignette_price_label($tarifs);
+
+        // Lieu de départ (pour la ville + coordonnées)
+        $lieux     = get_field('exp_lieux_horaires_depart', $post_id);
+        $lat       = null;
+        $lng       = null;
+        $city_name = '';
+
+        if ($lieux && !empty($lieux[0])) {
+            $lat       = $lieux[0]['lat']  ?? null;
+            $lng       = $lieux[0]['lng']  ?? null;
+            $city_name = $lieux[0]['exp_lieu_depart'] ?? '';
+        }
+
+        $vignette_data = [
+            'id'    => $post_id,
+            'title' => get_the_title($post_id),
+            'link'  => get_permalink($post_id),
+            'thumb' => get_the_post_thumbnail_url($post_id, 'medium_large'),
+            'price' => $price_label, // <<--- texte déjà prêt ("À partir de XX €", "Tarif sur devis", etc.)
+            'city'  => $city_name,
+            'lat'   => $lat,
+            'lng'   => $lng,
+        ];
+
         $vignettes_data[] = $vignette_data;
-        if($lat && $lng) { $map_data[] = $vignette_data; }
+        if ($lat && $lng) {
+            $map_data[] = $vignette_data;
+        }
     }
-    
+
     return [
         'vignettes' => $vignettes_data,
         'map_data' => $map_data,
@@ -258,7 +407,8 @@ function pc_get_filtered_experiences(array $filters): array {
  * ===================================================================
  */
 // Simplification du handler AJAX pour retourner du HTML
-function pc_exp_ajax_filter_handler() {
+function pc_exp_ajax_filter_handler()
+{
     check_ajax_referer('pc_experience_search_nonce', 'security');
 
     $filters = [
@@ -273,7 +423,7 @@ function pc_exp_ajax_filter_handler() {
 
     // On appelle notre moteur de recherche
     $results = pc_get_filtered_experiences($filters);
-    
+
     // On génère le HTML pour les vignettes et la pagination
     $vignettes_html = pc_exp_render_vignettes_html($results['vignettes']);
     $pagination_html = pc_exp_render_pagination_html($results['pagination']['current_page'], $results['pagination']['total_pages']);

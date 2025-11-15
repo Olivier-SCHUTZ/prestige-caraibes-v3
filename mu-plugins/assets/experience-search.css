@@ -279,4 +279,17 @@
     color: #ffffff !important;
   }
 }
-/* TEST DEPLOIEMENT V3.1 */
+
+/* --- Carte recherche expériences : minimum nécessaire --- */
+
+/* On réserve une hauteur mini pour éviter les sauts de mise en page */
+#pc-map-container {
+  min-height: 400px;
+}
+
+/* La carte ne doit jamais passer au-dessus du header ni du footer */
+.pc-map-sticky,
+#pc-map-container,
+#pc-map-container .leaflet-container {
+  z-index: 0;
+}
