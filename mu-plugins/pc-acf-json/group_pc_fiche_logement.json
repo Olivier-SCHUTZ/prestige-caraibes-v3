@@ -76,20 +76,19 @@
             "name": "gallery_urls",
             "aria-label": "",
             "type": "textarea",
-            "instructions": "1 URL d’image par ligne (utilisé par [pc_gallery]) uniquement si les images sont transmises par Urls sinon laissez vide.",
-            "required": 0,
-            "conditional_logic": 0,
+            "instructions": "1 URL d’image par ligne (utilisé par [pc_gallery]).",
+            "required": false,
+            "conditional_logic": false,
             "wrapper": {
                 "width": "",
                 "class": "",
                 "id": ""
             },
-            "default_value": "",
-            "maxlength": "",
-            "allow_in_bindings": 1,
             "rows": 8,
-            "placeholder": "",
-            "new_lines": ""
+            "default_value": "",
+            "new_lines": "",
+            "maxlength": "",
+            "placeholder": ""
         },
         {
             "key": "field_pc_video_urls",
@@ -110,155 +109,6 @@
             "new_lines": "",
             "maxlength": "",
             "placeholder": ""
-        },
-        {
-            "key": "field_6909eb9fcc805",
-            "label": "Gestionnaire d'images Logement",
-            "name": "",
-            "aria-label": "",
-            "type": "tab",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "placement": "top",
-            "endpoint": 0,
-            "selected": 0
-        },
-        {
-            "key": "field_6909f9f6495a0",
-            "label": "Groupes d'images",
-            "name": "groupes_images",
-            "aria-label": "",
-            "type": "repeater",
-            "instructions": "Ajoutez un \"groupe\" pour chaque catégorie d'image (ex: Salon, Piscine, Chambres). Vous pourrez ensuite ajouter toutes les images de ce groupe en une seule fois.",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "layout": "block",
-            "pagination": 0,
-            "min": 0,
-            "max": 0,
-            "collapsed": "field_6909faa8495a1",
-            "button_label": "Ajouter un groupe d'images",
-            "rows_per_page": 20,
-            "sub_fields": [
-                {
-                    "key": "field_6909faa8495a1",
-                    "label": "Catégorie",
-                    "name": "categorie",
-                    "aria-label": "",
-                    "type": "select",
-                    "instructions": "Sélectionnez la catégorie principale. Si elle n'existe pas, choisissez \"-- Autre --\" pour saisir un nom personnalisé.",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "choices": {
-                        "exterieur": "Extérieur",
-                        "terrasse": "Terrasse",
-                        "piscine": "Piscine",
-                        "alentours": "Alentours",
-                        "salon": "Salon",
-                        "cuisine": "Cuisine",
-                        "bureau": "Bureau",
-                        "buanderie": "Buanderie",
-                        "suite_parentale": "Suite parentale",
-                        "chambre_1": "Chambre 1",
-                        "chambre_2": "Chambre 2",
-                        "chambre_3": "Chambre 3",
-                        "chambre_4": "Chambre 4",
-                        "chambre_5": "Chambre 5",
-                        "salle_eau_1": "Salle d'eau 1",
-                        "salle_eau_2": "Salle d'eau 2",
-                        "salle_eau_3": "Salle d'eau 3",
-                        "salle_eau_4": "Salle d'eau 4",
-                        "salle_bain_1": "Salle de bain 1",
-                        "autre": "-- Autre (Préciser ci-dessous) --"
-                    },
-                    "default_value": false,
-                    "return_format": "value",
-                    "multiple": 0,
-                    "allow_null": 1,
-                    "allow_in_bindings": 0,
-                    "ui": 0,
-                    "ajax": 0,
-                    "placeholder": "",
-                    "create_options": 0,
-                    "save_options": 0,
-                    "parent_repeater": "field_6909f9f6495a0"
-                },
-                {
-                    "key": "field_6909fefe495a2",
-                    "label": "Nom de la catégorie personnalisée",
-                    "name": "categorie_personnalisee",
-                    "aria-label": "",
-                    "type": "text",
-                    "instructions": "Saisissez le nom de votre nouvelle catégorie (ex: \"Cave à vin\", \"Salle de sport\").",
-                    "required": 0,
-                    "conditional_logic": [
-                        [
-                            {
-                                "field": "field_6909faa8495a1",
-                                "operator": "==",
-                                "value": "autre"
-                            }
-                        ]
-                    ],
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "maxlength": "",
-                    "allow_in_bindings": 0,
-                    "placeholder": "",
-                    "prepend": "",
-                    "append": "",
-                    "parent_repeater": "field_6909f9f6495a0"
-                },
-                {
-                    "key": "field_6909ff75495a3",
-                    "label": "Images du groupe",
-                    "name": "images_du_groupe",
-                    "aria-label": "",
-                    "type": "gallery",
-                    "instructions": "Multi-sélection : Ajoutez toutes les images pour cette catégorie en une seule fois.",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "return_format": "array",
-                    "library": "all",
-                    "min": "",
-                    "max": "",
-                    "min_width": "",
-                    "min_height": "",
-                    "min_size": "",
-                    "max_width": "",
-                    "max_height": "",
-                    "max_size": "",
-                    "mime_types": "",
-                    "insert": "append",
-                    "preview_size": "thumbnail",
-                    "parent_repeater": "field_6909f9f6495a0"
-                }
-            ]
         },
         {
             "key": "tab_seo_long",
@@ -1351,27 +1201,6 @@
             "ui_off_text": ""
         },
         {
-            "key": "field_690c8f632ee24",
-            "label": "Logement sur devis",
-            "name": "pc_manual_quote",
-            "aria-label": "",
-            "type": "true_false",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "message": "Cochez si \"Ce logement nécessite un devis manuel\"",
-            "default_value": 0,
-            "allow_in_bindings": 0,
-            "ui": 0,
-            "ui_on_text": "",
-            "ui_off_text": ""
-        },
-        {
             "key": "field_pc_min_nights",
             "label": "Nombre de nuits minimum",
             "name": "min_nights",
@@ -2148,6 +1977,217 @@
             "allow_custom": 0,
             "save_custom": 0,
             "custom_choice_button_text": "Ajouter un nouveau choix"
+        },
+        {
+            "key": "field_6919e74557fd5",
+            "label": "Règles Channel Manager",
+            "name": "",
+            "aria-label": "",
+            "type": "tab",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "placement": "top",
+            "endpoint": 0,
+            "selected": 0
+        },
+        {
+            "key": "field_6919e7994db4a",
+            "label": "Règles de paiement",
+            "name": "regles_de_paiement",
+            "aria-label": "",
+            "type": "group",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "layout": "row",
+            "sub_fields": [
+                {
+                    "key": "field_6919e7994db4b",
+                    "label": "Mode de paiement",
+                    "name": "pc_pay_mode",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "30",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "acompte_plus_solde": "Acompte plus solde",
+                        "total_a_la_reservation": "Total à la réservation",
+                        "sur_place": "Sur place",
+                        "sur_devis": "Sur devis"
+                    },
+                    "default_value": false,
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 0,
+                    "allow_in_bindings": 1,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0
+                },
+                {
+                    "key": "field_6919e7994db4c",
+                    "label": "Acompte",
+                    "name": "pc_deposit_type",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_6919e7994db4b",
+                                "operator": "==",
+                                "value": "acompte_plus_solde"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "30",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "pourcentage": "Pourcentage",
+                        "montant_fixe": "Montant fixe"
+                    },
+                    "default_value": false,
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 0,
+                    "allow_in_bindings": 1,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0
+                },
+                {
+                    "key": "field_6919e7994db4d",
+                    "label": "Sommes ou %",
+                    "name": "pc_deposit_value",
+                    "aria-label": "",
+                    "type": "number",
+                    "instructions": "valeur numérique (ex : 30 ou 500)",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_6919e7994db4b",
+                                "operator": "==",
+                                "value": "acompte_plus_solde"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "30",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "min": "",
+                    "max": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "step": "",
+                    "prepend": "",
+                    "append": ""
+                },
+                {
+                    "key": "field_6919e7994db4e",
+                    "label": "Solde",
+                    "name": "pc_balance_delay_days",
+                    "aria-label": "",
+                    "type": "number",
+                    "instructions": "ex : 30 (= X jours avant arrivée \/ expérience)",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "min": "",
+                    "max": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "step": "",
+                    "prepend": "",
+                    "append": ""
+                },
+                {
+                    "key": "field_6919e7994db4f",
+                    "label": "Montant de la caution",
+                    "name": "pc_caution_amount",
+                    "aria-label": "",
+                    "type": "number",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "50",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "min": "",
+                    "max": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "step": "",
+                    "prepend": "€",
+                    "append": ""
+                },
+                {
+                    "key": "field_6919e7994db50",
+                    "label": "Méthode de caution",
+                    "name": "pc_caution_mode",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "Aucune caution = Le propriétaire sans occupe",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "50",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "aucune": "Aucune caution",
+                        "empreinte": "Empreinte bancaire",
+                        "encaissement": "Caution encaisser"
+                    },
+                    "default_value": false,
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 0,
+                    "allow_in_bindings": 1,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0
+                }
+            ]
         }
     ],
     "location": [
@@ -2176,5 +2216,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1762430932
+    "modified": 1763330631
 }

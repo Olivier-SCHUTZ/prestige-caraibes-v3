@@ -1569,6 +1569,217 @@
                     ]
                 }
             ]
+        },
+        {
+            "key": "field_6919d3567ec4f",
+            "label": "Règles Channel Manager",
+            "name": "",
+            "aria-label": "",
+            "type": "tab",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "placement": "top",
+            "endpoint": 0,
+            "selected": 0
+        },
+        {
+            "key": "field_6919d3b37ec50",
+            "label": "Règles de paiement",
+            "name": "regles_de_paiement",
+            "aria-label": "",
+            "type": "group",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "layout": "row",
+            "sub_fields": [
+                {
+                    "key": "field_6919d4793e90d",
+                    "label": "Mode de paiement",
+                    "name": "pc_pay_mode",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "30",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "acompte_plus_solde": "Acompte plus solde",
+                        "total_a_la_reservation": "Total à la réservation",
+                        "sur_place": "Sur place",
+                        "sur_devis": "Sur devis"
+                    },
+                    "default_value": false,
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 0,
+                    "allow_in_bindings": 1,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0
+                },
+                {
+                    "key": "field_6919e2d8b01b8",
+                    "label": "Acompte",
+                    "name": "pc_deposit_type",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_6919d4793e90d",
+                                "operator": "==",
+                                "value": "acompte_plus_solde"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "30",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "pourcentage": "Pourcentage",
+                        "montant_fixe": "Montant fixe"
+                    },
+                    "default_value": false,
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 0,
+                    "allow_in_bindings": 1,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0
+                },
+                {
+                    "key": "field_6919e38eb01b9",
+                    "label": "Sommes ou %",
+                    "name": "pc_deposit_value",
+                    "aria-label": "",
+                    "type": "number",
+                    "instructions": "valeur numérique (ex : 30 ou 500)",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_6919d4793e90d",
+                                "operator": "==",
+                                "value": "acompte_plus_solde"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "30",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "min": "",
+                    "max": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "step": "",
+                    "prepend": "",
+                    "append": ""
+                },
+                {
+                    "key": "field_6919e3e5b01ba",
+                    "label": "Solde",
+                    "name": "pc_balance_delay_days",
+                    "aria-label": "",
+                    "type": "number",
+                    "instructions": "ex : 30 (= X jours avant arrivée \/ expérience)",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "min": "",
+                    "max": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "step": "",
+                    "prepend": "",
+                    "append": ""
+                },
+                {
+                    "key": "field_6919e424b01bb",
+                    "label": "Montant de la caution",
+                    "name": "pc_caution_amount",
+                    "aria-label": "",
+                    "type": "number",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "50",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "min": "",
+                    "max": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "step": "",
+                    "prepend": "€",
+                    "append": ""
+                },
+                {
+                    "key": "field_6919e47bb01bc",
+                    "label": "Méthode de caution",
+                    "name": "pc_caution_mode",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "Aucune caution = Le propriétaire sans occupe",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "50",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "aucune": "Aucune caution",
+                        "empreinte": "Empreinte bancaire",
+                        "encaissement": "Caution encaisser"
+                    },
+                    "default_value": false,
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 0,
+                    "allow_in_bindings": 1,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0
+                }
+            ]
         }
     ],
     "location": [
@@ -1592,5 +1803,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1763221093
+    "modified": 1763332126
 }

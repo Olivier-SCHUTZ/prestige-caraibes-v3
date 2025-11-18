@@ -1875,6 +1875,55 @@ if (!function_exists('pc_handle_logement_booking_request')) {
       return;
     }
 
+    // ===== NOYAU RÉSERVATION : enregistrement dans wp_pc_reservations (si plugin actif) =====
+    if (class_exists('PCR_Reservation')) {
+      $resa_data = [
+        // Identification
+        'type'             => 'location',
+        'item_id'          => $logement_id,
+        'mode_reservation' => 'demande',
+        'origine'          => 'site',
+
+        // Dates (pour l’instant probablement vides tant que le JS ne les envoie pas)
+        'date_arrivee'     => isset($_POST['arrival'])   ? sanitize_text_field($_POST['arrival'])   : null,
+        'date_depart'      => isset($_POST['departure']) ? sanitize_text_field($_POST['departure']) : null,
+
+        // Personnes
+        'adultes'          => $adultes,
+        'enfants'          => $enfants,
+        'bebes'            => $bebes,
+
+        // Client
+        'prenom'           => $prenom,
+        'nom'              => $nom,
+        'email'            => $email,
+        'telephone'        => $tel,
+        'commentaire_client' => $message,
+
+        // Tarif (sera alimenté correctement quand on aura branché le JS)
+        'devise'           => 'EUR',
+        'montant_total'    => isset($_POST['total'])      ? (float) $_POST['total']      : 0,
+        'detail_tarif'     => isset($_POST['lines_json']) ? wp_kses_post($_POST['lines_json']) : null,
+
+        // Statuts initiaux
+        'statut_reservation' => 'en_attente',
+        'statut_paiement'    => 'non_demande',
+
+        // Système
+        'date_creation'    => current_time('mysql'),
+        'date_maj'         => current_time('mysql'),
+      ];
+
+      // Création de la réservation
+      $resa_id = PCR_Reservation::create($resa_data);
+
+      // Génération des paiements selon les règles ACF de la fiche
+      if ($resa_id && class_exists('PCR_Payment')) {
+        PCR_Payment::generate_for_reservation($resa_id);
+      }
+    }
+    // ===== FIN NOYAU RÉSERVATION =====
+
     $logement_title = get_the_title($logement_id);
     $headers = ['Content-Type: text/plain; charset=UTF-8'];
     $admin_to = 'guadeloupe@prestigecaraibes.com';

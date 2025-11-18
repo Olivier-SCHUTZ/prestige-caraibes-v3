@@ -851,6 +851,45 @@ document.addEventListener("DOMContentLoaded", function () {
     submitBtn.disabled = true;
     const formData = new FormData(form);
 
+    // NOUVEAU : infos noyau réservation uniquement si plugin actif
+    if (window.pcResaCoreActive) {
+      formData.append("total", String(window.currentTotal || 0));
+      formData.append("lines_json", JSON.stringify(window.currentLines || []));
+      formData.append("is_sur_devis", window.isSurDevis ? "1" : "0");
+
+      const typeSelect = document.querySelector('select[name="devis_type"]');
+      if (typeSelect) {
+        formData.append("devis_type", typeSelect.value || "");
+      }
+
+      const dateInput = form.querySelector('input[name="date_experience"]');
+      if (dateInput) {
+        formData.append("date_experience", dateInput.value || "");
+      }
+
+      // ⬇️ NOUVEAU : on pousse aussi les participants du calculateur
+      const devisWrap = document.querySelector("[data-exp-devis]");
+      if (devisWrap) {
+        const adultsInput = devisWrap.querySelector(
+          'input[name="devis_adults"]'
+        );
+        const childrenInput = devisWrap.querySelector(
+          'input[name="devis_children"]'
+        );
+        const bebesInput = devisWrap.querySelector('input[name="devis_bebes"]');
+
+        if (adultsInput) {
+          formData.append("devis_adults", adultsInput.value || "0");
+        }
+        if (childrenInput) {
+          formData.append("devis_children", childrenInput.value || "0");
+        }
+        if (bebesInput) {
+          formData.append("devis_bebes", bebesInput.value || "0");
+        }
+      }
+    }
+
     fetch(form.getAttribute("action"), { method: "POST", body: formData })
       .then((response) => response.json())
       .then((data) => {

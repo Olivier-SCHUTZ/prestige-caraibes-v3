@@ -483,6 +483,18 @@
             formData.append("children", String(parseInt(ss.children || 0, 10)));
             formData.append("infants", String(parseInt(ss.infants || 0, 10)));
             formData.append("manual_quote", isManualQuote ? "1" : "0");
+
+            // NOUVEAU : n'envoyer les infos de total que si le noyau est actif
+            if (window.pcResaCoreActive) {
+              formData.append(
+                "total",
+                String(window.currentLogementTotal || 0)
+              );
+              formData.append(
+                "lines_json",
+                JSON.stringify(window.currentLogementLines || [])
+              );
+            }
           }
 
           fetch(form.getAttribute("action"), { method: "POST", body: formData })
