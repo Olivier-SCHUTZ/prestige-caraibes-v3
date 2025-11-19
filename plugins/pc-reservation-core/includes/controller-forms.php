@@ -61,55 +61,50 @@ class PCR_FormController
      */
     private static function handle_logement(array $raw, array $post)
     {
-        if (!class_exists('PCR_Reservation')) {
+        if (!class_exists('PCR_Booking_Engine')) {
             return;
         }
 
         $item_id = get_the_ID() ?: 0;
 
-        $data = [
-            // Identification
-            'type'               => 'location',
-            'item_id'            => $item_id,
-            'mode_reservation'   => 'demande',
-            'origine'            => 'site',
+        $lines_json = isset($post['lines_json']) ? wp_kses_post(wp_unslash($post['lines_json'])) : '';
+        $type_flux  = (!empty($post['type_flux']) && $post['type_flux'] === 'devis') ? 'devis' : 'reservation';
 
-            // Dates
-            'date_arrivee'       => sanitize_text_field($post['arrival'] ?? ''),
-            'date_depart'        => sanitize_text_field($post['departure'] ?? ''),
-
-            // Personnes (version EN envoyée par le JS)
-            'adultes'            => isset($post['adults']) ? (int) $post['adults'] : 0,
-            'enfants'            => isset($post['children']) ? (int) $post['children'] : 0,
-            'bebes'              => isset($post['infants']) ? (int) $post['infants'] : 0,
-
-            // Tarif (sera mieux alimenté une fois les JS mis à jour)
-            'montant_total'      => isset($post['total']) ? (float) $post['total'] : 0,
-            'detail_tarif'       => isset($post['lines_json']) ? wp_kses_post($post['lines_json']) : null,
-            'devise'             => 'EUR',
-
-            // Client (labels Elementor -> $raw)
-            'prenom'             => isset($raw['prenom']) ? sanitize_text_field($raw['prenom']) : '',
-            'nom'                => isset($raw['nom']) ? sanitize_text_field($raw['nom']) : '',
-            'email'              => isset($raw['email']) ? sanitize_email($raw['email']) : '',
-            'telephone'          => isset($raw['telephone']) ? sanitize_text_field($raw['telephone']) : '',
-            'langue'             => 'fr',
-
-            // Statuts initiaux
-            'statut_reservation' => 'en_attente',
-            'statut_paiement'    => 'non_demande',
-
-            // Caution (à enrichir plus tard)
-            'caution_montant'    => 0,
-            'caution_mode'       => 'aucune',
-            'caution_statut'     => 'non_demande',
-
-            // Système
-            'date_creation'      => current_time('mysql'),
-            'date_maj'           => current_time('mysql'),
+        $payload = [
+            'context' => [
+                'type'             => 'location',
+                'origine'          => 'site',
+                'mode_reservation' => 'demande',
+                'type_flux'        => $type_flux,
+                'source'           => 'form_elementor',
+            ],
+            'item' => [
+                'item_id'     => $item_id,
+                'date_arrivee'=> sanitize_text_field($post['arrival'] ?? ''),
+                'date_depart' => sanitize_text_field($post['departure'] ?? ''),
+            ],
+            'people' => [
+                'adultes' => isset($post['adults']) ? (int) $post['adults'] : 0,
+                'enfants' => isset($post['children']) ? (int) $post['children'] : 0,
+                'bebes'   => isset($post['infants']) ? (int) $post['infants'] : 0,
+            ],
+            'pricing' => [
+                'currency'       => 'EUR',
+                'total'          => isset($post['total']) ? (float) $post['total'] : 0,
+                'raw_lines_json' => $lines_json,
+                'is_sur_devis'   => !empty($post['is_sur_devis']),
+            ],
+            'customer' => [
+                'prenom'             => isset($raw['prenom']) ? sanitize_text_field($raw['prenom']) : '',
+                'nom'                => isset($raw['nom']) ? sanitize_text_field($raw['nom']) : '',
+                'email'              => isset($raw['email']) ? sanitize_email($raw['email']) : '',
+                'telephone'          => isset($raw['telephone']) ? sanitize_text_field($raw['telephone']) : '',
+                'langue'             => 'fr',
+                'commentaire_client' => isset($raw['message']) ? sanitize_textarea_field($raw['message']) : '',
+            ],
         ];
 
-        PCR_Reservation::create($data);
+        PCR_Booking_Engine::create($payload);
     }
 
     /**
@@ -117,56 +112,49 @@ class PCR_FormController
      */
     private static function handle_experience(array $raw, array $post)
     {
-        if (!class_exists('PCR_Reservation')) {
+        if (!class_exists('PCR_Booking_Engine')) {
             return;
         }
 
         $item_id = get_the_ID() ?: 0;
 
-        $data = [
-            // Identification
-            'type'               => 'experience',
-            'item_id'            => $item_id,
-            'mode_reservation'   => 'demande',
-            'origine'            => 'site',
+        $lines_json = isset($post['lines_json']) ? wp_kses_post(wp_unslash($post['lines_json'])) : '';
+        $type_flux  = (!empty($post['type_flux']) && $post['type_flux'] === 'devis') ? 'devis' : 'reservation';
 
-            // Type tarifaire (grille choisie)
-            'experience_tarif_type' => sanitize_text_field($post['devis_type'] ?? ''),
-
-            // Date expérience (quand tu rajouteras le champ dans le form)
-            'date_experience'    => sanitize_text_field($post['date_experience'] ?? ''),
-
-            // Personnes (version FR côté expérience)
-            'adultes'            => isset($post['devis_adults']) ? (int) $post['devis_adults'] : 0,
-            'enfants'            => isset($post['devis_children']) ? (int) $post['devis_children'] : 0,
-            'bebes'              => isset($post['devis_bebes']) ? (int) $post['devis_bebes'] : 0,
-
-            // Tarif simulation
-            'montant_total'      => isset($post['total']) ? (float) $post['total'] : 0,
-            'detail_tarif'       => isset($post['lines_json']) ? wp_kses_post($post['lines_json']) : null,
-            'devise'             => 'EUR',
-
-            // Client
-            'prenom'             => isset($raw['prenom']) ? sanitize_text_field($raw['prenom']) : '',
-            'nom'                => isset($raw['nom']) ? sanitize_text_field($raw['nom']) : '',
-            'email'              => isset($raw['email']) ? sanitize_email($raw['email']) : '',
-            'telephone'          => isset($raw['telephone']) ? sanitize_text_field($raw['telephone']) : '',
-            'langue'             => 'fr',
-
-            // Statuts initiaux
-            'statut_reservation' => 'en_attente',
-            'statut_paiement'    => 'non_demande',
-
-            // Caution (pas pour les expériences pour l’instant)
-            'caution_montant'    => 0,
-            'caution_mode'       => 'aucune',
-            'caution_statut'     => 'non_demande',
-
-            // Système
-            'date_creation'      => current_time('mysql'),
-            'date_maj'           => current_time('mysql'),
+        $payload = [
+            'context' => [
+                'type'             => 'experience',
+                'origine'          => 'site',
+                'mode_reservation' => 'demande',
+                'type_flux'        => $type_flux,
+                'source'           => 'form_elementor',
+            ],
+            'item' => [
+                'item_id'               => $item_id,
+                'experience_tarif_type' => sanitize_text_field($post['devis_type'] ?? ''),
+                'date_experience'       => sanitize_text_field($post['date_experience'] ?? ''),
+            ],
+            'people' => [
+                'adultes' => isset($post['devis_adults']) ? (int) $post['devis_adults'] : 0,
+                'enfants' => isset($post['devis_children']) ? (int) $post['devis_children'] : 0,
+                'bebes'   => isset($post['devis_bebes']) ? (int) $post['devis_bebes'] : 0,
+            ],
+            'pricing' => [
+                'currency'       => 'EUR',
+                'total'          => isset($post['total']) ? (float) $post['total'] : 0,
+                'raw_lines_json' => $lines_json,
+                'is_sur_devis'   => !empty($post['is_sur_devis']),
+            ],
+            'customer' => [
+                'prenom'             => isset($raw['prenom']) ? sanitize_text_field($raw['prenom']) : '',
+                'nom'                => isset($raw['nom']) ? sanitize_text_field($raw['nom']) : '',
+                'email'              => isset($raw['email']) ? sanitize_email($raw['email']) : '',
+                'telephone'          => isset($raw['telephone']) ? sanitize_text_field($raw['telephone']) : '',
+                'langue'             => 'fr',
+                'commentaire_client' => isset($raw['message']) ? sanitize_textarea_field($raw['message']) : '',
+            ],
         ];
 
-        PCR_Reservation::create($data);
+        PCR_Booking_Engine::create($payload);
     }
 }

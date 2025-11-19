@@ -20,6 +20,8 @@ define('PC_RES_CORE_URL', plugin_dir_url(__FILE__));
 require_once PC_RES_CORE_PATH . 'db/schema.php';
 require_once PC_RES_CORE_PATH . 'includes/class-reservation.php';
 require_once PC_RES_CORE_PATH . 'includes/class-payment.php';
+require_once PC_RES_CORE_PATH . 'includes/class-booking-engine.php';
+require_once PC_RES_CORE_PATH . 'includes/class-dashboard-ajax.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-dashboard.php';
 // controller-forms sera branché plus tard quand tu seras prêt
 if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
@@ -46,6 +48,10 @@ add_action('plugins_loaded', function () {
     // Initialisation du contrôleur de formulaires (si présent)
     if (class_exists('PCR_FormController')) {
         PCR_FormController::init();
+    }
+
+    if (class_exists('PCR_Dashboard_Ajax')) {
+        PCR_Dashboard_Ajax::init();
     }
 });
 

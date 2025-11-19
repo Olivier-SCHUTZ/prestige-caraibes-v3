@@ -50,6 +50,43 @@ function pc_resa_format_status_label($status)
 }
 
 /**
+ * Prépare les données pour pré-remplir le formulaire de devis.
+ *
+ * @param object $resa
+ * @return array
+ */
+function pc_resa_build_prefill_payload($resa)
+{
+    if (empty($resa) || !is_object($resa)) {
+        return [];
+    }
+
+    $payload = [
+        'id'                    => isset($resa->id) ? (int) $resa->id : 0,
+        'type'                  => isset($resa->type) ? $resa->type : '',
+        'type_flux'             => isset($resa->type_flux) ? $resa->type_flux : '',
+        'mode_reservation'      => isset($resa->mode_reservation) ? $resa->mode_reservation : '',
+        'item_id'               => isset($resa->item_id) ? (int) $resa->item_id : 0,
+        'experience_tarif_type' => isset($resa->experience_tarif_type) ? $resa->experience_tarif_type : '',
+        'date_experience'       => isset($resa->date_experience) ? $resa->date_experience : '',
+        'adultes'               => isset($resa->adultes) ? (int) $resa->adultes : 0,
+        'enfants'               => isset($resa->enfants) ? (int) $resa->enfants : 0,
+        'bebes'                 => isset($resa->bebes) ? (int) $resa->bebes : 0,
+        'montant_total'         => isset($resa->montant_total) ? (float) $resa->montant_total : 0,
+        'lines_json'            => isset($resa->detail_tarif) ? $resa->detail_tarif : '',
+        'prenom'                => isset($resa->prenom) ? $resa->prenom : '',
+        'nom'                   => isset($resa->nom) ? $resa->nom : '',
+        'email'                 => isset($resa->email) ? $resa->email : '',
+        'telephone'             => isset($resa->telephone) ? $resa->telephone : '',
+        'commentaire_client'    => isset($resa->commentaire_client) ? $resa->commentaire_client : '',
+        'notes_internes'        => isset($resa->notes_internes) ? $resa->notes_internes : '',
+        'numero_devis'          => isset($resa->numero_devis) ? $resa->numero_devis : '',
+    ];
+
+    return $payload;
+}
+
+/**
  * Shortcode [pc_resa_dashboard]
  */
 function pc_resa_dashboard_shortcode($atts)
@@ -135,6 +172,105 @@ function pc_resa_dashboard_shortcode($atts)
     if (! empty($exp_options)) {
         asort($exp_options);
     }
+
+    $manual_experience_options = [];
+    $manual_experience_tarifs  = [];
+    $manual_experiences = get_posts([
+        'post_type'      => 'experience',
+        'post_status'    => ['publish', 'pending'],
+        'posts_per_page' => 200,
+        'orderby'        => 'title',
+        'order'          => 'ASC',
+        'fields'         => 'ids',
+    ]);
+
+    if (! empty($manual_experiences)) {
+        foreach ($manual_experiences as $exp_id) {
+            $manual_experience_options[$exp_id] = get_the_title($exp_id);
+
+            if (function_exists('get_field')) {
+
+                $tarifs_rows = get_field('exp_types_de_tarifs', $exp_id);
+                if (!empty($tarifs_rows) && is_array($tarifs_rows)) {
+                    $tarif_options = [];
+
+                    foreach ($tarifs_rows as $idx => $row) {
+                        $code = isset($row['exp_type']) ? (string) $row['exp_type'] : '';
+                        $key  = $code !== '' ? $code . '_' . $idx : 'tarif_' . $idx;
+
+                        if (function_exists('pc_exp_type_label')) {
+                            $label = pc_exp_type_label($row);
+                        } else {
+                            $label = isset($row['exp_type_custom']) && $code === 'custom'
+                                ? trim((string) $row['exp_type_custom'])
+                                : ($code ?: 'Tarif');
+                        }
+
+                        if ($label === '') {
+                            $label = sprintf(__('Tarif %d', 'pc'), $idx + 1);
+                        }
+
+                        $lines_raw = isset($row['exp_tarifs_lignes']) ? (array) $row['exp_tarifs_lignes'] : [];
+                        $lines = [];
+
+                        foreach ($lines_raw as $ln) {
+                            $type_ligne = isset($ln['type_ligne']) ? (string) $ln['type_ligne'] : 'personnalise';
+                            $entry = [
+                                'type'        => $type_ligne,
+                                'price'       => isset($ln['tarif_valeur']) ? (float) $ln['tarif_valeur'] : 0,
+                                'label'       => '',
+                                'observation' => trim((string) ($ln['tarif_observation'] ?? '')),
+                                'enable_qty'  => !empty($ln['tarif_enable_qty']),
+                                'default_qty' => isset($ln['tarif_qty_default']) ? (int) $ln['tarif_qty_default'] : 0,
+                            ];
+
+                            if ($type_ligne === 'adulte') {
+                                $entry['label'] = __('Adulte', 'pc');
+                            } elseif ($type_ligne === 'enfant') {
+                                $precision = trim((string) ($ln['precision_age_enfant'] ?? ''));
+                                $entry['label'] = $precision ? sprintf(__('Enfant (%s)', 'pc'), $precision) : __('Enfant', 'pc');
+                            } elseif ($type_ligne === 'bebe') {
+                                $precision = trim((string) ($ln['precision_age_bebe'] ?? ''));
+                                $entry['label'] = $precision ? sprintf(__('Bébé (%s)', 'pc'), $precision) : __('Bébé', 'pc');
+                            } else {
+                                $entry['label'] = trim((string) ($ln['tarif_nom_perso'] ?? '')) ?: __('Forfait', 'pc');
+                            }
+
+                            $lines[] = $entry;
+                        }
+
+                        $fixed_fees = [];
+                        if (!empty($row['exp-frais-fixes'])) {
+                            foreach ((array) $row['exp-frais-fixes'] as $fee_row) {
+                                $fee_label = trim((string) ($fee_row['exp_description_frais_fixe'] ?? ''));
+                                $fee_price = isset($fee_row['exp_tarif_frais_fixe']) ? (float) $fee_row['exp_tarif_frais_fixe'] : 0;
+                                if ($fee_label !== '' && $fee_price != 0) {
+                                    $fixed_fees[] = [
+                                        'label' => $fee_label,
+                                        'price' => $fee_price,
+                                    ];
+                                }
+                            }
+                        }
+
+                        $tarif_options[] = [
+                            'key'        => $key,
+                            'label'      => $label,
+                            'code'       => $code,
+                            'lines'      => $lines,
+                            'fixed_fees' => $fixed_fees,
+                        ];
+                    }
+
+                    if (!empty($tarif_options)) {
+                        $manual_experience_tarifs[$exp_id] = $tarif_options;
+                    }
+                }
+            }
+        }
+    }
+
+    $manual_nonce = wp_create_nonce('pc_resa_manual_create');
 
     ob_start();
 ?>
@@ -578,19 +714,24 @@ function pc_resa_dashboard_shortcode($atts)
                                     </div>
 
                                     <div class="pc-resa-card__footer">
-                                        <!-- Boutons pour les futures actions (à brancher plus tard) -->
-                                        <button type="button"
-                                            class="pc-resa-btn pc-resa-btn--primary"
-                                            data-action="mark-paid"
-                                            data-resa-id="<?php echo esc_attr($resa->id); ?>">
-                                            Marquer comme payé (à venir)
-                                        </button>
-                                        <button type="button"
-                                            class="pc-resa-btn pc-resa-btn--secondary"
-                                            data-action="cancel-resa"
-                                            data-resa-id="<?php echo esc_attr($resa->id); ?>">
-                                            Annuler la réservation (à venir)
-                                        </button>
+                                        <?php if ($resa->type === 'experience') :
+                                            $prefill_payload = pc_resa_build_prefill_payload($resa);
+                                            $prefill_json    = $prefill_payload ? wp_json_encode($prefill_payload) : '';
+                                            $prefill_attr    = esc_attr($prefill_json);
+                                        ?>
+                                            <button type="button"
+                                                class="pc-resa-btn pc-resa-btn--secondary pc-resa-edit-quote"
+                                                data-prefill="<?php echo $prefill_attr; ?>">
+                                                Modifier le devis
+                                            </button>
+                                            <button type="button"
+                                                class="pc-resa-btn pc-resa-btn--primary pc-resa-resend-quote"
+                                                data-prefill="<?php echo $prefill_attr; ?>">
+                                                Renvoyer le devis
+                                            </button>
+                                        <?php else : ?>
+                                            <em>Actions rapides disponibles prochainement.</em>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </td>
@@ -612,8 +753,12 @@ function pc_resa_dashboard_shortcode($atts)
             <p class="pc-resa-create-intro">
                 Créez manuellement un devis ou une réservation pour un logement ou une expérience.
             </p>
+            <p class="pc-resa-create-hint">
+                Pour l'instant, la création manuelle est disponible pour les expériences uniquement.
+            </p>
 
             <form class="pc-resa-create-form">
+                <input type="hidden" name="action" value="pc_manual_reservation_create">
                 <div class="pc-resa-create-grid">
                     <div class="pc-resa-create-section">
                         <h4>Type &amp; flux</h4>
@@ -621,8 +766,8 @@ function pc_resa_dashboard_shortcode($atts)
                         <label class="pc-resa-field">
                             <span class="pc-resa-field-label">Type de réservation</span>
                             <select name="type">
-                                <option value="location">Logement</option>
-                                <option value="experience">Expérience</option>
+                                <option value="experience" selected>Expérience</option>
+                                <option value="location">Logement (bientôt)</option>
                             </select>
                         </label>
 
@@ -632,6 +777,39 @@ function pc_resa_dashboard_shortcode($atts)
                                 <option value="devis">Devis</option>
                                 <option value="reservation">Réservation directe</option>
                             </select>
+                        </label>
+
+                        <label class="pc-resa-field">
+                            <span class="pc-resa-field-label">Mode</span>
+                            <select name="mode_reservation">
+                                <option value="demande">Demande</option>
+                                <option value="directe">Directe</option>
+                            </select>
+                        </label>
+
+                        <label class="pc-resa-field">
+                            <span class="pc-resa-field-label">Expérience</span>
+                            <select name="item_id">
+                                <option value="">Sélectionnez une expérience</option>
+                                <?php foreach ($manual_experience_options as $pid => $title) : ?>
+                                    <option value="<?php echo esc_attr($pid); ?>">
+                                        <?php echo esc_html($title); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <span class="pc-resa-field-hint">
+                                Les logements seront ajoutés après validation du moteur logement.
+                            </span>
+                        </label>
+
+                        <label class="pc-resa-field">
+                            <span class="pc-resa-field-label">Type de tarif</span>
+                            <select name="experience_tarif_type" data-tarif-select disabled required>
+                                <option value="">Sélectionnez une expérience d'abord</option>
+                            </select>
+                            <span class="pc-resa-field-hint">
+                                Choisissez une expérience pour afficher les options tarifaires disponibles.
+                            </span>
                         </label>
                     </div>
 
@@ -662,64 +840,105 @@ function pc_resa_dashboard_shortcode($atts)
                 </div>
 
                 <div class="pc-resa-create-section">
-                    <h4>Séjour (pré-remplissage)</h4>
+                    <h4>Détails devis</h4>
+
+                    <label class="pc-resa-field">
+                        <span class="pc-resa-field-label">Date de l'expérience</span>
+                        <input type="date" name="date_experience">
+                    </label>
 
                     <div class="pc-resa-create-grid pc-resa-create-grid--3">
-                        <label class="pc-resa-field">
-                            <span class="pc-resa-field-label">Date d'arrivée / expérience</span>
-                            <input type="date" name="date_arrivee">
-                        </label>
-                        <label class="pc-resa-field">
-                            <span class="pc-resa-field-label">Date de départ</span>
-                            <input type="date" name="date_depart">
-                        </label>
                         <label class="pc-resa-field">
                             <span class="pc-resa-field-label">Adultes</span>
-                            <input type="number" min="0" name="adultes" value="2">
+                            <input type="number" min="0" name="adultes" value="2" data-quote-counter>
                         </label>
-                    </div>
-
-                    <div class="pc-resa-create-grid pc-resa-create-grid--3">
                         <label class="pc-resa-field">
                             <span class="pc-resa-field-label">Enfants</span>
-                            <input type="number" min="0" name="enfants" value="0">
+                            <input type="number" min="0" name="enfants" value="0" data-quote-counter>
                         </label>
                         <label class="pc-resa-field">
                             <span class="pc-resa-field-label">Bébés</span>
-                            <input type="number" min="0" name="bebes" value="0">
-                        </label>
-                        <label class="pc-resa-field">
-                            <span class="pc-resa-field-label">Montant total (indicatif)</span>
-                            <input type="number" min="0" step="0.01" name="montant_total">
+                            <input type="number" min="0" name="bebes" value="0" data-quote-counter>
                         </label>
                     </div>
+
+                    <label class="pc-resa-field">
+                        <span class="pc-resa-field-label">Montant total / devis (€)</span>
+                        <input type="number" min="0" step="0.01" name="montant_total" readonly>
+                        <span class="pc-resa-field-hint">Calculé automatiquement d'après le tarif choisi.</span>
+                    </label>
+                </div>
+
+                <div class="pc-resa-create-section">
+                    <h4>Remise exceptionnelle</h4>
+                    <div class="pc-resa-create-grid pc-resa-create-grid--2">
+                        <label class="pc-resa-field">
+                            <span class="pc-resa-field-label">Libellé remise</span>
+                            <input type="text" name="remise_label" value="Remise exceptionnelle">
+                        </label>
+                        <label class="pc-resa-field">
+                            <span class="pc-resa-field-label">Montant remise (€)</span>
+                            <input type="number" step="0.01" name="remise_montant" placeholder="50">
+                            <span class="pc-resa-field-hint">Entrez un montant positif pour réduire le total automatiquement.</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pc-resa-create-summary">
+                    <h4>Résumé du devis</h4>
+                    <div class="pc-resa-create-summary-body" data-quote-summary>
+                        <p class="pc-resa-field-hint">Sélectionnez une expérience et un tarif pour afficher le calcul.</p>
+                    </div>
+                    <div class="pc-resa-create-summary-total">
+                        <span>Total</span>
+                        <span data-quote-total>—</span>
+                    </div>
+                </div>
+
+                <div class="pc-resa-create-section">
+                    <h4>Devis &amp; ajustements</h4>
+                    <p class="pc-resa-field-hint">
+                        Laissez vide pour un total simple ou collez le JSON généré par la fiche publique pour conserver le détail.
+                    </p>
+                    <label class="pc-resa-field">
+                        <span class="pc-resa-field-label">Détail du devis (JSON)</span>
+                        <textarea name="lines_json" rows="3" placeholder='[{"label":"Adultes × 2","price":"400 €"}]'></textarea>
+                    </label>
+                </div>
+
+                <div class="pc-resa-create-section">
+                    <h4>Infos complémentaires</h4>
+                    <label class="pc-resa-field">
+                        <span class="pc-resa-field-label">Commentaire client</span>
+                        <textarea name="commentaire_client" rows="2"></textarea>
+                    </label>
+                    <label class="pc-resa-field">
+                        <span class="pc-resa-field-label">Notes internes</span>
+                        <textarea name="notes_internes" rows="2"></textarea>
+                    </label>
+                    <label class="pc-resa-field">
+                        <span class="pc-resa-field-label">Numéro de devis</span>
+                        <input type="text" name="numero_devis" placeholder="DEV-2024-001">
+                    </label>
                 </div>
 
                 <div class="pc-resa-create-actions">
                     <button type="button" class="pc-resa-btn pc-resa-btn--ghost pc-resa-create-cancel">
                         Annuler
                     </button>
-                    <button type="button" class="pc-resa-btn pc-resa-btn--primary" disabled>
-                        Enregistrer (bientôt disponible)
-                    </button>
+                    <div class="pc-resa-create-actions__right">
+                        <button type="button" class="pc-resa-btn pc-resa-btn--secondary pc-resa-create-send">
+                            Envoyer le devis
+                        </button>
+                        <button type="submit" class="pc-resa-btn pc-resa-btn--primary pc-resa-create-submit">
+                            Enregistrer
+                        </button>
+                    </div>
                 </div>
+
             </form>
         </div>
     </div>
-
-    <!-- Popup Fiche réservation -->
-    <div class="pc-resa-modal" id="pc-resa-modal" style="display:none;">
-        <div class="pc-resa-modal-backdrop" id="pc-resa-modal-close"></div>
-
-        <div class="pc-resa-modal-dialog">
-            <button type="button" class="pc-resa-modal-close" id="pc-resa-modal-close-btn">&times;</button>
-
-            <div class="pc-resa-modal-content" id="pc-resa-modal-content">
-                <!-- Le contenu de la carte sera injecté ici -->
-            </div>
-        </div>
-    </div>
-
     <style>
         .pc-resa-dashboard-wrapper {
             margin: 2rem 0;
@@ -775,6 +994,8 @@ function pc_resa_dashboard_shortcode($atts)
             gap: 0.4rem;
             box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
             transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
 
         /* On force aussi toute éventuelle span interne à rester blanche */
@@ -832,12 +1053,18 @@ function pc_resa_dashboard_shortcode($atts)
             font-size: 0.8rem;
             text-decoration: none;
             color: #333;
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.06);
         }
 
         .pc-resa-filter-btn.is-active {
-            background: #4338ca;
-            border-color: #3730a3;
-            color: #ffffff;
+            background: var(--pc-color-primary, #4338ca);
+            border-color: var(--pc-color-primary, #4338ca);
+            color: var(--pc-color-btn-text, #fff);
+            box-shadow: 0 4px 12px rgba(67, 56, 202, 0.2);
         }
 
         .pc-resa-filter-btn:hover {
@@ -861,20 +1088,26 @@ function pc_resa_dashboard_shortcode($atts)
             border: 1px solid #d0d0d0;
             font-size: 0.8rem;
             background: #ffffff;
+            box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06) inset, 0 1px 2px rgba(15, 23, 42, 0.04);
+            appearance: none;
+            -webkit-appearance: none;
         }
 
         .pc-resa-filter-reset {
             margin-left: auto;
             padding: 0.35rem 0.9rem;
             border-radius: 999px;
-            border: 1px solid #d0d0d0;
-            background: #ffffff;
+            border: 1px solid var(--pc-color-primary, #4338ca);
+            background: transparent;
             font-size: 0.8rem;
             cursor: pointer;
+            color: var(--pc-color-primary, #4338ca);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
 
         .pc-resa-filter-reset:hover {
-            background: #f3f4ff;
+            background: rgba(67, 56, 202, 0.08);
         }
 
         .pc-resa-dashboard-table {
@@ -1084,12 +1317,78 @@ function pc_resa_dashboard_shortcode($atts)
         }
 
         .pc-resa-field input,
-        .pc-resa-field select {
+        .pc-resa-field select,
+        .pc-resa-field textarea {
             border-radius: 8px;
             border: 1px solid #e2e8f0;
             padding: 0.4rem 0.6rem;
             font-family: var(--pc-font-body);
             font-size: var(--pc-text-size);
+            width: 100%;
+        }
+
+        .pc-resa-field textarea {
+            min-height: 90px;
+        }
+
+        .pc-resa-create-hint,
+        .pc-resa-field-hint {
+            font-size: 0.8rem;
+            color: var(--pc-color-text-light);
+            margin: 0.2rem 0 0;
+        }
+
+        .pc-resa-create-summary {
+            margin-top: 1.5rem;
+            padding: 1.2rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            background: #f8fafc;
+        }
+
+        .pc-resa-create-summary h4 {
+            margin: 0 0 0.8rem;
+            font-family: var(--pc-font-title);
+            font-size: var(--pc-h4-size);
+        }
+
+        .pc-resa-create-summary-body {
+            border-radius: 0.5rem;
+            background: #fff;
+            padding: 0.75rem 1rem;
+            box-shadow: inset 0 0 0 1px #e2e8f0;
+        }
+
+        .pc-resa-create-summary-body ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .pc-resa-create-summary-body li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .pc-resa-create-summary-body li:last-child {
+            border-bottom: none;
+        }
+
+        .pc-resa-create-summary-body li.note {
+            font-style: italic;
+            color: #475569;
+            justify-content: flex-start;
+        }
+
+        .pc-resa-create-summary-total {
+            margin-top: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 1rem;
         }
 
         .pc-resa-create-actions {
@@ -1097,6 +1396,12 @@ function pc_resa_dashboard_shortcode($atts)
             display: flex;
             justify-content: flex-end;
             gap: 0.75rem;
+        }
+
+        .pc-resa-create-actions__right {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
         }
 
         @media (max-width: 768px) {
@@ -1120,15 +1425,48 @@ function pc_resa_dashboard_shortcode($atts)
         }
 
         .pc-resa-btn {
-            display: inline-block;
-            padding: 0.35rem 0.85rem;
-            margin-right: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.45rem 1.1rem;
             border-radius: 999px;
-            border: 1px solid #d0d0d0;
-            background: #f7f7f7;
-            font-size: 0.78rem;
-            cursor: not-allowed;
-            /* pour rappeler que c'est "à venir" */
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+                box-shadow 0.15s ease, transform 0.1s ease;
+        }
+
+        .pc-resa-btn--primary {
+            background: var(--pc-color-primary);
+            color: var(--pc-color-btn-text);
+            border-color: var(--pc-color-primary);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        }
+
+        .pc-resa-btn--primary:hover {
+            background: var(--pc-color-primary-hover, #4338ca);
+        }
+
+        .pc-resa-btn--secondary {
+            background: #f1f5f9;
+            color: #1f2937;
+            border-color: #cbd5f5;
+        }
+
+        .pc-resa-btn--secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .pc-resa-btn--ghost {
+            background: transparent;
+            border-color: #cbd5f5;
+            color: #1f2937;
+        }
+
+        .pc-resa-btn--ghost:hover {
+            background: #f8fafc;
         }
 
         .pc-resa-view-link {
@@ -1361,8 +1699,610 @@ function pc_resa_dashboard_shortcode($atts)
         }
     </style>
 
+    </div>
+
+    <!-- Modal global utilisé pour afficher la fiche et le formulaire de création -->
+    <div id="pc-resa-modal" class="pc-resa-modal" style="display:none;">
+        <div class="pc-resa-modal-backdrop" id="pc-resa-modal-close"></div>
+        <div class="pc-resa-modal-dialog" role="dialog" aria-modal="true">
+            <button type="button" class="pc-resa-modal-close" id="pc-resa-modal-close-btn" aria-label="Fermer">×</button>
+            <div id="pc-resa-modal-content"></div>
+        </div>
+    </div>
+
     <script>
+        window.pcResaExperienceTarifs = <?php echo wp_json_encode($manual_experience_tarifs); ?>;
+        const pcResaAjaxUrl = '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
+        const pcResaManualNonce = '<?php echo esc_attr($manual_nonce); ?>';
+
         document.addEventListener('DOMContentLoaded', function() {
+
+            const experiencePricingData = window.pcResaExperienceTarifs || {};
+            const currencyFormatter = new Intl.NumberFormat('fr-FR', {
+                style: 'currency',
+                currency: 'EUR',
+            });
+            const createTemplate = document.getElementById('pc-resa-create-template');
+
+            const formatPrice = (amount) => currencyFormatter.format(amount || 0);
+
+            const parseJSONSafe = (value) => {
+                if (!value) {
+                    return null;
+                }
+                try {
+                    return JSON.parse(value);
+                } catch (error) {
+                    console.error('JSON parse error', error);
+                    return null;
+                }
+            };
+
+            const renderStoredLinesSummary = (lines, summaryBody, summaryTotal, totalValue) => {
+                if (!summaryBody || !Array.isArray(lines) || lines.length === 0) {
+                    return;
+                }
+                let html = '<ul>';
+                lines.forEach((line) => {
+                    const label = line.label || '';
+                    const price = line.price || '';
+                    html += `<li><span>${label}</span><span>${price}</span></li>`;
+                });
+                html += '</ul>';
+                summaryBody.innerHTML = html;
+                if (summaryTotal) {
+                    const numericTotal = typeof totalValue === 'number' ?
+                        totalValue :
+                        parseFloat(totalValue || 0);
+                    summaryTotal.textContent = formatPrice(numericTotal);
+                }
+            };
+
+            const getTarifConfig = (expId, key) => {
+                if (!expId || !experiencePricingData[expId]) {
+                    return null;
+                }
+                return experiencePricingData[expId].find((tarif) => tarif.key === key) || null;
+            };
+
+            // Remplit les selects [data-tarif-select] pour une expérience donnée
+            const populateTarifOptions = (expId, selectedKey = '') => {
+                const selects = document.querySelectorAll('select[data-tarif-select]');
+                selects.forEach((select) => {
+                    // vide le select
+                    select.innerHTML = '';
+
+                    if (!expId || !experiencePricingData[expId] || experiencePricingData[expId].length === 0) {
+                        const opt = document.createElement('option');
+                        opt.value = '';
+                        opt.textContent = "Sélectionnez une expérience d'abord";
+                        select.appendChild(opt);
+                        select.disabled = true;
+                        select.required = true;
+                        return;
+                    }
+
+                    // option par défaut
+                    const defaultOpt = document.createElement('option');
+                    defaultOpt.value = '';
+                    defaultOpt.textContent = 'Sélectionnez un tarif';
+                    select.appendChild(defaultOpt);
+
+                    experiencePricingData[expId].forEach((tarif) => {
+                        const opt = document.createElement('option');
+                        opt.value = tarif.key || '';
+                        opt.textContent = tarif.label || tarif.key || 'Tarif';
+                        select.appendChild(opt);
+                    });
+
+                    select.disabled = false;
+                    select.required = true;
+                    if (selectedKey) {
+                        select.value = selectedKey;
+                    }
+                });
+            };
+
+            const computeQuote = (config, counts) => {
+                if (!config) {
+                    return {
+                        lines: [],
+                        html: '',
+                        total: 0,
+                        isSurDevis: false
+                    };
+                }
+
+                const pendingLabel = 'En attente de devis';
+                const isSurDevis = config.code === 'sur-devis';
+                let total = 0;
+                let html = '<ul>';
+                const lines = [];
+
+                const appendLine = (label, amount, formatted) => {
+                    const priceDisplay = formatted || (isSurDevis ? pendingLabel : formatPrice(amount));
+                    html += `<li><span>${label}</span><span>${priceDisplay}</span></li>`;
+                    lines.push({
+                        label,
+                        price: priceDisplay
+                    });
+                    if (!isSurDevis && amount) {
+                        total += amount;
+                    }
+                };
+
+                (config.lines || []).forEach((line) => {
+                    const type = line.type || 'personnalise';
+                    const unit = parseFloat(line.price) || 0;
+                    let qty = 1;
+
+                    if (type === 'adulte') qty = counts.adultes;
+                    else if (type === 'enfant') qty = counts.enfants;
+                    else if (type === 'bebe') qty = counts.bebes;
+                    else if (line.enable_qty) qty = line.default_qty ? parseInt(line.default_qty, 10) || 0 : 1;
+
+                    if ((type === 'adulte' || type === 'enfant' || type === 'bebe') && qty <= 0) {
+                        if (line.observation) {
+                            html += `<li class="note">${line.observation}</li>`;
+                        }
+                        return;
+                    }
+
+                    if (qty <= 0) {
+                        return;
+                    }
+
+                    const label = `${qty} ${line.label || ''}`.trim();
+                    const amount = qty * unit;
+
+                    if (type === 'bebe' && unit === 0 && !isSurDevis) {
+                        html += `<li><span>${label}</span><span>Gratuit</span></li>`;
+                        lines.push({
+                            label,
+                            price: 'Gratuit'
+                        });
+                        if (line.observation) {
+                            html += `<li class="note">${line.observation}</li>`;
+                        }
+                        return;
+                    }
+
+                    appendLine(label, amount);
+
+                    if (line.observation) {
+                        html += `<li class="note">${line.observation}</li>`;
+                    }
+                });
+
+                (config.fixed_fees || []).forEach((fee) => {
+                    const label = fee.label || 'Frais fixes';
+                    const amount = parseFloat(fee.price) || 0;
+                    if (!label || amount === 0) {
+                        return;
+                    }
+                    appendLine(label, amount);
+                });
+
+                html += '</ul>';
+
+                return {
+                    lines,
+                    html,
+                    total,
+                    isSurDevis,
+                    pendingLabel
+                };
+            };
+
+            const applyQuoteToForm = (args) => {
+                const {
+                    result,
+                    linesTextarea,
+                    totalInput,
+                    summaryBody,
+                    summaryTotal,
+                    remiseLabel,
+                    remiseAmount,
+                } = args;
+
+                let summaryHtml = result.html;
+                const linesJson = [...result.lines];
+                const remiseValue = parseFloat(remiseAmount && remiseAmount.value ? remiseAmount.value : 0) || 0;
+
+                if (remiseValue > 0) {
+                    const label = remiseLabel && remiseLabel.value ? remiseLabel.value : 'Remise exceptionnelle';
+                    const signed = -Math.abs(remiseValue);
+                    const display = result.isSurDevis ? result.pendingLabel : formatPrice(signed);
+                    summaryHtml = summaryHtml.replace('</ul>', `<li><span>${label}</span><span>${display}</span></li></ul>`);
+                    linesJson.push({
+                        label,
+                        price: display
+                    });
+                    if (!result.isSurDevis) {
+                        result.total += signed;
+                    }
+                }
+
+                if (summaryBody) {
+                    summaryBody.innerHTML = summaryHtml || '<p class="pc-resa-field-hint">Aucun calcul disponible.</p>';
+                }
+                if (summaryTotal) {
+                    summaryTotal.textContent = result.isSurDevis ? result.pendingLabel : formatPrice(Math.max(result.total, 0));
+                }
+                if (totalInput) {
+                    totalInput.value = result.isSurDevis ? '' : Math.max(result.total, 0).toFixed(2);
+                }
+                if (linesTextarea) {
+                    linesTextarea.value = linesJson.length ? JSON.stringify(linesJson) : '';
+                }
+            };
+
+            async function handleManualCreateSubmit(form, submitBtn) {
+                const formData = new FormData(form);
+                formData.set('action', formData.get('action') || 'pc_manual_reservation_create');
+                formData.set('nonce', pcResaManualNonce);
+
+                const typeValue = formData.get('type');
+                if (typeValue !== 'experience') {
+                    alert('La création manuelle est disponible uniquement pour les expériences.');
+                    return;
+                }
+
+                if (!formData.get('item_id')) {
+                    alert('Sélectionnez une expérience.');
+                    return;
+                }
+
+                const originalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Création en cours...';
+
+                try {
+                    const response = await fetch(pcResaAjaxUrl, {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin',
+                    });
+
+                    const responseText = await response.text();
+
+                    if (!response.ok) {
+                        console.error('Manual creation HTTP error', response.status, responseText);
+                        alert('Erreur serveur (' + response.status + ').');
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                        return;
+                    }
+
+
+
+
+
+
+
+                    let result;
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (parseError) {
+                        const trimmed = responseText.trim();
+                        let userMessage = 'Réponse inattendue du serveur.';
+                        if (trimmed === '0') {
+                            userMessage = 'Session expirée ou accès refusé. Merci de vous reconnecter à WordPress.';
+                        }
+                        console.error('Manual creation raw response:', responseText);
+                        alert(userMessage);
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                        return;
+                    }
+
+                    if (result.success) {
+                        const successMsg = result.data && result.data.message
+                            ? result.data.message
+                            : 'Réservation enregistrée';
+                        submitBtn.textContent = successMsg;
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 800);
+                    } else {
+                        const errorMsg = result.data && result.data.message ? result.data.message : 'Une erreur est survenue.';
+                        alert(errorMsg);
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Manual creation error', error);
+                    alert('Erreur technique pendant la création.');
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
+
+            function initManualCreateForm(container, prefillData = null, options = {}) {
+                const form = container.querySelector('.pc-resa-create-form');
+                if (!form) {
+                    return null;
+                }
+
+                const submitBtn = form.querySelector('.pc-resa-create-submit');
+                const sendBtn = form.querySelector('.pc-resa-create-send');
+                const typeSelect = form.querySelector('select[name="type"]');
+                const typeFluxSelect = form.querySelector('select[name="type_flux"]');
+                const modeSelect = form.querySelector('select[name="mode_reservation"]');
+                const experienceSelect = form.querySelector('select[name="item_id"]');
+                const tarifSelect = form.querySelector('select[name="experience_tarif_type"]');
+                const linesTextarea = form.querySelector('textarea[name="lines_json"]');
+                const totalInput = form.querySelector('input[name="montant_total"]');
+                const summaryBody = container.querySelector('[data-quote-summary]');
+                const summaryTotal = container.querySelector('[data-quote-total]');
+                const remiseLabel = form.querySelector('input[name="remise_label"]');
+                const remiseAmount = form.querySelector('input[name="remise_montant"]');
+                const counters = form.querySelectorAll('[data-quote-counter]');
+                const dateExperienceInput = form.querySelector('input[name="date_experience"]');
+                const prenomInput = form.querySelector('input[name="prenom"]');
+                const nomInput = form.querySelector('input[name="nom"]');
+                const emailInput = form.querySelector('input[name="email"]');
+                const telephoneInput = form.querySelector('input[name="telephone"]');
+                const commentaireField = form.querySelector('textarea[name="commentaire_client"]');
+                const notesField = form.querySelector('textarea[name="notes_internes"]');
+                const numeroDevisInput = form.querySelector('input[name="numero_devis"]');
+                const adultField = form.querySelector('input[name="adultes"]');
+                const childField = form.querySelector('input[name="enfants"]');
+                const babyField = form.querySelector('input[name="bebes"]');
+
+                const prefill = prefillData || null;
+                const opts = options || {};
+
+                // Applique les valeurs pré-remplies aux selects avant l'initialisation
+                // pour que populateTarifOptions et updateQuote utilisent les bonnes valeurs.
+                if (prefill) {
+                    if (typeof prefill.type !== 'undefined' && prefill.type && form) {
+                        const tmpType = form.querySelector('select[name="type"]');
+                        if (tmpType) {
+                            tmpType.value = prefill.type;
+                        }
+                    }
+                    if (typeof prefill.item_id !== 'undefined' && prefill.item_id && form) {
+                        const tmpItem = form.querySelector('select[name="item_id"]');
+                        if (tmpItem) {
+                            tmpItem.value = String(prefill.item_id);
+                        }
+                    }
+                }
+
+                // Ensure hidden "id" field exists so edits submit the reservation id instead of creating a new one
+                let idInput = form.querySelector('input[name="id"]');
+                if (!idInput) {
+                    idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'id';
+                    form.appendChild(idInput);
+                }
+                if (prefill && typeof prefill.id !== 'undefined' && prefill.id) {
+                    idInput.value = String(prefill.id);
+                } else {
+                    idInput.value = '0';
+                }
+
+                // Si on ouvre en mode édition, changer l'action envoyée pour appeler le handler update côté serveur
+                // Garder l'action "pc_manual_reservation_create" même en mode édition
+                // Le handler serveur attend cette action et doit traiter id != 0 comme une mise à jour.
+                const actionInput = form.querySelector('input[name="action"]');
+                const desiredAction = 'pc_manual_reservation_create';
+                if (actionInput) {
+                    actionInput.value = desiredAction;
+                } else {
+                    const a = document.createElement('input');
+                    a.type = 'hidden';
+                    a.name = 'action';
+                    a.value = desiredAction;
+                    form.appendChild(a);
+                }
+
+                if (prefill) {
+                    if (dateExperienceInput && prefill.date_experience) {
+                        dateExperienceInput.value = prefill.date_experience;
+                    }
+                    if (adultField && typeof prefill.adultes !== 'undefined') {
+                        adultField.value = prefill.adultes;
+                    }
+                    if (childField && typeof prefill.enfants !== 'undefined') {
+                        childField.value = prefill.enfants;
+                    }
+                    if (babyField && typeof prefill.bebes !== 'undefined') {
+                        babyField.value = prefill.bebes;
+                    }
+                    if (prenomInput) {
+                        prenomInput.value = prefill.prenom || '';
+                    }
+                    if (nomInput) {
+                        nomInput.value = prefill.nom || '';
+                    }
+                    if (emailInput) {
+                        emailInput.value = prefill.email || '';
+                    }
+                    if (telephoneInput) {
+                        telephoneInput.value = prefill.telephone || '';
+                    }
+                    if (commentaireField) {
+                        commentaireField.value = prefill.commentaire_client || '';
+                    }
+                    if (notesField) {
+                        notesField.value = prefill.notes_internes || '';
+                    }
+                    if (numeroDevisInput) {
+                        numeroDevisInput.value = prefill.numero_devis || '';
+                    }
+                }
+
+                const initialExperienceValue = experienceSelect ? experienceSelect.value : '';
+                const initialTarifKey = prefill ? prefill.experience_tarif_type : '';
+                populateTarifOptions(initialExperienceValue, initialTarifKey);
+                // si un tarif pré-rempli existe, appliquer la valeur au select tarif
+                if (tarifSelect && initialTarifKey) {
+                    tarifSelect.value = initialTarifKey;
+                }
+
+                // Assurer l'état du bouton submit selon le type actuel
+                if (typeSelect && submitBtn) {
+                    submitBtn.disabled = typeSelect.value !== 'experience';
+                }
+
+                let storedLines = null;
+                if (prefill && prefill.lines_json) {
+                    if (linesTextarea) {
+                        linesTextarea.value = prefill.lines_json;
+                    }
+                    const parsedLines = parseJSONSafe(prefill.lines_json);
+                    if (Array.isArray(parsedLines)) {
+                        storedLines = parsedLines;
+                    }
+                }
+
+                if (storedLines && summaryBody && summaryTotal) {
+                    renderStoredLinesSummary(storedLines, summaryBody, summaryTotal, prefill ? prefill.montant_total : 0);
+                }
+
+                if (totalInput && prefill && typeof prefill.montant_total !== 'undefined') {
+                    totalInput.value = parseFloat(prefill.montant_total || 0).toFixed(2);
+                }
+
+                const updateQuote = () => {
+                    if (!summaryBody || !summaryTotal) {
+                        return;
+                    }
+
+                    const typeValue = typeSelect ? typeSelect.value : 'experience';
+                    if (typeValue !== 'experience') {
+                        summaryBody.innerHTML = '<p class="pc-resa-field-hint">Le calcul de devis est disponible uniquement pour les expériences.</p>';
+                        summaryTotal.textContent = '—';
+                        if (totalInput) totalInput.value = '';
+                        if (linesTextarea) linesTextarea.value = '';
+                        return;
+                    }
+
+                    const expId = experienceSelect ? experienceSelect.value : '';
+                    const tarifKey = tarifSelect ? tarifSelect.value : '';
+
+                    if (!expId || !tarifKey) {
+                        summaryBody.innerHTML = '<p class="pc-resa-field-hint">Sélectionnez une expérience et un tarif.</p>';
+                        summaryTotal.textContent = '—';
+                        if (totalInput) totalInput.value = '';
+                        if (linesTextarea) linesTextarea.value = '';
+                        return;
+                    }
+
+                    const config = getTarifConfig(expId, tarifKey);
+                    if (!config) {
+                        summaryBody.innerHTML = '<p class="pc-resa-field-hint">Impossible de charger ce tarif (ACF).</p>';
+                        summaryTotal.textContent = '—';
+                        return;
+                    }
+
+                    const counts = {
+                        adultes: parseInt(adultField ? adultField.value : '0', 10) || 0,
+                        enfants: parseInt(childField ? childField.value : '0', 10) || 0,
+                        bebes: parseInt(babyField ? babyField.value : '0', 10) || 0,
+                    };
+
+                    const result = computeQuote(config, counts);
+                    applyQuoteToForm({
+                        result,
+                        linesTextarea,
+                        totalInput,
+                        summaryBody,
+                        summaryTotal,
+                        remiseLabel,
+                        remiseAmount,
+                    });
+                };
+
+                if (typeSelect) {
+                    typeSelect.addEventListener('change', function() {
+                        if (submitBtn) {
+                            submitBtn.disabled = this.value !== 'experience';
+                        }
+                        updateQuote();
+                    });
+                    if (submitBtn) {
+                        submitBtn.disabled = typeSelect.value !== 'experience';
+                    }
+                }
+
+                if (experienceSelect) {
+                    experienceSelect.addEventListener('change', function() {
+                        populateTarifOptions(this.value);
+                        updateQuote();
+                    });
+                }
+
+                if (tarifSelect) {
+                    tarifSelect.addEventListener('change', updateQuote);
+                }
+
+                counters.forEach((input) => {
+                    input.addEventListener('input', updateQuote);
+                });
+
+                if (remiseLabel) {
+                    remiseLabel.addEventListener('input', updateQuote);
+                }
+                if (remiseAmount) {
+                    remiseAmount.addEventListener('input', updateQuote);
+                }
+
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    if (!submitBtn) {
+                        return;
+                    }
+                    handleManualCreateSubmit(form, submitBtn);
+                });
+
+                if (!storedLines) {
+                    updateQuote();
+                }
+
+                if (sendBtn) {
+                    sendBtn.addEventListener('click', function() {
+                        if (typeFluxSelect) {
+                            typeFluxSelect.value = 'devis';
+                        }
+                        handleManualCreateSubmit(form, sendBtn);
+                    });
+                }
+
+                return {
+                    form,
+                    submitBtn,
+                    sendBtn,
+                    typeFluxSelect,
+                };
+            }
+
+            const openManualCreateModal = (prefillData = null, options = {}) => {
+                if (!createTemplate) {
+                    return null;
+                }
+
+                openResaModal(createTemplate.innerHTML);
+
+                const modalContent = document.getElementById('pc-resa-modal-content');
+                if (!modalContent) {
+                    return null;
+                }
+
+                const refs = initManualCreateForm(modalContent, prefillData, options);
+
+                const cancelBtn = modalContent.querySelector('.pc-resa-create-cancel');
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', function() {
+                        closeResaModal();
+                    });
+                }
+
+                return refs;
+            };
 
             function openResaModal(html) {
                 const modal = document.getElementById('pc-resa-modal');
@@ -1388,8 +2328,14 @@ function pc_resa_dashboard_shortcode($atts)
                 }
             }
 
-            document.getElementById('pc-resa-modal-close-btn').addEventListener('click', closeResaModal);
-            document.getElementById('pc-resa-modal-close').addEventListener('click', closeResaModal);
+            const modalCloseBtn = document.getElementById('pc-resa-modal-close-btn');
+            const modalCloseBackdrop = document.getElementById('pc-resa-modal-close');
+            if (modalCloseBtn) {
+                modalCloseBtn.addEventListener('click', closeResaModal);
+            }
+            if (modalCloseBackdrop) {
+                modalCloseBackdrop.addEventListener('click', closeResaModal);
+            }
 
             // Boutons "Voir la fiche"
             document.querySelectorAll('.pc-resa-view-link').forEach(btn => {
@@ -1407,28 +2353,73 @@ function pc_resa_dashboard_shortcode($atts)
                     if (!card) return;
 
                     openResaModal(card.innerHTML);
+                    // Ré-attache les handlers (boutons Modifier / Renvoyer) présents dans le HTML injecté
+                    if (typeof attachQuoteButtons === 'function') {
+                        attachQuoteButtons();
+                    }
                 });
             });
 
             // Bouton "Créer une réservation"
             const createBtn = document.querySelector('.pc-resa-create-btn');
-            const createTemplate = document.getElementById('pc-resa-create-template');
 
             if (createBtn && createTemplate) {
                 createBtn.addEventListener('click', function() {
-                    openResaModal(createTemplate.innerHTML);
-
-                    const modalContent = document.getElementById('pc-resa-modal-content');
-                    if (!modalContent) return;
-
-                    const cancelBtn = modalContent.querySelector('.pc-resa-create-cancel');
-                    if (cancelBtn) {
-                        cancelBtn.addEventListener('click', function() {
-                            closeResaModal();
-                        });
-                    }
+                    openManualCreateModal();
                 });
             }
+
+            const attachQuoteButtons = () => {
+                document.querySelectorAll('.pc-resa-edit-quote').forEach((btn) => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const rawData = this.getAttribute('data-prefill');
+                        const payload = parseJSONSafe(rawData);
+                        if (!payload) {
+                            alert('Impossible de charger les données du devis.');
+                            return;
+                        }
+                        openManualCreateModal(payload, {
+                            context: 'edit'
+                        });
+                    });
+                });
+
+                document.querySelectorAll('.pc-resa-resend-quote').forEach((btn) => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const rawData = this.getAttribute('data-prefill');
+                        const payload = parseJSONSafe(rawData);
+                        if (!payload) {
+                            alert('Impossible de charger les données du devis.');
+                            return;
+                        }
+                        const refs = openManualCreateModal(payload, {
+                            context: 'resend',
+                            forceTypeFlux: 'devis'
+                        });
+                        if (!refs) {
+                            return;
+                        }
+                        const {
+                            form,
+                            submitBtn,
+                            sendBtn,
+                            typeFluxSelect
+                        } = refs;
+                        if (typeFluxSelect) {
+                            typeFluxSelect.value = 'devis';
+                        }
+                        setTimeout(() => {
+                            if (confirm('Envoyer ce devis à nouveau ?')) {
+                                handleManualCreateSubmit(form, sendBtn || submitBtn);
+                            }
+                        }, 400);
+                    });
+                });
+            };
+
+            attachQuoteButtons();
         });
     </script>
 <?php

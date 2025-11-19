@@ -961,56 +961,47 @@ function pc_handle_experience_booking_request()
     }
 
     // ===== NOYAU RÉSERVATION : enregistrement (si plugin actif) =====
-    if (class_exists('PCR_Reservation')) {
+    if (class_exists('PCR_Booking_Engine')) {
+        $lines_json = isset($_POST['lines_json']) ? wp_kses_post(wp_unslash($_POST['lines_json'])) : '';
+        $type_flux  = isset($_POST['type_flux']) && $_POST['type_flux'] === 'devis' ? 'devis' : 'reservation';
 
-        $resa_data = [
-            // Identification
-            'type'                 => 'experience',
-            'item_id'              => $experience_id,
-            'mode_reservation'     => 'demande',
-            'origine'              => 'site',
-
-            // Type tarifaire (simulation JS)
-            'experience_tarif_type' => sanitize_text_field($_POST['devis_type'] ?? ''),
-
-            // Date de l'expérience (à venir lorsque ton formulaire aura le champ)
-            'date_experience'       => sanitize_text_field($_POST['date_experience'] ?? ''),
-
-            // Personnes
-            'adultes'              => intval($_POST['devis_adults'] ?? 0),
-            'enfants'              => intval($_POST['devis_children'] ?? 0),
-            'bebes'                => intval($_POST['devis_bebes'] ?? 0),
-
-            // Tarif JS
-            'devise'               => 'EUR',
-            'montant_total'        => isset($_POST['total']) ? (float) $_POST['total'] : 0,
-            'detail_tarif'         => isset($_POST['lines_json']) ? wp_kses_post($_POST['lines_json']) : null,
-
-            // Client
-            'prenom'               => $prenom,
-            'nom'                  => $nom,
-            'email'                => $email,
-            'telephone'            => $tel,
-            'commentaire_client'   => $message,
-
-            // Statuts initiaux
-            'statut_reservation'   => 'en_attente',
-            'statut_paiement'      => 'non_demande',
-
-            // Caution (expériences = 0)
-            'caution_montant'      => 0,
-            'caution_mode'         => 'aucune',
-            'caution_statut'       => 'non_demande',
-
-            // Système
-            'date_creation'        => current_time('mysql'),
-            'date_maj'             => current_time('mysql'),
+        $payload = [
+            'context' => [
+                'type'             => 'experience',
+                'origine'          => 'site',
+                'mode_reservation' => 'demande',
+                'type_flux'        => $type_flux,
+                'source'           => 'form_public',
+            ],
+            'item' => [
+                'item_id'               => $experience_id,
+                'experience_tarif_type' => sanitize_text_field($_POST['devis_type'] ?? ''),
+                'date_experience'       => sanitize_text_field($_POST['date_experience'] ?? ''),
+            ],
+            'people' => [
+                'adultes' => intval($_POST['devis_adults'] ?? 0),
+                'enfants' => intval($_POST['devis_children'] ?? 0),
+                'bebes'   => intval($_POST['devis_bebes'] ?? 0),
+            ],
+            'pricing' => [
+                'currency'       => 'EUR',
+                'total'          => isset($_POST['total']) ? (float) $_POST['total'] : 0,
+                'raw_lines_json' => $lines_json,
+                'is_sur_devis'   => !empty($_POST['is_sur_devis']),
+            ],
+            'customer' => [
+                'prenom'             => $prenom,
+                'nom'                => $nom,
+                'email'              => $email,
+                'telephone'          => $tel,
+                'commentaire_client' => $message,
+            ],
         ];
 
-        $resa_id = PCR_Reservation::create($resa_data);
+        $booking = PCR_Booking_Engine::create($payload);
 
-        if ($resa_id && class_exists('PCR_Payment')) {
-            PCR_Payment::generate_for_reservation($resa_id);
+        if (!$booking->success) {
+            error_log('[PC Booking] Création expérience impossible : ' . implode(', ', $booking->errors));
         }
     }
     // ===== FIN NOYAU RÉSERVATION =====

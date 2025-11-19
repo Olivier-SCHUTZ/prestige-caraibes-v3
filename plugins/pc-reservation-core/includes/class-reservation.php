@@ -110,6 +110,57 @@ class PCR_Reservation
     }
 
     /**
+     * Met à jour une réservation existante.
+     *
+     * @param int   $reservation_id
+     * @param array $data
+     * @return bool
+     */
+    public static function update($reservation_id, array $data)
+    {
+        global $wpdb;
+
+        $reservation_id = (int) $reservation_id;
+        if ($reservation_id <= 0) {
+            return false;
+        }
+
+        $table = $wpdb->prefix . 'pc_reservations';
+
+        if (isset($data['date_creation'])) {
+            unset($data['date_creation']);
+        }
+
+        if (!isset($data['date_maj'])) {
+            $data['date_maj'] = current_time('mysql');
+        }
+
+        $columns = $wpdb->get_results("SHOW COLUMNS FROM {$table}", ARRAY_A);
+        if (!empty($columns)) {
+            $allowed = [];
+            foreach ($columns as $col) {
+                $allowed[$col['Field']] = true;
+            }
+            $data = array_intersect_key($data, $allowed);
+        }
+
+        if (empty($data)) {
+            return true;
+        }
+
+        $updated = $wpdb->update($table, $data, ['id' => $reservation_id]);
+
+        if ($updated === false) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[PC Reservation] Erreur update: ' . $wpdb->last_error . ' | ID: ' . $reservation_id . ' | Données: ' . print_r($data, true));
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Retourne une liste de réservations (pour le dashboard, calendrier, etc.).
      *
      * @param array $args
