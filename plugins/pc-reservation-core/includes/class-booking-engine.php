@@ -148,6 +148,14 @@ class PCR_Booking_Engine
         $payments = [];
 
         if (class_exists('PCR_Payment')) {
+            PCR_Payment::regenerate_for_reservation(
+                $result->reservation_id,
+                [
+                    'preserve_statuses' => true,
+                    'statut_reservation' => $reservation_row['statut_reservation'] ?? '',
+                    'statut_paiement'    => $reservation_row['statut_paiement'] ?? '',
+                ]
+            );
             $payments = PCR_Payment::get_for_reservation($result->reservation_id);
         }
 
@@ -285,6 +293,7 @@ class PCR_Booking_Engine
         $meta     = $normalized['meta'];
 
         $original_lines = is_array($pricing['lines']) ? $pricing['lines'] : [];
+        $original_lines = self::remove_existing_adjustments_from_lines($original_lines, $pricing['manual_adjustments']);
         $detail_lines   = self::merge_lines_with_adjustments($original_lines, $pricing['manual_adjustments'], $pricing['currency']);
 
         if (!empty($detail_lines)) {
@@ -424,6 +433,59 @@ class PCR_Booking_Engine
         }
 
         return $sum;
+    }
+
+    protected static function remove_existing_adjustments_from_lines(array $lines, array $adjustments)
+    {
+        if (empty($lines)) {
+            return $lines;
+        }
+
+        if (empty($adjustments)) {
+            $filtered = [];
+            foreach ($lines as $line) {
+                $is_flagged = !empty($line['is_adjustment']) || !empty($line['is_manual_adjustment']) || (isset($line['source']) && $line['source'] === 'manual_adjustment');
+                if ($is_flagged) {
+                    continue;
+                }
+                $filtered[] = $line;
+            }
+            return $filtered;
+        }
+
+        foreach ($adjustments as $adj) {
+            $target_label  = self::normalize_adjustment_label($adj['label'] ?? '');
+            $target_amount = isset($adj['amount']) ? (float) $adj['amount'] : 0;
+
+            foreach ($lines as $index => $line) {
+                $line_label = self::normalize_adjustment_label($line['label'] ?? '');
+
+                if ($target_label !== '' && $line_label !== $target_label) {
+                    continue;
+                }
+
+                $is_flagged = !empty($line['is_adjustment']) || !empty($line['is_manual_adjustment']) || (isset($line['source']) && $line['source'] === 'manual_adjustment');
+                $line_amount = null;
+                if (isset($line['amount']) && is_numeric($line['amount'])) {
+                    $line_amount = (float) $line['amount'];
+                } elseif (!empty($line['price'])) {
+                    $line_amount = self::parse_price_to_float($line['price']);
+                }
+
+                if ($is_flagged || ($line_amount !== null && abs($line_amount - $target_amount) < 0.01)) {
+                    unset($lines[$index]);
+                    break;
+                }
+            }
+        }
+
+        return array_values($lines);
+    }
+
+    protected static function normalize_adjustment_label($label)
+    {
+        $label = (string) $label;
+        return $label === '' ? '' : strtolower(trim($label));
     }
 
     protected static function parse_price_to_float($value)

@@ -48,6 +48,8 @@ class PCR_Dashboard_Ajax
 
         $remise_label  = sanitize_text_field($_POST['remise_label'] ?? '');
         $remise_amount = isset($_POST['remise_montant']) ? (float) $_POST['remise_montant'] : 0;
+        $plus_label    = sanitize_text_field($_POST['plus_label'] ?? '');
+        $plus_amount   = isset($_POST['plus_montant']) ? (float) $_POST['plus_montant'] : 0;
 
         $manual_adjustments = [];
         if ($remise_amount !== 0.0) {
@@ -55,6 +57,14 @@ class PCR_Dashboard_Ajax
                 'type'            => 'remise',
                 'label'           => $remise_label ? $remise_label : 'Remise exceptionnelle',
                 'amount'          => 0 - abs($remise_amount),
+                'apply_to_total'  => true,
+            ];
+        }
+        if ($plus_amount !== 0.0) {
+            $manual_adjustments[] = [
+                'type'            => 'plus_value',
+                'label'           => $plus_label ? $plus_label : 'Plus-value',
+                'amount'          => abs($plus_amount),
                 'apply_to_total'  => true,
             ];
         }

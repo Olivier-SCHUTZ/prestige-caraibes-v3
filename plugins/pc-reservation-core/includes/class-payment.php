@@ -248,4 +248,60 @@ class PCR_Payment
 
         return $wpdb->get_results($wpdb->prepare($sql, (int) $reservation_id));
     }
+
+    /**
+     * Supprime toutes les lignes de paiement pour une réservation donnée.
+     *
+     * @param int $reservation_id
+     * @return void
+     */
+    public static function delete_for_reservation($reservation_id)
+    {
+        global $wpdb;
+
+        $reservation_id = (int) $reservation_id;
+        if ($reservation_id <= 0) {
+            return;
+        }
+
+        $table = $wpdb->prefix . 'pc_payments';
+        $wpdb->delete($table, ['reservation_id' => $reservation_id]);
+    }
+
+    /**
+     * Supprime puis régénère les paiements liés à une réservation.
+     *
+     * @param int   $reservation_id
+     * @param array $args
+     * @return void
+     */
+    public static function regenerate_for_reservation($reservation_id, array $args = [])
+    {
+        $reservation_id = (int) $reservation_id;
+        if ($reservation_id <= 0) {
+            return;
+        }
+
+        $preserve_statuses = !empty($args['preserve_statuses']);
+        $original_resa_status = isset($args['statut_reservation']) ? $args['statut_reservation'] : '';
+        $original_pay_status  = isset($args['statut_paiement']) ? $args['statut_paiement'] : '';
+
+        self::delete_for_reservation($reservation_id);
+        self::generate_for_reservation($reservation_id);
+
+        if ($preserve_statuses && ($original_resa_status || $original_pay_status)) {
+            global $wpdb;
+            $table_res = $wpdb->prefix . 'pc_reservations';
+            $updates = [
+                'date_maj' => current_time('mysql'),
+            ];
+            if ($original_resa_status) {
+                $updates['statut_reservation'] = $original_resa_status;
+            }
+            if ($original_pay_status) {
+                $updates['statut_paiement'] = $original_pay_status;
+            }
+            $wpdb->update($table_res, $updates, ['id' => $reservation_id]);
+        }
+    }
 }
