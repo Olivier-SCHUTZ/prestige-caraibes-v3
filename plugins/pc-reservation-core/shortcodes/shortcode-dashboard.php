@@ -69,6 +69,8 @@ function pc_resa_build_prefill_payload($resa)
         'item_id'               => isset($resa->item_id) ? (int) $resa->item_id : 0,
         'experience_tarif_type' => isset($resa->experience_tarif_type) ? $resa->experience_tarif_type : '',
         'date_experience'       => isset($resa->date_experience) ? $resa->date_experience : '',
+        'date_arrivee'          => isset($resa->date_arrivee) ? $resa->date_arrivee : '',
+        'date_depart'           => isset($resa->date_depart) ? $resa->date_depart : '',
         'adultes'               => isset($resa->adultes) ? (int) $resa->adultes : 0,
         'enfants'               => isset($resa->enfants) ? (int) $resa->enfants : 0,
         'bebes'                 => isset($resa->bebes) ? (int) $resa->bebes : 0,
@@ -85,16 +87,27 @@ function pc_resa_build_prefill_payload($resa)
         'remise_montant'        => '',
         'plus_label'            => '',
         'plus_montant'          => '',
+        'participants'          => [
+            'adultes' => isset($resa->adultes) ? (int) $resa->adultes : 0,
+            'enfants' => isset($resa->enfants) ? (int) $resa->enfants : 0,
+            'bebes'   => isset($resa->bebes) ? (int) $resa->bebes : 0,
+        ],
+        'lines_qty_map'         => [],
     ];
 
     if (!empty($resa->detail_tarif)) {
         $detail_lines = json_decode($resa->detail_tarif, true);
         if (is_array($detail_lines)) {
+            $qty_map = [];
+            $normalize_label = function($value) {
+                $value = (string) $value;
+                $value = strtolower(trim($value));
+                $value = preg_replace('/\s+/', ' ', $value);
+                return $value;
+            };
+
             foreach ($detail_lines as $line) {
-                if (empty($line['is_adjustment'])) {
-                    continue;
-                }
-                $label = isset($line['label']) ? $line['label'] : '';
+                $label = isset($line['label']) ? (string) $line['label'] : '';
                 $amount = 0;
                 if (isset($line['amount']) && $line['amount'] != 0) {
                     $amount = (float) $line['amount'];
@@ -102,18 +115,227 @@ function pc_resa_build_prefill_payload($resa)
                     $amount = pc_resa_dashboard_parse_amount($line['price']);
                 }
 
-                if ($amount < 0 && $payload['remise_montant'] === '') {
-                    $payload['remise_label'] = $label;
-                    $payload['remise_montant'] = abs($amount);
-                } elseif ($amount > 0 && $payload['plus_montant'] === '') {
-                    $payload['plus_label'] = $label;
-                    $payload['plus_montant'] = abs($amount);
+                if (!empty($line['is_adjustment'])) {
+                    if ($amount < 0 && $payload['remise_montant'] === '') {
+                        $payload['remise_label'] = $label;
+                        $payload['remise_montant'] = abs($amount);
+                    } elseif ($amount > 0 && $payload['plus_montant'] === '') {
+                        $payload['plus_label'] = $label;
+                        $payload['plus_montant'] = abs($amount);
+                    }
+                    continue;
                 }
+
+                $normalized_label = $normalize_label($label);
+                if ($normalized_label === '') {
+                    continue;
+                }
+
+                $qty_from_label = 0;
+                if (preg_match('/^(\d+)\s*[x×]?\s*(.+)$/u', $label, $m)) {
+                    $qty_from_label = (int) $m[1];
+                    $normalized_label = $normalize_label($m[2]);
+                }
+                if ($qty_from_label <= 0 && $amount !== 0) {
+                    $qty_from_label = 1;
+                }
+                if ($qty_from_label > 0) {
+                    $qty_map[$normalized_label] = $qty_from_label;
+                }
+            }
+
+            if (!empty($qty_map)) {
+                $payload['lines_qty_map'] = $qty_map;
             }
         }
     }
 
     return $payload;
+}
+
+function pc_resa_get_logement_pricing_config($post_id)
+{
+    if (! function_exists('get_field')) {
+        return null;
+    }
+
+    $post_id = (int) $post_id;
+    if ($post_id <= 0) {
+        return null;
+    }
+
+    $base_price   = (float) get_field('base_price_from', $post_id);
+    $unit         = (string) get_field('unite_de_prix',   $post_id);
+    $min_nights   = (int)    get_field('min_nights',      $post_id);
+    $max_nights   = (int)    get_field('max_nights',      $post_id);
+    $cap          = (int)    get_field('capacite',        $post_id);
+    if ($cap <= 0) {
+        $cap = 1;
+    }
+    $extra_fee    = (float)  get_field('extra_guest_fee',  $post_id);
+    $extra_from   = (int)    get_field('extra_guest_from', $post_id);
+    $cleaning     = (float)  get_field('frais_menage',      $post_id);
+    $other_fee    = (float)  get_field('autres_frais',      $post_id);
+    $other_label  = (string) get_field('autres_frais_type', $post_id);
+    $taxe_choices = (array)  get_field('taxe_sejour',       $post_id);
+    $unit_is_week = (stripos($unit, 'semaine') !== false);
+    $seasons_raw  = (array) get_field('pc_season_blocks', $post_id);
+    $manual_quote = (bool) get_field('pc_manual_quote', $post_id);
+
+    $seasons = [];
+    foreach ($seasons_raw as $s) {
+        $price = isset($s['season_price']) ? (float) $s['season_price'] : 0.0;
+        if ($unit_is_week && $price > 0) {
+            $price = $price / 7.0;
+        }
+        if (! is_array($s)) {
+            $s = [];
+        }
+        $seasons[] = [
+            'name'        => trim((string) ($s['season_name'] ?? 'Saison')),
+            'min_nights'  => (int) ($s['season_min_nights'] ?? 0),
+            'extra_fee'   => ($s['season_extra_guest_fee'] ?? '') !== '' ? (float) $s['season_extra_guest_fee'] : $extra_fee,
+            'extra_from'  => ($s['season_extra_guest_from'] ?? '') !== '' ? (int) $s['season_extra_guest_from'] : $extra_from,
+            'price'       => ($price > 0 ? $price : ($unit_is_week ? ($base_price / 7.0) : $base_price)),
+            'periods'     => array_values(array_map(function ($p) {
+                return [
+                    'from' => (string) ($p['date_from'] ?? ''),
+                    'to'   => (string) ($p['date_to'] ?? ''),
+                ];
+            }, (array) ($s['season_periods'] ?? []))),
+        ];
+    }
+
+    $ics_disable = [];
+    $ical_url    = (string) get_field('ical_url', $post_id);
+    if ($ical_url && function_exists('pc_parse_ics_ranges')) {
+        $cache_key = 'pc_ics_body_' . md5($ical_url);
+        $ics_body  = get_transient($cache_key);
+        if ($ics_body === false) {
+            $resp = wp_remote_get($ical_url, ['timeout' => 10]);
+            if (! is_wp_error($resp) && 200 === wp_remote_retrieve_response_code($resp)) {
+                $ics_body = (string) wp_remote_retrieve_body($resp);
+                if ($ics_body !== '') {
+                    set_transient($cache_key, $ics_body, 2 * HOUR_IN_SECONDS);
+                }
+            } else {
+                $ics_body = '';
+            }
+        }
+        if ($ics_body !== '') {
+            $ics_disable = pc_parse_ics_ranges($ics_body);
+        }
+    }
+
+    $booked_dates = get_post_meta($post_id, '_booked_dates_cache', true);
+    if (is_array($booked_dates) && !empty($booked_dates)) {
+        $ics_disable = array_merge($ics_disable, pc_resa_dashboard_dates_to_ranges($booked_dates));
+    }
+    if (!empty($ics_disable)) {
+        $ics_disable = pc_resa_dashboard_merge_ranges($ics_disable);
+    }
+
+    return [
+        'title'       => get_the_title($post_id),
+        'basePrice'   => $unit_is_week ? ($base_price / 7.0) : $base_price,
+        'cap'         => $cap,
+        'minNights'   => max(1, $min_nights ?: 1),
+        'maxNights'   => max(1, $max_nights ?: 365),
+        'extraFee'    => $extra_fee,
+        'extraFrom'   => max(0, $extra_from),
+        'cleaning'    => $cleaning,
+        'otherFee'    => $other_fee,
+        'otherLabel'  => $other_label ?: 'Autres frais',
+        'taxe_sejour' => $taxe_choices,
+        'seasons'     => $seasons,
+        'icsDisable'  => $ics_disable,
+        'manualQuote' => $manual_quote,
+    ];
+}
+
+function pc_resa_dashboard_dates_to_ranges($dates)
+{
+    if (!is_array($dates) || empty($dates)) {
+        return [];
+    }
+    $normalized = [];
+    foreach ($dates as $date) {
+        $value = trim((string) $date);
+        if ($value === '') {
+            continue;
+        }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            $timestamp = strtotime($value);
+            if ($timestamp === false) {
+                continue;
+            }
+            $value = date('Y-m-d', $timestamp);
+        }
+        $normalized[] = $value;
+    }
+    if (empty($normalized)) {
+        return [];
+    }
+    sort($normalized);
+    $ranges = [];
+    $currentStart = $normalized[0];
+    $currentEnd = $normalized[0];
+    for ($i = 1, $max = count($normalized); $i < $max; $i++) {
+        $date = $normalized[$i];
+        $prevNext = date('Y-m-d', strtotime($currentEnd . ' +1 day'));
+        if ($date === $prevNext) {
+            $currentEnd = $date;
+            continue;
+        }
+        $ranges[] = ['from' => $currentStart, 'to' => $currentEnd];
+        $currentStart = $date;
+        $currentEnd = $date;
+    }
+    $ranges[] = ['from' => $currentStart, 'to' => $currentEnd];
+    return $ranges;
+}
+
+function pc_resa_dashboard_merge_ranges($ranges)
+{
+    $valid = [];
+    foreach ($ranges as $range) {
+        if (empty($range['from']) || empty($range['to'])) {
+            continue;
+        }
+        $from = substr((string) $range['from'], 0, 10);
+        $to   = substr((string) $range['to'], 0, 10);
+        if (!$from || !$to) {
+            continue;
+        }
+        if ($to < $from) {
+            continue;
+        }
+        $valid[] = [
+            'from' => $from,
+            'to'   => $to,
+        ];
+    }
+    if (empty($valid)) {
+        return [];
+    }
+    usort($valid, function ($a, $b) {
+        return strcmp($a['from'], $b['from']);
+    });
+    $merged = [];
+    $current = array_shift($valid);
+    foreach ($valid as $range) {
+        $currentEndPlusOne = date('Y-m-d', strtotime($current['to'] . ' +1 day'));
+        if ($range['from'] <= $currentEndPlusOne) {
+            if ($range['to'] > $current['to']) {
+                $current['to'] = $range['to'];
+            }
+        } else {
+            $merged[] = $current;
+            $current = $range;
+        }
+    }
+    $merged[] = $current;
+    return $merged;
 }
 
 /**
@@ -178,6 +400,38 @@ function pc_resa_dashboard_shortcode($atts)
         return '<p>Module réservation non disponible.</p>';
     }
 
+    wp_enqueue_style(
+        'pc-flatpickr',
+        'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css',
+        [],
+        '4.6.13'
+    );
+    wp_enqueue_script(
+        'pc-flatpickr',
+        'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js',
+        [],
+        '4.6.13',
+        true
+    );
+    wp_enqueue_script(
+        'pc-flatpickr-fr',
+        'https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js',
+        ['pc-flatpickr'],
+        '4.6.13',
+        true
+    );
+
+    $pc_devis_js_path = WP_CONTENT_DIR . '/mu-plugins/assets/pc-devis.js';
+    if (file_exists($pc_devis_js_path)) {
+        wp_enqueue_script(
+            'pc-logement-devis',
+            content_url('mu-plugins/assets/pc-devis.js'),
+            ['pc-flatpickr-fr'],
+            filemtime($pc_devis_js_path),
+            true
+        );
+    }
+
     // Réinitialisation : si bouton reset, on ignore tous les filtres
     $is_reset = isset($_GET['pc_resa_reset']);
 
@@ -216,6 +470,38 @@ function pc_resa_dashboard_shortcode($atts)
     }
 
     $reservations = PCR_Reservation::get_list($list_args);
+
+    if (!empty($reservations)) {
+        global $wpdb;
+
+        $ids = array_filter(array_map(function ($resa) {
+            return isset($resa->id) ? (int) $resa->id : 0;
+        }, $reservations));
+
+        if (!empty($ids)) {
+            $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+            $table        = $wpdb->prefix . 'pc_reservations';
+            $sql         = "SELECT id, detail_tarif FROM {$table} WHERE id IN ({$placeholders})";
+            // $wpdb->prepare attend des arguments séparés, on unpacke le tableau d'ids
+            $prepared    = $wpdb->prepare($sql, ...array_values($ids));
+            $detail_rows = $wpdb->get_results($prepared, OBJECT_K);
+
+            foreach ($reservations as $resa) {
+                $resa_id = isset($resa->id) ? (int) $resa->id : 0;
+                if ($resa_id && isset($detail_rows[$resa_id])) {
+                    $resa->detail_tarif = isset($detail_rows[$resa_id]->detail_tarif) ? $detail_rows[$resa_id]->detail_tarif : '';
+                } elseif (!property_exists($resa, 'detail_tarif')) {
+                    $resa->detail_tarif = '';
+                }
+            }
+        } else {
+            foreach ($reservations as $resa) {
+                if (!property_exists($resa, 'detail_tarif')) {
+                    $resa->detail_tarif = '';
+                }
+            }
+        }
+    }
 
     // On récupère aussi le **nombre total** de réservations pour les filtres actifs
     $total_rows = PCR_Reservation::get_count($type_filter, $item_id);
@@ -379,6 +665,29 @@ function pc_resa_dashboard_shortcode($atts)
     }
 
     $manual_nonce = wp_create_nonce('pc_resa_manual_create');
+
+    $manual_logement_options = [];
+    $manual_logements = get_posts([
+        'post_type'      => ['logement', 'villa', 'appartement'],
+        'post_status'    => ['publish', 'pending'],
+        'posts_per_page' => -1,
+        'orderby'        => 'title',
+        'order'          => 'ASC',
+        'fields'         => 'ids',
+    ]);
+
+    if (! empty($manual_logements)) {
+        foreach ($manual_logements as $logement_id) {
+            $title = get_the_title($logement_id);
+            if (! $title) {
+                continue;
+            }
+            $manual_logement_options[$logement_id] = $title;
+        }
+    }
+    if (! empty($manual_logement_options)) {
+        asort($manual_logement_options);
+    }
 
     ob_start();
 ?>
@@ -674,10 +983,10 @@ function pc_resa_dashboard_shortcode($atts)
                                                 </p>
                                             </div>
                                         </div>
-                                        <div class="pc-resa-header-actions"<?php echo $reservation_data_attrs; ?>>
+                                        <div class="pc-resa-header-actions" <?php echo $reservation_data_attrs; ?>>
                                             <button type="button"
                                                 class="pc-btn pc-btn--primary pc-resa-action-primary"
-                                                data-primary-action="<?php echo esc_attr($primary_action_slug); ?>"<?php echo $reservation_data_attrs; ?>>
+                                                data-primary-action="<?php echo esc_attr($primary_action_slug); ?>" <?php echo $reservation_data_attrs; ?>>
                                                 <?php echo esc_html($primary_action_label); ?>
                                             </button>
                                             <div class="pc-resa-actions-more">
@@ -690,11 +999,10 @@ function pc_resa_dashboard_shortcode($atts)
                                                 <ul class="pc-resa-actions-menu" role="menu">
                                                     <li>
                                                         <button type="button"
-                                                            class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-edit-quote<?php echo $can_use_prefill ? ' pc-resa-edit-quote' : ''; ?>"
+                                                            class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-edit-quote pc-resa-edit-quote"
                                                             role="menuitem"
-                                                            data-action="edit_quote"<?php echo $reservation_data_attrs; ?>
-                                                            data-prefill="<?php echo esc_attr($prefill_json); ?>"
-                                                            <?php echo $can_use_prefill ? '' : 'disabled'; ?>>
+                                                            data-action="edit_quote" <?php echo $reservation_data_attrs; ?>
+                                                            data-prefill="<?php echo esc_attr($prefill_json); ?>">
                                                             Modifier le devis
                                                         </button>
                                                     </li>
@@ -702,18 +1010,17 @@ function pc_resa_dashboard_shortcode($atts)
                                                         <button type="button"
                                                             class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-send-quote"
                                                             role="menuitem"
-                                                            data-action="send_quote"<?php echo $reservation_data_attrs; ?>
+                                                            data-action="send_quote" <?php echo $reservation_data_attrs; ?>
                                                             data-prefill="<?php echo esc_attr($prefill_json); ?>">
                                                             Envoyer le devis
                                                         </button>
                                                     </li>
                                                     <li>
                                                         <button type="button"
-                                                            class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-resend-quote<?php echo $can_use_prefill ? ' pc-resa-resend-quote' : ''; ?>"
+                                                            class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-resend-quote pc-resa-resend-quote"
                                                             role="menuitem"
-                                                            data-action="resend_quote"<?php echo $reservation_data_attrs; ?>
-                                                            data-prefill="<?php echo esc_attr($prefill_json); ?>"
-                                                            <?php echo $can_use_prefill ? '' : 'disabled'; ?>>
+                                                            data-action="resend_quote" <?php echo $reservation_data_attrs; ?>
+                                                            data-prefill="<?php echo esc_attr($prefill_json); ?>">
                                                             Renvoyer le devis
                                                         </button>
                                                     </li>
@@ -721,7 +1028,7 @@ function pc_resa_dashboard_shortcode($atts)
                                                         <button type="button"
                                                             class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-confirm-booking"
                                                             role="menuitem"
-                                                            data-action="confirm_booking"<?php echo $reservation_data_attrs; ?>>
+                                                            data-action="confirm_booking" <?php echo $reservation_data_attrs; ?>>
                                                             Confirmer la réservation
                                                         </button>
                                                     </li>
@@ -729,7 +1036,7 @@ function pc_resa_dashboard_shortcode($atts)
                                                         <button type="button"
                                                             class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-cancel-booking"
                                                             role="menuitem"
-                                                            data-action="cancel_booking"<?php echo $reservation_data_attrs; ?>>
+                                                            data-action="cancel_booking" <?php echo $reservation_data_attrs; ?>>
                                                             Annuler la réservation
                                                         </button>
                                                     </li>
@@ -737,7 +1044,7 @@ function pc_resa_dashboard_shortcode($atts)
                                                         <button type="button"
                                                             class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-send-payment-link"
                                                             role="menuitem"
-                                                            data-action="send_payment_link"<?php echo $reservation_data_attrs; ?>>
+                                                            data-action="send_payment_link" <?php echo $reservation_data_attrs; ?>>
                                                             Envoyer un lien de paiement
                                                         </button>
                                                     </li>
@@ -745,7 +1052,7 @@ function pc_resa_dashboard_shortcode($atts)
                                                         <button type="button"
                                                             class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-add-message"
                                                             role="menuitem"
-                                                            data-action="add_message"<?php echo $reservation_data_attrs; ?>>
+                                                            data-action="add_message" <?php echo $reservation_data_attrs; ?>>
                                                             Ajouter un message
                                                         </button>
                                                     </li>
@@ -821,7 +1128,7 @@ function pc_resa_dashboard_shortcode($atts)
                                         </div>
 
                                         <div class="pc-resa-card__section">
-                                            <h4>Devis</h4>
+                                            <h4><?php echo ($resa->type === 'location') ? 'Devis et Politique' : 'Devis'; ?></h4>
 
                                             <?php
                                             $quote_lines_raw = isset($resa->detail_tarif) ? $resa->detail_tarif : '';
@@ -891,7 +1198,7 @@ function pc_resa_dashboard_shortcode($atts)
                                                         if (! $is_separator && isset($line['amount']) && is_numeric($line['amount'])) {
                                                             $quote_total_from_lines += (float) $line['amount'];
                                                         }
-                                                        ?>
+                                                    ?>
                                                         <?php if ($is_separator) : ?>
                                                             <li class="pc-resa-devis-line pc-resa-devis-separator">
                                                                 <?php echo esc_html($line_label); ?>
@@ -920,6 +1227,20 @@ function pc_resa_dashboard_shortcode($atts)
                                                     <p><em>Devis en attente (sur devis).</em></p>
                                                 <?php else : ?>
                                                     <p><em>Aucun détail de devis enregistré.</em></p>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+
+                                            <?php if ($resa->type === 'location') : ?>
+                                                <?php
+                                                $politique = function_exists('get_field') ? get_field('politique_dannulation', $resa->item_id) : '';
+                                                if (!empty($politique)) :
+                                                ?>
+                                                    <h5>Politique d’annulation appliquée :</h5>
+                                                    <div class="pc-resa-politique">
+                                                        <?php echo wp_kses_post($politique); ?>
+                                                    </div>
+                                                <?php else : ?>
+                                                    <p><em>Aucune politique d’annulation renseignée pour ce logement.</em></p>
                                                 <?php endif; ?>
                                             <?php endif; ?>
 
@@ -973,7 +1294,7 @@ function pc_resa_dashboard_shortcode($atts)
                                                                 esc_attr($resa->id)
                                                             );
                                                             ?>
-                                                            <tr class="pc-resa-payment-row"<?php echo $payment_row_attrs; ?>>
+                                                            <tr class="pc-resa-payment-row" <?php echo $payment_row_attrs; ?>>
                                                                 <td><?php echo esc_html($pay_type); ?></td>
                                                                 <td><?php echo esc_html(number_format($pay_amount, 2, ',', ' ')); ?> €</td>
                                                                 <td><?php echo esc_html($due_label); ?></td>
@@ -983,7 +1304,7 @@ function pc_resa_dashboard_shortcode($atts)
                                                                         <?php if ($pay_status_raw === 'en_attente') : ?>
                                                                             <button type="button"
                                                                                 class="pc-resa-payment-action pc-resa-payment-mark-paid"
-                                                                                data-action="mark_paid"<?php echo $reservation_data_attrs; ?>
+                                                                                data-action="mark_paid" <?php echo $reservation_data_attrs; ?>
                                                                                 data-payment-id="<?php echo esc_attr($pay_id); ?>"
                                                                                 data-payment-type="<?php echo esc_attr($pay_type); ?>"
                                                                                 data-payment-status="<?php echo esc_attr($pay_status_raw); ?>">
@@ -992,7 +1313,7 @@ function pc_resa_dashboard_shortcode($atts)
                                                                         <?php elseif ($pay_status_raw === 'paye') : ?>
                                                                             <button type="button"
                                                                                 class="pc-resa-payment-action pc-resa-payment-mark-cancelled"
-                                                                                data-action="mark_cancelled"<?php echo $reservation_data_attrs; ?>
+                                                                                data-action="mark_cancelled" <?php echo $reservation_data_attrs; ?>
                                                                                 data-payment-id="<?php echo esc_attr($pay_id); ?>"
                                                                                 data-payment-type="<?php echo esc_attr($pay_type); ?>"
                                                                                 data-payment-status="<?php echo esc_attr($pay_status_raw); ?>"
@@ -1017,10 +1338,14 @@ function pc_resa_dashboard_shortcode($atts)
                                             <?php if ($resa->type === 'location') : ?>
                                                 <div class="pc-resa-section-caution">
                                                     <h5>Caution (logement)</h5>
-                                                    <p>
-                                                        <em>Les informations de caution seront ajoutées ici lors de la prochaine
-                                                            étape d’intégration Stripe / ACF.</em>
-                                                    </p>
+                                                    <?php
+                                                    $caution_value = function_exists('get_field') ? get_field('caution', $resa->item_id) : '';
+                                                    if ($caution_value !== '' && $caution_value !== null) :
+                                                    ?>
+                                                        <p><strong>Montant de la caution :</strong> <?php echo esc_html(number_format((float) $caution_value, 0, ',', ' ')); ?> €</p>
+                                                    <?php else : ?>
+                                                        <p><em>Aucune caution configurée pour ce logement.</em></p>
+                                                    <?php endif; ?>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
@@ -1037,8 +1362,9 @@ function pc_resa_dashboard_shortcode($atts)
 
                                             <p><strong>Message du client :</strong><br>
                                                 <?php
-                                                echo ! empty($resa->commentaire_client)
-                                                    ? nl2br(esc_html($resa->commentaire_client))
+                                                $commentaire_client = isset($resa->commentaire_client) ? wp_unslash($resa->commentaire_client) : '';
+                                                echo $commentaire_client !== ''
+                                                    ? nl2br(esc_html($commentaire_client))
                                                     : '<em>Aucun message renseigné</em>';
                                                 ?>
                                             </p>
@@ -1048,8 +1374,9 @@ function pc_resa_dashboard_shortcode($atts)
                                             <h3>Notes internes</h3>
                                             <p>
                                                 <?php
-                                                echo ! empty($resa->notes_internes)
-                                                    ? nl2br(esc_html($resa->notes_internes))
+                                                $notes_internes = isset($resa->notes_internes) ? wp_unslash($resa->notes_internes) : '';
+                                                echo $notes_internes !== ''
+                                                    ? nl2br(esc_html($notes_internes))
                                                     : '<em>Aucune note interne</em>';
                                                 ?>
                                             </p>
@@ -1076,7 +1403,7 @@ function pc_resa_dashboard_shortcode($atts)
                 Créez manuellement un devis ou une réservation pour un logement ou une expérience.
             </p>
             <p class="pc-resa-create-hint">
-                Pour l'instant, la création manuelle est disponible pour les expériences uniquement.
+                Choisissez le type correspondant : le moteur applique automatiquement les règles tarifaires existantes.
             </p>
 
             <form class="pc-resa-create-form">
@@ -1089,7 +1416,7 @@ function pc_resa_dashboard_shortcode($atts)
                             <span class="pc-resa-field-label">Type de réservation</span>
                             <select name="type">
                                 <option value="experience" selected>Expérience</option>
-                                <option value="location">Logement (bientôt)</option>
+                                <option value="location">Logement</option>
                             </select>
                         </label>
 
@@ -1109,9 +1436,9 @@ function pc_resa_dashboard_shortcode($atts)
                             </select>
                         </label>
 
-                        <label class="pc-resa-field">
-                            <span class="pc-resa-field-label">Expérience</span>
-                            <select name="item_id">
+                        <label class="pc-resa-field" data-item-field>
+                            <span class="pc-resa-field-label" data-item-label>Expérience</span>
+                            <select name="item_id" data-item-select>
                                 <option value="">Sélectionnez une expérience</option>
                                 <?php foreach ($manual_experience_options as $pid => $title) : ?>
                                     <option value="<?php echo esc_attr($pid); ?>">
@@ -1119,18 +1446,31 @@ function pc_resa_dashboard_shortcode($atts)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                            <span class="pc-resa-field-hint">
-                                Les logements seront ajoutés après validation du moteur logement.
+                            <span class="pc-resa-field-hint" data-type-hint="experience">
+                                Choisissez une expérience pour afficher les options tarifaires disponibles.
+                            </span>
+                            <span class="pc-resa-field-hint" data-type-hint="location" style="display:none;">
+                                Sélectionnez un logement pour activer le calendrier et le calcul automatique.
                             </span>
                         </label>
 
-                        <label class="pc-resa-field">
+                        <label class="pc-resa-field" data-type-toggle="experience">
                             <span class="pc-resa-field-label">Type de tarif</span>
                             <select name="experience_tarif_type" data-tarif-select disabled required>
                                 <option value="">Sélectionnez une expérience d'abord</option>
                             </select>
                             <span class="pc-resa-field-hint">
                                 Choisissez une expérience pour afficher les options tarifaires disponibles.
+                            </span>
+                        </label>
+
+                        <label class="pc-resa-field" data-type-toggle="location" data-logement-date-field style="display:none;">
+                            <span class="pc-resa-field-label">Séjour logement</span>
+                            <input type="text" name="logement_dates" data-logement-range placeholder="Arrivée – Départ" autocomplete="off" readonly>
+                            <input type="hidden" name="date_arrivee">
+                            <input type="hidden" name="date_depart">
+                            <span class="pc-resa-field-hint" data-logement-availability>
+                                Les périodes occupées sont grisées automatiquement (d'après les iCal).
                             </span>
                         </label>
                     </div>
@@ -1164,7 +1504,7 @@ function pc_resa_dashboard_shortcode($atts)
                 <div class="pc-resa-create-section">
                     <h4>Détails devis</h4>
 
-                    <label class="pc-resa-field">
+                    <label class="pc-resa-field" data-type-toggle="experience">
                         <span class="pc-resa-field-label">Date de l'expérience</span>
                         <input type="date" name="date_experience">
                     </label>
@@ -1183,8 +1523,11 @@ function pc_resa_dashboard_shortcode($atts)
                             <input type="number" min="0" name="bebes" value="0" data-quote-counter>
                         </label>
                     </div>
+                    <p class="pc-resa-field-hint" data-type-toggle="location" style="display:none;" data-capacity-warning>
+                        Ces informations sont utilisées pour calculer le devis logement (taxe de séjour, capacité, etc.).
+                    </p>
 
-                    <div class="pc-resa-create-subsection pc-resa-create-section--custom" data-quote-custom-section style="display:none;">
+                    <div class="pc-resa-create-subsection pc-resa-create-section--custom" data-quote-custom-section data-type-toggle="experience" style="display:none;">
                         <h4>Quantités personnalisées</h4>
                         <p class="pc-resa-field-hint">
                             Ajustez ici les lignes forfaitaires qui nécessitent une quantité (ex : massages, transferts...).
@@ -1192,7 +1535,7 @@ function pc_resa_dashboard_shortcode($atts)
                         <div class="pc-resa-customqty-list" data-quote-customqty></div>
                     </div>
 
-                    <div class="pc-resa-create-subsection pc-resa-create-section--options" data-quote-options-section style="display:none;">
+                    <div class="pc-resa-create-subsection pc-resa-create-section--options" data-quote-options-section data-type-toggle="experience" style="display:none;">
                         <h4>Options</h4>
                         <p class="pc-resa-field-hint">
                             Activez les options complémentaires et précisez une quantité si nécessaire.
@@ -1205,6 +1548,27 @@ function pc_resa_dashboard_shortcode($atts)
                         <input type="number" min="0" step="0.01" name="montant_total" readonly>
                         <span class="pc-resa-field-hint">Calculé automatiquement d'après le tarif choisi.</span>
                     </label>
+                </div>
+
+                <div class="pc-resa-create-section" data-participants-section style="display:none;">
+                    <h4>Participants (ne recalcule pas le devis)</h4>
+                    <div class="pc-resa-create-grid pc-resa-create-grid--3">
+                        <label class="pc-resa-field">
+                            <span class="pc-resa-field-label">Adultes</span>
+                            <input type="number" min="0" name="participants_adultes">
+                        </label>
+                        <label class="pc-resa-field">
+                            <span class="pc-resa-field-label">Enfants</span>
+                            <input type="number" min="0" name="participants_enfants">
+                        </label>
+                        <label class="pc-resa-field">
+                            <span class="pc-resa-field-label">Bébés</span>
+                            <input type="number" min="0" name="participants_bebes">
+                        </label>
+                    </div>
+                    <p class="pc-resa-field-hint">
+                        Ces champs mettent à jour les occupants/participants sans modifier le calcul du devis.
+                    </p>
                 </div>
 
                 <div class="pc-resa-create-section">
@@ -1879,14 +2243,14 @@ function pc_resa_dashboard_shortcode($atts)
             font-size: 0.9rem;
         }
 
-        .pc-resa-create-summary-body li {
+        .pc-resa-create-summary_body li {
             display: flex;
             justify-content: space-between;
             padding: 0.35rem 0;
             border-bottom: 1px solid #edf2f7;
         }
 
-        .pc-resa-create-summary-body li.pc-resa-summary-sep {
+        .pc-resa-create-summary_body li.pc-resa-summary-sep {
             border-bottom: none;
             margin-top: 0.3rem;
             padding-top: 0.6rem;
@@ -1894,11 +2258,11 @@ function pc_resa_dashboard_shortcode($atts)
             font-weight: 600;
         }
 
-        .pc-resa-create-summary-body li:last-child {
+        .pc-resa-create-summary_body li:last-child {
             border-bottom: none;
         }
 
-        .pc-resa-create-summary-body li.note {
+        .pc-resa-create-summary_body li.note {
             font-style: italic;
             color: #475569;
             justify-content: flex-start;
@@ -2253,6 +2617,10 @@ function pc_resa_dashboard_shortcode($atts)
             margin-top: 0.5rem;
         }
 
+        .pc-resa-create-grid--3-static {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
         .pc-resa-section-caution {
             margin-top: 1rem;
             padding-top: 0.75rem;
@@ -2285,12 +2653,19 @@ function pc_resa_dashboard_shortcode($atts)
 
     <script>
         window.pcResaExperienceTarifs = <?php echo wp_json_encode($manual_experience_tarifs); ?>;
+        window.pcResaExperienceOptions = <?php echo wp_json_encode($manual_experience_options); ?>;
+        window.pcResaLogementOptions = <?php echo wp_json_encode($manual_logement_options); ?>;
         const pcResaAjaxUrl = '<?php echo esc_url(admin_url('admin-ajax.php')); ?>';
         const pcResaManualNonce = '<?php echo esc_attr($manual_nonce); ?>';
 
         document.addEventListener('DOMContentLoaded', function() {
 
             const experiencePricingData = window.pcResaExperienceTarifs || {};
+            const experienceOptions = window.pcResaExperienceOptions || {};
+            const logementOptions = window.pcResaLogementOptions || {};
+            const logementQuote = window.PCLogementDevis || null;
+            const logementConfigCache = {};
+            const logementConfigPromises = {};
             const currencyFormatter = new Intl.NumberFormat('fr-FR', {
                 style: 'currency',
                 currency: 'EUR',
@@ -2356,15 +2731,104 @@ function pc_resa_dashboard_shortcode($atts)
                 }
             };
 
+            const fetchLogementConfig = (logementId) => {
+                if (!logementId) {
+                    return Promise.reject(new Error('missing_logement_id'));
+                }
+                const cacheKey = String(logementId);
+                if (logementConfigCache[cacheKey]) {
+                    return Promise.resolve(logementConfigCache[cacheKey]);
+                }
+                if (logementConfigPromises[cacheKey]) {
+                    return logementConfigPromises[cacheKey];
+                }
+                const formData = new FormData();
+                formData.append('action', 'pc_manual_logement_config');
+                formData.append('nonce', pcResaManualNonce);
+                formData.append('logement_id', cacheKey);
+                console.log('[pc-devis] Demande config logement :', cacheKey);
+                const promise = fetch(pcResaAjaxUrl, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                }).then(async (response) => {
+                    const raw = await response.text();
+                    let payload = null;
+                    if (raw) {
+                        try {
+                            payload = JSON.parse(raw);
+                        } catch (error) {
+                            payload = null;
+                        }
+                    }
+                    if (!response.ok) {
+                        const message = payload && payload.data && payload.data.message ?
+                            payload.data.message :
+                            (raw || 'Erreur serveur');
+                        const err = new Error(message);
+                        err.payload = payload;
+                        throw err;
+                    }
+                    if (!payload || !payload.success || !payload.data || !payload.data.config) {
+                        const message = payload && payload.data && payload.data.message ?
+                            payload.data.message :
+                            'Config logement introuvable';
+                        const err = new Error(message);
+                        err.payload = payload;
+                        throw err;
+                    }
+                    console.log('[pc-devis] Configuration reçue par le calendrier :', payload.data.config || {});
+                    if (payload.data && payload.data.config) {
+                        console.log('[pc-devis] Dates à désactiver :', payload.data.config.icsDisable || []);
+                    }
+                    logementConfigCache[cacheKey] = payload.data.config;
+                    return payload.data.config;
+                }).finally(() => {
+                    delete logementConfigPromises[cacheKey];
+                });
+                logementConfigPromises[cacheKey] = promise;
+                return promise;
+            };
+
+            const decodeText = (value) => {
+                if (value == null) {
+                    return '';
+                }
+                let str = String(value);
+                str = str.replace(/\\u([0-9a-fA-F]{4})/g, (_m, g1) => {
+                    try {
+                        return JSON.parse('"\\u' + g1 + '"');
+                    } catch (e) {
+                        return _m;
+                    }
+                });
+                str = str.replace(/u([0-9a-fA-F]{4})/g, (_m, g1) => {
+                    try {
+                        return JSON.parse('"\\u' + g1 + '"');
+                    } catch (e) {
+                        return _m;
+                    }
+                });
+                str = str.replace(/\u00a0|\u202f/g, ' ');
+                return str;
+            };
+
             const renderStoredLinesSummary = (lines, summaryBody, summaryTotal, totalValue) => {
                 if (!summaryBody || !Array.isArray(lines) || lines.length === 0) {
                     return;
                 }
                 let html = '<ul>';
                 lines.forEach((line) => {
-                    const label = line.label || '';
-                    const price = line.price || '';
-                    html += `<li><span>${label}</span><span>${price}</span></li>`;
+                    const rawLabel = decodeText(line.label || '');
+                    const rawPrice = decodeText(line.price || '');
+
+                    let formattedPrice = rawPrice;
+                    const numericPrice = parseFloat(rawPrice.replace(/[^\d,\.-]/g, '').replace(',', '.'));
+                    if (!Number.isNaN(numericPrice) && rawPrice !== '') {
+                        formattedPrice = formatPrice(numericPrice);
+                    }
+                    const separator = formattedPrice ? ' \u2013 ' : '';
+                    html += `<li><span>${rawLabel}</span><span>${separator}${formattedPrice}</span></li>`;
                 });
                 html += '</ul>';
                 summaryBody.innerHTML = html;
@@ -2597,14 +3061,47 @@ function pc_resa_dashboard_shortcode($atts)
                 formData.set('action', formData.get('action') || 'pc_manual_reservation_create');
                 formData.set('nonce', pcResaManualNonce);
 
-                const typeValue = formData.get('type');
-                if (typeValue !== 'experience') {
-                    alert('La création manuelle est disponible uniquement pour les expériences.');
-                    return;
+                const participantsAdults = form.querySelector('input[name="participants_adultes"]');
+                const participantsEnfants = form.querySelector('input[name="participants_enfants"]');
+                const participantsBebes = form.querySelector('input[name="participants_bebes"]');
+                const participantsEnabled = form.getAttribute('data-participants-enabled') === '1';
+                if (participantsEnabled) {
+                    if (participantsAdults && participantsAdults.value !== '') {
+                        formData.set('adultes', parseInt(participantsAdults.value || '0', 10) || 0);
+                    }
+                    if (participantsEnfants && participantsEnfants.value !== '') {
+                        formData.set('enfants', parseInt(participantsEnfants.value || '0', 10) || 0);
+                    }
+                    if (participantsBebes && participantsBebes.value !== '') {
+                        formData.set('bebes', parseInt(participantsBebes.value || '0', 10) || 0);
+                    }
                 }
 
-                if (!formData.get('item_id')) {
-                    alert('Sélectionnez une expérience.');
+                const typeValue = formData.get('type') || 'experience';
+                if (typeValue === 'experience') {
+                    if (!formData.get('item_id')) {
+                        alert('Sélectionnez une expérience.');
+                        return;
+                    }
+                    if (!formData.get('experience_tarif_type')) {
+                        alert('Sélectionnez un type de tarif.');
+                        return;
+                    }
+                } else if (typeValue === 'location') {
+                    if (!formData.get('item_id')) {
+                        alert('Sélectionnez un logement.');
+                        return;
+                    }
+                    if (!formData.get('date_arrivee') || !formData.get('date_depart')) {
+                        alert('Choisissez les dates du séjour logement.');
+                        return;
+                    }
+                    if (!formData.get('lines_json')) {
+                        alert('Calculez le devis logement avant de continuer.');
+                        return;
+                    }
+                } else {
+                    alert('Type de réservation inconnu.');
                     return;
                 }
 
@@ -2652,9 +3149,9 @@ function pc_resa_dashboard_shortcode($atts)
                     }
 
                     if (result.success) {
-                        const successMsg = result.data && result.data.message
-                            ? result.data.message
-                            : 'Réservation enregistrée';
+                        const successMsg = result.data && result.data.message ?
+                            result.data.message :
+                            'Réservation enregistrée';
                         submitBtn.textContent = successMsg;
                         setTimeout(function() {
                             window.location.reload();
@@ -2684,7 +3181,7 @@ function pc_resa_dashboard_shortcode($atts)
                 const typeSelect = form.querySelector('select[name="type"]');
                 const typeFluxSelect = form.querySelector('select[name="type_flux"]');
                 const modeSelect = form.querySelector('select[name="mode_reservation"]');
-                const experienceSelect = form.querySelector('select[name="item_id"]');
+                const itemSelect = form.querySelector('select[name="item_id"]');
                 const tarifSelect = form.querySelector('select[name="experience_tarif_type"]');
                 const linesTextarea = form.querySelector('textarea[name="lines_json"]');
                 const totalInput = form.querySelector('input[name="montant_total"]');
@@ -2693,11 +3190,16 @@ function pc_resa_dashboard_shortcode($atts)
                 const remiseLabel = form.querySelector('input[name="remise_label"]');
                 const remiseAmount = form.querySelector('input[name="remise_montant"]');
                 const remiseClearBtn = form.querySelector('.pc-resa-remise-clear');
+                const participantsAdultsField = form.querySelector('input[name="participants_adultes"]');
+                const participantsEnfantsField = form.querySelector('input[name="participants_enfants"]');
+                const participantsBebesField = form.querySelector('input[name="participants_bebes"]');
+                const participantsSection = form.querySelector('[data-participants-section]');
                 const plusLabel = form.querySelector('input[name="plus_label"]');
                 const plusAmount = form.querySelector('input[name="plus_montant"]');
                 const plusClearBtn = form.querySelector('.pc-resa-plus-clear');
                 const counters = form.querySelectorAll('[data-quote-counter]');
                 const countersWrapper = form.querySelector('[data-quote-counters]');
+                const capacityWarning = form.querySelector('[data-capacity-warning]');
                 const customSection = form.querySelector('[data-quote-custom-section]');
                 const customList = form.querySelector('[data-quote-customqty]');
                 const optionsSection = form.querySelector('[data-quote-options-section]');
@@ -2713,9 +3215,300 @@ function pc_resa_dashboard_shortcode($atts)
                 const adultField = form.querySelector('input[name="adultes"]');
                 const childField = form.querySelector('input[name="enfants"]');
                 const babyField = form.querySelector('input[name="bebes"]');
+                const typeLabel = form.querySelector('[data-item-label]');
+                const typeHints = container.querySelectorAll('[data-type-hint]');
+                const typeToggleNodes = container.querySelectorAll('[data-type-toggle]');
+                const logementRangeInput = form.querySelector('[data-logement-range]');
+                const arrivalInput = form.querySelector('input[name="date_arrivee"]');
+                const departInput = form.querySelector('input[name="date_depart"]');
+                const logementAvailability = form.querySelector('[data-logement-availability]');
+                if (form) {
+                    form.setAttribute('data-participants-enabled', '0');
+                }
 
                 const prefill = prefillData || null;
                 const opts = options || {};
+                let logementCalendar = null;
+                let pendingLogementRange = null;
+                let currentLogementId = '';
+                let currentLogementConfig = null;
+
+                const formatYMD = (date) => {
+                    if (!(date instanceof Date)) {
+                        return '';
+                    }
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
+
+                const setTypeLabel = (currentType) => {
+                    if (!typeLabel) {
+                        return;
+                    }
+                    typeLabel.textContent = currentType === 'location' ? 'Logement' : 'Expérience';
+                };
+
+                const toggleTypeHints = (currentType) => {
+                    typeHints.forEach((hint) => {
+                        const expected = hint.getAttribute('data-type-hint');
+                        if (!expected) {
+                            return;
+                        }
+                        hint.style.display = expected === currentType ? '' : 'none';
+                    });
+                };
+
+                const ensureCountersVisible = () => {
+                    if (countersWrapper) {
+                        countersWrapper.style.display = '';
+                    }
+                };
+
+                const toggleTypeSections = (currentType) => {
+                    typeToggleNodes.forEach((node) => {
+                        const expected = node.getAttribute('data-type-toggle');
+                        if (!expected) {
+                            return;
+                        }
+                        node.style.display = expected === currentType ? '' : 'none';
+                    });
+                    if (currentType === 'location') {
+                        ensureCountersVisible();
+                    }
+                };
+
+                const populateItemOptions = (currentType, selectedId) => {
+                    if (!itemSelect) {
+                        return;
+                    }
+                    const source = currentType === 'location' ? logementOptions : experienceOptions;
+                    const placeholder = currentType === 'location' ?
+                        'Sélectionnez un logement' :
+                        'Sélectionnez une expérience';
+                    let html = `<option value=\"\">${placeholder}</option>`;
+                    Object.keys(source || {}).forEach((id) => {
+                        const label = source[id] || '';
+                        if (!label) {
+                            return;
+                        }
+                        html += `<option value=\"${id}\">${escapeHtml(label)}</option>`;
+                    });
+                    itemSelect.innerHTML = html;
+                    let targetValue = typeof selectedId === 'undefined' ? '' : selectedId;
+                    if (!targetValue) {
+                        targetValue = currentType === 'location' ? lastLocationId : lastExperienceId;
+                    }
+                    if (targetValue && source[String(targetValue)]) {
+                        itemSelect.value = String(targetValue);
+                    } else {
+                        itemSelect.value = '';
+                    }
+                    if (currentType === 'location') {
+                        lastLocationId = itemSelect.value || '';
+                    } else {
+                        lastExperienceId = itemSelect.value || '';
+                    }
+                    if (currentType !== 'experience' && tarifSelect) {
+                        tarifSelect.value = '';
+                        tarifSelect.disabled = true;
+                    } else if (tarifSelect) {
+                        tarifSelect.disabled = false;
+                    }
+                };
+
+                const setLogementAvailabilityMessage = (message) => {
+                    if (logementAvailability) {
+                        logementAvailability.textContent = message || '';
+                    }
+                };
+
+                const destroyLogementCalendar = () => {
+                    if (logementCalendar && typeof logementCalendar.destroy === 'function') {
+                        logementCalendar.destroy();
+                    }
+                    logementCalendar = null;
+                };
+
+                const initLogementCalendar = (config, rangeToApply = null, clearExisting = true) => {
+                    if (!logementRangeInput) {
+                        return;
+                    }
+                    destroyLogementCalendar();
+                    if (clearExisting) {
+                        logementRangeInput.value = '';
+                        if (arrivalInput) {
+                            arrivalInput.value = '';
+                        }
+                        if (departInput) {
+                            departInput.value = '';
+                        }
+                    }
+                    logementRangeInput.disabled = !config;
+                    if (!config) {
+                        return;
+                    }
+                    const disableRanges = Array.isArray(config.icsDisable) ?
+                        config.icsDisable.filter((range) => range && range.from && range.to) :
+                        [];
+                    const disableRules = disableRanges.length ?
+                        [
+                            function(date) {
+                                const s = formatYMD(date);
+                                return disableRanges.some((range) => s >= range.from && s <= range.to);
+                            },
+                        ] :
+                        [];
+                    const bootCalendar = () => {
+                        if (typeof window.flatpickr !== 'function') {
+                            setTimeout(bootCalendar, 150);
+                            return;
+                        }
+                        if (window.flatpickr.l10ns && window.flatpickr.l10ns.fr) {
+                            window.flatpickr.localize(window.flatpickr.l10ns.fr);
+                        }
+                        console.log('[pc-devis] INIT FLATPICKR DASHBOARD', logementRangeInput, {
+                            mode: 'range',
+                            dateFormat: 'd/m/Y',
+                            disableRanges,
+                        });
+                        logementCalendar = window.flatpickr(logementRangeInput, {
+                            mode: 'range',
+                            dateFormat: 'd/m/Y',
+                            altInput: false,
+                            minDate: 'today',
+                            disable: disableRules,
+                            onChange(selectedDates) {
+                                if (selectedDates.length === 2) {
+                                    if (arrivalInput) {
+                                        arrivalInput.value = formatYMD(selectedDates[0]);
+                                    }
+                                    if (departInput) {
+                                        departInput.value = formatYMD(selectedDates[1]);
+                                    }
+                                } else {
+                                    if (arrivalInput) {
+                                        arrivalInput.value = '';
+                                    }
+                                    if (departInput) {
+                                        departInput.value = '';
+                                    }
+                                }
+                                updateQuote();
+                            },
+                        });
+                        if (logementCalendar && logementCalendar.config) {
+                            console.log('[pc-devis] FLATPICKR CONFIG FINALE', logementCalendar.config.disable);
+                        }
+                        if (rangeToApply && Array.isArray(rangeToApply) && rangeToApply.length === 2) {
+                            logementCalendar.setDate(rangeToApply, true, 'Y-m-d');
+                            if (arrivalInput) {
+                                arrivalInput.value = rangeToApply[0];
+                            }
+                            if (departInput) {
+                                departInput.value = rangeToApply[1];
+                            }
+                        }
+                    };
+                    bootCalendar();
+                };
+
+                const updateCapacityLimits = (config) => {
+                    if (!capacityWarning) {
+                        return;
+                    }
+                    if (!config || typeof config.cap === 'undefined') {
+                        capacityWarning.style.display = 'none';
+                        capacityWarning.removeAttribute('data-current-cap');
+                        return;
+                    }
+                    const capValue = parseInt(config.cap, 10) || 0;
+                    if (capValue <= 0) {
+                        capacityWarning.style.display = 'none';
+                        capacityWarning.removeAttribute('data-current-cap');
+                        return;
+                    }
+                    capacityWarning.style.display = '';
+                    capacityWarning.textContent = `Capacité maximale : ${capValue} personnes (adultes + enfants).`;
+                    capacityWarning.setAttribute('data-current-cap', String(capValue));
+                    enforceCapacity({
+                        adultes: parseInt(adultField ? adultField.value : '0', 10) || 0,
+                        enfants: parseInt(childField ? childField.value : '0', 10) || 0,
+                        bebes: parseInt(babyField ? babyField.value : '0', 10) || 0,
+                    });
+                };
+
+                const enforceCapacity = (counts) => {
+                    if (!capacityWarning) {
+                        return;
+                    }
+                    const capAttr = capacityWarning.getAttribute('data-current-cap');
+                    if (!capAttr) {
+                        capacityWarning.style.display = 'none';
+                        return;
+                    }
+                    const capValue = parseInt(capAttr, 10) || 0;
+                    if (capValue <= 0) {
+                        capacityWarning.style.display = 'none';
+                        return;
+                    }
+                    let adultesCount = counts.adultes || 0;
+                    let enfantsCount = counts.enfants || 0;
+                    let totalGuests = adultesCount + enfantsCount;
+                    if (totalGuests > capValue) {
+                        const overflow = totalGuests - capValue;
+                        if (enfantsCount > 0) {
+                            const newChildren = Math.max(0, enfantsCount - overflow);
+                            enfantsCount = newChildren;
+                            if (childField) {
+                                childField.value = String(newChildren);
+                            }
+                        }
+                        totalGuests = adultesCount + enfantsCount;
+                        if (totalGuests > capValue && adultesCount > 0) {
+                            adultesCount = Math.max(0, capValue - enfantsCount);
+                            if (adultField) {
+                                adultField.value = String(adultesCount);
+                            }
+                        }
+                        capacityWarning.textContent = `Capacité max ${capValue} personnes atteinte.`;
+                    } else {
+                        capacityWarning.textContent = `Capacité maximale : ${capValue} personnes (adultes + enfants).`;
+                    }
+                    counts.adultes = adultesCount;
+                    counts.enfants = enfantsCount;
+                    capacityWarning.style.display = '';
+                };
+
+                const prepareLogementConfig = (logementId, options = {}) => {
+                    currentLogementId = logementId || '';
+                    currentLogementConfig = null;
+                    initLogementCalendar(null, null, !options.range);
+                    if (!logementId) {
+                        setLogementAvailabilityMessage('Sélectionnez un logement pour afficher les disponibilités.');
+                        updateCapacityLimits(null);
+                        updateQuote();
+                        return;
+                    }
+                    setLogementAvailabilityMessage('Chargement des disponibilités...');
+                    fetchLogementConfig(logementId)
+                        .then((config) => {
+                            currentLogementConfig = config;
+                            setLogementAvailabilityMessage('Les périodes grisées sont indisponibles.');
+                            initLogementCalendar(config, options.range || null);
+                            pendingLogementRange = null;
+                            updateCapacityLimits(config);
+                            updateQuote();
+                        })
+                        .catch((error) => {
+                            console.error('Logement config error', error);
+                            const msg = error && error.message ? error.message : 'Impossible de charger les disponibilités.';
+                            setLogementAvailabilityMessage(msg);
+                            updateCapacityLimits(null);
+                            updateQuote();
+                        });
+                };
 
                 const toggleAdjustmentButton = (input, btn) => {
                     if (!btn || !input) {
@@ -2726,6 +3519,99 @@ function pc_resa_dashboard_shortcode($atts)
                 };
                 const refreshRemiseButton = () => toggleAdjustmentButton(remiseAmount, remiseClearBtn);
                 const refreshPlusButton = () => toggleAdjustmentButton(plusAmount, plusClearBtn);
+                const normalizeLabelKey = (value) => {
+                    if (typeof value !== 'string') {
+                        value = value == null ? '' : String(value);
+                    }
+                    return value.trim().toLowerCase().replace(/\s+/g, ' ');
+                };
+                const parseQtyFromLabel = (label) => {
+                    if (!label) {
+                        return 0;
+                    }
+                    const m = label.match(/^(\d+)\s*[x×]?\s*(.+)$/i);
+                    if (m && m[1]) {
+                        const qty = parseInt(m[1], 10);
+                        return Number.isNaN(qty) ? 0 : qty;
+                    }
+                    return 0;
+                };
+                const deriveQtyMapFromLines = (lines) => {
+                    const out = {};
+                    if (!Array.isArray(lines)) {
+                        return out;
+                    }
+                    lines.forEach((line) => {
+                        const rawLabel = decodeText(line && line.label ? line.label : '');
+                        const qty = parseQtyFromLabel(rawLabel);
+                        if (qty > 0) {
+                            const normalized = normalizeLabelKey(rawLabel.replace(/^(\d+)\s*[x×]?\s*/, ''));
+                            if (normalized) {
+                                out[normalized] = qty;
+                            }
+                        }
+                    });
+                    return out;
+                };
+                const normalizePrefillQtyMap = (map) => {
+                    const out = {};
+                    if (!map || typeof map !== 'object') {
+                        return out;
+                    }
+                    Object.keys(map).forEach((key) => {
+                        const qty = parseInt(map[key], 10);
+                        if (!Number.isNaN(qty) && qty > 0) {
+                            out[normalizeLabelKey(key)] = qty;
+                        }
+                    });
+                    return out;
+                };
+                let prefillQtyMap = normalizePrefillQtyMap(prefill && prefill.lines_qty_map);
+                const applyPrefillSelections = () => {
+                    if (!prefillQtyMap || Object.keys(prefillQtyMap).length === 0) {
+                        return;
+                    }
+
+                    if (customList) {
+                        customList.querySelectorAll('input[data-custom-line]').forEach((input) => {
+                            const labelEl = input.closest('.pc-resa-field');
+                            const labelTextEl = labelEl ? labelEl.querySelector('.pc-resa-field-label') : null;
+                            const labelText = labelTextEl ? labelTextEl.textContent : '';
+                            const key = normalizeLabelKey(labelText);
+                            const qty = prefillQtyMap[key];
+                            if (qty && qty > 0) {
+                                input.value = qty;
+                                input.dispatchEvent(new Event('input'));
+                            }
+                        });
+                    }
+
+                    if (optionsList) {
+                        optionsList.querySelectorAll('input[type="checkbox"][data-option-label]').forEach((checkbox) => {
+                            const encodedLabel = checkbox.getAttribute('data-option-label') || '';
+                            let labelDecoded = encodedLabel;
+                            try {
+                                labelDecoded = decodeURIComponent(encodedLabel);
+                            } catch (error) {
+                                // ignore decode errors
+                            }
+                            const key = normalizeLabelKey(labelDecoded);
+                            const qty = prefillQtyMap[key];
+                            if (!qty || qty <= 0) {
+                                return;
+                            }
+                            checkbox.checked = true;
+                            const optId = checkbox.getAttribute('data-option-id');
+                            if (optId) {
+                                const qtyInput = optionsList.querySelector(`[data-option-qty-for="${optId}"]`);
+                                if (qtyInput) {
+                                    qtyInput.disabled = false;
+                                    qtyInput.value = qty;
+                                }
+                            }
+                        });
+                    }
+                };
 
                 const getCustomQtyValues = () => {
                     const map = {};
@@ -2786,11 +3672,50 @@ function pc_resa_dashboard_shortcode($atts)
                     countersWrapper.style.display = shouldDisplay ? '' : 'none';
                 };
 
+                const setParticipantsEnabled = (enabled) => {
+                    if (!form) {
+                        return;
+                    }
+                    form.setAttribute('data-participants-enabled', enabled ? '1' : '0');
+                };
+
+                const normalizeCode = (value) => {
+                    if (typeof value !== 'string') {
+                        value = value == null ? '' : String(value);
+                    }
+                    return value
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .trim()
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-');
+                };
+
+                const isCustomExperienceConfig = (config) => {
+                    if (!config) {
+                        return false;
+                    }
+                    const code = normalizeCode(config.code || '');
+                    const label = normalizeCode(config.label || '');
+                    return ['custom', 'personnalise', 'personnalisee'].includes(code) ||
+                        ['custom', 'personnalise', 'personnalisee'].includes(label);
+                };
+
+                const toggleParticipantsSection = (config) => {
+                    if (!participantsSection) {
+                        setParticipantsEnabled(false);
+                        return;
+                    }
+                    const typeValue = typeSelect ? typeSelect.value : 'experience';
+                    const shouldShow = (typeValue === 'experience') && isCustomExperienceConfig(config);
+                    participantsSection.style.display = shouldShow ? '' : 'none';
+                    setParticipantsEnabled(shouldShow);
+                };
+
                 function renderCustomQtyInputs(config) {
                     if (!customList) {
                         return;
                     }
-                    customList.innerHTML = '';
                     if (!config || !Array.isArray(config.lines)) {
                         if (customSection) {
                             customSection.style.display = 'none';
@@ -2807,9 +3732,9 @@ function pc_resa_dashboard_shortcode($atts)
                     let html = '';
                     linesWithQty.forEach((line, index) => {
                         const inputKey = line.uid || `line_${index}`;
-                        const defaultValue = line.default_qty && parseInt(line.default_qty, 10) > 0
-                            ? parseInt(line.default_qty, 10)
-                            : 0;
+                        const defaultValue = line.default_qty && parseInt(line.default_qty, 10) > 0 ?
+                            parseInt(line.default_qty, 10) :
+                            0;
                         html += `
                             <label class="pc-resa-field pc-resa-field--inline">
                                 <span class="pc-resa-field-label">${escapeHtml(line.label || 'Service')}</span>
@@ -2857,9 +3782,9 @@ function pc_resa_dashboard_shortcode($atts)
                             </label>
                         `;
                         if (opt.enable_qty) {
-                            const defaultQty = opt.default_qty && parseInt(opt.default_qty, 10) > 0
-                                ? parseInt(opt.default_qty, 10)
-                                : 1;
+                            const defaultQty = opt.default_qty && parseInt(opt.default_qty, 10) > 0 ?
+                                parseInt(opt.default_qty, 10) :
+                                1;
                             html += `
                                 <div class="pc-resa-option-qty">
                                     <label class="pc-resa-field pc-resa-field--inline">
@@ -2891,26 +3816,35 @@ function pc_resa_dashboard_shortcode($atts)
 
                 const refreshDynamicSections = (config) => {
                     toggleCountersVisibility(config);
+                    toggleParticipantsSection(config);
                     renderCustomQtyInputs(config);
                     renderOptionsInputs(config);
                 };
 
-                // Applique les valeurs pré-remplies aux selects avant l'initialisation
-                // pour que populateTarifOptions et updateQuote utilisent les bonnes valeurs.
-                if (prefill) {
-                    if (typeof prefill.type !== 'undefined' && prefill.type && form) {
-                        const tmpType = form.querySelector('select[name="type"]');
-                        if (tmpType) {
-                            tmpType.value = prefill.type;
-                        }
+                let currentType = typeSelect ? (typeSelect.value || 'experience') : 'experience';
+                if (prefill && prefill.type) {
+                    currentType = prefill.type;
+                }
+                if (typeSelect) {
+                    typeSelect.value = currentType;
+                }
+                if (prefill && prefill.type === 'location' && prefill.date_arrivee && prefill.date_depart) {
+                    pendingLogementRange = [prefill.date_arrivee, prefill.date_depart];
+                    if (arrivalInput) {
+                        arrivalInput.value = prefill.date_arrivee;
                     }
-                    if (typeof prefill.item_id !== 'undefined' && prefill.item_id && form) {
-                        const tmpItem = form.querySelector('select[name="item_id"]');
-                        if (tmpItem) {
-                            tmpItem.value = String(prefill.item_id);
-                        }
+                    if (departInput) {
+                        departInput.value = prefill.date_depart;
                     }
                 }
+
+                const initialItemId = prefill && prefill.item_id ? String(prefill.item_id) : '';
+                let lastExperienceId = currentType === 'experience' ? initialItemId : '';
+                let lastLocationId = currentType === 'location' ? initialItemId : '';
+                populateItemOptions(currentType, initialItemId);
+                setTypeLabel(currentType);
+                toggleTypeHints(currentType);
+                toggleTypeSections(currentType);
 
                 // Ensure hidden "id" field exists so edits submit the reservation id instead of creating a new one
                 let idInput = form.querySelector('input[name="id"]');
@@ -2987,26 +3921,61 @@ function pc_resa_dashboard_shortcode($atts)
                     if (plusAmount && typeof prefill.plus_montant !== 'undefined' && prefill.plus_montant !== '') {
                         plusAmount.value = prefill.plus_montant;
                     }
+                    if (participantsAdultsField) {
+                        participantsAdultsField.value = prefill.participants && typeof prefill.participants.adultes !== 'undefined'
+                            ? prefill.participants.adultes
+                            : (prefill.adultes || 0);
+                    }
+                    if (participantsEnfantsField) {
+                        participantsEnfantsField.value = prefill.participants && typeof prefill.participants.enfants !== 'undefined'
+                            ? prefill.participants.enfants
+                            : (prefill.enfants || 0);
+                    }
+                    if (participantsBebesField) {
+                        participantsBebesField.value = prefill.participants && typeof prefill.participants.bebes !== 'undefined'
+                            ? prefill.participants.bebes
+                            : (prefill.bebes || 0);
+                    }
+                }
+
+                if (!prefill) {
+                    if (participantsAdultsField && adultField) {
+                        participantsAdultsField.value = adultField.value || '';
+                    }
+                    if (participantsEnfantsField && childField) {
+                        participantsEnfantsField.value = childField.value || '';
+                    }
+                    if (participantsBebesField && babyField) {
+                        participantsBebesField.value = babyField.value || '';
+                    }
                 }
 
                 refreshRemiseButton();
                 refreshPlusButton();
 
-                const initialExperienceValue = experienceSelect ? experienceSelect.value : '';
                 const initialTarifKey = prefill ? prefill.experience_tarif_type : '';
-                populateTarifOptions(initialExperienceValue, initialTarifKey);
-                // si un tarif pré-rempli existe, appliquer la valeur au select tarif
-                if (tarifSelect && initialTarifKey) {
-                    tarifSelect.value = initialTarifKey;
-                }
-                const initialConfig = initialExperienceValue && initialTarifKey
-                    ? getTarifConfig(initialExperienceValue, initialTarifKey)
-                    : null;
-                refreshDynamicSections(initialConfig);
-
-                // Assurer l'état du bouton submit selon le type actuel
-                if (typeSelect && submitBtn) {
-                    submitBtn.disabled = typeSelect.value !== 'experience';
+                if (currentType === 'experience') {
+                    populateTarifOptions(initialItemId, initialTarifKey);
+                    if (tarifSelect && initialTarifKey) {
+                        tarifSelect.value = initialTarifKey;
+                    }
+                    const initialConfig = initialItemId && initialTarifKey ?
+                        getTarifConfig(initialItemId, initialTarifKey) :
+                        null;
+                    refreshDynamicSections(initialConfig);
+                    applyPrefillSelections();
+                    updateCapacityLimits(null);
+                } else {
+                    if (customSection) {
+                        customSection.style.display = 'none';
+                    }
+                    if (optionsSection) {
+                        optionsSection.style.display = 'none';
+                    }
+                    toggleParticipantsSection(null);
+                    prepareLogementConfig(initialItemId, {
+                        range: pendingLogementRange,
+                    });
                 }
 
                 let storedLines = null;
@@ -3018,6 +3987,9 @@ function pc_resa_dashboard_shortcode($atts)
                     if (Array.isArray(parsedLines)) {
                         storedLines = parsedLines;
                     }
+                }
+                if ((!prefillQtyMap || Object.keys(prefillQtyMap).length === 0) && storedLines) {
+                    prefillQtyMap = deriveQtyMapFromLines(storedLines);
                 }
 
                 if (storedLines && summaryBody && summaryTotal) {
@@ -3034,15 +4006,78 @@ function pc_resa_dashboard_shortcode($atts)
                     }
 
                     const typeValue = typeSelect ? typeSelect.value : 'experience';
-                    if (typeValue !== 'experience') {
-                        summaryBody.innerHTML = '<p class="pc-resa-field-hint">Le calcul de devis est disponible uniquement pour les expériences.</p>';
-                        summaryTotal.textContent = '—';
-                        if (totalInput) totalInput.value = '';
-                        if (linesTextarea) linesTextarea.value = '';
+                    const counts = {
+                        adultes: parseInt(adultField ? adultField.value : '0', 10) || 0,
+                        enfants: parseInt(childField ? childField.value : '0', 10) || 0,
+                        bebes: parseInt(babyField ? babyField.value : '0', 10) || 0,
+                    };
+                    if (typeValue !== 'location' && capacityWarning) {
+                        capacityWarning.style.display = 'none';
+                    }
+
+                    if (typeValue === 'location') {
+                        enforceCapacity(counts);
+                        if (!logementQuote || typeof logementQuote.calculateQuote !== 'function') {
+                            summaryBody.innerHTML = '<p class="pc-resa-field-hint">Le moteur logement n’est pas chargé.</p>';
+                            summaryTotal.textContent = '—';
+                            if (totalInput) totalInput.value = '';
+                            if (linesTextarea) linesTextarea.value = '';
+                            return;
+                        }
+                        const logementId = itemSelect ? itemSelect.value : '';
+                        if (!logementId) {
+                            summaryBody.innerHTML = '<p class="pc-resa-field-hint">Sélectionnez un logement.</p>';
+                            summaryTotal.textContent = '—';
+                            if (totalInput) totalInput.value = '';
+                            if (linesTextarea) linesTextarea.value = '';
+                            return;
+                        }
+                        const config = (logementId === currentLogementId && currentLogementConfig) ? currentLogementConfig : null;
+                        if (!config) {
+                            summaryBody.innerHTML = '<p class="pc-resa-field-hint">Chargement des données du logement…</p>';
+                            summaryTotal.textContent = '—';
+                            if (totalInput) totalInput.value = '';
+                            if (linesTextarea) linesTextarea.value = '';
+                            return;
+                        }
+                        const arrivalValue = arrivalInput ? arrivalInput.value : '';
+                        const departValue = departInput ? departInput.value : '';
+                        if (!arrivalValue || !departValue) {
+                            summaryBody.innerHTML = '<p class="pc-resa-field-hint">Choisissez les dates du séjour.</p>';
+                            summaryTotal.textContent = '—';
+                            if (totalInput) totalInput.value = '';
+                            if (linesTextarea) linesTextarea.value = '';
+                            return;
+                        }
+                        const result = logementQuote.calculateQuote(config, {
+                            date_arrivee: arrivalValue,
+                            date_depart: departValue,
+                            adults: counts.adultes,
+                            children: counts.enfants,
+                            infants: counts.bebes,
+                        });
+                        if (!result.success) {
+                            summaryBody.innerHTML = `<p class="pc-resa-field-hint">${escapeHtml(result.message || 'Sélection invalide.')}</p>`;
+                            summaryTotal.textContent = '—';
+                            if (totalInput) totalInput.value = '';
+                            if (linesTextarea) linesTextarea.value = '';
+                            return;
+                        }
+                        applyQuoteToForm({
+                            result,
+                            linesTextarea,
+                            totalInput,
+                            summaryBody,
+                            summaryTotal,
+                            remiseLabel,
+                            remiseAmount,
+                            plusLabel,
+                            plusAmount,
+                        });
                         return;
                     }
 
-                    const expId = experienceSelect ? experienceSelect.value : '';
+                    const expId = itemSelect ? itemSelect.value : '';
                     const tarifKey = tarifSelect ? tarifSelect.value : '';
 
                     if (!expId || !tarifKey) {
@@ -3059,12 +4094,6 @@ function pc_resa_dashboard_shortcode($atts)
                         summaryTotal.textContent = '—';
                         return;
                     }
-
-                    const counts = {
-                        adultes: parseInt(adultField ? adultField.value : '0', 10) || 0,
-                        enfants: parseInt(childField ? childField.value : '0', 10) || 0,
-                        bebes: parseInt(babyField ? babyField.value : '0', 10) || 0,
-                    };
 
                     const customQty = getCustomQtyValues();
                     const selectedOptions = getSelectedOptions();
@@ -3087,35 +4116,61 @@ function pc_resa_dashboard_shortcode($atts)
 
                 if (typeSelect) {
                     typeSelect.addEventListener('change', function() {
-                        if (submitBtn) {
-                            submitBtn.disabled = this.value !== 'experience';
-                        }
-                        if (this.value !== 'experience') {
-                            refreshDynamicSections(null);
-                        } else {
-                            const expId = experienceSelect ? experienceSelect.value : '';
-                            const tarifKey = tarifSelect ? tarifSelect.value : '';
-                            const cfg = expId && tarifKey ? getTarifConfig(expId, tarifKey) : null;
+                        const nextType = this.value || 'experience';
+                        populateItemOptions(nextType);
+                        setTypeLabel(nextType);
+                        toggleTypeHints(nextType);
+                        toggleTypeSections(nextType);
+                        if (nextType === 'experience') {
+                            const expId = itemSelect ? itemSelect.value : '';
+                            populateTarifOptions(expId);
+                            const cfg = expId && tarifSelect ? getTarifConfig(expId, tarifSelect.value) : null;
                             refreshDynamicSections(cfg);
+                            currentLogementId = '';
+                            currentLogementConfig = null;
+                            setLogementAvailabilityMessage('');
+                            initLogementCalendar(null);
+                            updateCapacityLimits(null);
+                        } else {
+                            if (customSection) {
+                                customSection.style.display = 'none';
+                            }
+                            if (optionsSection) {
+                                optionsSection.style.display = 'none';
+                            }
+                            toggleParticipantsSection(null);
+                            prepareLogementConfig(itemSelect ? itemSelect.value : '');
                         }
                         updateQuote();
                     });
-                    if (submitBtn) {
-                        submitBtn.disabled = typeSelect.value !== 'experience';
-                    }
                 }
 
-                if (experienceSelect) {
-                    experienceSelect.addEventListener('change', function() {
-                        populateTarifOptions(this.value);
-                        refreshDynamicSections(null);
+                if (itemSelect) {
+                    itemSelect.addEventListener('change', function() {
+                        const current = typeSelect ? typeSelect.value : 'experience';
+                        if (current === 'experience') {
+                            populateTarifOptions(this.value);
+                            refreshDynamicSections(null);
+                            updateCapacityLimits(null);
+                        } else {
+                            prepareLogementConfig(this.value);
+                        }
+                        console.log('[pc-devis] Sélection logement changée :', this.value || '(vide)');
+                        if (current === 'experience') {
+                            lastExperienceId = this.value || '';
+                        } else {
+                            lastLocationId = this.value || '';
+                        }
                         updateQuote();
                     });
                 }
 
                 if (tarifSelect) {
                     tarifSelect.addEventListener('change', function() {
-                        const expId = experienceSelect ? experienceSelect.value : '';
+                        if (typeSelect && typeSelect.value !== 'experience') {
+                            return;
+                        }
+                        const expId = itemSelect ? itemSelect.value : '';
                         const cfg = expId ? getTarifConfig(expId, this.value) : null;
                         refreshDynamicSections(cfg);
                         updateQuote();
@@ -3150,6 +4205,14 @@ function pc_resa_dashboard_shortcode($atts)
                         updateQuote();
                     });
                 }
+
+                [participantsAdultsField, participantsEnfantsField, participantsBebesField].forEach((field) => {
+                    if (field) {
+                        field.addEventListener('input', () => {
+                            // pas de recalcul du devis
+                        });
+                    }
+                });
 
                 if (plusLabel) {
                     plusLabel.addEventListener('input', () => {
@@ -3313,33 +4376,8 @@ function pc_resa_dashboard_shortcode($atts)
                 document.querySelectorAll('.pc-resa-resend-quote').forEach((btn) => {
                     btn.addEventListener('click', function(e) {
                         e.preventDefault();
-                        const rawData = this.getAttribute('data-prefill');
-                        const payload = parseJSONSafe(rawData);
-                        if (!payload) {
-                            alert('Impossible de charger les données du devis.');
-                            return;
-                        }
-                        const refs = openManualCreateModal(payload, {
-                            context: 'resend',
-                            forceTypeFlux: 'devis'
-                        });
-                        if (!refs) {
-                            return;
-                        }
-                        const {
-                            form,
-                            submitBtn,
-                            sendBtn,
-                            typeFluxSelect
-                        } = refs;
-                        if (typeFluxSelect) {
-                            typeFluxSelect.value = 'devis';
-                        }
-                        setTimeout(() => {
-                            if (confirm('Envoyer ce devis à nouveau ?')) {
-                                handleManualCreateSubmit(form, sendBtn || submitBtn);
-                            }
-                        }, 400);
+                        const reservationId = this.getAttribute('data-resa-id') || '';
+                        console.log('[pc-reservations] Renvoyer devis TODO', reservationId);
                     });
                 });
             };

@@ -118,6 +118,195 @@
     };
   }
 
+  function normalizeDate(value) {
+    if (!value) return null;
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+    var parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function calculateLogementQuote(cfg, args) {
+    args = args || {};
+    var pendingLabel = "En attente de devis";
+    var response = {
+      success: false,
+      lines: [],
+      html: "",
+      total: 0,
+      isSurDevis: false,
+      pendingLabel: pendingLabel,
+      selection: null,
+      message: "",
+      code: "",
+    };
+
+    if (!cfg) {
+      response.code = "missing_config";
+      response.message = "Sélectionnez un logement.";
+      return response;
+    }
+
+    var manualQuote =
+      typeof args.manualQuote !== "undefined"
+        ? !!args.manualQuote
+        : !!cfg.manualQuote;
+
+    var start =
+      normalizeDate(args.startDate) ||
+      normalizeDate(args.arrival) ||
+      normalizeDate(args.date_arrivee);
+    var end =
+      normalizeDate(args.endDate) ||
+      normalizeDate(args.departure) ||
+      normalizeDate(args.date_depart);
+
+    if (!start || !end || end <= start) {
+      response.code = "missing_dates";
+      response.message = "Choisissez vos dates";
+      return response;
+    }
+
+    var adults = parseInt(args.adults, 10);
+    var children = parseInt(args.children, 10);
+    var infants = parseInt(args.infants, 10);
+    adults = isFinite(adults) && adults >= 0 ? adults : 0;
+    children = isFinite(children) && children >= 0 ? children : 0;
+    infants = isFinite(infants) && infants >= 0 ? infants : 0;
+    var guestsForExtras = adults + children + infants;
+    var guestsForCapacity = adults + children;
+    var cap = Number(cfg.cap) || 0;
+    if (cap > 0 && guestsForCapacity > cap) {
+      response.code = "over_capacity";
+      response.message =
+        "Capacité max : " + cap + " personnes (adultes + enfants).";
+      return response;
+    }
+
+    var nights = [];
+    for (var d = new Date(start); d < end; d = addDays(d, 1)) {
+      nights.push(ymd(d));
+    }
+    var nN = nights.length;
+    if (nN <= 0) {
+      response.code = "invalid_range";
+      response.message = "Choisissez vos dates";
+      return response;
+    }
+
+    var reqMin = requiredMinNights(cfg, nights);
+    if (reqMin && nN < reqMin) {
+      response.code = "min_nights";
+      response.message =
+        "Séjour minimum : " + reqMin + " nuit" + (reqMin > 1 ? "s" : "") + ".";
+      return response;
+    }
+
+    var maxN = Number(cfg.maxNights) || 0;
+    if (maxN && nN > maxN) {
+      response.code = "max_nights";
+      response.message =
+        "Séjour maximum : " + maxN + " nuit" + (maxN > 1 ? "s" : "") + ".";
+      return response;
+    }
+
+    response.selection = {
+      arrival: ymd(start),
+      departure: ymd(end),
+      adults: adults,
+      children: children,
+      infants: infants,
+    };
+
+    if (manualQuote) {
+      response.success = true;
+      response.isSurDevis = true;
+      response.lines = [
+        { label: "En attente de devis personnalisé", price: "" },
+      ];
+      response.html =
+        "<ul><li><span>En attente de devis personnalisé</span><span></span></li></ul>";
+      return response;
+    }
+
+    var lodging = 0;
+    for (var ni = 0; ni < nN; ni++) {
+      lodging += nightPrice(cfg, nights[ni]);
+    }
+    var extras = 0;
+    for (var k = 0; k < nN; k++) {
+      var ep = extraParamsFor(cfg, nights[k]);
+      if (ep.fee > 0 && ep.from > 0 && guestsForExtras >= ep.from) {
+        extras += (guestsForExtras - (ep.from - 1)) * ep.fee;
+      }
+    }
+    var cleaning = Number(cfg.cleaning) || 0;
+    var other = Number(cfg.otherFee) || 0;
+    var taxe = 0;
+    var taxRaw = cfg.taxe_sejour || "";
+    if (Array.isArray(taxRaw)) taxRaw = taxRaw[0] != null ? taxRaw[0] : "";
+    if (typeof taxRaw === "object" && taxRaw !== null && taxRaw.value) {
+      taxRaw = taxRaw.value;
+    }
+    var taxKey = normKey(taxRaw);
+    var isPct5 =
+      taxKey &&
+      (/\b5\b/.test(taxKey) || taxKey.includes("5")) &&
+      (taxKey.includes("%") ||
+        taxKey.includes("pourcent") ||
+        taxKey.includes("pct"));
+    var m = taxKey.match(/([1-5])_?etoile/);
+    var stars = m ? parseInt(m[1], 10) : null;
+    var classRates = { 1: 0.8, 2: 0.9, 3: 1.5, 4: 2.3, 5: 3.0 };
+    if (isPct5 && nN > 0 && guestsForExtras > 0 && adults > 0) {
+      var A = lodging / nN / guestsForExtras;
+      var B = 0.05 * A;
+      taxe = B * nN * adults;
+    } else if (stars && classRates[stars] && adults > 0) {
+      taxe = classRates[stars] * adults * nN;
+    }
+
+    var grand = lodging + extras + cleaning + other + taxe;
+    var html = "<ul>";
+    var lines = [];
+    function addLine(label, priceValue, formatted) {
+      var display =
+        typeof formatted !== "undefined" ? formatted : eur(priceValue);
+      html += "<li><span>" + label + "</span><span>" + display + "</span></li>";
+      lines.push({ label: label, price: display });
+    }
+    function dateFR(d) {
+      return d.toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    }
+    addLine(
+      "Hébergement du " +
+        dateFR(start) +
+        " au " +
+        dateFR(end) +
+        " (" +
+        nN +
+        " nuits)",
+      lodging
+    );
+    if (extras > 0) addLine("Invités supplémentaires", extras);
+    if (cleaning > 0) addLine("Frais de ménage", cleaning);
+    if (other > 0)
+      addLine(cfg.otherLabel || "Autres frais", other);
+    if (taxe > 0) addLine("Taxe de séjour", taxe);
+    html += "</ul>";
+
+    response.success = true;
+    response.lines = lines;
+    response.html = html;
+    response.total = grand;
+    return response;
+  }
+
   // ---------- Initialisation d'une section de devis ----------
   function initOne(section) {
     if (!section || section.__pcqInit) return;
@@ -247,17 +436,14 @@
 
       var a = parseIntSafe(adults);
       var c = parseIntSafe(children);
-      var i = parseIntSafe(infants);
-      var totalGuests = a + c + i;
+      var totalGuests = a + c;
 
       if (totalGuests > CAP) {
         if (msgBox) {
           msgBox.textContent =
             "Capacité max : " +
             CAP +
-            " personnes (" +
-            totalGuests +
-            " sélectionnés).";
+            " personnes (adultes + enfants).";
         }
 
         var currentVal = 0;
@@ -269,9 +455,6 @@
         } else if (sourceField === "children") {
           inputElement = children;
           currentVal = c;
-        } else if (sourceField === "infants") {
-          inputElement = infants;
-          currentVal = i;
         }
 
         if (inputElement && currentVal > 0) {
@@ -330,162 +513,29 @@
         var start = fpi.selectedDates[0],
           end = fpi.selectedDates[1];
         if (msgBox) msgBox.textContent = "";
-        var nights = [];
-        for (var d = new Date(start); d < end; d = addDays(d, 1))
-          nights.push(ymd(d));
-        var nN = nights.length;
-        if (nN <= 0) {
-          if (out) out.hidden = true;
-          window.currentLogementTotal = 0;
-          window.currentLogementLines = [];
-          window.currentLogementSelection = null;
-          section.dispatchEvent(
-            new CustomEvent("devisLogementUpdated", { bubbles: true })
-          );
-          return;
-        }
-
-        var reqMin = requiredMinNights(cfg, nights);
-        if (reqMin && nN < reqMin) {
-          if (out) out.hidden = true;
-          if (msgBox)
-            msgBox.textContent =
-              "Séjour minimum : " +
-              reqMin +
-              " nuit" +
-              (reqMin > 1 ? "s" : "") +
-              ".";
-          window.currentLogementTotal = 0;
-          window.currentLogementLines = [];
-          window.currentLogementSelection = null;
-          section.dispatchEvent(
-            new CustomEvent("devisLogementUpdated", { bubbles: true })
-          );
-          return;
-        }
-        var maxN = Number(cfg.maxNights) || 0;
-        if (maxN && nN > maxN) {
-          if (out) out.hidden = true;
-          if (msgBox)
-            msgBox.textContent =
-              "Séjour maximum : " +
-              maxN +
-              " nuit" +
-              (maxN > 1 ? "s" : "") +
-              ".";
-          window.currentLogementTotal = 0;
-          window.currentLogementLines = [];
-          window.currentLogementSelection = null;
-          section.dispatchEvent(
-            new CustomEvent("devisLogementUpdated", { bubbles: true })
-          );
-          return;
-        }
-        if (msgBox && msgBox.textContent.startsWith("Séjour minimum"))
-          msgBox.textContent = "";
-        if (msgBox && msgBox.textContent.startsWith("Séjour maximum"))
-          msgBox.textContent = "";
-
-        if (isManual) {
-          var a = parseIntSafe(adults),
-            c = parseIntSafe(children),
-            i = parseIntSafe(infants);
-
-          if (lines) {
-            lines.innerHTML =
-              '<li class="pcq-line"><span>En attente de devis personnalisé</span><span></span></li>';
-          }
-          if (total) total.hidden = true;
-          if (out) out.hidden = false;
-
-          window.currentLogementTotal = 0;
-          window.currentLogementLines = [
-            { label: "En attente de devis personnalisé", price: "" },
-          ];
-          window.currentLogementSelection = {
-            arrival: ymd(fpi.selectedDates[0]),
-            departure: ymd(fpi.selectedDates[1]),
-            adults: a,
-            children: c,
-            infants: i,
-          };
-
-          section.dispatchEvent(
-            new CustomEvent("devisLogementUpdated", {
-              bubbles: true,
-              detail: { manual: true },
-            })
-          );
-          return;
-        }
-
-        var lodging = 0;
-        for (var ni = 0; ni < nN; ni++) {
-          lodging += nightPrice(cfg, nights[ni]);
-        }
-        var extras = 0;
-        for (var k = 0; k < nN; k++) {
-          var ep = extraParamsFor(cfg, nights[k]);
-          if (ep.fee > 0 && ep.from > 0 && g >= ep.from) {
-            extras += (g - (ep.from - 1)) * ep.fee;
-          }
-        }
-        var cleaning = Number(cfg.cleaning) || 0;
-        var other = Number(cfg.otherFee) || 0;
-        var taxe = 0;
-        var taxRaw = cfg.taxe_sejour || "";
-        if (Array.isArray(taxRaw)) taxRaw = taxRaw[0] != null ? taxRaw[0] : "";
-        if (typeof taxRaw === "object" && taxRaw !== null && taxRaw.value) {
-          taxRaw = taxRaw.value;
-        }
-        var taxKey = normKey(taxRaw);
-        var isPct5 =
-          taxKey &&
-          (/\b5\b/.test(taxKey) || taxKey.includes("5")) &&
-          (taxKey.includes("%") ||
-            taxKey.includes("pourcent") ||
-            taxKey.includes("pct"));
-        var m = taxKey.match(/([1-5])_?etoile/);
-        var stars = m ? parseInt(m[1], 10) : null;
-        var classRates = { 1: 0.8, 2: 0.9, 3: 1.5, 4: 2.3, 5: 3.0 };
-        if (isPct5 && nN > 0 && g > 0 && a > 0) {
-          var A = lodging / nN / g;
-          var B = 0.05 * A;
-          taxe = B * nN * a;
-        } else if (stars && classRates[stars] && a > 0) {
-          taxe = classRates[stars] * a * nN;
-        }
-
-        var grand = lodging + extras + cleaning + other + taxe;
-        currentTotal = grand;
-        currentLines = [];
-        function dateFR(d) {
-          return d.toLocaleDateString("fr-FR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          });
-        }
-        currentLines.push({
-          label: `Hébergement du ${dateFR(start)} au ${dateFR(
-            end
-          )} (${nN} nuits)`,
-          price: eur(lodging),
+        var calc = calculateLogementQuote(cfg, {
+          startDate: start,
+          endDate: end,
+          adults: a,
+          children: c,
+          infants: i,
+          manualQuote: isManual,
         });
-        if (extras > 0)
-          currentLines.push({
-            label: "Invités supplémentaires",
-            price: eur(extras),
-          });
-        if (cleaning > 0)
-          currentLines.push({ label: "Frais de ménage", price: eur(cleaning) });
-        if (other > 0)
-          currentLines.push({
-            label: cfg.otherLabel || "Autres frais",
-            price: eur(other),
-          });
-        if (taxe > 0)
-          currentLines.push({ label: "Taxe de séjour", price: eur(taxe) });
+
+        if (!calc.success) {
+          if (out) out.hidden = true;
+          if (msgBox) msgBox.textContent = calc.message || "Choisissez vos dates";
+          window.currentLogementTotal = 0;
+          window.currentLogementLines = [];
+          window.currentLogementSelection = null;
+          section.dispatchEvent(
+            new CustomEvent("devisLogementUpdated", { bubbles: true })
+          );
+          return;
+        }
+
+        currentLines = calc.lines.slice();
+        currentTotal = calc.isSurDevis ? 0 : calc.total;
 
         if (lines) {
           lines.innerHTML = "";
@@ -502,23 +552,24 @@
           });
         }
         if (total) {
-          total.textContent = eur(grand);
-          total.hidden = false;
+          if (calc.isSurDevis) {
+            total.hidden = true;
+          } else {
+            total.textContent = eur(calc.total);
+            total.hidden = false;
+          }
         }
         if (out) out.hidden = false;
 
-        window.currentLogementTotal = grand;
+        window.currentLogementTotal = calc.isSurDevis ? 0 : calc.total;
         window.currentLogementLines = currentLines;
-        window.currentLogementSelection = {
-          arrival: ymd(start),
-          departure: ymd(end),
-          adults: a,
-          children: c,
-          infants: i,
-        };
+        window.currentLogementSelection = calc.selection;
 
         section.dispatchEvent(
-          new CustomEvent("devisLogementUpdated", { bubbles: true })
+          new CustomEvent("devisLogementUpdated", {
+            bubbles: true,
+            detail: { manual: calc.isSurDevis },
+          })
         );
       } catch (e) {
         console.error("[pc-devis] Erreur de calcul:", e);
@@ -891,4 +942,9 @@
     // Fallback : comportement actuel si l'orchestrateur n'est pas chargé
     waitForFlatpickr();
   }
+
+  window.PCLogementDevis = window.PCLogementDevis || {};
+  window.PCLogementDevis.calculateQuote = calculateLogementQuote;
+  window.PCLogementDevis.formatCurrency = eur;
+  window.PCLogementDevis.waitForFlatpickr = waitForFlatpickr;
 })();

@@ -22,6 +22,7 @@ require_once PC_RES_CORE_PATH . 'includes/class-reservation.php';
 require_once PC_RES_CORE_PATH . 'includes/class-payment.php';
 require_once PC_RES_CORE_PATH . 'includes/class-booking-engine.php';
 require_once PC_RES_CORE_PATH . 'includes/class-dashboard-ajax.php';
+require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-calendar.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-dashboard.php';
 // controller-forms sera branché plus tard quand tu seras prêt
 if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {

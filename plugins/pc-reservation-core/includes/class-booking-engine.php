@@ -124,6 +124,14 @@ class PCR_Booking_Engine
         }
 
         $normalized = self::normalize_payload($payload);
+        if (
+            isset($normalized['context']['type']) &&
+            $normalized['context']['type'] === 'experience' &&
+            (empty($normalized['item']['date_experience'])) &&
+            !empty($existing->date_experience)
+        ) {
+            $normalized['item']['date_experience'] = $existing->date_experience;
+        }
         $reservation_row = self::build_reservation_row($normalized);
 
         unset($reservation_row['date_creation']);
@@ -210,6 +218,7 @@ class PCR_Booking_Engine
             'total'              => 0,
             'lines'              => [],
             'raw_lines_json'     => '',
+            'lines_json'         => '',
             'is_sur_devis'       => false,
             'manual_adjustments' => [],
             'snapshot_politique' => null,
@@ -239,12 +248,11 @@ class PCR_Booking_Engine
         $customer = wp_parse_args($payload['customer'] ?? [], $customer_defaults);
         $meta     = wp_parse_args($payload['meta'] ?? [], $meta_defaults);
 
-        if (empty($pricing['lines']) && !empty($pricing['raw_lines_json'])) {
-            $decoded = json_decode(wp_unslash($pricing['raw_lines_json']), true);
-            if (is_array($decoded)) {
-                $pricing['lines'] = $decoded;
-            }
+        if (empty($pricing['raw_lines_json']) && !empty($pricing['lines_json'])) {
+            $pricing['raw_lines_json'] = $pricing['lines_json'];
         }
+
+        $pricing = self::hydrate_pricing_lines($pricing);
 
         $manual_adjustments = [];
         if (!empty($pricing['manual_adjustments']) && is_array($pricing['manual_adjustments'])) {
@@ -280,6 +288,112 @@ class PCR_Booking_Engine
         return self::maybe_autofill_pricing($normalized);
     }
 
+    protected static function hydrate_pricing_lines(array $pricing)
+    {
+        if (!isset($pricing['lines'])) {
+            $pricing['lines'] = [];
+        }
+
+        $pricing = self::maybe_merge_pricing_lines_from_source($pricing, $pricing['lines']);
+
+        if (empty($pricing['lines']) && !empty($pricing['raw_lines_json'])) {
+            $pricing = self::maybe_merge_pricing_lines_from_source($pricing, $pricing['raw_lines_json']);
+        }
+
+        if (empty($pricing['lines']) && !empty($pricing['lines_json'])) {
+            $pricing = self::maybe_merge_pricing_lines_from_source($pricing, $pricing['lines_json']);
+        }
+
+        if (empty($pricing['raw_lines_json']) && !empty($pricing['lines']) && is_array($pricing['lines'])) {
+            $encoded = wp_json_encode($pricing['lines']);
+            if ($encoded !== false) {
+                $pricing['raw_lines_json'] = $encoded;
+            }
+        }
+
+        if (!is_array($pricing['lines'])) {
+            $pricing['lines'] = [];
+        }
+
+        return $pricing;
+    }
+
+    protected static function maybe_merge_pricing_lines_from_source(array $pricing, $source)
+    {
+        $extracted = self::extract_pricing_lines_payload($source);
+
+        if (!empty($extracted['lines'])) {
+            $pricing['lines'] = $extracted['lines'];
+        }
+
+        $current_total = isset($pricing['total']) ? (float) $pricing['total'] : 0;
+        if ($current_total <= 0 && isset($extracted['total'])) {
+            $pricing['total'] = (float) $extracted['total'];
+        }
+
+        if (empty($pricing['manual_adjustments']) && !empty($extracted['manual_adjustments'])) {
+            $pricing['manual_adjustments'] = $extracted['manual_adjustments'];
+        }
+
+        return $pricing;
+    }
+
+    protected static function extract_pricing_lines_payload($source)
+    {
+        $result = [
+            'lines' => [],
+            'total' => null,
+            'manual_adjustments' => null,
+        ];
+
+        if (empty($source)) {
+            return $result;
+        }
+
+        if (is_string($source)) {
+            $decoded = json_decode(wp_unslash($source), true);
+            if (!is_array($decoded)) {
+                return $result;
+            }
+            $source = $decoded;
+        }
+
+        if (!is_array($source)) {
+            return $result;
+        }
+
+        if (self::is_associative_array($source) && isset($source['lines']) && is_array($source['lines'])) {
+            $result['lines'] = $source['lines'];
+
+            if (isset($source['total'])) {
+                $result['total'] = (float) $source['total'];
+            }
+
+            if (!empty($source['manual_adjustments']) && is_array($source['manual_adjustments'])) {
+                $result['manual_adjustments'] = $source['manual_adjustments'];
+            }
+
+            return $result;
+        }
+
+        foreach ($source as $line) {
+            if (is_array($line)) {
+                $result['lines'][] = $line;
+            }
+        }
+
+        return $result;
+    }
+
+    protected static function is_associative_array(array $array)
+    {
+        if ($array === []) {
+            return false;
+        }
+
+        return array_keys($array) !== range(0, count($array) - 1);
+    }
+
     /**
      * Transforme les données normalisées en une ligne compatible avec la table wp_pc_reservations.
      */
@@ -288,7 +402,7 @@ class PCR_Booking_Engine
         $context  = $normalized['context'];
         $item     = $normalized['item'];
         $people   = $normalized['people'];
-        $pricing  = $normalized['pricing'];
+        $pricing  = self::hydrate_pricing_lines($normalized['pricing']);
         $customer = $normalized['customer'];
         $meta     = $normalized['meta'];
 
@@ -672,6 +786,22 @@ class PCR_Booking_Engine
             'lines' => $lines,
             'total' => $total,
         ];
+    }
+
+    /**
+     * Indique si le tarif sélectionné correspond à une expérience personnalisée.
+     */
+    public static function is_custom_experience_type($item_id, $identifier)
+    {
+        $row_info = self::find_experience_pricing_row((int) $item_id, (string) $identifier);
+        if (!$row_info) {
+            return false;
+        }
+
+        $code = isset($row_info['code']) ? (string) $row_info['code'] : '';
+        $normalized = sanitize_title($code);
+
+        return in_array($normalized, ['custom', 'personnalise', 'personnalisee'], true);
     }
 
     protected static function find_experience_pricing_row($item_id, $identifier)

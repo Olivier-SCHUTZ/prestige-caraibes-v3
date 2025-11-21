@@ -106,7 +106,9 @@ class PCR_Reservation
             return false;
         }
 
-        return (int) $wpdb->insert_id;
+        $insert_id = (int) $wpdb->insert_id;
+        self::maybe_generate_quote_number($insert_id, $row);
+        return $insert_id;
     }
 
     /**
@@ -148,6 +150,8 @@ class PCR_Reservation
             return true;
         }
 
+        $existing = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id = %d", $reservation_id));
+
         $updated = $wpdb->update($table, $data, ['id' => $reservation_id]);
 
         if ($updated === false) {
@@ -157,7 +161,37 @@ class PCR_Reservation
             return false;
         }
 
+        if ($existing) {
+            $merged = array_merge((array) $existing, $data);
+            self::maybe_generate_quote_number($reservation_id, $merged);
+        }
+
         return true;
+    }
+
+    protected static function maybe_generate_quote_number($reservation_id, array $row)
+    {
+        if ($reservation_id <= 0) {
+            return;
+        }
+
+        $current_number = isset($row['numero_devis']) ? $row['numero_devis'] : '';
+        if (!empty($current_number)) {
+            return;
+        }
+
+        $type = isset($row['type']) ? $row['type'] : '';
+        if ($type === 'location') {
+            $generated = 'DEV-LOG-' . str_pad((string) $reservation_id, 6, '0', STR_PAD_LEFT);
+        } elseif ($type === 'experience') {
+            $generated = 'DEV-EXP-' . str_pad((string) $reservation_id, 6, '0', STR_PAD_LEFT);
+        } else {
+            return;
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'pc_reservations';
+        $wpdb->update($table, ['numero_devis' => $generated], ['id' => $reservation_id]);
     }
 
     /**

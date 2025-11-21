@@ -67,7 +67,7 @@ class PCR_FormController
 
         $item_id = get_the_ID() ?: 0;
 
-        $lines_json = isset($post['lines_json']) ? wp_kses_post(wp_unslash($post['lines_json'])) : '';
+        $pricing_lines = self::prepare_pricing_lines($post);
         $type_flux  = (!empty($post['type_flux']) && $post['type_flux'] === 'devis') ? 'devis' : 'reservation';
 
         $payload = [
@@ -91,8 +91,11 @@ class PCR_FormController
             'pricing' => [
                 'currency'       => 'EUR',
                 'total'          => isset($post['total']) ? (float) $post['total'] : 0,
-                'raw_lines_json' => $lines_json,
+                'lines'          => $pricing_lines['lines'],
+                'raw_lines_json' => $pricing_lines['raw_lines_json'],
+                'lines_json'     => $pricing_lines['raw_lines_json'],
                 'is_sur_devis'   => !empty($post['is_sur_devis']),
+                'manual_adjustments' => [],
             ],
             'customer' => [
                 'prenom'             => isset($raw['prenom']) ? sanitize_text_field($raw['prenom']) : '',
@@ -118,7 +121,7 @@ class PCR_FormController
 
         $item_id = get_the_ID() ?: 0;
 
-        $lines_json = isset($post['lines_json']) ? wp_kses_post(wp_unslash($post['lines_json'])) : '';
+        $pricing_lines = self::prepare_pricing_lines($post);
         $type_flux  = (!empty($post['type_flux']) && $post['type_flux'] === 'devis') ? 'devis' : 'reservation';
 
         $payload = [
@@ -142,8 +145,11 @@ class PCR_FormController
             'pricing' => [
                 'currency'       => 'EUR',
                 'total'          => isset($post['total']) ? (float) $post['total'] : 0,
-                'raw_lines_json' => $lines_json,
+                'lines'          => $pricing_lines['lines'],
+                'raw_lines_json' => $pricing_lines['raw_lines_json'],
+                'lines_json'     => $pricing_lines['raw_lines_json'],
                 'is_sur_devis'   => !empty($post['is_sur_devis']),
+                'manual_adjustments' => [],
             ],
             'customer' => [
                 'prenom'             => isset($raw['prenom']) ? sanitize_text_field($raw['prenom']) : '',
@@ -156,5 +162,80 @@ class PCR_FormController
         ];
 
         PCR_Booking_Engine::create($payload);
+    }
+
+    /**
+     * Prépare les lignes de devis envoyées par le formulaire (JSON -> array).
+     */
+    private static function prepare_pricing_lines(array $post)
+    {
+        $raw_json      = isset($post['lines_json']) ? wp_unslash($post['lines_json']) : '';
+        $sanitized_raw = $raw_json !== '' ? wp_kses_post($raw_json) : '';
+        $lines         = [];
+
+        if ($raw_json !== '') {
+            $decoded = json_decode($raw_json, true);
+
+            if (!is_array($decoded) && $sanitized_raw !== '' && $sanitized_raw !== $raw_json) {
+                $decoded = json_decode($sanitized_raw, true);
+            }
+
+            if (is_array($decoded)) {
+                foreach ($decoded as $line) {
+                    $normalized_line = self::normalize_pricing_line($line);
+                    if (!empty($normalized_line)) {
+                        $lines[] = $normalized_line;
+                    }
+                }
+            }
+        }
+
+        if (!empty($lines)) {
+            $encoded = wp_json_encode($lines);
+            if ($encoded !== false) {
+                $sanitized_raw = $encoded;
+            }
+        }
+
+        return [
+            'lines'          => $lines,
+            'raw_lines_json' => $sanitized_raw,
+        ];
+    }
+
+    /**
+     * Sécurise une ligne de pricing (label / montants).
+     */
+    private static function normalize_pricing_line($line)
+    {
+        if (!is_array($line)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($line as $key => $value) {
+            if (is_string($value)) {
+                $normalized[$key] = wp_kses_post($value);
+                continue;
+            }
+
+            if (is_int($value) || is_float($value)) {
+                $normalized[$key] = $value;
+                continue;
+            }
+
+            if (is_bool($value)) {
+                $normalized[$key] = $value;
+                continue;
+            }
+
+            if (is_numeric($value)) {
+                $normalized[$key] = (float) $value;
+                continue;
+            }
+        }
+
+        return $normalized;
     }
 }
