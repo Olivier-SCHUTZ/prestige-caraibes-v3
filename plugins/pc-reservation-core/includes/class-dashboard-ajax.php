@@ -229,6 +229,9 @@ class PCR_Dashboard_Ajax
         $range = self::get_month_range($month, $year);
 
         $logements = self::get_calendar_logements();
+        $logements_count = is_array($logements) ? count($logements) : 0;
+        error_log(sprintf('[PC CALENDAR] Global request %02d/%d | logements=%d', $range['month'], $range['year'], $logements_count));
+
         if (empty($logements)) {
             wp_send_json_success([
                 'month'     => $range['month'],
@@ -238,11 +241,16 @@ class PCR_Dashboard_Ajax
             ]);
         }
 
-        $logement_ids = array_map(function ($lg) {
-            return (int) $lg['id'];
-        }, $logements);
+        $events = [];
+        foreach ($logements as $lg) {
+            $logement_events = self::get_cached_events_for_logement((int) $lg['id'], $range['start'], $range['end']);
+            if (!empty($logement_events)) {
+                $events = array_merge($events, $logement_events);
+            }
+        }
 
-        $events = self::build_calendar_events($logement_ids, $range['start'], $range['end']);
+        $events_count = is_array($events) ? count($events) : 0;
+        error_log(sprintf('[PC CALENDAR] Global payload %02d/%d | logements=%d | events=%d', $range['month'], $range['year'], $logements_count, $events_count));
 
         wp_send_json_success([
             'month'     => $range['month'],
@@ -274,7 +282,9 @@ class PCR_Dashboard_Ajax
             wp_send_json_error(['message' => 'Ce logement n’est pas actif.'], 404);
         }
 
-        $events = self::build_calendar_events([$logement_id], $range['start'], $range['end']);
+        $events = self::get_cached_events_for_logement($logement_id, $range['start'], $range['end']);
+        $events_count = is_array($events) ? count($events) : 0;
+        error_log(sprintf('[PC CALENDAR] Single payload logement=%d | events=%d', $logement_id, $events_count));
 
         $title = '';
         foreach ($logements as $lg) {
@@ -366,6 +376,98 @@ class PCR_Dashboard_Ajax
         }
 
         return $logements;
+    }
+
+    /**
+     * Récupère les événements (réservations/bloquages) depuis le cache iCal pour un logement.
+     *
+     * @param int    $logement_id
+     * @param string $start_date
+     * @param string $end_date
+     * @return array
+     */
+    protected static function get_cached_events_for_logement($logement_id, $start_date, $end_date)
+    {
+        $logement_id = (int) $logement_id;
+        if ($logement_id <= 0) {
+            return [];
+        }
+
+        $dates = get_post_meta($logement_id, '_booked_dates_cache', true);
+
+        // Fallback : si le cache est vide, on relit l'iCal via le helper central.
+        if ((!is_array($dates) || empty($dates)) && function_exists('get_field')) {
+            $ical_url = (string) get_field('ical_url', $logement_id);
+            if ($ical_url && function_exists('pc_parse_ical_data')) {
+                $resp = wp_remote_get($ical_url, ['timeout' => 10]);
+                if (!is_wp_error($resp) && 200 === wp_remote_retrieve_response_code($resp)) {
+                    $body = (string) wp_remote_retrieve_body($resp);
+                    $parsed = pc_parse_ical_data($body);
+                    if (is_array($parsed)) {
+                        $dates = $parsed;
+                    }
+                }
+            }
+        }
+
+        if (!is_array($dates) || empty($dates)) {
+            return [];
+        }
+
+        $filtered = [];
+        foreach ($dates as $d) {
+            $d = sanitize_text_field($d);
+            if ($d && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
+                if ($d >= $start_date && $d <= $end_date) {
+                    $filtered[] = $d;
+                }
+            }
+        }
+
+        if (empty($filtered)) {
+            return [];
+        }
+
+        sort($filtered);
+
+        $events = [];
+        $range_start = null;
+        $range_end = null;
+
+        foreach ($filtered as $date) {
+            if ($range_start === null) {
+                $range_start = $date;
+                $range_end   = $date;
+                continue;
+            }
+
+            $expected = date('Y-m-d', strtotime($range_end . ' +1 day'));
+            if ($date === $expected) {
+                $range_end = $date;
+            } else {
+                $events[] = [
+                    'item_id' => $logement_id,
+                    'type'    => 'blocking',
+                    'start'   => $range_start,
+                    'end'     => $range_end,
+                    'source'  => 'ical_cache',
+                ];
+                $range_start = $date;
+                $range_end   = $date;
+            }
+        }
+
+        if ($range_start !== null) {
+            $events[] = [
+                'item_id' => $logement_id,
+                'type'    => 'blocking',
+                'start'   => $range_start,
+                'end'     => $range_end,
+                'source'  => 'ical_cache',
+            ];
+        }
+
+        return $events;
     }
 
     /**
