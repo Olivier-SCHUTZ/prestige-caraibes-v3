@@ -295,11 +295,17 @@
 }
 
 .pc-cal-day--today {
-  background: rgba(0, 123, 255, 0.1) !important; /* léger bleu clair */
+  background: rgba(0, 180, 100, 0.2) !important; /* vert transparent */
+  box-shadow: inset 0 0 0 2px rgba(22, 163, 74, 0.45);
 }
-
-.pc-cal-day--past {
-  background: rgba(0, 0, 0, 0.06) !important; /* gris plus prononcé */
+/* Réservations passées → plus transparentes */
+.pc-cal-day--past.is-busy,
+.pc-cal-modal__cell.pc-cal-day--past.is-busy {
+  opacity: 0.35; /* Ajuste ici la transparence */
+}
+/* On ne grise les jours passés QUE s'ils ne sont pas réservés */
+.pc-cal-day--past:not(.is-busy) {
+  background: rgba(0, 0, 0, 0.06); /* gris discret */
 }
 
 .pc-cal-modal {

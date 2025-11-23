@@ -490,8 +490,17 @@
       }
 
       const monthStart = this.parseDate(this.currentRange.start);
-      const monthEnd = this.parseDate(this.currentRange.end);
-      const daysInMonth = monthEnd.getDate();
+      const rangeEnd = this.parseDate(this.currentRange.extendedEnd);
+      if (!monthStart || !rangeEnd) {
+        return;
+      }
+
+      // nombre de jours entre start et extendedEnd (1 mois + 15 jours)
+      const MS_PER_DAY = 24 * 60 * 60 * 1000;
+      const daysInRange =
+        Math.round((rangeEnd.getTime() - monthStart.getTime()) / MS_PER_DAY) +
+        1;
+
       const firstWeekday = this.getMondayBasedDay(monthStart);
 
       if (this.modalTitleEl) {
@@ -509,7 +518,7 @@
       const busyDates = this.collectBusyDates(
         logement.id,
         this.currentRange.start,
-        this.currentRange.end
+        this.currentRange.extendedEnd
       );
       this.modalGridEl.innerHTML = "";
       this.modalGridEl.style.setProperty("--pc-cal-modal-columns", 7);
@@ -522,7 +531,7 @@
 
       const todayISO = this.toISO(new Date());
 
-      for (let day = 1; day <= daysInMonth; day += 1) {
+      for (let day = 1; day <= daysInRange; day += 1) {
         const dateObj = new Date(monthStart);
         dateObj.setUTCDate(day);
         const iso = this.toISO(dateObj);
@@ -530,7 +539,7 @@
         cell.className = "pc-cal-modal__cell";
         cell.dataset.logementId = logement.id;
         cell.dataset.date = iso;
-        cell.innerHTML = `<span class="pc-cal-modal__day">${day}</span>`;
+        cell.innerHTML = `<span class="pc-cal-modal__day">${dateObj.getUTCDate()}</span>`;
 
         // AJOUT : couleurs aujourd'hui / jours passés
         if (iso === todayISO) {
