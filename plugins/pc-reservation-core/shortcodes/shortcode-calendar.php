@@ -61,7 +61,7 @@ function pc_dashboard_calendar_shortcode($atts = [])
     $year  = (int) current_time('Y');
 
     ob_start();
-    ?>
+?>
     <div class="pc-cal-shell" data-pc-calendar data-initial-month="<?php echo esc_attr($month); ?>" data-initial-year="<?php echo esc_attr($year); ?>">
         <div class="pc-cal-heading">
             <div class="pc-cal-heading__text">
@@ -75,9 +75,19 @@ function pc_dashboard_calendar_shortcode($atts = [])
                 </div>
             </div>
             <div class="pc-cal-actions">
-                <button type="button" class="pc-btn pc-btn--line" data-pc-cal-nav="prev"><?php echo esc_html__('Mois précédent', 'pc-reservation-core'); ?></button>
-                <button type="button" class="pc-btn pc-btn--line" data-pc-cal-nav="next"><?php echo esc_html__('Mois suivant', 'pc-reservation-core'); ?></button>
-                <p class="pc-cal-period" data-pc-cal-period></p>
+                <div class="pc-cal-select-group">
+                    <label class="pc-cal-select-label" for="pc-cal-month"><?php echo esc_html__('Mois', 'pc-reservation-core'); ?></label>
+                    <select id="pc-cal-month" class="pc-cal-select" data-pc-cal-month></select>
+                </div>
+                <div class="pc-cal-select-group">
+                    <label class="pc-cal-select-label" for="pc-cal-year"><?php echo esc_html__('Année', 'pc-reservation-core'); ?></label>
+                    <select id="pc-cal-year" class="pc-cal-select" data-pc-cal-year></select>
+                </div>
+                <button type="button"
+                    class="pc-cal-today-btn"
+                    data-pc-cal-today>
+                    <?php echo esc_html__('Aujourd’hui', 'pc-reservation-core'); ?>
+                </button>
             </div>
         </div>
 
@@ -97,11 +107,29 @@ function pc_dashboard_calendar_shortcode($atts = [])
                     </div>
                     <button type="button" class="pc-cal-modal__close" data-pc-cal-close aria-label="<?php echo esc_attr__('Fermer la modale', 'pc-reservation-core'); ?>">&times;</button>
                 </div>
+
+                <!-- AJOUT : sélecteurs mois / année / aujourd’hui dans la modale -->
+                <div class="pc-cal-modal-actions">
+                    <div class="pc-cal-select-group">
+                        <label class="pc-cal-select-label" for="pc-cal-modal-month"><?php echo esc_html__('Mois', 'pc-reservation-core'); ?></label>
+                        <select id="pc-cal-modal-month" class="pc-cal-select" data-pc-cal-modal-month></select>
+                    </div>
+                    <div class="pc-cal-select-group">
+                        <label class="pc-cal-select-label" for="pc-cal-modal-year"><?php echo esc_html__('Année', 'pc-reservation-core'); ?></label>
+                        <select id="pc-cal-modal-year" class="pc-cal-select" data-pc-cal-modal-year></select>
+                    </div>
+                    <button type="button"
+                        class="pc-cal-today-btn"
+                        data-pc-cal-modal-today>
+                        <?php echo esc_html__('Aujourd’hui', 'pc-reservation-core'); ?>
+                    </button>
+                </div>
+
                 <div class="pc-cal-modal__grid" data-pc-cal-modal-grid></div>
             </div>
         </div>
     </div>
-    <?php
+<?php
 
     return ob_get_clean();
 }
