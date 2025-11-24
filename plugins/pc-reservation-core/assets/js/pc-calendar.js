@@ -24,11 +24,14 @@
       this.modalGridEl = root.querySelector("[data-pc-cal-modal-grid]");
       this.modalTitleEl = root.querySelector("[data-pc-cal-modal-title]");
       this.modalSubtitleEl = root.querySelector("[data-pc-cal-modal-subtitle]");
+      this.modalBarsEl = root.querySelector("[data-pc-cal-modal-bars]");
 
       // AJOUT : contrôles de navigation dans la modale
       this.modalMonthSelect = root.querySelector("[data-pc-cal-modal-month]");
       this.modalYearSelect = root.querySelector("[data-pc-cal-modal-year]");
       this.modalTodayBtn = root.querySelector("[data-pc-cal-modal-today]");
+      this.modalPrevBtn = root.querySelector("[data-pc-cal-modal-prev]");
+      this.modalNextBtn = root.querySelector("[data-pc-cal-modal-next]");
       this.currentModalLogementId = null;
 
       this.currentMonth =
@@ -200,6 +203,42 @@
           const year = today.getUTCFullYear();
 
           // s'assurer que l'année existe dans la liste
+          if (!this.modalYearSelect.querySelector(`option[value="${year}"]`)) {
+            const opt = document.createElement("option");
+            opt.value = String(year);
+            opt.textContent = String(year);
+            this.modalYearSelect.appendChild(opt);
+          }
+
+          this.modalMonthSelect.value = String(month);
+          this.modalYearSelect.value = String(year);
+          this.fetchAndRender(month, year);
+        });
+      }
+
+      // Flèche "<" dans la zone scrollable
+      if (this.modalPrevBtn && this.modalMonthSelect && this.modalYearSelect) {
+        this.modalPrevBtn.addEventListener("click", () => {
+          const { month, year } = this.getNextMonthYear(-1);
+
+          if (!this.modalYearSelect.querySelector(`option[value="${year}"]`)) {
+            const opt = document.createElement("option");
+            opt.value = String(year);
+            opt.textContent = String(year);
+            this.modalYearSelect.appendChild(opt);
+          }
+
+          this.modalMonthSelect.value = String(month);
+          this.modalYearSelect.value = String(year);
+          this.fetchAndRender(month, year);
+        });
+      }
+
+      // Flèche ">" dans la zone scrollable
+      if (this.modalNextBtn && this.modalMonthSelect && this.modalYearSelect) {
+        this.modalNextBtn.addEventListener("click", () => {
+          const { month, year } = this.getNextMonthYear(1);
+
           if (!this.modalYearSelect.querySelector(`option[value="${year}"]`)) {
             const opt = document.createElement("option");
             opt.value = String(year);
@@ -467,9 +506,12 @@
         this.modalYearSelect.value = String(this.currentYear);
       }
 
-      this.buildModalCalendar(logement);
+      // 🔹 Rendre la modale visible AVANT de mesurer la grille
       this.modalEl.hidden = false;
       this.modalEl.classList.add("is-open");
+
+      // 🔹 Maintenant on peut construire le planning unique (barres calculées correctement)
+      this.buildModalCalendar(logement);
     }
 
     closeModal() {
@@ -489,19 +531,17 @@
         return;
       }
 
-      const monthStart = this.parseDate(this.currentRange.start);
+      const rangeStart = this.parseDate(this.currentRange.start);
       const rangeEnd = this.parseDate(this.currentRange.extendedEnd);
-      if (!monthStart || !rangeEnd) {
+      if (!rangeStart || !rangeEnd) {
         return;
       }
 
       // nombre de jours entre start et extendedEnd (1 mois + 15 jours)
       const MS_PER_DAY = 24 * 60 * 60 * 1000;
       const daysInRange =
-        Math.round((rangeEnd.getTime() - monthStart.getTime()) / MS_PER_DAY) +
+        Math.round((rangeEnd.getTime() - rangeStart.getTime()) / MS_PER_DAY) +
         1;
-
-      const firstWeekday = this.getMondayBasedDay(monthStart);
 
       if (this.modalTitleEl) {
         this.modalTitleEl.textContent = logement.title || `#${logement.id}`;
@@ -512,7 +552,7 @@
           year: "numeric",
           timeZone: "UTC",
         });
-        this.modalSubtitleEl.textContent = formatter.format(monthStart);
+        this.modalSubtitleEl.textContent = formatter.format(rangeStart);
       }
 
       const busyDates = this.collectBusyDates(
@@ -520,20 +560,17 @@
         this.currentRange.start,
         this.currentRange.extendedEnd
       );
-      this.modalGridEl.innerHTML = "";
-      this.modalGridEl.style.setProperty("--pc-cal-modal-columns", 7);
 
-      for (let i = 0; i < firstWeekday; i += 1) {
-        const filler = document.createElement("div");
-        filler.className = "pc-cal-modal__cell pc-cal-modal__cell--pad";
-        this.modalGridEl.appendChild(filler);
-      }
+      // 🔹 Timeline linéaire : 1 colonne = 1 jour sur toute la période
+      this.modalGridEl.innerHTML = "";
+      this.modalGridEl.style.setProperty("--pc-cal-modal-columns", daysInRange);
 
       const todayISO = this.toISO(new Date());
 
-      for (let day = 1; day <= daysInRange; day += 1) {
-        const dateObj = new Date(monthStart);
-        dateObj.setUTCDate(day);
+      for (let offset = 0; offset < daysInRange; offset += 1) {
+        const dateObj = new Date(rangeStart);
+        dateObj.setUTCDate(rangeStart.getUTCDate() + offset);
+
         const iso = this.toISO(dateObj);
         const cell = document.createElement("div");
         cell.className = "pc-cal-modal__cell";
@@ -551,12 +588,17 @@
         if (busyDates.has(iso)) {
           cell.classList.add("is-busy");
         }
+
         cell.addEventListener("click", () => {
           // eslint-disable-next-line no-console
           console.log("[pc-calendar] modal-cell", logement.id, iso);
         });
+
         this.modalGridEl.appendChild(cell);
       }
+
+      // 🔹 Barres continues par réservation
+      this.renderModalBars(logement.id, rangeStart, rangeEnd);
     }
 
     collectBusyDates(logementId, start, end) {
@@ -584,6 +626,85 @@
       });
 
       return busy;
+    }
+
+    /**
+     * Planning unique : dessine 1 barre <div> par réservation
+     * sur la timeline (rangeStart → rangeEnd).
+     */
+    renderModalBars(logementId, rangeStart, rangeEnd) {
+      if (!this.modalBarsEl || !this.modalGridEl) {
+        return;
+      }
+
+      this.modalBarsEl.innerHTML = "";
+
+      // Filtrer les événements du logement
+      const events = (this.events || []).filter(
+        (evt) => parseInt(evt.logement_id, 10) === parseInt(logementId, 10)
+      );
+      if (!events.length) {
+        return;
+      }
+
+      const containerRect = this.modalGridEl.getBoundingClientRect();
+      const todayISO = this.toISO(new Date());
+
+      events.forEach((evt) => {
+        const eventStart = this.parseDate(evt.start_date);
+        const eventEnd = this.parseDate(evt.end_date);
+        if (!eventStart || !eventEnd) {
+          return;
+        }
+
+        // On recadre la réservation sur la plage visible
+        const clampedStart = eventStart < rangeStart ? rangeStart : eventStart;
+        const clampedEnd = eventEnd > rangeEnd ? rangeEnd : eventEnd;
+        if (clampedEnd < clampedStart) {
+          return;
+        }
+
+        const startIso = this.toISO(clampedStart);
+        const endIso = this.toISO(clampedEnd);
+
+        const startCell = this.modalGridEl.querySelector(
+          `.pc-cal-modal__cell[data-date="${startIso}"]`
+        );
+        const endCell = this.modalGridEl.querySelector(
+          `.pc-cal-modal__cell[data-date="${endIso}"]`
+        );
+
+        if (!startCell || !endCell) {
+          return;
+        }
+
+        const startRect = startCell.getBoundingClientRect();
+        const endRect = endCell.getBoundingClientRect();
+
+        const left = startRect.left - containerRect.left + 4;
+        const right = endRect.right - containerRect.left - 4;
+        const width = right - left;
+
+        if (width <= 0) {
+          return;
+        }
+
+        // On place la barre au milieu vertical des cellules
+        const top =
+          startRect.top - containerRect.top + startRect.height / 2 - 12 + 8;
+
+        const bar = document.createElement("div");
+        const source = evt.source || "reservation";
+        bar.className = `pc-cal-modal-bar pc-cal-modal-bar--${source}`;
+        bar.style.left = `${left}px`;
+        bar.style.top = `${top}px`;
+        bar.style.width = `${width}px`;
+
+        // Préparation future : on pourra mettre du texte dans la barre
+        bar.title = `${evt.start_date} → ${evt.end_date}`;
+
+        this.modalBarsEl.appendChild(bar);
+      });
     }
 
     updatePeriodLabel() {

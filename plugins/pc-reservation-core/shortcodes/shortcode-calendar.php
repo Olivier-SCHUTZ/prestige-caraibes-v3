@@ -99,33 +99,66 @@ function pc_dashboard_calendar_shortcode($atts = [])
 
         <div class="pc-cal-modal" data-pc-cal-modal hidden>
             <div class="pc-cal-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="pc-cal-modal-title">
-                <div class="pc-cal-modal__header">
-                    <div>
-                        <p class="pc-cal-eyebrow"><?php echo esc_html__('Planning logement', 'pc-reservation-core'); ?></p>
-                        <h3 class="pc-cal-modal__title" id="pc-cal-modal-title" data-pc-cal-modal-title></h3>
-                        <p class="pc-cal-modal__subtitle" data-pc-cal-modal-subtitle></p>
+                <div class="pc-cal-modal-sticky">
+                    <div class="pc-cal-modal__header">
+                        <div>
+                            <p class="pc-cal-eyebrow"><?php echo esc_html__('Planning logement', 'pc-reservation-core'); ?></p>
+                            <h3 class="pc-cal-modal__title" id="pc-cal-modal-title" data-pc-cal-modal-title></h3>
+                            <p class="pc-cal-modal__subtitle" data-pc-cal-modal-subtitle></p>
+                            <div class="pc-cal-legend pc-cal-legend--modal">
+                                <span class="pc-cal-legend__item">
+                                    <span class="pc-cal-dot pc-cal-dot--reservation"></span>
+                                    <?php echo esc_html__('Réservation confirmée', 'pc-reservation-core'); ?>
+                                </span>
+                                <span class="pc-cal-legend__item">
+                                    <span class="pc-cal-dot pc-cal-dot--manual"></span>
+                                    <?php echo esc_html__('Blocage manuel', 'pc-reservation-core'); ?>
+                                </span>
+                                <span class="pc-cal-legend__item">
+                                    <span class="pc-cal-dot pc-cal-dot--ical"></span>
+                                    <?php echo esc_html__('iCal / import', 'pc-reservation-core'); ?>
+                                </span>
+                            </div>
+                        </div>
+                        <button type="button" class="pc-cal-modal__close" data-pc-cal-close aria-label="<?php echo esc_attr__('Fermer la modale', 'pc-reservation-core'); ?>">&times;</button>
                     </div>
-                    <button type="button" class="pc-cal-modal__close" data-pc-cal-close aria-label="<?php echo esc_attr__('Fermer la modale', 'pc-reservation-core'); ?>">&times;</button>
-                </div>
 
-                <!-- AJOUT : sélecteurs mois / année / aujourd’hui dans la modale -->
-                <div class="pc-cal-modal-actions">
-                    <div class="pc-cal-select-group">
-                        <label class="pc-cal-select-label" for="pc-cal-modal-month"><?php echo esc_html__('Mois', 'pc-reservation-core'); ?></label>
-                        <select id="pc-cal-modal-month" class="pc-cal-select" data-pc-cal-modal-month></select>
-                    </div>
-                    <div class="pc-cal-select-group">
-                        <label class="pc-cal-select-label" for="pc-cal-modal-year"><?php echo esc_html__('Année', 'pc-reservation-core'); ?></label>
-                        <select id="pc-cal-modal-year" class="pc-cal-select" data-pc-cal-modal-year></select>
-                    </div>
+                    <!-- AJOUT : sélecteurs mois / année / aujourd’hui dans la modale -->
+                    <div class="pc-cal-modal-actions">
+                        <div class="pc-cal-select-group">
+                            <label class="pc-cal-select-label" for="pc-cal-modal-month"><?php echo esc_html__('Mois', 'pc-reservation-core'); ?></label>
+                            <select id="pc-cal-modal-month" class="pc-cal-select" data-pc-cal-modal-month></select>
+                        </div>
+                        <div class="pc-cal-select-group">
+                            <label class="pc-cal-select-label" for="pc-cal-modal-year"><?php echo esc_html__('Année', 'pc-reservation-core'); ?></label>
+                            <select id="pc-cal-modal-year" class="pc-cal-select" data-pc-cal-modal-year></select>
+                        </div>
+                        <button type="button"
+                            class="pc-cal-today-btn"
+                            data-pc-cal-modal-today>
+                            <?php echo esc_html__('Aujourd’hui', 'pc-reservation-core'); ?>
+                        </button>
+                    </div><!-- fin .pc-cal-modal-actions -->
+                </div> <!-- fin .pc-cal-modal-sticky -->
+
+                <div class="pc-cal-modal-scroll">
                     <button type="button"
-                        class="pc-cal-today-btn"
-                        data-pc-cal-modal-today>
-                        <?php echo esc_html__('Aujourd’hui', 'pc-reservation-core'); ?>
+                        class="pc-cal-modal-arrow pc-cal-modal-arrow--prev"
+                        data-pc-cal-modal-prev>
+                        &lt;
+                    </button>
+
+                    <div class="pc-cal-modal__viewport">
+                        <div class="pc-cal-modal__grid" data-pc-cal-modal-grid></div>
+                        <div class="pc-cal-modal__bars" data-pc-cal-modal-bars></div>
+                    </div>
+
+                    <button type="button"
+                        class="pc-cal-modal-arrow pc-cal-modal-arrow--next"
+                        data-pc-cal-modal-next>
+                        &gt;
                     </button>
                 </div>
-
-                <div class="pc-cal-modal__grid" data-pc-cal-modal-grid></div>
             </div>
         </div>
     </div>

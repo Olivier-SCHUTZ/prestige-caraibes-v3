@@ -128,6 +128,10 @@
   color: var(--pc-color-muted, #6f6f6f);
   font-size: 0.98rem;
 }
+.pc-cal-legend--modal {
+  margin-top: 8px;
+  margin-bottom: 6px;
+}
 .pc-cal-legend__item {
   display: inline-flex;
   align-items: center;
@@ -219,8 +223,8 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .pc-cal-header-cell__month {
@@ -337,6 +341,22 @@
   gap: 12px;
   margin-bottom: 12px;
 }
+/* Bloc sticky en haut de la modale (titre + selects) */
+.pc-cal-modal-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fff;
+  padding-bottom: 8px;
+}
+
+/* Conteneur scrollable horizontal pour les jours */
+.pc-cal-modal-scroll {
+  margin-top: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px; /* espace pour la barre de scroll */
+}
 .pc-cal-modal-actions {
   display: flex;
   align-items: flex-end;
@@ -363,6 +383,49 @@
   cursor: pointer;
 }
 
+/* Conteneur scrollable + flèches dans la modale */
+.pc-cal-modal-scroll {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pc-cal-modal__viewport {
+  position: relative;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 0 12px;
+}
+
+.pc-cal-modal-arrow {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 60px;
+  border-radius: 999px;
+  border: 1px solid #d0d7e2;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--pc-color-heading, #0f2f4f);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+.pc-cal-modal-arrow:hover {
+  background: #f1f5f9;
+}
+
+.pc-cal-modal-arrow:focus {
+  outline: none;
+  border-color: var(--pc-color-primary, #007a92);
+  box-shadow: 0 0 0 2px rgba(0, 122, 146, 0.18);
+}
+
 .pc-cal-modal__grid {
   display: grid;
   grid-template-columns: repeat(
@@ -370,7 +433,6 @@
     minmax(40px, 1fr)
   );
   gap: 6px;
-  margin-top: 6px;
 }
 .pc-cal-modal__cell {
   border: 1px solid #e5e9f2;
@@ -380,6 +442,45 @@
   background: #fafbfd;
   position: relative;
   cursor: pointer;
+}
+/* === Planning unique : viewport + barres continues === */
+.pc-cal-modal__viewport {
+  position: relative;
+  min-width: max-content; /* largeur = contenu → scroll horizontal possible */
+}
+
+/* La grille reste cliquable, mais passe en dessous des barres */
+.pc-cal-modal__grid {
+  position: relative;
+  z-index: 1;
+}
+
+/* Calque pour les barres continues */
+.pc-cal-modal__bars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* les clics passent aux cellules */
+  z-index: 2;
+}
+
+/* Barre générique */
+.pc-cal-modal-bar {
+  position: absolute;
+  height: 24px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  opacity: 0.95;
+}
+
+/* Couleurs alignées sur le multi-calendrier */
+.pc-cal-modal-bar--manual {
+  background: #f0b429;
+}
+.pc-cal-modal-bar--ical {
+  background: #5c6f82;
+}
+.pc-cal-modal-bar--reservation {
+  background: var(--pc-color-primary, #007a92);
 }
 .pc-cal-modal__cell--pad {
   background: transparent;
