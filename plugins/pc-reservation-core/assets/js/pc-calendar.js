@@ -32,7 +32,23 @@
       this.modalTodayBtn = root.querySelector("[data-pc-cal-modal-today]");
       this.modalPrevBtn = root.querySelector("[data-pc-cal-modal-prev]");
       this.modalNextBtn = root.querySelector("[data-pc-cal-modal-next]");
+
+      // AJOUT : barre de sélection dans la modale
+      this.modalSelectionBarEl = root.querySelector(
+        "[data-pc-cal-modal-selection]"
+      );
+      this.modalSelectionLabelEl = root.querySelector(
+        "[data-pc-cal-modal-selection-label]"
+      );
+      this.modalSelectionCreateReservationBtn = root.querySelector(
+        "[data-pc-cal-modal-create-reservation]"
+      );
+      this.modalSelectionCreateBlockBtn = root.querySelector(
+        "[data-pc-cal-modal-create-block]"
+      );
+
       this.currentModalLogementId = null;
+      this.modalSelection = null;
 
       this.currentMonth =
         parseInt(root.getAttribute("data-initial-month"), 10) ||
@@ -249,6 +265,32 @@
           this.modalMonthSelect.value = String(month);
           this.modalYearSelect.value = String(year);
           this.fetchAndRender(month, year);
+        });
+      }
+
+      // AJOUT : actions de sélection (pour l'instant, simple log)
+      if (this.modalSelectionCreateReservationBtn) {
+        this.modalSelectionCreateReservationBtn.addEventListener(
+          "click",
+          () => {
+            if (!this.modalSelection) return;
+            // eslint-disable-next-line no-console
+            console.log(
+              "[pc-calendar] create reservation from selection",
+              this.modalSelection
+            );
+          }
+        );
+      }
+
+      if (this.modalSelectionCreateBlockBtn) {
+        this.modalSelectionCreateBlockBtn.addEventListener("click", () => {
+          if (!this.modalSelection) return;
+          // eslint-disable-next-line no-console
+          console.log(
+            "[pc-calendar] create manual block from selection",
+            this.modalSelection
+          );
         });
       }
     }
@@ -479,12 +521,32 @@
         }
 
         const bar = document.createElement("div");
-        bar.className = `pc-cal-event pc-cal-event--${evt.source || "default"}`;
+        const source = evt.source || "reservation";
+        bar.className = `pc-cal-event pc-cal-event--${source}`;
         bar.style.left = `${clampedStart * this.dayWidth}px`;
         bar.style.width = `${
           (clampedEnd - clampedStart + 1) * this.dayWidth - 8
         }px`;
-        bar.title = `${evt.source || ""} : ${evt.start_date} → ${evt.end_date}`;
+        bar.title = `${source || ""} : ${evt.start_date} → ${evt.end_date}`;
+
+        // 🔹 Texte affiché dans la barre (aligné à gauche)
+        let labelText = "";
+        if (source === "ical") {
+          labelText = "Réservation iCal propriétaire";
+        } else if (source === "manual") {
+          labelText = "Blocage manuel";
+        } else if (source === "reservation" && evt.label) {
+          // Réservation interne : on utilisera evt.label plus tard (nom client, ref…)
+          labelText = evt.label;
+        }
+
+        if (labelText) {
+          const span = document.createElement("span");
+          span.className = "pc-cal-event__label";
+          span.textContent = labelText;
+          bar.appendChild(span);
+        }
+
         layer.appendChild(bar);
       });
     }
@@ -510,6 +572,11 @@
       this.modalEl.hidden = false;
       this.modalEl.classList.add("is-open");
 
+      // Reset sélection
+      this.modalSelection = null;
+      this.updateModalSelectionPanel();
+      this.updateModalSelectionUI();
+
       // 🔹 Maintenant on peut construire le planning unique (barres calculées correctement)
       this.buildModalCalendar(logement);
     }
@@ -521,6 +588,8 @@
       this.modalEl.classList.remove("is-open");
       this.modalEl.hidden = true;
       this.currentModalLogementId = null;
+      this.modalSelection = null;
+      this.updateModalSelectionPanel();
       if (this.modalGridEl) {
         this.modalGridEl.innerHTML = "";
       }
@@ -590,12 +659,15 @@
         }
 
         cell.addEventListener("click", () => {
-          // eslint-disable-next-line no-console
-          console.log("[pc-calendar] modal-cell", logement.id, iso);
+          this.handleModalCellClick(logement.id, iso, busyDates);
         });
 
         this.modalGridEl.appendChild(cell);
       }
+
+      // Après avoir regénéré la grille, on met à jour le visuel de sélection
+      this.updateModalSelectionUI();
+      this.updateModalSelectionPanel();
 
       // 🔹 Barres continues par réservation
       this.renderModalBars(logement.id, rangeStart, rangeEnd);
@@ -703,8 +775,189 @@
         // Préparation future : on pourra mettre du texte dans la barre
         bar.title = `${evt.start_date} → ${evt.end_date}`;
 
+        // 🔹 Texte affiché dans la barre (aligné à gauche)
+        let labelText = "";
+        if (source === "ical") {
+          labelText = "Réservation iCal propriétaire";
+        } else if (source === "manual") {
+          labelText = "Blocage manuel";
+        } else if (source === "reservation" && evt.label) {
+          labelText = evt.label;
+        }
+
+        if (labelText) {
+          const span = document.createElement("span");
+          span.className = "pc-cal-modal-bar__label";
+          span.textContent = labelText;
+          bar.appendChild(span);
+        }
+
         this.modalBarsEl.appendChild(bar);
       });
+    }
+
+    /**
+     * Gestion du clic sur une cellule de la modale (sélection de période).
+     * - Uniquement sur des cases libres (non is-busy)
+     * - 1er clic = start
+     * - 2e clic = étend la sélection, sans traverser des jours occupés
+     * - clic sur le même jour = annule la sélection
+     */
+    handleModalCellClick(logementId, iso, busyDates) {
+      // On ne sélectionne jamais un jour occupé
+      if (busyDates.has(iso)) {
+        return;
+      }
+
+      // Si pas de sélection ou logement différent -> nouvelle sélection
+      if (
+        !this.modalSelection ||
+        this.modalSelection.logementId !== logementId ||
+        !this.modalSelection.start
+      ) {
+        this.modalSelection = { logementId, start: iso, end: iso };
+        this.updateModalSelectionUI();
+        this.updateModalSelectionPanel();
+        return;
+      }
+
+      const currentStart = this.modalSelection.start;
+      const currentEnd = this.modalSelection.end;
+
+      // Clic sur le même jour que la sélection simple -> reset
+      if (currentStart === iso && currentEnd === iso) {
+        this.modalSelection = null;
+        this.updateModalSelectionUI();
+        this.updateModalSelectionPanel();
+        return;
+      }
+
+      const startDate = this.parseDate(currentStart);
+      const endDate = this.parseDate(currentEnd);
+      const clickedDate = this.parseDate(iso);
+      if (!startDate || !clickedDate) {
+        return;
+      }
+
+      // Calcule le nouvel intervalle [newStart, newEnd]
+      let newStart = currentStart;
+      let newEnd = currentEnd;
+
+      if (clickedDate < startDate) {
+        newStart = iso;
+        newEnd = currentEnd;
+      } else {
+        newStart = currentStart;
+        newEnd = iso;
+      }
+
+      const sDate = this.parseDate(newStart);
+      const eDate = this.parseDate(newEnd);
+      if (!sDate || !eDate) {
+        return;
+      }
+
+      // Vérifie qu'il n'y a pas de jour occupé dans l'intervalle
+      let hasBusy = false;
+      const cursor = new Date(sDate);
+      while (cursor <= eDate) {
+        const dIso = this.toISO(cursor);
+        if (busyDates.has(dIso)) {
+          hasBusy = true;
+          break;
+        }
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+
+      // Si la plage traverse un jour occupé -> on ignore l'extension
+      if (hasBusy) {
+        return;
+      }
+
+      this.modalSelection = { logementId, start: newStart, end: newEnd };
+      this.updateModalSelectionUI();
+      this.updateModalSelectionPanel();
+    }
+
+    /**
+     * Met à jour les classes CSS des cellules de la modale
+     * en fonction de this.modalSelection.
+     */
+    updateModalSelectionUI() {
+      if (!this.modalGridEl) {
+        return;
+      }
+      const cells = this.modalGridEl.querySelectorAll(".pc-cal-modal__cell");
+      cells.forEach((cell) => {
+        cell.classList.remove("pc-cal-modal__cell--selected");
+      });
+
+      if (!this.modalSelection) {
+        return;
+      }
+
+      const { logementId, start, end } = this.modalSelection;
+      const startDate = this.parseDate(start);
+      const endDate = this.parseDate(end);
+      if (!startDate || !endDate) {
+        return;
+      }
+
+      cells.forEach((cell) => {
+        const cellLogementId = parseInt(cell.dataset.logementId || "0", 10);
+        const cellDateStr = cell.dataset.date;
+        if (!cellDateStr || cellLogementId !== parseInt(logementId, 10)) {
+          return;
+        }
+        const cellDate = this.parseDate(cellDateStr);
+        if (!cellDate) {
+          return;
+        }
+        if (cellDate >= startDate && cellDate <= endDate) {
+          cell.classList.add("pc-cal-modal__cell--selected");
+        }
+      });
+    }
+
+    /**
+     * Met à jour la barre de sélection dans le header de la modale.
+     */
+    updateModalSelectionPanel() {
+      if (!this.modalSelectionBarEl || !this.modalSelectionLabelEl) {
+        return;
+      }
+
+      if (!this.modalSelection) {
+        this.modalSelectionBarEl.hidden = true;
+        this.modalSelectionLabelEl.textContent = "";
+        return;
+      }
+
+      const { start, end } = this.modalSelection;
+      const startDate = this.parseDate(start);
+      const endDate = this.parseDate(end);
+      if (!startDate || !endDate) {
+        this.modalSelectionBarEl.hidden = true;
+        this.modalSelectionLabelEl.textContent = "";
+        return;
+      }
+
+      const formatter = new Intl.DateTimeFormat("fr-FR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      });
+
+      const labelText =
+        start === end
+          ? `Jour sélectionné : ${formatter.format(startDate)}`
+          : `Période sélectionnée : ${formatter.format(
+              startDate
+            )} → ${formatter.format(endDate)}`;
+
+      this.modalSelectionLabelEl.textContent = labelText;
+      this.modalSelectionBarEl.hidden = false;
     }
 
     updatePeriodLabel() {

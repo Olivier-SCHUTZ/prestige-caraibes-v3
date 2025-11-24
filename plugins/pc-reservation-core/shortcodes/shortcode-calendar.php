@@ -139,7 +139,24 @@ function pc_dashboard_calendar_shortcode($atts = [])
                             <?php echo esc_html__('Aujourd’hui', 'pc-reservation-core'); ?>
                         </button>
                     </div><!-- fin .pc-cal-modal-actions -->
-                </div> <!-- fin .pc-cal-modal-sticky -->
+
+                    <!-- Barre de sélection de période dans la modale -->
+                    <div class="pc-cal-modal-selection" data-pc-cal-modal-selection hidden>
+                        <span class="pc-cal-modal-selection__label" data-pc-cal-modal-selection-label></span>
+                        <div class="pc-cal-modal-selection__actions">
+                            <button type="button"
+                                class="pc-cal-today-btn"
+                                data-pc-cal-modal-create-reservation>
+                                <?php echo esc_html__('Créer une réservation', 'pc-reservation-core'); ?>
+                            </button>
+                            <button type="button"
+                                class="pc-cal-today-btn"
+                                data-pc-cal-modal-create-block>
+                                <?php echo esc_html__('Créer un blocage manuel', 'pc-reservation-core'); ?>
+                            </button>
+                        </div>
+                    </div><!-- fin .pc-cal-modal-selection -->
+                </div><!-- fin .pc-cal-modal-sticky -->
 
                 <div class="pc-cal-modal-scroll">
                     <button type="button"
