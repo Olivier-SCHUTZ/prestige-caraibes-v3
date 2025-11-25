@@ -285,13 +285,146 @@
 
       if (this.modalSelectionCreateBlockBtn) {
         this.modalSelectionCreateBlockBtn.addEventListener("click", () => {
-          if (!this.modalSelection) return;
-          // eslint-disable-next-line no-console
-          console.log(
-            "[pc-calendar] create manual block from selection",
-            this.modalSelection
-          );
+          if (!this.modalSelection) {
+            return;
+          }
+          this.createManualBlockFromSelection();
         });
+      }
+    }
+
+    async createManualBlockFromSelection() {
+      if (!this.modalSelection || !this.modalSelection.logementId) {
+        return;
+      }
+
+      const { logementId, start, end } = this.modalSelection;
+
+      const ajaxUrl =
+        (this.settings && this.settings.ajaxUrl) ||
+        (window.pcCalendarData && window.pcCalendarData.ajaxUrl);
+      const nonce =
+        (this.settings && this.settings.nonce) ||
+        (window.pcCalendarData && window.pcCalendarData.nonce);
+
+      if (!ajaxUrl || !nonce) {
+        // eslint-disable-next-line no-console
+        console.error(
+          "[pc-calendar] Config AJAX manquante pour la création de blocage manuel"
+        );
+        return;
+      }
+
+      const body = new URLSearchParams();
+      body.append("action", "pc_calendar_create_block");
+      body.append("nonce", nonce);
+      body.append("logement_id", logementId);
+      body.append("start_date", start);
+      body.append("end_date", end);
+
+      try {
+        if (this.modalSelectionCreateBlockBtn) {
+          this.modalSelectionCreateBlockBtn.disabled = true;
+        }
+
+        const response = await fetch(ajaxUrl, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString(),
+        });
+
+        if (!response.ok) {
+          throw new Error(texts.error || "Requête impossible.");
+        }
+
+        const json = await response.json();
+        if (!json || !json.success) {
+          const message =
+            (json && json.data && json.data.message) ||
+            texts.error ||
+            "Création du blocage impossible.";
+          // eslint-disable-next-line no-alert
+          alert(message);
+          return;
+        }
+
+        // Rafraîchir le calendrier global + la modale
+        await this.fetchAndRender(this.currentMonth, this.currentYear);
+
+        // Reset de la sélection
+        this.modalSelection = null;
+        this.updateModalSelectionUI();
+        this.updateModalSelectionPanel();
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(
+          "[pc-calendar] Erreur lors de la création du blocage manuel",
+          err
+        );
+        // eslint-disable-next-line no-alert
+        alert(err.message || texts.error || "Erreur AJAX.");
+      } finally {
+        if (this.modalSelectionCreateBlockBtn) {
+          this.modalSelectionCreateBlockBtn.disabled = false;
+        }
+      }
+    }
+
+    /**
+     * Supprime un blocage manuel existant.
+     */
+    async deleteManualBlock(blockId) {
+      const ajaxUrl =
+        (this.settings && this.settings.ajaxUrl) ||
+        (window.pcCalendarData && window.pcCalendarData.ajaxUrl);
+
+      const nonce =
+        (this.settings && this.settings.nonce) ||
+        (window.pcCalendarData && window.pcCalendarData.nonce);
+
+      if (!ajaxUrl || !nonce) {
+        // eslint-disable-next-line no-console
+        console.error(
+          "[pc-calendar] Config AJAX manquante pour suppression blocage"
+        );
+        return;
+      }
+
+      const body = new URLSearchParams();
+      body.append("action", "pc_calendar_delete_block");
+      body.append("nonce", nonce);
+      body.append("block_id", blockId);
+
+      try {
+        const response = await fetch(ajaxUrl, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString(),
+        });
+
+        if (!response.ok) {
+          throw new Error("Requête impossible.");
+        }
+
+        const json = await response.json();
+        if (!json || !json.success) {
+          const message =
+            (json && json.data && json.data.message) ||
+            "Impossible de supprimer ce blocage.";
+          // eslint-disable-next-line no-alert
+          alert(message);
+          return;
+        }
+
+        // 🔄 Rafraîchit le calendrier global et la modale
+        await this.fetchAndRender(this.currentMonth, this.currentYear);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[pc-calendar] Erreur suppression blocage", err);
+        // eslint-disable-next-line no-alert
+        alert(err.message || "Erreur AJAX.");
       }
     }
 
@@ -546,6 +679,16 @@
           span.textContent = labelText;
           bar.appendChild(span);
         }
+        // 🔹 Suppression d’un blocage manuel par clic
+        if (source === "manual" && evt.block_id) {
+          bar.style.cursor = "pointer";
+          bar.addEventListener("click", async () => {
+            const ok = confirm("Supprimer ce blocage manuel ?");
+            if (!ok) return;
+
+            await this.deleteManualBlock(evt.block_id);
+          });
+        }
 
         layer.appendChild(bar);
       });
@@ -790,6 +933,17 @@
           span.className = "pc-cal-modal-bar__label";
           span.textContent = labelText;
           bar.appendChild(span);
+        }
+
+        // Clic sur un blocage manuel dans la modale : popup de confirmation
+        if (source === "manual" && evt.block_id) {
+          bar.style.cursor = "pointer";
+          bar.addEventListener("click", (event) => {
+            event.stopPropagation();
+            this.showModalConfirm(async () => {
+              await this.deleteManualBlock(evt.block_id);
+            });
+          });
         }
 
         this.modalBarsEl.appendChild(bar);
@@ -1088,6 +1242,51 @@
 
       this.monthSelect.value = String(this.currentMonth);
       this.yearSelect.value = String(this.currentYear);
+    }
+
+    showModalConfirm(onConfirm) {
+      if (!this.modalEl) {
+        if (typeof onConfirm === "function") {
+          onConfirm();
+        }
+        return;
+      }
+
+      const overlay = this.modalEl.querySelector("[data-pc-cal-modal-confirm]");
+      if (!overlay) {
+        if (typeof onConfirm === "function") {
+          onConfirm();
+        }
+        return;
+      }
+
+      const yesBtn = overlay.querySelector("[data-pc-cal-confirm-yes]");
+      const noBtn = overlay.querySelector("[data-pc-cal-confirm-no]");
+
+      overlay.style.display = "flex";
+      overlay.removeAttribute("hidden");
+
+      const cleanup = () => {
+        overlay.style.display = "none";
+        overlay.setAttribute("hidden", "hidden");
+        if (yesBtn) yesBtn.onclick = null;
+        if (noBtn) noBtn.onclick = null;
+      };
+
+      if (yesBtn) {
+        yesBtn.onclick = () => {
+          cleanup();
+          if (typeof onConfirm === "function") {
+            onConfirm();
+          }
+        };
+      }
+
+      if (noBtn) {
+        noBtn.onclick = () => {
+          cleanup();
+        };
+      }
     }
 
     setLoading(isLoading) {

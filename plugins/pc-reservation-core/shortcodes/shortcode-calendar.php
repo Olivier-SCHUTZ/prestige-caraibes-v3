@@ -176,6 +176,27 @@ function pc_dashboard_calendar_shortcode($atts = [])
                         &gt;
                     </button>
                 </div>
+
+                <!-- Popup de confirmation suppression blocage manuel -->
+                <div class="pc-cal-modal-confirm" data-pc-cal-modal-confirm hidden>
+                    <div class="pc-cal-modal-confirm__box">
+                        <div class="pc-cal-modal-confirm__title">
+                            <?php echo esc_html__('Supprimer ce blocage manuel ?', 'pc-reservation-core'); ?>
+                        </div>
+                        <div class="pc-cal-modal-confirm__actions">
+                            <button type="button"
+                                class="pc-cal-modal-confirm__btn pc-cal-modal-confirm__btn--danger"
+                                data-pc-cal-confirm-yes>
+                                <?php echo esc_html__('Supprimer', 'pc-reservation-core'); ?>
+                            </button>
+                            <button type="button"
+                                class="pc-cal-modal-confirm__btn"
+                                data-pc-cal-confirm-no>
+                                <?php echo esc_html__('Annuler', 'pc-reservation-core'); ?>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

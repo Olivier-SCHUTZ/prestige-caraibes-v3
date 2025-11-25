@@ -20,6 +20,8 @@ class PCR_Dashboard_Ajax
         add_action('wp_ajax_nopriv_pc_get_global_calendar', [__CLASS__, 'ajax_get_global_calendar']);
         add_action('wp_ajax_pc_get_single_calendar', [__CLASS__, 'ajax_get_single_calendar']);
         add_action('wp_ajax_nopriv_pc_get_single_calendar', [__CLASS__, 'ajax_get_single_calendar']);
+        add_action('wp_ajax_pc_calendar_create_block', [__CLASS__, 'ajax_calendar_create_block']);
+        add_action('wp_ajax_pc_calendar_delete_block', [__CLASS__, 'ajax_calendar_delete_block']);
     }
 
     public static function handle_manual_reservation()
@@ -108,7 +110,7 @@ class PCR_Dashboard_Ajax
             ],
             'item' => [
                 'item_id'              => $item_id,
-                'experience_tarif_type'=> $type === 'experience' ? $experience_tarif_type : '',
+                'experience_tarif_type' => $type === 'experience' ? $experience_tarif_type : '',
                 'date_experience'      => $type === 'experience' ? $date_experience : '',
                 'date_arrivee'         => $type === 'location' ? $date_arrivee : '',
                 'date_depart'          => $type === 'location' ? $date_depart : '',
@@ -246,7 +248,7 @@ class PCR_Dashboard_Ajax
             wp_send_json_success([
                 'month'     => $range['month'],
                 'year'      => $range['year'],
-                'start_date'=> $range['start'],
+                'start_date' => $range['start'],
                 'end_date'  => $range['end'],
                 'extended_end' => $range['extended_end'],
                 'logements' => [],
@@ -264,7 +266,7 @@ class PCR_Dashboard_Ajax
         wp_send_json_success([
             'month'     => $range['month'],
             'year'      => $range['year'],
-            'start_date'=> $range['start'],
+            'start_date' => $range['start'],
             'end_date'  => $range['end'],
             'extended_end' => $range['extended_end'],
             'logements' => $logements,
@@ -319,6 +321,110 @@ class PCR_Dashboard_Ajax
             ],
             'events'   => $events,
         ]);
+    }
+
+    /**
+     * Crée un blocage manuel sur un logement pour une plage de dates.
+     */
+    public static function ajax_calendar_create_block()
+    {
+        self::assert_calendar_access();
+
+        $logement_id = isset($_POST['logement_id']) ? (int) $_POST['logement_id'] : 0;
+        $start_date  = isset($_POST['start_date']) ? sanitize_text_field(wp_unslash($_POST['start_date'])) : '';
+        $end_date    = isset($_POST['end_date']) ? sanitize_text_field(wp_unslash($_POST['end_date'])) : '';
+
+        if ($logement_id <= 0 || $start_date === '' || $end_date === '') {
+            wp_send_json_error(['message' => 'Logement ou dates invalides.'], 400);
+        }
+
+        // Validation du format de date (Y-m-d)
+        $start_dt = \DateTime::createFromFormat('Y-m-d', $start_date);
+        $end_dt   = \DateTime::createFromFormat('Y-m-d', $end_date);
+        if (!$start_dt || !$end_dt || $start_dt > $end_dt) {
+            wp_send_json_error(['message' => 'Plage de dates invalide.'], 400);
+        }
+
+        global $wpdb;
+        $table   = $wpdb->prefix . 'pc_unavailabilities';
+        $now     = current_time('mysql');
+        $user_id = get_current_user_id();
+
+        $inserted = $wpdb->insert(
+            $table,
+            [
+                'item_id'       => $logement_id,
+                'date_debut'    => $start_date,
+                'date_fin'      => $end_date,
+                'type_source'   => 'manuel',
+                'motif'         => 'Blocage manuel via calendrier',
+                'date_creation' => $now,
+                'date_maj'      => $now,
+                'user_id'       => $user_id > 0 ? $user_id : null,
+            ],
+            [
+                '%d',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%d',
+            ]
+        );
+
+        if (false === $inserted) {
+            wp_send_json_error(['message' => 'Erreur lors de la création du blocage.'], 500);
+        }
+
+        $block_id = (int) $wpdb->insert_id;
+
+        wp_send_json_success([
+            'id'          => $block_id,
+            'logement_id' => $logement_id,
+            'start_date'  => $start_date,
+            'end_date'    => $end_date,
+        ]);
+    }
+
+    /**
+     * Supprime un blocage manuel existant.
+     */
+    public static function ajax_calendar_delete_block()
+    {
+        self::assert_calendar_access();
+
+        $block_id = isset($_POST['block_id']) ? (int) $_POST['block_id'] : 0;
+        if ($block_id <= 0) {
+            wp_send_json_error(['message' => 'Blocage introuvable.'], 400);
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'pc_unavailabilities';
+
+        // Vérifier que le blocage existe et est bien de type manuel
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT id, type_source FROM {$table} WHERE id = %d",
+                $block_id
+            )
+        );
+
+        if (!$row) {
+            wp_send_json_error(['message' => 'Blocage introuvable.'], 404);
+        }
+        if ((string) $row->type_source !== 'manuel') {
+            wp_send_json_error(['message' => 'Ce blocage ne peut pas être supprimé.'], 400);
+        }
+
+        $deleted = $wpdb->delete($table, ['id' => $block_id], ['%d']);
+
+        if (false === $deleted) {
+            wp_send_json_error(['message' => 'Erreur lors de la suppression du blocage.'], 500);
+        }
+
+        wp_send_json_success(['deleted' => true]);
     }
 
     /**
@@ -465,6 +571,7 @@ class PCR_Dashboard_Ajax
                 'start_date'  => isset($event['start']) ? substr((string) $event['start'], 0, 10) : '',
                 'end_date'    => isset($event['end']) ? substr((string) $event['end'], 0, 10) : '',
                 'source'      => self::normalize_event_source($event),
+                'block_id'    => (isset($event['id']) && (($event['type'] ?? '') === 'blocking')) ? (int) $event['id'] : 0,
                 'type'        => $event['type'] ?? '',
                 'status'      => $event['status'] ?? '',
             ];
@@ -482,10 +589,17 @@ class PCR_Dashboard_Ajax
     protected static function normalize_event_source(array $event)
     {
         if (!empty($event['source'])) {
-            if ($event['source'] === 'ical_cache') {
+            $src = (string) $event['source'];
+
+            // Normalisation des différentes variantes
+            if ($src === 'ical_cache') {
                 return 'ical';
             }
-            return (string) $event['source'];
+            if ($src === 'manuel' || $src === 'manual') {
+                return 'manual';
+            }
+
+            return $src;
         }
 
         $type = isset($event['type']) ? (string) $event['type'] : '';
@@ -547,7 +661,7 @@ class PCR_Dashboard_Ajax
         $ids_placeholder = implode(',', array_fill(0, count($logement_ids), '%d'));
         $table = $wpdb->prefix . 'pc_unavailabilities';
         $sql = "
-            SELECT item_id, date_debut, date_fin, type_source
+            SELECT id, item_id, date_debut, date_fin, type_source
             FROM {$table}
             WHERE item_id IN ({$ids_placeholder})
               AND date_fin >= %s
@@ -560,6 +674,7 @@ class PCR_Dashboard_Ajax
         $events = [];
         foreach ((array) $rows as $row) {
             $events[] = [
+                'id'      => (int) $row->id,
                 'item_id' => (int) $row->item_id,
                 'type'    => 'blocking',
                 'start'   => sanitize_text_field($row->date_debut),
