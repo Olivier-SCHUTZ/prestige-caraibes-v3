@@ -56,6 +56,10 @@
       this.currentYear =
         parseInt(root.getAttribute("data-initial-year"), 10) ||
         new Date().getFullYear();
+
+      // URL de la page "Dashboard Réservations" (passée via data-reservation-url)
+      this.reservationUrl = root.getAttribute("data-reservation-url") || "";
+
       this.labelWidth = this.readCssNumber(
         "--pc-cal-label-width",
         CONFIG.labelWidth
@@ -273,12 +277,36 @@
         this.modalSelectionCreateReservationBtn.addEventListener(
           "click",
           () => {
-            if (!this.modalSelection) return;
-            // eslint-disable-next-line no-console
-            console.log(
-              "[pc-calendar] create reservation from selection",
-              this.modalSelection
-            );
+            if (!this.modalSelection) {
+              return;
+            }
+
+            const payload = {
+              logementId: this.modalSelection.logementId || null,
+              start: this.modalSelection.start || null,
+              end: this.modalSelection.end || null,
+            };
+
+            try {
+              window.sessionStorage.setItem(
+                "pc_resa_from_calendar",
+                JSON.stringify(payload)
+              );
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.error("[pc-calendar] sessionStorage error", e);
+            }
+
+            if (this.reservationUrl) {
+              window.location.href = this.reservationUrl;
+            } else {
+              // fallback : si pas d'URL configurée, log uniquement
+              // eslint-disable-next-line no-console
+              console.log(
+                "[pc-calendar] missing reservationUrl, payload =",
+                payload
+              );
+            }
           }
         );
       }

@@ -49,6 +49,16 @@ function pc_dashboard_calendar_enqueue_assets()
  */
 function pc_dashboard_calendar_shortcode($atts = [])
 {
+    // Permet de passer une URL de page "Dashboard Réservations" depuis le shortcode
+    $atts = shortcode_atts(
+        [
+            'reservation_url' => '',
+        ],
+        $atts,
+        'pc_dashboard_calendar'
+    );
+    $reservation_url = !empty($atts['reservation_url']) ? esc_url($atts['reservation_url']) : '';
+
     $capability = apply_filters('pc_resa_manual_creation_capability', 'manage_options');
     $can_manage = current_user_can($capability);
     if (!is_user_logged_in() || !$can_manage) {
@@ -62,7 +72,11 @@ function pc_dashboard_calendar_shortcode($atts = [])
 
     ob_start();
 ?>
-    <div class="pc-cal-shell" data-pc-calendar data-initial-month="<?php echo esc_attr($month); ?>" data-initial-year="<?php echo esc_attr($year); ?>">
+    <div class="pc-cal-shell"
+        data-pc-calendar
+        data-initial-month="<?php echo esc_attr($month); ?>"
+        data-initial-year="<?php echo esc_attr($year); ?>"
+        data-reservation-url="<?php echo esc_attr($reservation_url); ?>">
         <div class="pc-cal-heading">
             <div class="pc-cal-heading__text">
                 <p class="pc-cal-eyebrow"><?php echo esc_html__('Dashboard', 'pc-reservation-core'); ?></p>

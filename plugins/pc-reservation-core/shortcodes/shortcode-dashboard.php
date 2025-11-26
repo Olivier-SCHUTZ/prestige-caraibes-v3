@@ -99,7 +99,7 @@ function pc_resa_build_prefill_payload($resa)
         $detail_lines = json_decode($resa->detail_tarif, true);
         if (is_array($detail_lines)) {
             $qty_map = [];
-            $normalize_label = function($value) {
+            $normalize_label = function ($value) {
                 $value = (string) $value;
                 $value = strtolower(trim($value));
                 $value = preg_replace('/\s+/', ' ', $value);
@@ -2672,6 +2672,14 @@ function pc_resa_dashboard_shortcode($atts)
             });
             const createTemplate = document.getElementById('pc-resa-create-template');
 
+            // Bouton "Créer une réservation" (ouverture manuelle du popup)
+            const createBtn = document.querySelector('.pc-resa-create-btn');
+            if (createBtn && createTemplate) {
+                createBtn.addEventListener('click', function() {
+                    openManualCreateModal();
+                });
+            }
+
             const closeAllActionMenus = () => {
                 document.querySelectorAll('.pc-resa-actions-more').forEach((menu) => {
                     menu.classList.remove('is-open');
@@ -3350,16 +3358,13 @@ function pc_resa_dashboard_shortcode($atts)
                         return;
                     }
                     const disableRanges = Array.isArray(config.icsDisable) ?
-                        config.icsDisable.filter((range) => range && range.from && range.to) :
-                        [];
-                    const disableRules = disableRanges.length ?
-                        [
-                            function(date) {
-                                const s = formatYMD(date);
-                                return disableRanges.some((range) => s >= range.from && s <= range.to);
-                            },
-                        ] :
-                        [];
+                        config.icsDisable.filter((range) => range && range.from && range.to) : [];
+                    const disableRules = disableRanges.length ? [
+                        function(date) {
+                            const s = formatYMD(date);
+                            return disableRanges.some((range) => s >= range.from && s <= range.to);
+                        },
+                    ] : [];
                     const bootCalendar = () => {
                         if (typeof window.flatpickr !== 'function') {
                             setTimeout(bootCalendar, 150);
@@ -3697,8 +3702,7 @@ function pc_resa_dashboard_shortcode($atts)
                     }
                     const code = normalizeCode(config.code || '');
                     const label = normalizeCode(config.label || '');
-                    return ['custom', 'personnalise', 'personnalisee'].includes(code) ||
-                        ['custom', 'personnalise', 'personnalisee'].includes(label);
+                    return ['custom', 'personnalise', 'personnalisee'].includes(code) || ['custom', 'personnalise', 'personnalisee'].includes(label);
                 };
 
                 const toggleParticipantsSection = (config) => {
@@ -3922,19 +3926,19 @@ function pc_resa_dashboard_shortcode($atts)
                         plusAmount.value = prefill.plus_montant;
                     }
                     if (participantsAdultsField) {
-                        participantsAdultsField.value = prefill.participants && typeof prefill.participants.adultes !== 'undefined'
-                            ? prefill.participants.adultes
-                            : (prefill.adultes || 0);
+                        participantsAdultsField.value = prefill.participants && typeof prefill.participants.adultes !== 'undefined' ?
+                            prefill.participants.adultes :
+                            (prefill.adultes || 0);
                     }
                     if (participantsEnfantsField) {
-                        participantsEnfantsField.value = prefill.participants && typeof prefill.participants.enfants !== 'undefined'
-                            ? prefill.participants.enfants
-                            : (prefill.enfants || 0);
+                        participantsEnfantsField.value = prefill.participants && typeof prefill.participants.enfants !== 'undefined' ?
+                            prefill.participants.enfants :
+                            (prefill.enfants || 0);
                     }
                     if (participantsBebesField) {
-                        participantsBebesField.value = prefill.participants && typeof prefill.participants.bebes !== 'undefined'
-                            ? prefill.participants.bebes
-                            : (prefill.bebes || 0);
+                        participantsBebesField.value = prefill.participants && typeof prefill.participants.bebes !== 'undefined' ?
+                            prefill.participants.bebes :
+                            (prefill.bebes || 0);
                     }
                 }
 
@@ -4348,13 +4352,37 @@ function pc_resa_dashboard_shortcode($atts)
                 });
             });
 
-            // Bouton "Créer une réservation"
-            const createBtn = document.querySelector('.pc-resa-create-btn');
+            // Ouverture automatique du popup si on arrive depuis le calendrier
+            if (typeof window !== "undefined" && window.sessionStorage) {
+                const key = "pc_resa_from_calendar";
+                const raw = window.sessionStorage.getItem(key);
 
-            if (createBtn && createTemplate) {
-                createBtn.addEventListener('click', function() {
-                    openManualCreateModal();
-                });
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        window.sessionStorage.removeItem(key);
+
+                        if (parsed && typeof parsed === "object") {
+                            const prefill = {
+                                type: "location",
+                                item_id: parsed.logementId || "",
+                                date_arrivee: parsed.start || "",
+                                date_depart: parsed.end || "",
+                            };
+
+                            openManualCreateModal(prefill, {
+                                context: "from_calendar",
+                            });
+                        }
+                    } catch (error) {
+                        // eslint-disable-next-line no-console
+                        console.error(
+                            "[pc-reservations] erreur prefill depuis calendrier",
+                            error
+                        );
+                        window.sessionStorage.removeItem(key);
+                    }
+                }
             }
 
             const attachQuoteButtons = () => {
