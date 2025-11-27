@@ -187,6 +187,52 @@ class PCR_Booking_Engine
     }
 
     /**
+     * Annule une réservation (statut_reservation = annulee) sans toucher aux paiements.
+     */
+    public static function cancel($reservation_id)
+    {
+        $result = new PCR_Booking_Result([
+            'reservation_id' => (int) $reservation_id,
+        ]);
+
+        if ($result->reservation_id <= 0) {
+            $result->errors[] = 'invalid_reservation_id';
+            return $result;
+        }
+
+        if (!class_exists('PCR_Reservation')) {
+            $result->errors[] = 'reservation_module_missing';
+            return $result;
+        }
+
+        $existing = PCR_Reservation::get_by_id($result->reservation_id);
+        if (!$existing) {
+            $result->errors[] = 'reservation_not_found';
+            return $result;
+        }
+
+        // On ne touche pas aux paiements, uniquement au statut de réservation
+        $updated = PCR_Reservation::update($result->reservation_id, [
+            'statut_reservation' => 'annulee',
+        ]);
+
+        if (!$updated) {
+            $result->errors[] = 'db_update_failed';
+            return $result;
+        }
+
+        $result->success = true;
+        $result->data = [
+            'statuts' => [
+                'reservation' => 'annulee',
+                'paiement'    => isset($existing->statut_paiement) ? $existing->statut_paiement : '',
+            ],
+        ];
+
+        return $result;
+    }
+
+    /**
      * Normalise les payloads (front, back, API, etc.) afin d'obtenir une structure commune.
      */
     public static function normalize_payload(array $payload)
@@ -201,7 +247,7 @@ class PCR_Booking_Engine
 
         $item_defaults = [
             'item_id'              => 0,
-            'experience_tarif_type'=> '',
+            'experience_tarif_type' => '',
             'date_experience'      => '',
             'date_arrivee'         => '',
             'date_depart'          => '',
@@ -474,23 +520,26 @@ class PCR_Booking_Engine
      */
     protected static function determine_statuses(array $context, array $pricing)
     {
+        // Flux "devis" ou tarification sur devis : la réservation reste un devis
         if ($context['type_flux'] === 'devis' || !empty($pricing['is_sur_devis'])) {
             return [
                 'reservation' => 'devis_envoye',
-                'paiement'    => 'sur_devis',
+                'paiement'    => 'non_concerne',
             ];
         }
 
+        // Flux "réservation" + mode directe : réservation confirmée qui doit apparaître au calendrier
         if ($context['mode_reservation'] === 'directe') {
             return [
-                'reservation' => 'en_attente_paiement',
-                'paiement'    => 'non_paye',
+                'reservation' => 'reservee',
+                'paiement'    => 'en_attente_paiement',
             ];
         }
 
+        // Flux "réservation" + mode "demande" : en attente de traitement (ne doit PAS apparaître au calendrier)
         return [
             'reservation' => 'en_attente_traitement',
-            'paiement'    => 'non_paye',
+            'paiement'    => 'en_attente_paiement',
         ];
     }
 
@@ -828,7 +877,7 @@ class PCR_Booking_Engine
                 'row'  => $first_row,
                 'key'  => $first_key,
                 'code' => $first_code,
-                'label'=> $first_label,
+                'label' => $first_label,
             ];
         }
 
@@ -855,7 +904,7 @@ class PCR_Booking_Engine
                         'row'  => $row,
                         'key'  => $key,
                         'code' => $code,
-                        'label'=> $label,
+                        'label' => $label,
                     ];
                 }
             }

@@ -1348,5 +1348,10 @@
     }
     const instance = new PcDashboardCalendar(root, window.pcCalendarData || {});
     instance.init();
+
+    // Rafraîchissement global déclenché par le dashboard (annulation, création, etc.)
+    document.addEventListener("pc:calendar:refresh", () => {
+      instance.fetchAndRender(instance.currentMonth, instance.currentYear);
+    });
   });
 })();

@@ -22,6 +22,7 @@ class PCR_Dashboard_Ajax
         add_action('wp_ajax_nopriv_pc_get_single_calendar', [__CLASS__, 'ajax_get_single_calendar']);
         add_action('wp_ajax_pc_calendar_create_block', [__CLASS__, 'ajax_calendar_create_block']);
         add_action('wp_ajax_pc_calendar_delete_block', [__CLASS__, 'ajax_calendar_delete_block']);
+        add_action('wp_ajax_pc_cancel_reservation', [__CLASS__, 'ajax_cancel_reservation']);
     }
 
     public static function handle_manual_reservation()
@@ -425,6 +426,47 @@ class PCR_Dashboard_Ajax
         }
 
         wp_send_json_success(['deleted' => true]);
+    }
+
+    /**
+     * Annule une réservation depuis le dashboard.
+     */
+    public static function ajax_cancel_reservation()
+    {
+        if (!is_user_logged_in()) {
+            wp_send_json_error(['message' => 'Veuillez vous connecter.'], 403);
+        }
+
+        if (!self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.'], 403);
+        }
+
+        // On réutilise le même nonce que pour la création manuelle
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+
+        if (!class_exists('PCR_Booking_Engine')) {
+            wp_send_json_error(['message' => 'Moteur de réservation indisponible.'], 500);
+        }
+
+        $reservation_id = isset($_POST['reservation_id']) ? (int) $_POST['reservation_id'] : 0;
+        if ($reservation_id <= 0) {
+            wp_send_json_error(['message' => 'Réservation introuvable.'], 400);
+        }
+
+        $result = PCR_Booking_Engine::cancel($reservation_id);
+
+        if (!$result->success) {
+            $message = 'Impossible d’annuler la réservation.';
+            if (!empty($result->errors)) {
+                $message .= ' (' . implode(', ', $result->errors) . ')';
+            }
+            wp_send_json_error(['message' => $message], 500);
+        }
+
+        wp_send_json_success([
+            'message' => 'Réservation annulée.',
+            'statuts' => $result->data['statuts'] ?? [],
+        ]);
     }
 
     /**

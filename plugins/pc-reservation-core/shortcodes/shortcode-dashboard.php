@@ -2638,6 +2638,59 @@ function pc_resa_dashboard_shortcode($atts)
                 justify-content: flex-start;
             }
         }
+
+        /* ============================
+        POPUP ANNULATION RÉSERVATION
+        ============================ */
+
+        .pc-popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            /* dark + brand */
+            z-index: 99999;
+            /* toujours au-dessus de tout */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .pc-popup-overlay[hidden] {
+            display: none !important;
+        }
+
+        .pc-popup-box {
+            background: #fff;
+            border-radius: var(--pc-radius, 10px);
+            max-width: 420px;
+            width: 92%;
+            padding: 24px 28px;
+            box-shadow: var(--pc-shadow-soft, 0 12px 32px rgba(0, 0, 0, 0.12));
+            text-align: center;
+        }
+
+        .pc-popup-title {
+            font-family: var(--pc-font-title);
+            color: var(--pc-color-heading);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        .pc-popup-text {
+            color: var(--pc-color-text);
+            font-size: 1rem;
+            line-height: 1.45;
+            margin-bottom: 22px;
+        }
+
+        .pc-popup-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
     </style>
 
     </div>
@@ -4413,6 +4466,94 @@ function pc_resa_dashboard_shortcode($atts)
             attachQuoteButtons();
         });
     </script>
+
+    <script>
+        document.addEventListener("click", function(event) {
+
+            /* --- OUVERTURE DU POPUP --- */
+            const cancelBtn = event.target.closest(".pc-resa-action-cancel-booking");
+            if (cancelBtn) {
+                event.preventDefault();
+                const id = cancelBtn.dataset.reservationId;
+
+                const popup = document.getElementById("pc-cancel-reservation-popup");
+                popup.dataset.resaId = id;
+                popup.hidden = false;
+                return;
+            }
+
+            /* --- FERMETURE DU POPUP --- */
+            if (event.target.matches("[data-pc-popup-close]")) {
+                document.getElementById("pc-cancel-reservation-popup").hidden = true;
+                return;
+            }
+
+            /* --- CONFIRMATION ANNULATION --- */
+            if (event.target.matches("[data-pc-popup-confirm]")) {
+
+                const popup = document.getElementById("pc-cancel-reservation-popup");
+                const id = popup.dataset.resaId;
+
+                const body = new URLSearchParams();
+                body.append("action", "pc_cancel_reservation");
+                body.append("nonce", pcResaManualNonce);
+                body.append("reservation_id", id);
+
+                fetch(pcResaAjaxUrl, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: body.toString(),
+                    })
+                    .then(r => r.json())
+                    .then(json => {
+
+                        if (!json || !json.success) {
+                            console.error(json && json.data && json.data.message ?
+                                json.data.message :
+                                "Erreur lors de l’annulation.");
+                            return;
+                        }
+
+                        // Ferme le popup
+                        popup.hidden = true;
+
+                        // Refresh calendrier
+                        document.dispatchEvent(new CustomEvent("pc:calendar:refresh"));
+
+                        // Recharger la page pour mettre à jour la fiche (statut = annulée)
+                        window.location.reload();
+
+                    })
+                    .catch(() => {
+                        console.error("Erreur réseau lors de l'annulation.");
+                    });
+            }
+
+        });
+    </script>
+    <!-- Popup d’annulation Prestige Caraïbes -->
+    <div id="pc-cancel-reservation-popup" class="pc-popup-overlay" hidden>
+        <div class="pc-popup-box">
+            <h3 class="pc-popup-title">Annuler cette réservation ?</h3>
+
+            <p class="pc-popup-text">
+                Êtes-vous sûr de vouloir annuler cette réservation ?<br>
+                <small>Si votre client a déjà fait des règlements, pensez au remboursement suivant vos conditions générales.</small>
+            </p>
+
+            <div class="pc-popup-actions">
+                <button class="pc-btn pc-btn--primary" data-pc-popup-confirm>
+                    J’annule cette réservation
+                </button>
+                <button class="pc-btn pc-btn--line" data-pc-popup-close>
+                    Revenir
+                </button>
+            </div>
+        </div>
+    </div>
 <?php
 
     return ob_get_clean();
