@@ -216,6 +216,13 @@ class PCR_Payment
         }
 
         // 4) Mise à jour des statuts dans la réservation
+
+        // [FIX] Si la réservation est déjà "reservee" (ex: réservation directe/manuelle),
+        // le moteur de paiement ne doit PAS la repasser en "en_attente_paiement".
+        if (!empty($resa['statut_reservation']) && $resa['statut_reservation'] === 'reservee') {
+            $new_resa_status = 'reservee';
+        }
+
         $wpdb->update(
             $table_res,
             [

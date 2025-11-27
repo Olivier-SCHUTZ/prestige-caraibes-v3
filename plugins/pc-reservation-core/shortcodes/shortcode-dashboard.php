@@ -1424,17 +1424,11 @@ function pc_resa_dashboard_shortcode($atts)
                             <span class="pc-resa-field-label">Flux</span>
                             <select name="type_flux">
                                 <option value="devis">Devis</option>
-                                <option value="reservation">Réservation directe</option>
+                                <option value="reservation">Réservation confirmée</option>
                             </select>
                         </label>
 
-                        <label class="pc-resa-field">
-                            <span class="pc-resa-field-label">Mode</span>
-                            <select name="mode_reservation">
-                                <option value="demande">Demande</option>
-                                <option value="directe">Directe</option>
-                            </select>
-                        </label>
+                        <input type="hidden" name="mode_reservation" value="directe">
 
                         <label class="pc-resa-field" data-item-field>
                             <span class="pc-resa-field-label" data-item-label>Expérience</span>
@@ -4531,7 +4525,53 @@ function pc_resa_dashboard_shortcode($atts)
                         console.error("Erreur réseau lors de l'annulation.");
                     });
             }
+            /* --- CONFIRMATION RÉSERVATION --- */
+            const confirmBtn = event.target.closest(".pc-resa-action-confirm-booking");
+            if (confirmBtn) {
+                event.preventDefault();
+                const id = confirmBtn.dataset.reservationId;
 
+                if (!confirm('Confirmer cette réservation ? Elle apparaîtra dans le calendrier.')) {
+                    return;
+                }
+
+                const originalText = confirmBtn.textContent;
+                confirmBtn.textContent = '...';
+                confirmBtn.disabled = true;
+
+                const body = new URLSearchParams();
+                body.append("action", "pc_confirm_reservation");
+                body.append("nonce", pcResaManualNonce);
+                body.append("reservation_id", id);
+
+                fetch(pcResaAjaxUrl, {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: body.toString(),
+                    })
+                    .then(r => r.json())
+                    .then(json => {
+                        if (json && json.success) {
+                            // Rafraîchir calendrier si présent
+                            document.dispatchEvent(new CustomEvent("pc:calendar:refresh"));
+                            // Recharger la page pour mettre à jour les statuts et boutons
+                            window.location.reload();
+                        } else {
+                            alert(json.data && json.data.message ? json.data.message : 'Erreur.');
+                            confirmBtn.textContent = originalText;
+                            confirmBtn.disabled = false;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Erreur réseau.');
+                        confirmBtn.textContent = originalText;
+                        confirmBtn.disabled = false;
+                    });
+            }
         });
     </script>
     <!-- Popup d’annulation Prestige Caraïbes -->

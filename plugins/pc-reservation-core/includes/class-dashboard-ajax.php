@@ -23,6 +23,7 @@ class PCR_Dashboard_Ajax
         add_action('wp_ajax_pc_calendar_create_block', [__CLASS__, 'ajax_calendar_create_block']);
         add_action('wp_ajax_pc_calendar_delete_block', [__CLASS__, 'ajax_calendar_delete_block']);
         add_action('wp_ajax_pc_cancel_reservation', [__CLASS__, 'ajax_cancel_reservation']);
+        add_action('wp_ajax_pc_confirm_reservation', [__CLASS__, 'ajax_confirm_reservation']);
     }
 
     public static function handle_manual_reservation()
@@ -465,6 +466,48 @@ class PCR_Dashboard_Ajax
 
         wp_send_json_success([
             'message' => 'Réservation annulée.',
+            'statuts' => $result->data['statuts'] ?? [],
+        ]);
+    }
+
+    /**
+     * Confirme une réservation (passe de "demande/devis" à "réservation confirmée").
+     */
+    public static function ajax_confirm_reservation()
+    {
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.'], 403);
+        }
+
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+
+        $reservation_id = isset($_POST['reservation_id']) ? (int) $_POST['reservation_id'] : 0;
+        if ($reservation_id <= 0) {
+            wp_send_json_error(['message' => 'ID manquant.'], 400);
+        }
+
+        if (!class_exists('PCR_Booking_Engine')) {
+            wp_send_json_error(['message' => 'Moteur indisponible.'], 500);
+        }
+
+        // On force le mode "directe" et le flux "reservation" pour que le moteur
+        // calcule le statut "reservee" (cf. PCR_Booking_Engine::determine_statuses)
+        $payload = [
+            'context' => [
+                'type_flux'        => 'reservation',
+                'mode_reservation' => 'directe',
+                'origine'          => 'manuelle', // Marqueur pour dire que c'est validé par l'admin
+            ]
+        ];
+
+        $result = PCR_Booking_Engine::update($reservation_id, $payload);
+
+        if (!$result->success) {
+            wp_send_json_error(['message' => 'Erreur lors de la confirmation.'], 500);
+        }
+
+        wp_send_json_success([
+            'message' => 'Réservation confirmée avec succès.',
             'statuts' => $result->data['statuts'] ?? [],
         ]);
     }
