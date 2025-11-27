@@ -83,7 +83,8 @@ function pc_dashboard_calendar_shortcode($atts = [])
                 <h2 class="pc-cal-title"><?php echo esc_html__('Dashboard Calendrier', 'pc-reservation-core'); ?></h2>
                 <p class="pc-cal-subtitle"><?php echo esc_html__('Période affichée : mois courant + 15 jours.', 'pc-reservation-core'); ?></p>
                 <div class="pc-cal-legend">
-                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--reservation"></span><?php echo esc_html__('Réservation confirmée', 'pc-reservation-core'); ?></span>
+                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--paye"></span><?php echo esc_html__('Réservé (Soldé)', 'pc-reservation-core'); ?></span>
+                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--pending"></span><?php echo esc_html__('Réservé (En attente / Acompte)', 'pc-reservation-core'); ?></span>
                     <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--manual"></span><?php echo esc_html__('Blocage manuel', 'pc-reservation-core'); ?></span>
                     <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--ical"></span><?php echo esc_html__('iCal / import', 'pc-reservation-core'); ?></span>
                 </div>
@@ -120,14 +121,9 @@ function pc_dashboard_calendar_shortcode($atts = [])
                             <h3 class="pc-cal-modal__title" id="pc-cal-modal-title" data-pc-cal-modal-title></h3>
                             <p class="pc-cal-modal__subtitle" data-pc-cal-modal-subtitle></p>
                             <div class="pc-cal-legend pc-cal-legend--modal">
-                                <span class="pc-cal-legend__item">
-                                    <span class="pc-cal-dot pc-cal-dot--reservation"></span>
-                                    <?php echo esc_html__('Réservation confirmée', 'pc-reservation-core'); ?>
-                                </span>
-                                <span class="pc-cal-legend__item">
-                                    <span class="pc-cal-dot pc-cal-dot--manual"></span>
-                                    <?php echo esc_html__('Blocage manuel', 'pc-reservation-core'); ?>
-                                </span>
+                                <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--paye"></span><?php echo esc_html__('Réservé (Soldé)', 'pc-reservation-core'); ?></span>
+                                <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--pending"></span><?php echo esc_html__('Réservé (En attente / Acompte)', 'pc-reservation-core'); ?></span>
+                                <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--manual"></span><?php echo esc_html__('Blocage manuel', 'pc-reservation-core'); ?></span>
                                 <span class="pc-cal-legend__item">
                                     <span class="pc-cal-dot pc-cal-dot--ical"></span>
                                     <?php echo esc_html__('iCal / import', 'pc-reservation-core'); ?>

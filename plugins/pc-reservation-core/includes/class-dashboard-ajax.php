@@ -652,13 +652,16 @@ class PCR_Dashboard_Ajax
         $normalized = [];
         foreach ($raw_events as $event) {
             $normalized[] = [
-                'logement_id' => (int) ($event['item_id'] ?? 0),
-                'start_date'  => isset($event['start']) ? substr((string) $event['start'], 0, 10) : '',
-                'end_date'    => isset($event['end']) ? substr((string) $event['end'], 0, 10) : '',
-                'source'      => self::normalize_event_source($event),
-                'block_id'    => (isset($event['id']) && (($event['type'] ?? '') === 'blocking')) ? (int) $event['id'] : 0,
-                'type'        => $event['type'] ?? '',
-                'status'      => $event['status'] ?? '',
+                'logement_id'    => (int) ($event['item_id'] ?? 0),
+                'start_date'     => isset($event['start']) ? substr((string) $event['start'], 0, 10) : '',
+                'end_date'       => isset($event['end']) ? substr((string) $event['end'], 0, 10) : '',
+                'source'         => self::normalize_event_source($event),
+                'block_id'       => (isset($event['id']) && (($event['type'] ?? '') === 'blocking')) ? (int) $event['id'] : 0,
+                'type'           => $event['type'] ?? '',
+                'status'         => $event['status'] ?? '',
+                // [FIX] On laisse passer les infos de paiement et de texte
+                'payment_status' => $event['payment_status'] ?? '',
+                'label'          => $event['label'] ?? '',
             ];
         }
 
@@ -708,7 +711,7 @@ class PCR_Dashboard_Ajax
         $ids_placeholder = implode(',', array_fill(0, count($logement_ids), '%d'));
         $table = $wpdb->prefix . 'pc_reservations';
         $sql = "
-            SELECT id, item_id, date_arrivee, date_depart, statut_reservation
+            SELECT id, item_id, date_arrivee, date_depart, statut_reservation, statut_paiement, nom, prenom
             FROM {$table}
             WHERE type = %s
               AND statut_reservation = %s
@@ -724,12 +727,19 @@ class PCR_Dashboard_Ajax
 
         $events = [];
         foreach ((array) $rows as $row) {
+            // Construction du Label : "Nom Prénom (#ID)"
+            $nom = !empty($row->nom) ? strtoupper($row->nom) : 'Client';
+            $prenom = !empty($row->prenom) ? $row->prenom : '';
+            $label = trim("$nom $prenom (#{$row->id})");
+
             $events[] = [
-                'item_id'   => (int) $row->item_id,
-                'type'      => 'reservation',
-                'start'     => sanitize_text_field($row->date_arrivee),
-                'end'       => sanitize_text_field($row->date_depart),
-                'status'    => sanitize_text_field($row->statut_reservation),
+                'item_id'        => (int) $row->item_id,
+                'type'           => 'reservation',
+                'start'          => sanitize_text_field($row->date_arrivee),
+                'end'            => sanitize_text_field($row->date_depart),
+                'status'         => sanitize_text_field($row->statut_reservation),
+                'payment_status' => sanitize_text_field($row->statut_paiement), // Info vitale pour la couleur
+                'label'          => $label, // Info vitale pour le texte
             ];
         }
 

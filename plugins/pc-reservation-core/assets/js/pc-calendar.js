@@ -682,8 +682,20 @@
         }
 
         const bar = document.createElement("div");
+        // On définit d'abord la source de base pour la logique
         const source = evt.source || "reservation";
-        bar.className = `pc-cal-event pc-cal-event--${source}`;
+        let sourceClass = source;
+
+        // Logique couleur réservation : Vert si payé, Orange sinon
+        if (source === "reservation") {
+          if (evt.payment_status === "paye") {
+            sourceClass = "paye";
+          } else {
+            sourceClass = "pending"; // Englobe 'en_attente_paiement', 'acompte_paye', 'non_paye'
+          }
+        }
+
+        bar.className = `pc-cal-event pc-cal-event--${sourceClass}`;
         bar.style.left = `${clampedStart * this.dayWidth}px`;
         bar.style.width = `${
           (clampedEnd - clampedStart + 1) * this.dayWidth - 8
@@ -937,8 +949,19 @@
           startRect.top - containerRect.top + startRect.height / 2 - 12 + 8;
 
         const bar = document.createElement("div");
+        // On définit d'abord la source de base
         const source = evt.source || "reservation";
-        bar.className = `pc-cal-modal-bar pc-cal-modal-bar--${source}`;
+        let sourceClass = source;
+
+        if (source === "reservation") {
+          if (evt.payment_status === "paye") {
+            sourceClass = "paye";
+          } else {
+            sourceClass = "pending";
+          }
+        }
+
+        bar.className = `pc-cal-modal-bar pc-cal-modal-bar--${sourceClass}`;
         bar.style.left = `${left}px`;
         bar.style.top = `${top}px`;
         bar.style.width = `${width}px`;
