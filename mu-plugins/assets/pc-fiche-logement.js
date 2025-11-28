@@ -250,18 +250,145 @@
           lines &&
           lines.length > 0
         ) {
-          let summaryHTML = "<ul>";
+          // --- DETECTION DU MODE ---
+          const isDirectBooking = cfg.bookingMode === "directe";
+
+          // SI C'EST UNE "DEMANDE" CLASSIQUE : On garde l'affichage simple
+          if (!isDirectBooking) {
+            let summaryHTML = "<ul>";
+            let detailsText = "";
+            lines.forEach((line) => {
+              summaryHTML += `<li><span>${line.label}</span><span>${line.price}</span></li>`;
+              detailsText += `${line.label}: ${line.price}\n`;
+            });
+            summaryHTML += "</ul>";
+            summaryHTML += `<div style="text-align:right; font-weight:bold; margin-top:10px;">Total estimé : ${formatCurrency(
+              total
+            )}</div>`;
+
+            detailsText += `\nTotal: ${formatCurrency(total)}`;
+            modalSummary.innerHTML = summaryHTML;
+            modalHiddenDetails.value = detailsText;
+
+            // On s'assure que le bouton reste "Envoyer la demande" (on reset le conteneur d'actions au cas où)
+            const actionsContainer = document.querySelector(
+              ".exp-booking-modal__actions"
+            );
+            if (actionsContainer) {
+              // On remet le HTML par défaut (Bouton classique)
+              actionsContainer.innerHTML = `
+                    <p class="exp-booking-disclaimer">Cette demande est sans engagement.</p>
+                    <button type="submit" class="pc-btn pc-btn--primary">Envoyer la demande</button>
+                  `;
+            }
+            return; // ON S'ARRÊTE LÀ POUR LE MODE DEMANDE
+          }
+
+          // ============================================================
+          // SI C'EST UNE "RÉSERVATION DIRECTE" : On affiche l'échéancier + Stripe
+          // ============================================================
+
+          const payRules = cfg.payment || {
+            mode: "acompte_plus_solde",
+            deposit_val: 30,
+            delay_days: 30,
+          };
+          let dueNow = total;
+          let dueLater = 0;
+          let isDeposit = false;
+
+          // Calcul des 30 jours
+          const today = new Date();
+          const arrivalDate = new Date(sel.arrival);
+          const diffTime = arrivalDate - today;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const forceTotal = diffDays <= (payRules.delay_days || 30);
+
+          if (payRules.mode === "acompte_plus_solde" && !forceTotal) {
+            isDeposit = true;
+            if (payRules.deposit_type === "montant_fixe") {
+              dueNow = payRules.deposit_val;
+            } else {
+              dueNow = total * (payRules.deposit_val / 100);
+            }
+            dueLater = total - dueNow;
+          }
+
+          // 1. Facture Détaillée
+          let summaryHTML = '<div class="pc-invoice-lines">';
           let detailsText = "";
           lines.forEach((line) => {
-            const label = line.label || "";
-            const price = line.price || "";
-            summaryHTML += `<li><span>${label}</span><span>${price}</span></li>`;
-            detailsText += `${label}: ${price}\n`;
+            summaryHTML += `<div class="pc-invoice-row"><span class="pc-lbl">${line.label}</span><span class="pc-val">${line.price}</span></div>`;
+            detailsText += `${line.label}: ${line.price}\n`;
           });
-          summaryHTML += "</ul>";
+          summaryHTML += `<div class="pc-invoice-total"><span class="pc-lbl">Total</span><span class="pc-val">${formatCurrency(
+            total
+          )}</span></div>`;
+          summaryHTML += "</div>";
           detailsText += `\nTotal: ${formatCurrency(total)}`;
+
+          // 2. Échéancier
+          if (isDeposit && dueLater > 0) {
+            const balanceDate = new Date(arrivalDate);
+            balanceDate.setDate(
+              arrivalDate.getDate() - (payRules.delay_days || 30)
+            );
+            const dateStr = balanceDate.toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            });
+
+            summaryHTML += `
+              <div class="pc-payment-schedule">
+                  <div class="pc-schedule-header">📅 Calendrier de paiement</div>
+                  <div class="pc-schedule-row is-now">
+                      <div class="pc-col-date"><strong>Acompte à régler</strong><br><span class="pc-tag-now">Immédiat</span></div>
+                      <div class="pc-col-amount">${formatCurrency(dueNow)}</div>
+                  </div>
+                  <div class="pc-schedule-row">
+                      <div class="pc-col-date"><strong>Solde à venir</strong><br><span class="pc-text-muted">Le ${dateStr}</span></div>
+                      <div class="pc-col-amount">${formatCurrency(
+                        dueLater
+                      )}</div>
+                  </div>
+              </div>`;
+          } else {
+            summaryHTML += `
+              <div class="pc-payment-schedule">
+                  <div class="pc-schedule-row is-now">
+                      <div class="pc-col-date"><strong>Total à régler</strong><br><span class="pc-tag-now">Immédiat</span></div>
+                      <div class="pc-col-amount">${formatCurrency(total)}</div>
+                  </div>
+              </div>`;
+          }
+
           modalSummary.innerHTML = summaryHTML;
           modalHiddenDetails.value = detailsText;
+
+          // 3. Bouton STRIPE UNIQUEMENT
+          const actionsContainer = document.querySelector(
+            ".exp-booking-modal__actions"
+          );
+          if (actionsContainer) {
+            actionsContainer.innerHTML = ""; // On vide tout
+
+            const btnStripe = document.createElement("button");
+            btnStripe.type = "submit";
+            btnStripe.className = "pc-btn pc-btn--primary pc-btn-full";
+            // Texte explicite : "Payer 900€" ou "Payer la totalité"
+            btnStripe.innerHTML = `💳 Payer ${formatCurrency(
+              dueNow
+            )} (Carte Bancaire)`;
+
+            const disclaimer = document.createElement("p");
+            disclaimer.className = "exp-booking-disclaimer";
+            disclaimer.textContent =
+              "Paiement sécurisé. Réservation confirmée immédiatement.";
+
+            actionsContainer.appendChild(disclaimer);
+            actionsContainer.appendChild(btnStripe);
+          }
         } else {
           if (sel && sel.arrival && sel.departure) {
             const nights = hNights ? hNights.value : "";

@@ -2114,3 +2114,175 @@
     inset: 0;
   }
 }
+
+/* Echéancier de paiement dans la modale */
+.pc-payment-schedule {
+  margin-top: 15px;
+  background: #f7f9fc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+}
+.pc-schedule-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pc-schedule-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed #cbd5e1;
+}
+.pc-schedule-row:last-child {
+  border-bottom: none;
+}
+.pc-schedule-row.is-now {
+  background: #fff;
+  margin: 0 -12px;
+  padding: 10px 12px;
+  border-left: 3px solid #005f73;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+.pc-col-amount {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #0f172a;
+}
+.pc-tag-now {
+  display: inline-block;
+  background: #e0f2f1;
+  color: #00695c;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+.pc-btn-full {
+  width: 100%;
+  justify-content: center;
+  margin-top: 5px;
+}
+
+/* ============================================================
+   Style de la facture dans la modale (Simulation & Échéancier)
+   ============================================================ */
+
+.pc-invoice-lines {
+  font-family: var(--pc-font-body);
+  color: var(--pc-color-text);
+  margin-bottom: 1.5rem;
+}
+
+/* Lignes classiques (Hébergement, Ménage, Taxe) */
+.pc-invoice-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline; /* Aligne le texte sur la ligne d'écriture */
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 1rem;
+}
+
+/* Le libellé prend toute la place dispo */
+.pc-invoice-row .pc-lbl {
+  flex: 1;
+  padding-right: 1rem;
+  line-height: 1.4;
+}
+
+/* Le prix ne se coupe jamais */
+.pc-invoice-row .pc-val {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--pc-color-heading);
+}
+
+/* Ligne TOTAL (Gros, Gras, Bordure épaisse) */
+.pc-invoice-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.8rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--pc-color-heading); /* La barre foncée au-dessus */
+  color: var(--pc-color-heading); /* Bleu foncé */
+  font-family: var(--pc-font-title);
+  font-weight: 700;
+  font-size: 1.3rem; /* Taille plus grosse comme sur la capture */
+}
+
+/* Echéancier (Le bloc gris/bleu en dessous) */
+.pc-payment-schedule {
+  margin-top: 1.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pc-schedule-header {
+  background: #f1f5f9;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-schedule-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.pc-schedule-row:last-child {
+  border-bottom: none;
+}
+
+/* Mise en avant de la ligne "Aujourd'hui" */
+.pc-schedule-row.is-now {
+  background: #fff;
+  border-left: 4px solid var(--pc-color-primary, #007a92);
+}
+
+.pc-col-date strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--pc-color-heading);
+  margin-bottom: 2px;
+}
+
+.pc-tag-now {
+  display: inline-block;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+.pc-text-muted {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.pc-col-amount {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--pc-color-heading);
+}

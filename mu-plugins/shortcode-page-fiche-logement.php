@@ -1682,6 +1682,22 @@ add_shortcode('pc_devis', function ($atts = []) {
       }
     }
   }
+
+  // --- NOUVEAU : Récupération des règles de paiement (ACF) ---
+  $pay_rules = get_field('regles_de_paiement', $post_id);
+  $payment_config = [
+    'mode'         => $pay_rules['pc_pay_mode'] ?? 'acompte_plus_solde', // 'acompte_plus_solde' | 'total_a_la_reservation' | 'sur_devis'
+    'deposit_type' => $pay_rules['pc_deposit_type'] ?? 'pourcentage',    // 'pourcentage' | 'montant_fixe'
+    'deposit_val'  => floatval($pay_rules['pc_deposit_value'] ?? 30),
+    'delay_days'   => intval($pay_rules['pc_balance_delay_days'] ?? 30), // Délai avant arrivée pour forcer le total
+  ];
+  // --- NOUVEAU : Récupération du Mode de Réservation (Direct vs Demande) ---
+  $mode_raw = get_field('mode_reservation', $post_id);
+  // Gestion format array/string ACF
+  if (is_array($mode_raw)) $mode_raw = $mode_raw['value'] ?? $mode_raw[0] ?? '';
+  // Si c'est 'log_directe' ou 'log_direct', on active le mode Direct. Sinon (log_demande, log_channel...), c'est Demande.
+  $booking_mode = ($mode_raw === 'log_directe' || $mode_raw === 'log_direct') ? 'directe' : 'demande';
+
   $cfg = [
     'basePrice'   => $unit_is_week ? ($base_price / 7.0) : $base_price,
     'cap'         => $cap,
@@ -1695,6 +1711,8 @@ add_shortcode('pc_devis', function ($atts = []) {
     'taxe_sejour' => $taxe_choices,
     'seasons'     => $seasons,
     'icsDisable'  => $ics_disable,
+    'payment'     => $payment_config,
+    'bookingMode' => $booking_mode,
     'lodgifyId'      => get_field('identifiant_lodgify', $post_id) ?: '',
     'lodgifyAccount' => 'marine-schutz-431222',
     'manualQuote' => $manual,
