@@ -1997,6 +1997,36 @@
             "selected": 0
         },
         {
+            "key": "field_692986ddcf6e3",
+            "label": "Mode de réservation",
+            "name": "mode_reservation",
+            "aria-label": "",
+            "type": "select",
+            "instructions": "Indiquer le mode de réservation pour ce logement ! Channel Manager ne sera plus géré sur le site",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "choices": {
+                "log_demande": "Logement sur demande avec accord au préalable",
+                "log_directe": "Logement en réservation directe",
+                "log_channel": "Logement géré par un autre Channet Manager"
+            },
+            "default_value": false,
+            "return_format": "value",
+            "multiple": 0,
+            "allow_null": 0,
+            "allow_in_bindings": 1,
+            "ui": 0,
+            "ajax": 0,
+            "placeholder": "",
+            "create_options": 0,
+            "save_options": 0
+        },
+        {
             "key": "field_6919e7994db4a",
             "label": "Règles de paiement",
             "name": "regles_de_paiement",
@@ -2216,5 +2246,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1763330631
+    "modified": 1764329543
 }

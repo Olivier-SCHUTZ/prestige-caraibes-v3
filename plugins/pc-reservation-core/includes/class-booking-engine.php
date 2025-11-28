@@ -96,10 +96,6 @@ class PCR_Booking_Engine
 
     /**
      * Met à jour une réservation existante avec un payload normalisé.
-     *
-     * @param int   $reservation_id
-     * @param array $payload
-     * @return PCR_Booking_Result
      */
     public static function update($reservation_id, array $payload)
     {
@@ -123,7 +119,46 @@ class PCR_Booking_Engine
             return $result;
         }
 
+        // [HYDRATATION] On complète le payload avec les données existantes
+        // pour ne pas tout effacer lors d'une mise à jour partielle.
+
+        // 1. Context & Items
+        if (empty($payload['context']['type'])) $payload['context']['type'] = $existing->type;
+        if (empty($payload['context']['mode_reservation'])) $payload['context']['mode_reservation'] = $existing->mode_reservation;
+        if (empty($payload['context']['origine'])) $payload['context']['origine'] = $existing->origine;
+        if (empty($payload['item']['item_id'])) $payload['item']['item_id'] = $existing->item_id;
+        if (empty($payload['item']['date_arrivee'])) $payload['item']['date_arrivee'] = $existing->date_arrivee;
+        if (empty($payload['item']['date_depart'])) $payload['item']['date_depart'] = $existing->date_depart;
+        if (empty($payload['item']['date_experience'])) $payload['item']['date_experience'] = $existing->date_experience;
+        if (empty($payload['item']['experience_tarif_type'])) $payload['item']['experience_tarif_type'] = $existing->experience_tarif_type;
+
+        // 2. People
+        if (!isset($payload['people']['adultes'])) $payload['people']['adultes'] = $existing->adultes;
+        if (!isset($payload['people']['enfants'])) $payload['people']['enfants'] = $existing->enfants;
+        if (!isset($payload['people']['bebes'])) $payload['people']['bebes'] = $existing->bebes;
+
+        // 3. Customer
+        if (empty($payload['customer']['prenom'])) $payload['customer']['prenom'] = $existing->prenom;
+        if (empty($payload['customer']['nom'])) $payload['customer']['nom'] = $existing->nom;
+        if (empty($payload['customer']['email'])) $payload['customer']['email'] = $existing->email;
+        if (empty($payload['customer']['telephone'])) $payload['customer']['telephone'] = $existing->telephone;
+        if (empty($payload['customer']['commentaire_client'])) $payload['customer']['commentaire_client'] = $existing->commentaire_client;
+
+        // 4. Pricing (Si pas fourni, on reprend le total et le détail existants)
+        if (!isset($payload['pricing']['total'])) {
+            $payload['pricing']['total'] = $existing->montant_total;
+            if (empty($payload['pricing']['lines_json']) && !empty($existing->detail_tarif)) {
+                $payload['pricing']['lines_json'] = $existing->detail_tarif;
+            }
+        }
+
+        // 5. Meta
+        if (empty($payload['meta']['notes_internes'])) $payload['meta']['notes_internes'] = $existing->notes_internes;
+        if (empty($payload['meta']['numero_devis'])) $payload['meta']['numero_devis'] = $existing->numero_devis;
+
         $normalized = self::normalize_payload($payload);
+
+        // Fix spécifique pour les dates d'expérience
         if (
             isset($normalized['context']['type']) &&
             $normalized['context']['type'] === 'experience' &&
@@ -132,17 +167,14 @@ class PCR_Booking_Engine
         ) {
             $normalized['item']['date_experience'] = $existing->date_experience;
         }
+
         $reservation_row = self::build_reservation_row($normalized);
 
         unset($reservation_row['date_creation']);
 
-        if (!empty($existing->statut_reservation)) {
-            $reservation_row['statut_reservation'] = $existing->statut_reservation;
-        }
-
-        if (!empty($existing->statut_paiement)) {
-            $reservation_row['statut_paiement'] = $existing->statut_paiement;
-        }
+        // [IMPORTANT] On laisse determine_statuses() recalculer le statut
+        // basé sur le nouveau contexte (ex: passage de devis à réservation).
+        // On ne force PAS l'ancien statut ici.
 
         $updated = PCR_Reservation::update($result->reservation_id, $reservation_row);
 
@@ -160,8 +192,7 @@ class PCR_Booking_Engine
                 $result->reservation_id,
                 [
                     'preserve_statuses' => true,
-                    'statut_reservation' => $reservation_row['statut_reservation'] ?? '',
-                    'statut_paiement'    => $reservation_row['statut_paiement'] ?? '',
+                    // On ne passe plus les anciens statuts pour ne pas écraser la logique
                 ]
             );
             $payments = PCR_Payment::get_for_reservation($result->reservation_id);
@@ -187,7 +218,7 @@ class PCR_Booking_Engine
     }
 
     /**
-     * Annule une réservation (statut_reservation = annulee) sans toucher aux paiements.
+     * Annule une réservation.
      */
     public static function cancel($reservation_id)
     {
@@ -211,7 +242,6 @@ class PCR_Booking_Engine
             return $result;
         }
 
-        // On ne touche pas aux paiements, uniquement au statut de réservation
         $updated = PCR_Reservation::update($result->reservation_id, [
             'statut_reservation' => 'annulee',
         ]);
@@ -233,10 +263,13 @@ class PCR_Booking_Engine
     }
 
     /**
-     * Normalise les payloads (front, back, API, etc.) afin d'obtenir une structure commune.
+     * Normalise les payloads.
      */
     public static function normalize_payload(array $payload)
     {
+        // ... (Code existant inchangé pour normalize_payload, hydrate_pricing_lines, etc.)
+        // Je remets le code standard pour ne pas couper le fichier
+
         $context_defaults = [
             'type'             => 'experience',
             'type_flux'        => 'reservation',
@@ -334,114 +367,58 @@ class PCR_Booking_Engine
         return self::maybe_autofill_pricing($normalized);
     }
 
+    // ... (Helpers inchangés : hydrate_pricing_lines, maybe_merge..., extract..., is_associative_array)
     protected static function hydrate_pricing_lines(array $pricing)
     {
-        if (!isset($pricing['lines'])) {
-            $pricing['lines'] = [];
-        }
-
+        if (!isset($pricing['lines'])) $pricing['lines'] = [];
         $pricing = self::maybe_merge_pricing_lines_from_source($pricing, $pricing['lines']);
-
-        if (empty($pricing['lines']) && !empty($pricing['raw_lines_json'])) {
-            $pricing = self::maybe_merge_pricing_lines_from_source($pricing, $pricing['raw_lines_json']);
-        }
-
-        if (empty($pricing['lines']) && !empty($pricing['lines_json'])) {
-            $pricing = self::maybe_merge_pricing_lines_from_source($pricing, $pricing['lines_json']);
-        }
-
+        if (empty($pricing['lines']) && !empty($pricing['raw_lines_json'])) $pricing = self::maybe_merge_pricing_lines_from_source($pricing, $pricing['raw_lines_json']);
+        if (empty($pricing['lines']) && !empty($pricing['lines_json'])) $pricing = self::maybe_merge_pricing_lines_from_source($pricing, $pricing['lines_json']);
         if (empty($pricing['raw_lines_json']) && !empty($pricing['lines']) && is_array($pricing['lines'])) {
             $encoded = wp_json_encode($pricing['lines']);
-            if ($encoded !== false) {
-                $pricing['raw_lines_json'] = $encoded;
-            }
+            if ($encoded !== false) $pricing['raw_lines_json'] = $encoded;
         }
-
-        if (!is_array($pricing['lines'])) {
-            $pricing['lines'] = [];
-        }
-
+        if (!is_array($pricing['lines'])) $pricing['lines'] = [];
         return $pricing;
     }
-
     protected static function maybe_merge_pricing_lines_from_source(array $pricing, $source)
     {
         $extracted = self::extract_pricing_lines_payload($source);
-
-        if (!empty($extracted['lines'])) {
-            $pricing['lines'] = $extracted['lines'];
-        }
-
+        if (!empty($extracted['lines'])) $pricing['lines'] = $extracted['lines'];
         $current_total = isset($pricing['total']) ? (float) $pricing['total'] : 0;
-        if ($current_total <= 0 && isset($extracted['total'])) {
-            $pricing['total'] = (float) $extracted['total'];
-        }
-
-        if (empty($pricing['manual_adjustments']) && !empty($extracted['manual_adjustments'])) {
-            $pricing['manual_adjustments'] = $extracted['manual_adjustments'];
-        }
-
+        if ($current_total <= 0 && isset($extracted['total'])) $pricing['total'] = (float) $extracted['total'];
+        if (empty($pricing['manual_adjustments']) && !empty($extracted['manual_adjustments'])) $pricing['manual_adjustments'] = $extracted['manual_adjustments'];
         return $pricing;
     }
-
     protected static function extract_pricing_lines_payload($source)
     {
-        $result = [
-            'lines' => [],
-            'total' => null,
-            'manual_adjustments' => null,
-        ];
-
-        if (empty($source)) {
-            return $result;
-        }
-
+        $result = ['lines' => [], 'total' => null, 'manual_adjustments' => null];
+        if (empty($source)) return $result;
         if (is_string($source)) {
             $decoded = json_decode(wp_unslash($source), true);
-            if (!is_array($decoded)) {
-                return $result;
-            }
+            if (!is_array($decoded)) return $result;
             $source = $decoded;
         }
-
-        if (!is_array($source)) {
-            return $result;
-        }
-
+        if (!is_array($source)) return $result;
         if (self::is_associative_array($source) && isset($source['lines']) && is_array($source['lines'])) {
             $result['lines'] = $source['lines'];
-
-            if (isset($source['total'])) {
-                $result['total'] = (float) $source['total'];
-            }
-
-            if (!empty($source['manual_adjustments']) && is_array($source['manual_adjustments'])) {
-                $result['manual_adjustments'] = $source['manual_adjustments'];
-            }
-
+            if (isset($source['total'])) $result['total'] = (float) $source['total'];
+            if (!empty($source['manual_adjustments']) && is_array($source['manual_adjustments'])) $result['manual_adjustments'] = $source['manual_adjustments'];
             return $result;
         }
-
         foreach ($source as $line) {
-            if (is_array($line)) {
-                $result['lines'][] = $line;
-            }
+            if (is_array($line)) $result['lines'][] = $line;
         }
-
         return $result;
     }
-
     protected static function is_associative_array(array $array)
     {
-        if ($array === []) {
-            return false;
-        }
-
+        if ($array === []) return false;
         return array_keys($array) !== range(0, count($array) - 1);
     }
 
     /**
-     * Transforme les données normalisées en une ligne compatible avec la table wp_pc_reservations.
+     * Transforme les données normalisées en une ligne compatible avec la table.
      */
     public static function build_reservation_row(array $normalized)
     {
@@ -516,19 +493,20 @@ class PCR_Booking_Engine
     }
 
     /**
-     * Détermine les statuts initiaux selon le flux et le mode.
+     * Détermine les statuts initiaux (NOUVELLE LOGIQUE CLEAN).
      */
     protected static function determine_statuses(array $context, array $pricing)
     {
-        // Flux "devis" ou tarification sur devis : la réservation reste un devis
+        // 1. FLUX DEVIS : Statut initial = Brouillon
         if ($context['type_flux'] === 'devis' || !empty($pricing['is_sur_devis'])) {
             return [
-                'reservation' => 'devis_envoye',
-                'paiement'    => 'non_concerne',
+                'reservation' => 'brouillon',
+                'paiement'    => 'sur_devis',
             ];
         }
 
-        // Flux "réservation" + mode directe : réservation confirmée qui doit apparaître au calendrier
+        // 2. FLUX RÉSERVATION DIRECTE (ou confirmée manuellement)
+        // Statut = Réservée (Bloque le calendrier)
         if ($context['mode_reservation'] === 'directe') {
             return [
                 'reservation' => 'reservee',
@@ -536,19 +514,18 @@ class PCR_Booking_Engine
             ];
         }
 
-        // Flux "réservation" + mode "demande" : en attente de traitement (ne doit PAS apparaître au calendrier)
+        // 3. FLUX DEMANDE FRONT (Défaut)
+        // Statut = En attente de traitement
         return [
             'reservation' => 'en_attente_traitement',
             'paiement'    => 'en_attente_paiement',
         ];
     }
 
+    // ... (Reste des helpers : merge_lines, calculate_total, etc. INCHANGÉS)
     protected static function merge_lines_with_adjustments(array $lines, array $adjustments, $currency)
     {
-        if (empty($adjustments)) {
-            return $lines;
-        }
-
+        if (empty($adjustments)) return $lines;
         $result = $lines;
         foreach ($adjustments as $adj) {
             $label = $adj['label'] ?: 'Ajustement';
@@ -560,10 +537,8 @@ class PCR_Booking_Engine
                 'is_adjustment' => true,
             ];
         }
-
         return $result;
     }
-
     protected static function calculate_total_from_lines(array $lines)
     {
         $sum = 0.0;
@@ -572,102 +547,65 @@ class PCR_Booking_Engine
                 $sum += (float) $line['amount'];
                 continue;
             }
-
-            if (empty($line['price'])) {
-                continue;
-            }
-
+            if (empty($line['price'])) continue;
             $sum += self::parse_price_to_float($line['price']);
         }
-
         return $sum;
     }
-
     protected static function sum_manual_adjustments(array $adjustments)
     {
         $sum = 0.0;
-
         foreach ($adjustments as $adj) {
             $apply = array_key_exists('apply_to_total', $adj) ? (bool) $adj['apply_to_total'] : true;
-            if (!$apply) {
-                continue;
-            }
+            if (!$apply) continue;
             $sum += isset($adj['amount']) ? (float) $adj['amount'] : 0;
         }
-
         return $sum;
     }
-
     protected static function remove_existing_adjustments_from_lines(array $lines, array $adjustments)
     {
-        if (empty($lines)) {
-            return $lines;
-        }
-
+        if (empty($lines)) return $lines;
         if (empty($adjustments)) {
             $filtered = [];
             foreach ($lines as $line) {
                 $is_flagged = !empty($line['is_adjustment']) || !empty($line['is_manual_adjustment']) || (isset($line['source']) && $line['source'] === 'manual_adjustment');
-                if ($is_flagged) {
-                    continue;
-                }
+                if ($is_flagged) continue;
                 $filtered[] = $line;
             }
             return $filtered;
         }
-
         foreach ($adjustments as $adj) {
             $target_label  = self::normalize_adjustment_label($adj['label'] ?? '');
             $target_amount = isset($adj['amount']) ? (float) $adj['amount'] : 0;
-
             foreach ($lines as $index => $line) {
                 $line_label = self::normalize_adjustment_label($line['label'] ?? '');
-
-                if ($target_label !== '' && $line_label !== $target_label) {
-                    continue;
-                }
-
+                if ($target_label !== '' && $line_label !== $target_label) continue;
                 $is_flagged = !empty($line['is_adjustment']) || !empty($line['is_manual_adjustment']) || (isset($line['source']) && $line['source'] === 'manual_adjustment');
                 $line_amount = null;
-                if (isset($line['amount']) && is_numeric($line['amount'])) {
-                    $line_amount = (float) $line['amount'];
-                } elseif (!empty($line['price'])) {
-                    $line_amount = self::parse_price_to_float($line['price']);
-                }
-
+                if (isset($line['amount']) && is_numeric($line['amount'])) $line_amount = (float) $line['amount'];
+                elseif (!empty($line['price'])) $line_amount = self::parse_price_to_float($line['price']);
                 if ($is_flagged || ($line_amount !== null && abs($line_amount - $target_amount) < 0.01)) {
                     unset($lines[$index]);
                     break;
                 }
             }
         }
-
         return array_values($lines);
     }
-
     protected static function normalize_adjustment_label($label)
     {
         $label = (string) $label;
         return $label === '' ? '' : strtolower(trim($label));
     }
-
     protected static function parse_price_to_float($value)
     {
-        if (is_numeric($value)) {
-            return (float) $value;
-        }
-
+        if (is_numeric($value)) return (float) $value;
         $value = html_entity_decode((string) $value);
         $value = str_replace(["\xC2\xA0", ' '], '', $value);
         $value = preg_replace('/[^0-9,\.\-]/', '', $value);
-
-        if ($value === '' || $value === '-' || $value === '--') {
-            return 0;
-        }
-
+        if ($value === '' || $value === '-' || $value === '--') return 0;
         $comma_pos = strrpos($value, ',');
         $dot_pos   = strrpos($value, '.');
-
         if ($comma_pos !== false && $dot_pos !== false) {
             if ($comma_pos > $dot_pos) {
                 $value = str_replace('.', '', $value);
@@ -678,270 +616,138 @@ class PCR_Booking_Engine
         } elseif ($comma_pos !== false && $dot_pos === false) {
             $value = str_replace(',', '.', $value);
         }
-
         return (float) $value;
     }
-
     protected static function format_adjustment_price($amount, $currency)
     {
         return self::format_currency_display($amount, $currency);
     }
-
     protected static function format_currency_display($amount, $currency)
     {
-        $formatted = function_exists('number_format_i18n')
-            ? number_format_i18n($amount, 2)
-            : number_format($amount, 2, ',', ' ');
-
+        $formatted = function_exists('number_format_i18n') ? number_format_i18n($amount, 2) : number_format($amount, 2, ',', ' ');
         $symbol = self::currency_symbol($currency);
         return trim($formatted . ' ' . $symbol);
     }
-
     protected static function currency_symbol($currency)
     {
         $currency = strtoupper($currency ?: 'EUR');
-        if ($currency === 'EUR') {
-            return '€';
-        }
-
+        if ($currency === 'EUR') return '€';
         return $currency;
     }
-
     protected static function maybe_autofill_pricing(array $normalized)
     {
         $context = $normalized['context'];
         $pricing = $normalized['pricing'];
-
         if ($context['type'] === 'experience') {
             $needs_lines = empty($pricing['lines']);
             $needs_total = ($pricing['total'] <= 0);
-
             if ($needs_lines || $needs_total) {
                 $auto = self::auto_generate_experience_pricing($normalized);
                 if (!empty($auto)) {
-                    if ($needs_lines && !empty($auto['lines'])) {
-                        $pricing['lines'] = $auto['lines'];
-                    }
-                    if ($needs_total && isset($auto['total'])) {
-                        $pricing['total'] = (float) $auto['total'];
-                    }
-                    if (!empty($auto['is_sur_devis'])) {
-                        $pricing['is_sur_devis'] = true;
-                    }
+                    if ($needs_lines && !empty($auto['lines'])) $pricing['lines'] = $auto['lines'];
+                    if ($needs_total && isset($auto['total'])) $pricing['total'] = (float) $auto['total'];
+                    if (!empty($auto['is_sur_devis'])) $pricing['is_sur_devis'] = true;
                 }
             }
         }
-
         $normalized['pricing'] = $pricing;
         return $normalized;
     }
-
     protected static function auto_generate_experience_pricing(array $normalized)
     {
-        if (!function_exists('get_field')) {
-            return null;
-        }
-
+        if (!function_exists('get_field')) return null;
         $item_id = (int) ($normalized['item']['item_id'] ?? 0);
         $identifier = $normalized['item']['experience_tarif_type'] ?? '';
-
-        if (!$item_id || !$identifier) {
-            return null;
-        }
-
+        if (!$item_id || !$identifier) return null;
         $row_info = self::find_experience_pricing_row($item_id, $identifier);
-        if (!$row_info) {
-            return null;
-        }
-
+        if (!$row_info) return null;
         $row      = $row_info['row'];
         $currency = $normalized['pricing']['currency'] ?: 'EUR';
         $people   = $normalized['people'];
-
         $lines = [];
         $total = 0.0;
-
         if ($row_info['code'] === 'sur-devis') {
-            return [
-                'lines'        => [],
-                'total'        => 0,
-                'is_sur_devis' => true,
-            ];
+            return ['lines' => [], 'total' => 0, 'is_sur_devis' => true];
         }
-
         $line_defs = isset($row['exp_tarifs_lignes']) ? (array) $row['exp_tarifs_lignes'] : [];
-
         foreach ($line_defs as $def) {
             $type  = isset($def['type_ligne']) ? (string) $def['type_ligne'] : 'personnalise';
             $unit  = isset($def['tarif_valeur']) ? (float) $def['tarif_valeur'] : 0;
             $label = self::resolve_line_label($type, $def);
-
             $qty = 1;
-            if ($type === 'adulte') {
-                $qty = max(0, (int) ($people['adultes'] ?? 0));
-            } elseif ($type === 'enfant') {
-                $qty = max(0, (int) ($people['enfants'] ?? 0));
-            } elseif ($type === 'bebe') {
-                $qty = max(0, (int) ($people['bebes'] ?? 0));
-            } elseif (!empty($def['tarif_enable_qty'])) {
-                $qty = max(0, (int) ($def['tarif_qty_default'] ?? 0));
-            }
-
-            if (($type === 'adulte' || $type === 'enfant' || $type === 'bebe') && $qty <= 0) {
-                continue;
-            }
-
-            if ($qty <= 0) {
-                continue;
-            }
-
+            if ($type === 'adulte') $qty = max(0, (int) ($people['adultes'] ?? 0));
+            elseif ($type === 'enfant') $qty = max(0, (int) ($people['enfants'] ?? 0));
+            elseif ($type === 'bebe') $qty = max(0, (int) ($people['bebes'] ?? 0));
+            elseif (!empty($def['tarif_enable_qty'])) $qty = max(0, (int) ($def['tarif_qty_default'] ?? 0));
+            if (($type === 'adulte' || $type === 'enfant' || $type === 'bebe') && $qty <= 0) continue;
+            if ($qty <= 0) continue;
             $amount = $qty * $unit;
             $display_label = trim($qty . ' ' . $label);
-
             if ($type === 'bebe' && $unit <= 0) {
-                $lines[] = [
-                    'label'  => $display_label,
-                    'price'  => __('Gratuit', 'pc'),
-                    'amount' => 0,
-                ];
+                $lines[] = ['label' => $display_label, 'price' => __('Gratuit', 'pc'), 'amount' => 0];
                 continue;
             }
-
-            $lines[] = [
-                'label'  => $display_label,
-                'price'  => self::format_currency_display($amount, $currency),
-                'amount' => $amount,
-            ];
+            $lines[] = ['label' => $display_label, 'price' => self::format_currency_display($amount, $currency), 'amount' => $amount];
             $total += $amount;
         }
-
         $fixed_fees = isset($row['exp-frais-fixes']) ? (array) $row['exp-frais-fixes'] : [];
         foreach ($fixed_fees as $fee) {
             $fee_label = trim((string) ($fee['exp_description_frais_fixe'] ?? ''));
             $fee_amount = isset($fee['exp_tarif_frais_fixe']) ? (float) $fee['exp_tarif_frais_fixe'] : 0;
-            if ($fee_label === '' || $fee_amount == 0) {
-                continue;
-            }
-
-            $lines[] = [
-                'label'  => $fee_label,
-                'price'  => self::format_currency_display($fee_amount, $currency),
-                'amount' => $fee_amount,
-            ];
+            if ($fee_label === '' || $fee_amount == 0) continue;
+            $lines[] = ['label' => $fee_label, 'price' => self::format_currency_display($fee_amount, $currency), 'amount' => $fee_amount];
             $total += $fee_amount;
         }
-
-        return [
-            'lines' => $lines,
-            'total' => $total,
-        ];
+        return ['lines' => $lines, 'total' => $total];
     }
-
-    /**
-     * Indique si le tarif sélectionné correspond à une expérience personnalisée.
-     */
     public static function is_custom_experience_type($item_id, $identifier)
     {
         $row_info = self::find_experience_pricing_row((int) $item_id, (string) $identifier);
-        if (!$row_info) {
-            return false;
-        }
-
+        if (!$row_info) return false;
         $code = isset($row_info['code']) ? (string) $row_info['code'] : '';
         $normalized = sanitize_title($code);
-
         return in_array($normalized, ['custom', 'personnalise', 'personnalisee'], true);
     }
-
     protected static function find_experience_pricing_row($item_id, $identifier)
     {
-        if (!$item_id || !function_exists('get_field')) {
-            return null;
-        }
-
+        if (!$item_id || !function_exists('get_field')) return null;
         $rows = get_field('exp_types_de_tarifs', $item_id);
-        if (empty($rows)) {
-            return null;
-        }
-
+        if (empty($rows)) return null;
         $identifier      = (string) $identifier;
         $identifier_slug = sanitize_title($identifier);
-
         if ($identifier === '' && count($rows) === 1) {
             $first_row   = $rows[0];
             $first_code  = isset($first_row['exp_type']) ? (string) $first_row['exp_type'] : '';
             $first_key   = $first_code !== '' ? $first_code . '_0' : 'tarif_0';
             $first_label = self::resolve_experience_type_label($first_row);
-
-            return [
-                'row'  => $first_row,
-                'key'  => $first_key,
-                'code' => $first_code,
-                'label' => $first_label,
-            ];
+            return ['row' => $first_row, 'key' => $first_key, 'code' => $first_code, 'label' => $first_label];
         }
-
         foreach ($rows as $index => $row) {
             $code = isset($row['exp_type']) ? (string) $row['exp_type'] : '';
             $key  = $code !== '' ? $code . '_' . $index : 'tarif_' . $index;
             $label = self::resolve_experience_type_label($row);
-
-            $candidates = array_filter([
-                $key,
-                $code,
-                $label,
-                sanitize_title($key),
-                sanitize_title($code),
-                sanitize_title($label),
-            ]);
-
+            $candidates = array_filter([$key, $code, $label, sanitize_title($key), sanitize_title($code), sanitize_title($label)]);
             foreach ($candidates as $candidate) {
-                if ($candidate === '') {
-                    continue;
-                }
-                if ($candidate === $identifier || sanitize_title($candidate) === $identifier_slug) {
-                    return [
-                        'row'  => $row,
-                        'key'  => $key,
-                        'code' => $code,
-                        'label' => $label,
-                    ];
-                }
+                if ($candidate === '') continue;
+                if ($candidate === $identifier || sanitize_title($candidate) === $identifier_slug) return ['row' => $row, 'key' => $key, 'code' => $code, 'label' => $label];
             }
         }
-
         return null;
     }
-
     protected static function resolve_experience_type_label(array $row)
     {
-        if (function_exists('pc_exp_type_label')) {
-            return pc_exp_type_label($row, self::get_experience_type_choices());
-        }
-
+        if (function_exists('pc_exp_type_label')) return pc_exp_type_label($row, self::get_experience_type_choices());
         $type_value   = isset($row['exp_type']) ? (string) $row['exp_type'] : '';
         $custom_label = isset($row['exp_type_custom']) ? trim((string) $row['exp_type_custom']) : '';
-
-        if ($type_value === 'custom' && $custom_label !== '') {
-            return $custom_label;
-        }
-
+        if ($type_value === 'custom' && $custom_label !== '') return $custom_label;
         $choices = self::get_experience_type_choices();
-        if ($type_value !== '' && isset($choices[$type_value])) {
-            return (string) $choices[$type_value];
-        }
-
+        if ($type_value !== '' && isset($choices[$type_value])) return (string) $choices[$type_value];
         return $type_value !== '' ? ucwords(str_replace(['_', '-'], ' ', $type_value)) : __('Type', 'pc');
     }
-
     protected static function get_experience_type_choices()
     {
-        if (self::$experience_type_choices !== null) {
-            return self::$experience_type_choices;
-        }
-
+        if (self::$experience_type_choices !== null) return self::$experience_type_choices;
         $choices = [];
-
         if (function_exists('get_field_object')) {
             $field_object = get_field_object('exp_types_de_tarifs');
             if (!empty($field_object['sub_fields'])) {
@@ -953,16 +759,12 @@ class PCR_Booking_Engine
                 }
             }
         }
-
         self::$experience_type_choices = $choices;
         return $choices;
     }
-
     protected static function resolve_line_label($type, array $def)
     {
-        if ($type === 'adulte') {
-            return __('Adulte', 'pc');
-        }
+        if ($type === 'adulte') return __('Adulte', 'pc');
         if ($type === 'enfant') {
             $precision = isset($def['precision_age_enfant']) ? trim((string) $def['precision_age_enfant']) : '';
             return $precision ? sprintf(__('Enfant (%s)', 'pc'), $precision) : __('Enfant', 'pc');
@@ -971,7 +773,6 @@ class PCR_Booking_Engine
             $precision = isset($def['precision_age_bebe']) ? trim((string) $def['precision_age_bebe']) : '';
             return $precision ? sprintf(__('Bébé (%s)', 'pc'), $precision) : __('Bébé', 'pc');
         }
-
         $custom = isset($def['tarif_nom_perso']) ? trim((string) $def['tarif_nom_perso']) : '';
         return $custom !== '' ? $custom : __('Forfait', 'pc');
     }

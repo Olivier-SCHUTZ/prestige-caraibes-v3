@@ -104,14 +104,11 @@ class PCR_Payment
             $wpdb->insert($table_pay, $row);
         };
 
-        $new_resa_status   = $resa['statut_reservation'] ?? 'en_attente_traitement';
-        $new_payment_state = $resa['statut_paiement'] ?? 'non_paye';
+        // Note: On ne définit plus $new_resa_status ici, c'est le Booking Engine qui gère.
+        $new_payment_state = 'non_paye'; // Par défaut
 
         // 3) Logique selon le mode de paiement
         if ($mode_pay === 'sur_devis') {
-
-            // Sur devis : aucune ligne de paiement pour l'instant
-            $new_resa_status   = 'en_attente_validation';
             $new_payment_state = 'non_demande';
         } elseif ($mode_pay === 'total_a_la_reservation') {
 
@@ -122,7 +119,6 @@ class PCR_Payment
                 'statut'        => 'en_attente',
             ]);
 
-            $new_resa_status   = 'en_attente_paiement';
             $new_payment_state = 'en_attente_paiement';
         } elseif ($mode_pay === 'acompte_plus_solde') {
 
@@ -165,7 +161,6 @@ class PCR_Payment
                     'statut'        => 'en_attente',
                 ]);
 
-                $new_resa_status   = 'en_attente_paiement';
                 $new_payment_state = 'en_attente_paiement';
             } else {
 
@@ -199,7 +194,6 @@ class PCR_Payment
                     ]);
                 }
 
-                $new_resa_status   = 'en_attente_paiement';
                 $new_payment_state = 'en_attente_paiement';
             }
         } elseif ($mode_pay === 'sur_place') {
@@ -211,23 +205,29 @@ class PCR_Payment
                 'statut'        => 'en_attente',
             ]);
 
-            $new_resa_status   = 'en_attente';
             $new_payment_state = 'sur_place';
         }
 
-        // 4) Mise à jour des statuts dans la réservation
+        // 4) Mise à jour des statuts
 
-        // [FIX] Si la réservation est déjà "reservee" (ex: réservation directe/manuelle),
-        // le moteur de paiement ne doit PAS la repasser en "en_attente_paiement".
-        if (!empty($resa['statut_reservation']) && $resa['statut_reservation'] === 'reservee') {
-            $new_resa_status = 'reservee';
+        // [FIX] Si c'est un devis/brouillon, on force le statut paiement à "sur_devis"
+        $is_draft = (isset($resa['type_flux']) && $resa['type_flux'] === 'devis')
+            || (isset($resa['statut_reservation']) && $resa['statut_reservation'] === 'brouillon');
+
+        if ($is_draft) {
+            $new_payment_state = 'sur_devis';
         }
+
+        // [CASTRATION DU COMPTABLE]
+        // On ne touche JAMAIS au statut_reservation ici.
+        // On conserve celui défini par le Booking Engine ou existant en base.
+        $current_resa_status = $resa['statut_reservation'] ?? 'en_attente_traitement';
 
         $wpdb->update(
             $table_res,
             [
-                'statut_reservation' => $new_resa_status,
-                'statut_paiement'    => $new_payment_state,
+                'statut_reservation' => $current_resa_status, // On préserve le statut
+                'statut_paiement'    => $new_payment_state,     // On met à jour le paiement uniquement
                 'date_maj'           => $now,
             ],
             ['id' => $resa_id]
@@ -236,9 +236,6 @@ class PCR_Payment
 
     /**
      * Retourne tous les paiements liés à une réservation.
-     *
-     * @param int $reservation_id
-     * @return array Liste d'objets stdClass
      */
     public static function get_for_reservation($reservation_id)
     {
@@ -258,9 +255,6 @@ class PCR_Payment
 
     /**
      * Supprime toutes les lignes de paiement pour une réservation donnée.
-     *
-     * @param int $reservation_id
-     * @return void
      */
     public static function delete_for_reservation($reservation_id)
     {
@@ -277,10 +271,6 @@ class PCR_Payment
 
     /**
      * Supprime puis régénère les paiements liés à une réservation.
-     *
-     * @param int   $reservation_id
-     * @param array $args
-     * @return void
      */
     public static function regenerate_for_reservation($reservation_id, array $args = [])
     {
@@ -290,6 +280,7 @@ class PCR_Payment
         }
 
         $preserve_statuses = !empty($args['preserve_statuses']);
+        // Récupération des statuts d'origine si on veut les préserver
         $original_resa_status = isset($args['statut_reservation']) ? $args['statut_reservation'] : '';
         $original_pay_status  = isset($args['statut_paiement']) ? $args['statut_paiement'] : '';
 
@@ -302,6 +293,8 @@ class PCR_Payment
             $updates = [
                 'date_maj' => current_time('mysql'),
             ];
+            // On ne rétablit que si nécessaire, mais normalement generate_for_reservation ne doit plus rien casser.
+            // On laisse cette sécurité au cas où.
             if ($original_resa_status) {
                 $updates['statut_reservation'] = $original_resa_status;
             }

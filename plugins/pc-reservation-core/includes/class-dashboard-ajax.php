@@ -23,6 +23,8 @@ class PCR_Dashboard_Ajax
         add_action('wp_ajax_pc_calendar_create_block', [__CLASS__, 'ajax_calendar_create_block']);
         add_action('wp_ajax_pc_calendar_delete_block', [__CLASS__, 'ajax_calendar_delete_block']);
         add_action('wp_ajax_pc_cancel_reservation', [__CLASS__, 'ajax_cancel_reservation']);
+
+        // AJOUT : Nouvelle action pour confirmer une réservation
         add_action('wp_ajax_pc_confirm_reservation', [__CLASS__, 'ajax_confirm_reservation']);
     }
 
@@ -490,16 +492,17 @@ class PCR_Dashboard_Ajax
             wp_send_json_error(['message' => 'Moteur indisponible.'], 500);
         }
 
-        // On force le mode "directe" et le flux "reservation" pour que le moteur
-        // calcule le statut "reservee" (cf. PCR_Booking_Engine::determine_statuses)
+        // Action simple du "Chef de Gare" : Je confirme.
+        // On passe en "directe" / "reservation" pour que le moteur applique "reservee".
         $payload = [
             'context' => [
                 'type_flux'        => 'reservation',
                 'mode_reservation' => 'directe',
-                'origine'          => 'manuelle', // Marqueur pour dire que c'est validé par l'admin
+                'origine'          => 'manuelle',
             ]
         ];
 
+        // Hydratation via PCR_Booking_Engine::update pour ne pas perdre les données
         $result = PCR_Booking_Engine::update($reservation_id, $payload);
 
         if (!$result->success) {
@@ -659,7 +662,7 @@ class PCR_Dashboard_Ajax
                 'block_id'       => (isset($event['id']) && (($event['type'] ?? '') === 'blocking')) ? (int) $event['id'] : 0,
                 'type'           => $event['type'] ?? '',
                 'status'         => $event['status'] ?? '',
-                // [FIX] On laisse passer les infos de paiement et de texte
+                // [FIX] On laisse passer les infos de paiement et de texte pour le calendrier
                 'payment_status' => $event['payment_status'] ?? '',
                 'label'          => $event['label'] ?? '',
             ];
@@ -710,6 +713,8 @@ class PCR_Dashboard_Ajax
 
         $ids_placeholder = implode(',', array_fill(0, count($logement_ids), '%d'));
         $table = $wpdb->prefix . 'pc_reservations';
+
+        // [FIX] Récupération nom + paiement pour affichage
         $sql = "
             SELECT id, item_id, date_arrivee, date_depart, statut_reservation, statut_paiement, nom, prenom
             FROM {$table}

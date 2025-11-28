@@ -12,31 +12,25 @@ if (! defined('ABSPATH')) {
 function pc_resa_format_status_label($status)
 {
     $map = [
-        // Statuts réservation
+        // --- Statuts de Réservation ---
         'brouillon'             => 'Brouillon',
-        'en_attente_traitement' => 'En attente de traitement',
+        'en_attente_traitement' => 'En attente de traitement', // Demande entrante
         'devis_envoye'          => 'Devis envoyé',
-        'en_attente_validation' => 'En attente de validation',
-        'en_attente_paiement'   => 'En attente de paiement',
-        'reservee'              => 'Réservée',
-        'annule'                => 'Annulé',
+        'reservee'              => 'Réservée', // Le seul qui bloque le calendrier
+        'annule'                => 'Annulée',
         'annulee'               => 'Annulée',
 
-        // Compat anciens codes
-        'en_attente'            => 'En attente de paiement',
-        'non_demande'           => 'Non payé',
-
-        // Statuts paiement global
+        // --- Statuts de Paiement ---
+        'sur_devis'             => 'Sur devis',
+        'en_attente_paiement'   => 'En attente de paiement',
         'non_paye'              => 'Non payé',
         'partiellement_paye'    => 'Partiellement payé',
         'paye'                  => 'Payé',
-        'sur_devis'             => 'Sur devis',
         'sur_place'             => 'À régler sur place',
 
-        // Statuts lignes de paiement
-        'acompte_paye'          => 'Acompte payé',
-        'solde_paye'            => 'Solde payé',
-        'en_retard'             => 'En retard',
+        // Lignes de paiement spécifiques
+        'acompte_paye'          => 'Acompte réglé',
+        'solde_paye'            => 'Solde réglé',
     ];
 
     $status = (string) $status;
