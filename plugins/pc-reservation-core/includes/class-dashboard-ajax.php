@@ -562,14 +562,29 @@ class PCR_Dashboard_Ajax
      */
     protected static function get_calendar_logements()
     {
-        $posts = get_posts([
+        $args = [
             'post_type'      => ['logement', 'villa', 'appartement'],
             'post_status'    => ['publish', 'pending'],
             'posts_per_page' => -1,
             'orderby'        => 'title',
             'order'          => 'ASC',
             'fields'         => 'ids',
-        ]);
+            // FILTRE : On exclut ceux qui ont 'mode_reservation' == 'log_channel'
+            'meta_query'     => [
+                'relation' => 'OR',
+                [
+                    'key'     => 'mode_reservation',
+                    'compare' => 'NOT EXISTS', // Garde ceux qui n'ont pas encore le champ
+                ],
+                [
+                    'key'     => 'mode_reservation',
+                    'value'   => 'log_channel',
+                    'compare' => '!=', // Garde ceux qui ont le champ mais PAS à 'log_channel'
+                ],
+            ],
+        ];
+
+        $posts = get_posts($args);
 
         if (empty($posts)) {
             return [];

@@ -1875,13 +1875,33 @@ if (!function_exists('pc_handle_logement_booking_request')) {
       return;
     }
 
+    // ===== INTELLIGENCE AJOUTÉE : Détection du mode (Direct vs Demande) =====
+    $mode_reservation = 'demande'; // Par défaut
+
+    if (function_exists('get_field')) {
+      $setting = get_field('mode_reservation', $logement_id);
+
+      // Gestion robuste du format de retour ACF
+      if (is_array($setting)) {
+        $setting = $setting['value'] ?? ($setting[0] ?? '');
+      }
+      $setting = (string) $setting;
+
+      if ($setting === 'log_directe' || $setting === 'log_direct') {
+        $mode_reservation = 'directe';
+      } elseif ($setting === 'log_channel') {
+        // Optionnel : Bloquer ou traiter comme demande
+        $mode_reservation = 'demande';
+      }
+    }
+
     // ===== NOYAU RÉSERVATION : enregistrement dans wp_pc_reservations (si plugin actif) =====
     if (class_exists('PCR_Reservation')) {
       $resa_data = [
         // Identification
         'type'             => 'location',
         'item_id'          => $logement_id,
-        'mode_reservation' => 'demande',
+        'mode_reservation' => $mode_reservation,
         'origine'          => 'site',
 
         // Dates (pour l’instant probablement vides tant que le JS ne les envoie pas)
@@ -1906,8 +1926,8 @@ if (!function_exists('pc_handle_logement_booking_request')) {
         'detail_tarif'     => isset($_POST['lines_json']) ? wp_kses_post($_POST['lines_json']) : null,
 
         // Statuts initiaux
-        'statut_reservation' => 'en_attente',
-        'statut_paiement'    => 'non_demande',
+        'statut_reservation' => ($mode_reservation === 'directe') ? 'reservee' : 'en_attente_traitement',
+        'statut_paiement'    => ($mode_reservation === 'directe') ? 'en_attente_paiement' : 'non_paye',
 
         // Système
         'date_creation'    => current_time('mysql'),

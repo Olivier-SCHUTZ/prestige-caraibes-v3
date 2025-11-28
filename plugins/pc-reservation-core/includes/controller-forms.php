@@ -4,83 +4,105 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Contrôleur des formulaires Elementor
- * - Logements (fiche logement)
- * - Expériences (fiche expérience)
- *
- * Il suppose :
- *  - que les JS ajoutent bien les champs (total, lines_json, etc.)
- *  - que PCR_Reservation::create() est dispo
+ * Contrôleur des formulaires Elementor (Version Finale & Propre)
+ * Gère les formulaires natifs Elementor pour Logements et Expériences.
  */
 class PCR_FormController
 {
     public static function init()
     {
-        // On ne fait rien si Elementor Pro n'est pas là
-        if (!did_action('elementor_pro/init')) {
-            return;
-        }
-
-        // Accroche sur la création d'un nouveau "record" Elementor
+        // Pas de condition stricte ici : on écoute simplement.
+        // Si Elementor n'est pas là, l'action ne se déclenchera jamais, donc aucun risque d'erreur.
         add_action('elementor_pro/forms/new_record', [__CLASS__, 'handle_elementor_form'], 20, 2);
     }
 
     /**
-     * Point d'entrée : chaque envoi de formulaire Elementor arrive ici
+     * Point d'entrée
      */
     public static function handle_elementor_form($record, $handler)
     {
-        // Sécurité de base
         if (empty($_POST)) {
             return;
         }
 
-        $raw  = $record->get_formatted_data(); // Données du form Elementor (labels)
-        $post = $_POST;                        // Données brutes + ajouts JS
+        $raw  = $record->get_formatted_data();
+        $post = $_POST;
 
-        // Détection LOGEMENT / EXPERIENCE
+        // Détection intelligente du type de formulaire
         $is_logement   = isset($post['arrival']) && isset($post['departure']);
         $is_experience = isset($post['devis_type']) || isset($post['lines_json']);
 
-        if (!$is_logement && !$is_experience) {
-            // On ne touche pas aux autres formulaires du site
-            return;
-        }
-
         if ($is_logement) {
-            self::handle_logement($raw, $post);
-        }
-
-        if ($is_experience) {
+            self::handle_logement($record, $raw, $post);
+        } elseif ($is_experience) {
             self::handle_experience($raw, $post);
         }
     }
 
     /**
-     * Traitement des demandes LOGEMENT
+     * Traitement LOGEMENT
      */
-    private static function handle_logement(array $raw, array $post)
+    private static function handle_logement($record, array $raw, array $post)
     {
         if (!class_exists('PCR_Booking_Engine')) {
             return;
         }
 
-        $item_id = get_the_ID() ?: 0;
+        // 1. Récupération ROBUSTE de l'ID (Priorité à la page affichée)
+        $item_id = 0;
+
+        // A. Via le champ caché queried_id (souvent présent dans les popups)
+        if (!empty($post['queried_id'])) {
+            $item_id = (int) $post['queried_id'];
+        }
+        // B. Via le champ post_id
+        elseif (!empty($post['post_id'])) {
+            $item_id = (int) $post['post_id'];
+        }
+        // C. Via l'objet Elementor (ID du template ou de la page)
+        elseif (method_exists($record, 'get_main_post_id')) {
+            $item_id = (int) $record->get_main_post_id();
+        }
+        // D. Fallback ultime
+        else {
+            $item_id = get_the_ID() ?: 0;
+        }
 
         $pricing_lines = self::prepare_pricing_lines($post);
         $type_flux  = (!empty($post['type_flux']) && $post['type_flux'] === 'devis') ? 'devis' : 'reservation';
+
+        // 2. Détection du mode via ACF
+        $mode_reservation = 'demande'; // Par défaut
+
+        if ($item_id > 0 && function_exists('get_field')) {
+            $setting = get_field('mode_reservation', $item_id);
+
+            // Gestion format tableau/string
+            if (is_array($setting)) {
+                $setting = $setting['value'] ?? ($setting[0] ?? '');
+            }
+            $setting = (string) $setting;
+
+            if ($setting === 'log_directe' || $setting === 'log_direct') {
+                $mode_reservation = 'directe';
+            } elseif ($setting === 'log_demande') {
+                $mode_reservation = 'demande';
+            } elseif ($setting === 'log_channel') {
+                $mode_reservation = 'demande';
+            }
+        }
 
         $payload = [
             'context' => [
                 'type'             => 'location',
                 'origine'          => 'site',
-                'mode_reservation' => 'demande',
+                'mode_reservation' => $mode_reservation,
                 'type_flux'        => $type_flux,
                 'source'           => 'form_elementor',
             ],
             'item' => [
                 'item_id'     => $item_id,
-                'date_arrivee'=> sanitize_text_field($post['arrival'] ?? ''),
+                'date_arrivee' => sanitize_text_field($post['arrival'] ?? ''),
                 'date_depart' => sanitize_text_field($post['departure'] ?? ''),
             ],
             'people' => [
@@ -111,7 +133,7 @@ class PCR_FormController
     }
 
     /**
-     * Traitement des demandes EXPERIENCE
+     * Traitement EXPERIENCE
      */
     private static function handle_experience(array $raw, array $post)
     {
@@ -119,7 +141,12 @@ class PCR_FormController
             return;
         }
 
-        $item_id = get_the_ID() ?: 0;
+        $item_id = 0;
+        if (!empty($post['post_id'])) {
+            $item_id = (int) $post['post_id'];
+        } else {
+            $item_id = get_the_ID() ?: 0;
+        }
 
         $pricing_lines = self::prepare_pricing_lines($post);
         $type_flux  = (!empty($post['type_flux']) && $post['type_flux'] === 'devis') ? 'devis' : 'reservation';
@@ -164,9 +191,6 @@ class PCR_FormController
         PCR_Booking_Engine::create($payload);
     }
 
-    /**
-     * Prépare les lignes de devis envoyées par le formulaire (JSON -> array).
-     */
     private static function prepare_pricing_lines(array $post)
     {
         $raw_json      = isset($post['lines_json']) ? wp_unslash($post['lines_json']) : '';
@@ -175,11 +199,9 @@ class PCR_FormController
 
         if ($raw_json !== '') {
             $decoded = json_decode($raw_json, true);
-
             if (!is_array($decoded) && $sanitized_raw !== '' && $sanitized_raw !== $raw_json) {
                 $decoded = json_decode($sanitized_raw, true);
             }
-
             if (is_array($decoded)) {
                 foreach ($decoded as $line) {
                     $normalized_line = self::normalize_pricing_line($line);
@@ -203,39 +225,30 @@ class PCR_FormController
         ];
     }
 
-    /**
-     * Sécurise une ligne de pricing (label / montants).
-     */
     private static function normalize_pricing_line($line)
     {
         if (!is_array($line)) {
             return [];
         }
-
         $normalized = [];
-
         foreach ($line as $key => $value) {
             if (is_string($value)) {
                 $normalized[$key] = wp_kses_post($value);
                 continue;
             }
-
             if (is_int($value) || is_float($value)) {
                 $normalized[$key] = $value;
                 continue;
             }
-
             if (is_bool($value)) {
                 $normalized[$key] = $value;
                 continue;
             }
-
             if (is_numeric($value)) {
                 $normalized[$key] = (float) $value;
                 continue;
             }
         }
-
         return $normalized;
     }
 }

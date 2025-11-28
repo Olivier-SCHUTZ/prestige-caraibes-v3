@@ -668,6 +668,19 @@ function pc_resa_dashboard_shortcode($atts)
         'orderby'        => 'title',
         'order'          => 'ASC',
         'fields'         => 'ids',
+        // FILTRE : On masque les logements gérés par channel externe
+        'meta_query'     => [
+            'relation' => 'OR',
+            [
+                'key'     => 'mode_reservation',
+                'compare' => 'NOT EXISTS',
+            ],
+            [
+                'key'     => 'mode_reservation',
+                'value'   => 'log_channel',
+                'compare' => '!=',
+            ],
+        ],
     ]);
 
     if (! empty($manual_logements)) {
@@ -832,19 +845,7 @@ function pc_resa_dashboard_shortcode($atts)
                         $prefill_json    = $prefill_payload ? wp_json_encode($prefill_payload) : '';
                         $can_use_prefill = ! empty($prefill_json) && $resa->type === 'experience';
 
-                        $primary_action_slug  = 'default';
-                        $primary_action_label = 'Action principale';
-                        if (! empty($resa->type_flux) && $resa->type_flux === 'devis') {
-                            $primary_action_slug  = 'send_quote';
-                            $primary_action_label = 'Envoyer le devis au client';
-                        } elseif ($statut_resa === 'en_attente_paiement') {
-                            $primary_action_slug  = 'record_payment';
-                            $primary_action_label = 'Enregistrer un paiement';
-                        } elseif ($statut_resa === 'en_attente_traitement') {
-                            $primary_action_slug  = 'confirm_booking';
-                            $primary_action_label = 'Confirmer la réservation';
-                        }
-
+                        // On garde juste les attributs de données pour le JS
                         $reservation_data_attrs = sprintf(
                             ' data-reservation-id="%1$s" data-reservation-type="%2$s" data-reservation-status="%3$s" data-reservation-payment-status="%4$s" data-type-flux="%5$s"',
                             esc_attr($resa->id),
@@ -978,11 +979,22 @@ function pc_resa_dashboard_shortcode($atts)
                                             </div>
                                         </div>
                                         <div class="pc-resa-header-actions" <?php echo $reservation_data_attrs; ?>>
+
                                             <button type="button"
-                                                class="pc-btn pc-btn--primary pc-resa-action-primary"
-                                                data-primary-action="<?php echo esc_attr($primary_action_slug); ?>" <?php echo $reservation_data_attrs; ?>>
-                                                <?php echo esc_html($primary_action_label); ?>
+                                                class="pc-btn pc-btn--primary pc-resa-action pc-resa-edit-quote"
+                                                data-action="edit_quote"
+                                                data-prefill="<?php echo esc_attr($prefill_json); ?>"
+                                                <?php echo $reservation_data_attrs; ?>>
+                                                Modifier la réservation
                                             </button>
+
+                                            <button type="button"
+                                                class="pc-btn pc-btn--secondary pc-resa-action pc-resa-action-cancel-booking"
+                                                data-action="cancel_booking"
+                                                <?php echo $reservation_data_attrs; ?>>
+                                                Annuler la réservation
+                                            </button>
+
                                             <div class="pc-resa-actions-more">
                                                 <button type="button"
                                                     class="pc-btn pc-btn--line pc-resa-actions-toggle"
@@ -993,61 +1005,32 @@ function pc_resa_dashboard_shortcode($atts)
                                                 <ul class="pc-resa-actions-menu" role="menu">
                                                     <li>
                                                         <button type="button"
-                                                            class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-edit-quote pc-resa-edit-quote"
-                                                            role="menuitem"
-                                                            data-action="edit_quote" <?php echo $reservation_data_attrs; ?>
-                                                            data-prefill="<?php echo esc_attr($prefill_json); ?>">
-                                                            Modifier le devis
-                                                        </button>
-                                                    </li>
-                                                    <li>
-                                                        <button type="button"
                                                             class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-send-quote"
                                                             role="menuitem"
-                                                            data-action="send_quote" <?php echo $reservation_data_attrs; ?>
-                                                            data-prefill="<?php echo esc_attr($prefill_json); ?>">
+                                                            data-action="send_quote"
+                                                            data-prefill="<?php echo esc_attr($prefill_json); ?>"
+                                                            <?php echo $reservation_data_attrs; ?>>
                                                             Envoyer le devis
                                                         </button>
                                                     </li>
-                                                    <li>
-                                                        <button type="button"
-                                                            class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-resend-quote pc-resa-resend-quote"
-                                                            role="menuitem"
-                                                            data-action="resend_quote" <?php echo $reservation_data_attrs; ?>
-                                                            data-prefill="<?php echo esc_attr($prefill_json); ?>">
-                                                            Renvoyer le devis
-                                                        </button>
-                                                    </li>
-                                                    <li>
-                                                        <button type="button"
-                                                            class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-confirm-booking"
-                                                            role="menuitem"
-                                                            data-action="confirm_booking" <?php echo $reservation_data_attrs; ?>>
-                                                            Confirmer la réservation
-                                                        </button>
-                                                    </li>
-                                                    <li>
-                                                        <button type="button"
-                                                            class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-cancel-booking"
-                                                            role="menuitem"
-                                                            data-action="cancel_booking" <?php echo $reservation_data_attrs; ?>>
-                                                            Annuler la réservation
-                                                        </button>
-                                                    </li>
+
                                                     <li>
                                                         <button type="button"
                                                             class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-send-payment-link"
                                                             role="menuitem"
-                                                            data-action="send_payment_link" <?php echo $reservation_data_attrs; ?>>
+                                                            data-action="send_payment_link"
+                                                            <?php echo $reservation_data_attrs; ?>>
                                                             Envoyer un lien de paiement
                                                         </button>
                                                     </li>
+
                                                     <li>
                                                         <button type="button"
                                                             class="pc-resa-actions-menu__link pc-resa-action pc-resa-action-add-message"
                                                             role="menuitem"
-                                                            data-action="add_message" <?php echo $reservation_data_attrs; ?>>
-                                                            Ajouter un message
+                                                            data-action="add_message"
+                                                            <?php echo $reservation_data_attrs; ?>>
+                                                            Envoyer un message
                                                         </button>
                                                     </li>
                                                 </ul>
