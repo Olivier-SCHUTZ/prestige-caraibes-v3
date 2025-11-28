@@ -1363,12 +1363,18 @@ function pc_resa_dashboard_shortcode($atts)
                                                                     <div class="pc-resa-payment-actions">
                                                                         <?php if ($pay_status_raw === 'en_attente') : ?>
                                                                             <button type="button"
+                                                                                class="pc-resa-payment-action pc-resa-payment-generate-link"
+                                                                                style="color:#4f46e5; font-weight:600; margin-right:10px;"
+                                                                                data-payment-id="<?php echo esc_attr($pay_id); ?>">
+                                                                                🔗 Générer lien
+                                                                            </button>
+
+                                                                            <button type="button"
                                                                                 class="pc-resa-payment-action pc-resa-payment-mark-paid"
-                                                                                data-action="mark_paid" <?php echo $reservation_data_attrs; ?>
-                                                                                data-payment-id="<?php echo esc_attr($pay_id); ?>"
-                                                                                data-payment-type="<?php echo esc_attr($pay_type); ?>"
-                                                                                data-payment-status="<?php echo esc_attr($pay_status_raw); ?>">
-                                                                                Marquer comme payé
+                                                                                style="font-size:0.8em; color:#64748b;"
+                                                                                data-action="mark_paid"
+                                                                                data-payment-id="<?php echo esc_attr($pay_id); ?>">
+                                                                                (Marquer payé manuel)
                                                                             </button>
                                                                         <?php elseif ($pay_status_raw === 'paye') : ?>
                                                                             <button type="button"
@@ -4550,6 +4556,61 @@ function pc_resa_dashboard_shortcode($atts)
             };
 
             attachQuoteButtons();
+            // --- DEBUT DU NOUVEAU CODE (Bouton Lien Stripe) ---
+            document.addEventListener('click', function(e) {
+                // On vérifie si l'élément cliqué (ou son parent) a la classe du bouton
+                const btn = e.target.closest('.pc-resa-payment-generate-link');
+
+                if (btn) {
+                    e.preventDefault();
+                    const paymentId = btn.getAttribute('data-payment-id');
+                    const originalText = btn.textContent;
+
+                    if (btn.disabled) return;
+
+                    btn.textContent = '⏳ Création...';
+                    btn.disabled = true;
+
+                    const formData = new URLSearchParams();
+                    formData.append('action', 'pc_stripe_get_link');
+                    formData.append('nonce', pcResaManualNonce);
+                    formData.append('payment_id', paymentId);
+
+                    fetch(pcResaAjaxUrl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.data.url) {
+                                // Copie dans le presse-papier
+                                navigator.clipboard.writeText(data.data.url).then(() => {
+                                    // Feedback visuel uniquement sur le bouton (plus pro)
+                                    btn.textContent = '✅ Lien copié !';
+                                    btn.style.color = '#16a34a'; // Vert
+
+                                    // On remet le bouton normal après 3 secondes
+                                    setTimeout(() => {
+                                        btn.textContent = '🔗 Générer nouveau lien';
+                                        btn.style.color = '#4f46e5'; // Retour couleur normale
+                                        btn.disabled = false;
+                                    }, 3000);
+                                });
+                                // PLUS D'ALERT ICI
+                            } else {
+                                alert('Erreur : ' + (data.data && data.data.message ? data.data.message : 'Impossible de créer le lien.'));
+                                btn.textContent = originalText;
+                                btn.disabled = false;
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Erreur technique.');
+                            btn.textContent = originalText;
+                            btn.disabled = false;
+                        });
+                }
+            });
         });
     </script>
 

@@ -25,6 +25,9 @@ require_once PC_RES_CORE_PATH . 'includes/class-dashboard-ajax.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-calendar.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-dashboard.php';
 require_once PC_RES_CORE_PATH . 'includes/class-ical-export.php';
+require_once PC_RES_CORE_PATH . 'includes/class-settings.php';
+require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-manager.php';
+require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-ajax.php';
 // controller-forms sera branché plus tard quand tu seras prêt
 if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
     require_once PC_RES_CORE_PATH . 'includes/controller-forms.php';
@@ -59,6 +62,16 @@ add_action('plugins_loaded', function () {
     // Initialisation de l'export iCal
     if (class_exists('PCR_Ical_Export')) {
         PCR_Ical_Export::init();
+    }
+
+    // Initialisation des réglages
+    if (class_exists('PCR_Settings')) {
+        PCR_Settings::init();
+    }
+
+    // Initialisation AJAX Stripe
+    if (class_exists('PCR_Stripe_Ajax')) {
+        PCR_Stripe_Ajax::init();
     }
 });
 
