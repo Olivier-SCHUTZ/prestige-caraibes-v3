@@ -24,6 +24,7 @@ require_once PC_RES_CORE_PATH . 'includes/class-booking-engine.php';
 require_once PC_RES_CORE_PATH . 'includes/class-dashboard-ajax.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-calendar.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-dashboard.php';
+require_once PC_RES_CORE_PATH . 'includes/class-ical-export.php';
 // controller-forms sera branché plus tard quand tu seras prêt
 if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
     require_once PC_RES_CORE_PATH . 'includes/controller-forms.php';
@@ -53,6 +54,11 @@ add_action('plugins_loaded', function () {
 
     if (class_exists('PCR_Dashboard_Ajax')) {
         PCR_Dashboard_Ajax::init();
+    }
+
+    // Initialisation de l'export iCal
+    if (class_exists('PCR_Ical_Export')) {
+        PCR_Ical_Export::init();
     }
 });
 

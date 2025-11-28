@@ -102,7 +102,17 @@ function pc_render_final_init_script()
           var icalInput = document.querySelector('.pc-cal-input');
           if (icalInput) {
             var icalContainer = icalInput.closest('.pc-cal');
-            var disabledRanges = JSON.parse(icalContainer.querySelector('.pc-ical-disabled-json').textContent || '[]');
+            var rawRanges = JSON.parse(icalContainer.querySelector('.pc-ical-disabled-json').textContent || '[]');
+
+            // CORRECTION : Conversion du format [début, fin] vers {from: début, to: fin}
+            var disabledRanges = rawRanges.map(function(r) {
+              // Si c'est déjà un objet (héritage), on le garde, sinon on convertit le tableau
+              return (Array.isArray(r) && r.length >= 2) ? {
+                from: r[0],
+                to: r[1]
+              } : r;
+            });
+
             flatpickr(icalInput, {
               inline: true,
               mode: 'range',
@@ -547,30 +557,25 @@ add_shortcode('pc_ical_calendar', function ($atts = []) {
     'min'        => 'today',
     'class'      => '',
   ], $atts, 'pc_ical_calendar');
+
   $post = get_post();
   if (!$post) return '';
+
   if (!$a['url'] && function_exists('get_field')) {
     $a['url'] = (string) get_field('ical_url', $post->ID);
   }
+
+  // 1. SÉCURITÉ PROPRIÉTAIRE : Si pas d'iCal externe, on cache le calendrier
   if (!$a['url']) {
     $message = 'Faites votre demande, nous vous renseignerons sur les disponibilités de ce logement.';
-    // On ajoute une classe 'pc-cal-missing' pour le style
     return '<div class="pc-cal-missing">' . esc_html($message) . '</div>';
   }
-  $cache_key = 'pc_ics_' . md5($a['url']);
-  $ics = get_transient($cache_key);
-  if ($ics === false) {
-    $res = wp_remote_get($a['url'], ['timeout' => 10]);
-    if (is_wp_error($res))  return '';
-    $code = wp_remote_retrieve_response_code($res);
-    if ($code != 200)       return '';
-    $ics = wp_remote_retrieve_body($res);
-    set_transient($cache_key, $ics, 2 * HOUR_IN_SECONDS);
-  }
-  if (!function_exists('pc_parse_ics_ranges')) return '';
-  $ranges = pc_parse_ics_ranges($ics);
+
+  // 2. CORRECTION : On utilise la fonction combinée (Externe + Interne + Manuel)
+  // Au lieu de lire juste l'URL externe, on appelle la fonction intelligente.
+  $json = pc_get_combined_availability($post->ID);
+
   $id   = 'pc-cal-input-' . $post->ID;
-  $json = wp_json_encode($ranges);
   ob_start(); ?>
   <section class="pc-cal <?php echo esc_attr($a['class']); ?>"
     data-max-months="<?php echo esc_attr((int)$a['max_months']); ?>"
@@ -1197,9 +1202,14 @@ if (!function_exists('pc_sc_booking_request_form')) {
     $title    = get_the_title($id);
     $price    = get_field('base_price_from', $id);
     $unite    = get_field('unite_de_prix', $id) ?: 'par nuit';
-    $ical     = get_field('ical_url', $id);
     $capacity = intval(get_field('capacite', $id)); // ← capacité ACF
-    $disabled_json = $ical ? pc_ics_disabled_ranges($ical, 24) : '[]';
+
+    // MODIFICATION : On récupère les indisponibilités combinées (Interne + Manuel + Externe)
+    // Cela grise les dates connues, même si le propriétaire n'a pas donné d'iCal complet.
+    $disabled_json = function_exists('pc_get_combined_availability')
+      ? pc_get_combined_availability($id)
+      : '[]';
+
     $err_html = '';
     if (isset($_GET['err']) && $_GET['err'] === 'cap') {
       $cap = isset($_GET['cap']) ? intval($_GET['cap']) : $capacity;
@@ -1652,22 +1662,24 @@ add_shortcode('pc_devis', function ($atts = []) {
       }, (array)($s['season_periods'] ?? [])))
     ];
   }
-  $ical_url    = (string) get_field('ical_url', $post_id);
+  // NOUVELLE LOGIQUE : Récupération centralisée pour le DEVIS (Interne + Externe + Manuel)
+  $combined_json = function_exists('pc_get_combined_availability')
+    ? pc_get_combined_availability($post_id)
+    : '[]';
+
+  $raw_ranges = json_decode($combined_json, true);
   $ics_disable = [];
-  if ($ical_url && function_exists('pc_parse_ics_ranges')) {
-    $cache_key = 'pc_ics_body_' . md5($ical_url);
-    $ics_body  = get_transient($cache_key);
-    if ($ics_body === false) {
-      $resp = wp_remote_get($ical_url, ['timeout' => 10]);
-      $ics_body = (!is_wp_error($resp) && 200 === wp_remote_retrieve_response_code($resp))
-        ? (string) wp_remote_retrieve_body($resp)
-        : '';
-      if ($ics_body !== '') {
-        set_transient($cache_key, $ics_body, 2 * HOUR_IN_SECONDS);
+
+  // Conversion importante : Le module de devis attend un format {from, to}
+  // alors que notre fonction renvoie [start, end]. On fait la conversion ici.
+  if (is_array($raw_ranges)) {
+    foreach ($raw_ranges as $range) {
+      if (isset($range[0], $range[1])) {
+        $ics_disable[] = [
+          'from' => $range[0],
+          'to'   => $range[1]
+        ];
       }
-    }
-    if ($ics_body !== '') {
-      $ics_disable = pc_parse_ics_ranges($ics_body);
     }
   }
   $cfg = [
@@ -1923,7 +1935,8 @@ if (!function_exists('pc_handle_logement_booking_request')) {
         // Tarif (sera alimenté correctement quand on aura branché le JS)
         'devise'           => 'EUR',
         'montant_total'    => isset($_POST['total'])      ? (float) $_POST['total']      : 0,
-        'detail_tarif'     => isset($_POST['lines_json']) ? wp_kses_post($_POST['lines_json']) : null,
+        // CORRECTION : on utilise wp_unslash() pour retirer les antislashs ajoutés par WordPress
+        'detail_tarif'     => isset($_POST['lines_json']) ? wp_kses_post(wp_unslash($_POST['lines_json'])) : null,
 
         // Statuts initiaux
         'statut_reservation' => ($mode_reservation === 'directe') ? 'reservee' : 'en_attente_traitement',
@@ -1977,4 +1990,64 @@ if (!function_exists('pc_handle_logement_booking_request')) {
     wp_send_json_success(['message' => 'Votre demande a bien été envoyée ! Un email de confirmation vous a été adressé.']);
     exit;
   }
+}
+
+/**
+ * =========================================================
+ * HELPER : Récupère TOUTES les indisponibilités (Interne + Externe)
+ * =========================================================
+ */
+function pc_get_combined_availability($logement_id)
+{
+  global $wpdb;
+  $ranges = [];
+  $today = current_time('Y-m-d'); // Date du jour (heure locale WP)
+
+  // 1. External iCals (via le champ ACF ical_url)
+  $ical_url = function_exists('get_field') ? get_field('ical_url', $logement_id) : '';
+  if ($ical_url && function_exists('pc_ics_disabled_ranges')) {
+    $ext_ranges = json_decode(pc_ics_disabled_ranges($ical_url, 24), true);
+    if (is_array($ext_ranges)) {
+      $ranges = array_merge($ranges, $ext_ranges);
+    }
+  }
+
+  // 2. Réservations Internes (Statut 'reservee')
+  // On prend tout ce qui finit APRES aujourd'hui (donc inclut les séjours en cours)
+  $table_res = $wpdb->prefix . 'pc_reservations';
+  if ($wpdb->get_var("SHOW TABLES LIKE '$table_res'") === $table_res) {
+    $internal_res = $wpdb->get_results($wpdb->prepare(
+      "SELECT date_arrivee, date_depart FROM {$table_res} 
+             WHERE item_id = %d AND statut_reservation = 'reservee' 
+             AND date_depart >= %s",
+      $logement_id,
+      $today
+    ));
+
+    foreach ($internal_res as $res) {
+      // On libère le jour du départ (-1 day) pour permettre le chassé-croisé
+      $end_date = date('Y-m-d', strtotime($res->date_depart . ' -1 day'));
+      if ($end_date >= $res->date_arrivee) {
+        $ranges[] = [$res->date_arrivee, $end_date];
+      }
+    }
+  }
+
+  // 3. Blocages Manuels (Table pc_unavailabilities)
+  $table_unv = $wpdb->prefix . 'pc_unavailabilities';
+  if ($wpdb->get_var("SHOW TABLES LIKE '$table_unv'") === $table_unv) {
+    $manual_blocks = $wpdb->get_results($wpdb->prepare(
+      "SELECT date_debut, date_fin FROM {$table_unv} 
+             WHERE item_id = %d AND date_fin >= %s",
+      $logement_id,
+      $today
+    ));
+
+    foreach ($manual_blocks as $blk) {
+      // Blocage manuel = dates bloquées incluses
+      $ranges[] = [$blk->date_debut, $blk->date_fin];
+    }
+  }
+
+  return wp_json_encode($ranges);
 }

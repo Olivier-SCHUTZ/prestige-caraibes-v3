@@ -221,10 +221,46 @@ function pc_resa_get_logement_pricing_config($post_id)
         }
     }
 
+    // 1. Cache iCal Externe
     $booked_dates = get_post_meta($post_id, '_booked_dates_cache', true);
     if (is_array($booked_dates) && !empty($booked_dates)) {
         $ics_disable = array_merge($ics_disable, pc_resa_dashboard_dates_to_ranges($booked_dates));
     }
+
+    // 2. [AJOUT] Réservations Internes + Blocages Manuels
+    // Pour que le calendrier du dashboard grise aussi ce qu'on a déjà créé en interne.
+    global $wpdb;
+    $today_sql = current_time('Y-m-d');
+
+    // A. Réservations internes (statut 'reservee')
+    $table_res = $wpdb->prefix . 'pc_reservations';
+    $internal_res = $wpdb->get_results($wpdb->prepare(
+        "SELECT date_arrivee, date_depart FROM {$table_res} 
+         WHERE item_id = %d AND statut_reservation = 'reservee' AND date_depart >= %s",
+        $post_id,
+        $today_sql
+    ));
+    foreach ($internal_res as $r) {
+        // Logique chassé-croisé : on libère le jour du départ
+        $end_date = date('Y-m-d', strtotime($r->date_depart . ' -1 day'));
+        if ($end_date >= $r->date_arrivee) {
+            $ics_disable[] = ['from' => $r->date_arrivee, 'to' => $end_date];
+        }
+    }
+
+    // B. Blocages manuels
+    $table_unv = $wpdb->prefix . 'pc_unavailabilities';
+    $manual_blocks = $wpdb->get_results($wpdb->prepare(
+        "SELECT date_debut, date_fin FROM {$table_unv} 
+         WHERE item_id = %d AND date_fin >= %s",
+        $post_id,
+        $today_sql
+    ));
+    foreach ($manual_blocks as $b) {
+        $ics_disable[] = ['from' => $b->date_debut, 'to' => $b->date_fin];
+    }
+
+    // Fusion et nettoyage final
     if (!empty($ics_disable)) {
         $ics_disable = pc_resa_dashboard_merge_ranges($ics_disable);
     }
@@ -501,36 +537,31 @@ function pc_resa_dashboard_shortcode($atts)
     $total_rows = PCR_Reservation::get_count($type_filter, $item_id);
     $total_pages = ceil($total_rows / $per_page);
 
-    // Récupération des logements / expériences disponibles pour les sélecteurs
-    $all_for_filters = PCR_Reservation::get_list([
-        'limit'  => 9999,
-        'offset' => 0,
+    // --- MODIFICATION : Récupération de TOUS les logements (pour export iCal même sans résa) ---
+    $logement_options = [];
+    $all_logements_posts = get_posts([
+        'post_type'      => ['logement', 'villa', 'appartement'],
+        'post_status'    => ['publish', 'pending'],
+        'posts_per_page' => -1,
+        'orderby'        => 'title',
+        'order'          => 'ASC',
+        'fields'         => 'ids',
     ]);
 
-    $logement_options = [];
-    $exp_options      = [];
-
-    if (! empty($all_for_filters)) {
-        foreach ($all_for_filters as $r) {
-            $pid = isset($r->item_id) ? (int) $r->item_id : 0;
-            if (! $pid) {
-                continue;
-            }
-            $title = get_the_title($pid);
-            if (! $title) {
-                continue;
-            }
-
-            if ($r->type === 'location') {
-                $logement_options[$pid] = $title;
-            } elseif ($r->type === 'experience') {
-                $exp_options[$pid] = $title;
-            }
+    if (!empty($all_logements_posts)) {
+        foreach ($all_logements_posts as $pid) {
+            $logement_options[$pid] = get_the_title($pid);
         }
     }
 
-    if (! empty($logement_options)) {
-        asort($logement_options);
+    // Pour les expériences, on garde la logique existante basée sur les réservations (ou on pourrait faire pareil)
+    $exp_options = [];
+    $all_reservations_raw = PCR_Reservation::get_list(['limit' => 9999, 'type' => 'experience']);
+    if (!empty($all_reservations_raw)) {
+        foreach ($all_reservations_raw as $r) {
+            $pid = (int) $r->item_id;
+            if ($pid) $exp_options[$pid] = get_the_title($pid);
+        }
     }
     if (! empty($exp_options)) {
         asort($exp_options);
@@ -737,8 +768,7 @@ function pc_resa_dashboard_shortcode($atts)
             <div class="pc-resa-filters__group">
                 <span class="pc-resa-filters__group-label">Logement</span>
                 <select name="pc_resa_item_location" onchange="this.form.submit()">
-                    <option value="">Tous</option>
-                    <?php foreach ($logement_options as $pid => $title) : ?>
+                    <option value="">Tous les logements</option> <?php foreach ($logement_options as $pid => $title) : ?>
                         <option value="<?php echo esc_attr($pid); ?>"
                             <?php selected($item_id, $pid); ?>>
                             <?php echo esc_html($title); ?>
@@ -768,6 +798,59 @@ function pc_resa_dashboard_shortcode($atts)
             </button>
         </form>
 
+        <?php
+        // On affiche ce bloc seulement si un logement spécifique est sélectionné et que la classe d'export existe
+        if ($item_id > 0 && array_key_exists($item_id, $logement_options) && class_exists('PCR_Ical_Export')) :
+            $link_proprio = PCR_Ical_Export::get_export_url($item_id, 'simple');
+            $link_ota     = PCR_Ical_Export::get_export_url($item_id, 'full');
+        ?>
+            <div class="pc-resa-ical-links" style="background:#f0f9ff; border:1px solid #bae6fd; padding:20px; border-radius:8px; margin-bottom:24px; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+                <h4 style="color:#0369a1; font-size:1.1rem; margin:0 0 8px 0; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.4em;">🔗</span> Synchronisation iCal : <?php echo esc_html($logement_options[$item_id]); ?>
+                </h4>
+                <p style="font-size:0.9rem; color:#64748b; margin-bottom:16px; margin-top:0;">
+                    Copiez ces URL et collez-les dans les paramètres de synchronisation de vos calendriers externes (Airbnb, Booking, etc.).
+                </p>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+
+                    <div style="background:#fff; padding:12px; border:1px solid #e2e8f0; border-radius:6px;">
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#0369a1; margin-bottom:6px;">
+                            📅 Lien Propriétaire (Mode Simple)
+                        </label>
+                        <p style="font-size:0.75rem; color:#64748b; margin:0 0 8px 0;">
+                            Contient : <strong>Vos réservations internes + Blocages manuels</strong>.<br>
+                            <em>Donnez ce lien à votre propriétaire.</em>
+                        </p>
+                        <div style="display:flex; gap:6px;">
+                            <input type="text" value="<?php echo esc_url($link_proprio); ?>" readonly onclick="this.select()"
+                                style="flex:1; padding:8px 12px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.85rem; color:#334155; background:#f8fafc; font-family:monospace;">
+                            <button type="button" class="pc-btn pc-btn--ghost"
+                                onclick="navigator.clipboard.writeText('<?php echo esc_js($link_proprio); ?>'); alert('Lien copié !');"
+                                style="padding:0 16px; font-size:0.85rem; border-color:#cbd5f5;">Copier</button>
+                        </div>
+                    </div>
+
+                    <div style="background:#fff; padding:12px; border:1px solid #e2e8f0; border-radius:6px;">
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#be123c; margin-bottom:6px;">
+                            🌍 Lien Airbnb / Booking (Mode Full)
+                        </label>
+                        <p style="font-size:0.75rem; color:#64748b; margin:0 0 8px 0;">
+                            Contient : <strong>TOUT</strong> (Internes + Manuels + Imports externes).<br>
+                            <em>Collez ce lien dans Airbnb/Booking pour tout bloquer.</em>
+                        </p>
+                        <div style="display:flex; gap:6px;">
+                            <input type="text" value="<?php echo esc_url($link_ota); ?>" readonly onclick="this.select()"
+                                style="flex:1; padding:8px 12px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.85rem; color:#334155; background:#f8fafc; font-family:monospace;">
+                            <button type="button" class="pc-btn pc-btn--ghost"
+                                onclick="navigator.clipboard.writeText('<?php echo esc_js($link_ota); ?>'); alert('Lien copié !');"
+                                style="padding:0 16px; font-size:0.85rem; border-color:#cbd5f5;">Copier</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        <?php endif; ?>
         <table class="pc-resa-dashboard-table">
             <thead>
                 <tr>
@@ -1370,6 +1453,38 @@ function pc_resa_dashboard_shortcode($atts)
                 <?php endif; ?>
             </tbody>
         </table>
+        <?php if (isset($total_pages) && $total_pages > 1) : ?>
+            <div class="pc-resa-pagination" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
+
+                <?php
+                // Fonction simple pour garder les filtres actuels dans l'URL
+                $get_page_link = function ($p) {
+                    return add_query_arg('pc_resa_page', $p);
+                };
+                ?>
+
+                <?php if ($page > 1) : ?>
+                    <a href="<?php echo esc_url($get_page_link($page - 1)); ?>" class="pc-resa-page-btn">
+                        &laquo; Précédent
+                    </a>
+                <?php else : ?>
+                    <span class="pc-resa-page-btn" style="opacity:0.5; cursor:default;">&laquo; Précédent</span>
+                <?php endif; ?>
+
+                <span class="pc-resa-page-info" style="font-size: 0.9rem; color: #666; margin: 0 5px;">
+                    Page <strong><?php echo intval($page); ?></strong> sur <?php echo intval($total_pages); ?>
+                </span>
+
+                <?php if ($page < $total_pages) : ?>
+                    <a href="<?php echo esc_url($get_page_link($page + 1)); ?>" class="pc-resa-page-btn">
+                        Suivant &raquo;
+                    </a>
+                <?php else : ?>
+                    <span class="pc-resa-page-btn" style="opacity:0.5; cursor:default;">Suivant &raquo;</span>
+                <?php endif; ?>
+
+            </div>
+        <?php endif; ?>
     </div>
 
     <!-- Template création réservation -->
