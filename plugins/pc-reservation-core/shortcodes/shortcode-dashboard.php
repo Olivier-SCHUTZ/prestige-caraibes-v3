@@ -1440,8 +1440,16 @@ function pc_resa_dashboard_shortcode($atts)
                                                                         🔗 Lien caution
                                                                     </button>
                                                                 <?php elseif ($c_statut === 'empreinte_validee') : ?>
-                                                                    <div style="display:flex; gap:5px; align-items:center;">
+                                                                    <div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
                                                                         <span style="color:#16a34a; font-weight:600; margin-right:5px;">✅ Validée</span>
+
+                                                                        <button type="button" class="pc-resa-caution-rotate pc-btn--ghost"
+                                                                            style="font-size:0.75rem; padding:4px 8px; border:1px solid #2563eb; color:#2563eb;"
+                                                                            data-id="<?php echo $resa->id; ?>"
+                                                                            data-ref="<?php echo esc_attr($resa->caution_reference); ?>"
+                                                                            title="Prolonger de 7 jours (recrée une empreinte)">
+                                                                            🔄 Renouveler
+                                                                        </button>
 
                                                                         <button type="button" class="pc-resa-caution-action pc-btn--ghost"
                                                                             style="font-size:0.75rem; padding:4px 8px; border:1px solid #16a34a; color:#16a34a;"
@@ -4840,6 +4848,65 @@ function pc_resa_dashboard_shortcode($atts)
                 });
             }
 
+            // --- GESTION ROTATION CAUTION (Renouvellement) ---
+
+            // 1. Clic sur le bouton "Renouveler" -> Ouverture Popup
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.pc-resa-caution-rotate');
+                if (!btn) return;
+
+                e.preventDefault();
+                const id = btn.dataset.id;
+                const ref = btn.dataset.ref;
+
+                document.getElementById('pc-rotate-resa-id').value = id;
+                document.getElementById('pc-rotate-ref').value = ref;
+
+                document.getElementById('pc-rotate-caution-popup').hidden = false;
+            });
+
+            // 2. Confirmation dans le Popup -> Appel AJAX
+            const rotateConfirmBtn = document.getElementById('pc-rotate-confirm-btn');
+            if (rotateConfirmBtn) {
+                rotateConfirmBtn.addEventListener('click', function() {
+                    const id = document.getElementById('pc-rotate-resa-id').value;
+                    const ref = document.getElementById('pc-rotate-ref').value;
+
+                    const btn = this;
+                    const originalText = btn.textContent;
+                    btn.disabled = true;
+                    btn.textContent = 'Traitement en cours...';
+
+                    const formData = new URLSearchParams();
+                    formData.append('action', 'pc_stripe_rotate_caution');
+                    formData.append('nonce', pcResaManualNonce);
+                    formData.append('reservation_id', id);
+                    formData.append('old_ref', ref);
+
+                    fetch(pcResaAjaxUrl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Succès : on recharge pour voir la nouvelle réf et la note interne
+                                window.location.reload();
+                            } else {
+                                alert('Erreur : ' + (data.data.message || 'Inconnue'));
+                                btn.disabled = false;
+                                btn.textContent = originalText;
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Erreur technique (voir console).');
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                        });
+                });
+            }
+
         }); // <--- C'EST ICI QUE CA MANQUAIT (Fermeture du DOMContentLoaded)
 
         // --- GESTION DES POPUPS (Annulation / Confirmation) ---
@@ -5005,6 +5072,37 @@ function pc_resa_dashboard_shortcode($atts)
                 color: #475569 !important;
             }
         </style>
+    </div>
+
+    <div id="pc-rotate-caution-popup" class="pc-popup-overlay" hidden>
+        <div class="pc-popup-box" style="max-width: 400px;">
+            <h3 class="pc-popup-title">🔄 Renouveler la Caution</h3>
+
+            <p class="pc-popup-text">
+                Cette action va :<br>
+                1. Créer une <strong>nouvelle empreinte</strong> bancaire sur la carte du client.<br>
+                2. Annuler (libérer) l'ancienne empreinte immédiatement.
+            </p>
+
+            <p class="pc-popup-text" style="font-size:0.9rem; color:#64748b; background:#f1f5f9; padding:10px; border-radius:6px;">
+                💡 Utile si le séjour dure plus de 7 jours.<br>
+                Le client ne sera pas débité, c'est transparent pour lui.
+            </p>
+
+            <form id="pc-rotate-form">
+                <input type="hidden" id="pc-rotate-resa-id">
+                <input type="hidden" id="pc-rotate-ref">
+            </form>
+
+            <div class="pc-popup-actions">
+                <button type="button" class="pc-btn pc-btn--primary" id="pc-rotate-confirm-btn" style="background:#2563eb; border-color:#2563eb;">
+                    Confirmer le renouvellement
+                </button>
+                <button type="button" class="pc-btn pc-btn--line" onclick="document.getElementById('pc-rotate-caution-popup').hidden = true;">
+                    Annuler
+                </button>
+            </div>
+        </div>
     </div>
 <?php
     return ob_get_clean();

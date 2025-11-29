@@ -16,6 +16,7 @@ class PCR_Stripe_Ajax
         add_action('wp_ajax_pc_stripe_get_caution_link', [__CLASS__, 'handle_get_caution_link']);
         add_action('wp_ajax_pc_stripe_release_caution', [__CLASS__, 'handle_release_caution']);
         add_action('wp_ajax_pc_stripe_capture_caution', [__CLASS__, 'handle_capture_caution']);
+        add_action('wp_ajax_pc_stripe_rotate_caution', [__CLASS__, 'handle_rotate_caution']);
         // Pas de nopriv ici : c'est l'admin qui génère le lien manuellement.
         // Pour le front, c'est le contrôleur de formulaire qui s'en chargera directement.
     }
@@ -175,5 +176,57 @@ class PCR_Stripe_Ajax
         $wpdb->update($table, $data_update, ['id' => $resa_id]);
 
         wp_send_json_success(['message' => 'Montant prélevé avec succès.']);
+    }
+
+    public static function handle_rotate_caution()
+    {
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Non autorisé.']);
+
+        $resa_id = (int) $_POST['reservation_id'];
+        $old_ref = sanitize_text_field($_POST['old_ref']); // L'ancienne réf Stripe
+
+        if (!$resa_id || !$old_ref) wp_send_json_error(['message' => 'Données manquantes.']);
+
+        // Récupérer le montant actuel de la caution défini dans la résa
+        // (On repart sur le montant théorique, au cas où on voudrait changer le montant, ici on garde le même)
+        global $wpdb;
+        $table = $wpdb->prefix . 'pc_reservations';
+        $resa = $wpdb->get_row($wpdb->prepare("SELECT caution_montant, notes_internes FROM {$table} WHERE id = %d", $resa_id));
+
+        if (!$resa) wp_send_json_error(['message' => 'Réservation introuvable.']);
+        $amount = (float) $resa->caution_montant;
+
+        if (!class_exists('PCR_Stripe_Manager')) wp_send_json_error(['message' => 'Manager absent.']);
+
+        // Appel de la logique métier
+        $res = PCR_Stripe_Manager::rotate_caution($old_ref, $amount, $resa_id);
+
+        if (!$res['success']) {
+            wp_send_json_error(['message' => $res['message']]);
+        }
+
+        // Succès : Mise à jour BDD
+        $new_ref = sanitize_text_field($res['new_ref']);
+
+        // On loggue l'action dans les notes internes
+        $date_now = date('d/m/Y H:i');
+        $new_note = "$date_now - Rotation Caution OK.\nAncienne : $old_ref (Libérée)\nNouvelle : $new_ref (Validée)\n----------------\n" . $resa->notes_internes;
+
+        $wpdb->update(
+            $table,
+            [
+                'caution_reference'       => $new_ref,
+                'caution_date_validation' => current_time('mysql'), // On rafraîchit la date
+                'notes_internes'          => $new_note,
+                'date_maj'                => current_time('mysql')
+            ],
+            ['id' => $resa_id]
+        );
+
+        wp_send_json_success([
+            'message' => 'Caution renouvelée avec succès !',
+            'new_ref' => $new_ref
+        ]);
     }
 }
