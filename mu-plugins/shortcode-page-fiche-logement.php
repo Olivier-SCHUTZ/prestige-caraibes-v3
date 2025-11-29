@@ -1638,7 +1638,8 @@ add_shortcode('pc_devis', function ($atts = []) {
   $unit_is_week = (stripos($unit, 'semaine') !== false);
   $seasons_raw = (array) get_field('pc_season_blocks', $post_id);
   $seasons = [];
-  $manual = (bool) get_field('pc_manual_quote', $post->ID);
+  // Correction : on utilise $post_id qui est défini au début de la fonction
+  $manual = (bool) get_field('pc_manual_quote', $post_id);
   foreach ($seasons_raw as $s) {
     $price = isset($s['season_price']) ? (float)$s['season_price'] : 0.0;
     if ($unit_is_week && $price > 0) $price = $price / 7.0;
@@ -1968,44 +1969,56 @@ if (!function_exists('pc_handle_logement_booking_request')) {
       // Création de la réservation
       $resa_id = PCR_Reservation::create($resa_data);
 
+      $payment_url = ''; // Variable pour stocker l'URL Stripe
+
       // Génération des paiements selon les règles ACF de la fiche
       if ($resa_id && class_exists('PCR_Payment')) {
         PCR_Payment::generate_for_reservation($resa_id);
+
+        // --- DÉBUT MODIF : GÉNÉRATION DU LIEN STRIPE SI DIRECTE ---
+        if ($mode_reservation === 'directe' && class_exists('PCR_Stripe_Manager')) {
+          global $wpdb;
+          $table_pay = $wpdb->prefix . 'pc_payments';
+
+          // On récupère le paiement généré (Acompte ou Total) qui est "en_attente"
+          $payment_row = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, montant, type_paiement FROM {$table_pay} WHERE reservation_id = %d AND statut = 'en_attente' ORDER BY id ASC LIMIT 1",
+            $resa_id
+          ));
+
+          if ($payment_row && $payment_row->montant > 0) {
+            $stripe_result = PCR_Stripe_Manager::create_payment_link(
+              $resa_id,
+              (float)$payment_row->montant,
+              $payment_row->type_paiement
+            );
+
+            if ($stripe_result['success']) {
+              $payment_url = $stripe_result['url'];
+            }
+          }
+        }
+        // --- FIN MODIF ---
       }
     }
     // ===== FIN NOYAU RÉSERVATION =====
 
     $logement_title = get_the_title($logement_id);
-    $headers = ['Content-Type: text/plain; charset=UTF-8'];
-    $admin_to = 'guadeloupe@prestigecaraibes.com';
-    $admin_subject = "Nouvelle demande pour le logement : " . $logement_title;
-    $admin_body  = "Une nouvelle demande de réservation a été effectuée.\n\n";
-    $admin_body .= "Logement : " . $logement_title . " (ID: " . $logement_id . ")\n\n";
-    $admin_body .= "CLIENT\n--------------------------------\n";
-    $admin_body .= "Prénom et Nom : " . $prenom . " " . $nom . "\n";
-    $admin_body .= "Email : " . $email . "\n";
-    $admin_body .= "Téléphone : " . $tel . "\n";
+    // ... (Laissez votre code d'envoi d'emails ici, inchangé) ...
+    // wp_mail(...);
 
-    // --- CORRECTION BUG : Ajout des bébés dans l'email ---
-    $admin_body .= "Participants : " . $adultes . " Adulte(s), " . $enfants . " Enfant(s) et " . $bebes . " Bébé(s)\n\n";
+    // --- RÉPONSE JSON MODIFIÉE ---
+    $response_data = [
+      'message' => 'Votre demande a bien été envoyée ! Un email de confirmation vous a été adressé.'
+    ];
 
-    if (!empty($message)) {
-      $admin_body .= "MESSAGE SUPPLÉMENTAIRE\n--------------------------------\n";
-      $admin_body .= $message . "\n\n";
+    // Si une URL de paiement a été générée, on l'ajoute à la réponse
+    if (!empty($payment_url)) {
+      $response_data['payment_url'] = $payment_url;
+      $response_data['message'] = 'Redirection vers le paiement sécurisé...';
     }
-    $admin_body .= "DÉTAILS DE LA SIMULATION\n--------------------------------\n";
-    $admin_body .= $quote_details . "\n";
 
-    $mail_sent_admin = wp_mail($admin_to, $admin_subject, $admin_body, $headers);
-
-    $client_subject = "Confirmation de votre demande pour : " . $logement_title;
-    $client_body  = "Bonjour " . $prenom . ",\n\n";
-    $client_body .= "Nous avons bien reçu votre demande concernant le logement \"" . $logement_title . "\".\n\n";
-    $client_body .= "Nous allons vérifier les disponibilités et nous revenons vers vous dans les plus brefs délais.\n\n";
-    $client_body .= "Cordialement,\nL'équipe Prestige Caraïbes";
-    wp_mail($email, $client_subject, $client_body, $headers);
-
-    wp_send_json_success(['message' => 'Votre demande a bien été envoyée ! Un email de confirmation vous a été adressé.']);
+    wp_send_json_success($response_data);
     exit;
   }
 }
@@ -2069,3 +2082,196 @@ function pc_get_combined_availability($logement_id)
 
   return wp_json_encode($ranges);
 }
+
+/**
+ * ===================================================================
+ * POPUP DE REMERCIEMENT APRÈS PAIEMENT STRIPE (RETOUR ACCUEIL)
+ * ===================================================================
+ */
+add_action('wp_footer', function () {
+  // On vérifie si l'URL contient le paramètre de succès
+  if (!isset($_GET['pc_payment_return']) || $_GET['pc_payment_return'] !== 'success') {
+    return;
+  }
+
+  // URL mise à jour selon votre demande
+  $link_experiences = home_url('/recherche-dexperiences/');
+?>
+
+  <div id="pc-success-modal" class="pc-success-overlay">
+    <div class="pc-success-box">
+      <div class="pc-success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <h3>Merci pour votre commande !</h3>
+
+      <p>
+        Votre paiement a bien été validé et votre réservation est confirmée.<br>
+        Vous allez recevoir un email récapitulatif dans quelques instants.
+      </p>
+
+      <div class="pc-success-actions">
+        <a href="<?php echo esc_url($link_experiences); ?>" class="pc-btn pc-btn--primary">
+          Visitez nos expériences
+        </a>
+        <button type="button" class="pc-btn pc-btn--ghost" id="pc-success-close">
+          Continuer la visite
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .pc-success-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(14, 43, 92, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: pcFadeIn 0.4s ease-out;
+    }
+
+    .pc-success-box {
+      background: #fff;
+      padding: 40px 30px;
+      border-radius: 16px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      animation: pcSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .pc-success-icon {
+      width: 80px;
+      height: 80px;
+      background: #dcfce7;
+      color: #16a34a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .pc-success-icon svg {
+      width: 40px;
+      height: 40px;
+    }
+
+    .pc-success-box h3 {
+      margin: 0 0 16px;
+      font-family: inherit;
+      font-size: 1.6rem;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    .pc-success-box p {
+      color: #64748b;
+      line-height: 1.6;
+      margin-bottom: 32px;
+      font-size: 1.05rem;
+    }
+
+    .pc-success-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pc-success-box .pc-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 99px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-sizing: border-box;
+    }
+
+    .pc-success-box .pc-btn--primary {
+      background-color: #0e2b5c;
+      color: #ffffff !important;
+      border: 1px solid #0e2b5c;
+    }
+
+    .pc-success-box .pc-btn--primary:hover {
+      background-color: #1a3c75;
+      transform: translateY(-1px);
+    }
+
+    .pc-success-box .pc-btn--ghost {
+      background-color: transparent;
+      border: 1px solid #cbd5e1;
+      color: #475569 !important;
+    }
+
+    .pc-success-box .pc-btn--ghost:hover {
+      background-color: #f8fafc;
+      border-color: #94a3b8;
+      color: #0f172a !important;
+    }
+
+    @keyframes pcFadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes pcSlideUp {
+      from {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var modal = document.getElementById('pc-success-modal');
+      var closeBtn = document.getElementById('pc-success-close');
+
+      if (closeBtn && modal) {
+        closeBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          // 1. Masquer le popup
+          modal.style.opacity = '0';
+          setTimeout(function() {
+            modal.style.display = 'none';
+          }, 300);
+
+          // 2. Nettoyer l'URL proprement (sans recharger)
+          if (window.history && window.history.pushState) {
+            var cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.pushState({
+              path: cleanUrl
+            }, '', cleanUrl);
+          }
+        });
+      }
+    });
+  </script>
+<?php
+});

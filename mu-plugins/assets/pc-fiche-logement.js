@@ -628,6 +628,16 @@
             .then((response) => response.json())
             .then((data) => {
               if (data.success) {
+                // --- DÉBUT MODIF : REDIRECTION STRIPE ---
+                if (data.data && data.data.payment_url) {
+                  if (fabPriceDisplay)
+                    fabPriceDisplay.textContent = "Redirection Paiement...";
+                  // Redirection immédiate vers Stripe
+                  window.location.href = data.data.payment_url;
+                  return; // On arrête tout ici, la page va changer
+                }
+                // --- FIN MODIF ---
+
                 quoteSubmitted = true;
                 form.style.display = "none";
                 if (fabPriceDisplay) fabPriceDisplay.textContent = "Merci ! 🌴";

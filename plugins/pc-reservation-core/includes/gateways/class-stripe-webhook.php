@@ -4,8 +4,7 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Écouteur de Webhook Stripe.
- * Met à jour les statuts de paiement et de réservation automatiquement.
+ * Écouteur de Webhook Stripe (Version Debug).
  * URL : https://votre-site.com/?pc_action=stripe_webhook
  */
 class PCR_Stripe_Webhook
@@ -21,83 +20,103 @@ class PCR_Stripe_Webhook
             return;
         }
 
-        // 1. Récupération du corps de la requête (JSON brut)
+        // 1. Log d'entrée
+        error_log('[Stripe Webhook] Réception d\'un signal...');
+
         $payload = @file_get_contents('php://input');
         $event = json_decode($payload, true);
 
         if (!$event || !isset($event['type'])) {
+            error_log('[Stripe Webhook] Erreur : Payload invalide ou vide.');
             status_header(400);
             exit('Payload invalide');
         }
 
-        // 2. Filtrage : On ne traite que les sessions de paiement réussies
-        if ($event['type'] === 'checkout.session.completed') {
-            self::handle_checkout_session($event['data']['object']);
+        // 2. Vérification du type d'événement
+        if ($event['type'] !== 'checkout.session.completed') {
+            // On ignore poliment les autres événements pour ne pas spammer les logs
+            status_header(200);
+            exit('Event ignored');
         }
 
-        // Stripe attend un code 200 pour savoir que tout va bien
+        error_log('[Stripe Webhook] Événement checkout.session.completed reçu.');
+
+        $session = $event['data']['object'];
+        self::handle_checkout_session($session);
+
         status_header(200);
-        exit('Webhook reçu');
+        exit('Webhook processed');
     }
 
-    /**
-     * Traite le succès d'un paiement.
-     */
     private static function handle_checkout_session($session)
     {
-        // Récupération des métadonnées injectées lors de la création du lien
-        $resa_id = isset($session['client_reference_id']) ? (int) $session['client_reference_id'] : 0;
+        global $wpdb;
 
-        // On peut avoir passé le type de paiement dans les métadonnées
-        $payment_type = isset($session['metadata']['payment_type']) ? $session['metadata']['payment_type'] : '';
+        // Récupération ID Réservation
+        $resa_id = isset($session['client_reference_id']) ? (int) $session['client_reference_id'] : 0;
+        $stripe_id = $session['id'] ?? 'inconnu';
+        $amount_received = isset($session['amount_total']) ? $session['amount_total'] / 100 : 0;
+
+        error_log(sprintf('[Stripe Webhook] Session ID: %s | Resa ID: %d | Montant: %s', $stripe_id, $resa_id, $amount_received));
 
         if (!$resa_id) {
-            return; // Pas de lien avec une réservation
+            error_log('[Stripe Webhook] Erreur : Pas de client_reference_id (ID réservation) dans la session.');
+            return;
         }
 
         // --- A. Mise à jour de la ligne de paiement (pc_payments) ---
-        global $wpdb;
         $table_pay = $wpdb->prefix . 'pc_payments';
 
-        // On cherche la ligne de paiement correspondante 'en_attente' pour cette réservation
-        // Idéalement, on aurait stocké l'ID du paiement dans les métadonnées, 
-        // mais sinon on prend la plus logique (celle qui correspond au montant ou au type)
+        // On cherche le paiement "en_attente" le plus pertinent pour cette réservation.
+        // On vérifie le montant (marge d'erreur de 1€ pour arrondis) pour être sûr de valider le bon (acompte vs solde).
+        $payment = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table_pay} 
+             WHERE reservation_id = %d 
+             AND statut != 'paye'
+             AND (montant BETWEEN %f AND %f)
+             LIMIT 1",
+            $resa_id,
+            $amount_received - 1,
+            $amount_received + 1
+        ));
 
-        $sql = "SELECT id FROM {$table_pay} WHERE reservation_id = %d AND statut != 'paye'";
-
-        if ($payment_type) {
-            $sql .= $wpdb->prepare(" AND type_paiement = %s", $payment_type);
+        // Fallback : Si pas trouvé par montant, on prend le premier 'en_attente' (souvent l'acompte)
+        if (!$payment) {
+            error_log('[Stripe Webhook] Pas de paiement trouvé par montant exact. Tentative fallback sur le premier en attente.');
+            $payment = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$table_pay} WHERE reservation_id = %d AND statut = 'en_attente' LIMIT 1",
+                $resa_id
+            ));
         }
 
-        // On trie par ID pour prendre la plus ancienne (souvent l'acompte)
-        $sql .= " ORDER BY id ASC LIMIT 1";
-
-        $payment_id = $wpdb->get_var($wpdb->prepare($sql, $resa_id));
-
-        if ($payment_id) {
-            $wpdb->update(
+        if ($payment) {
+            $updated = $wpdb->update(
                 $table_pay,
                 [
-                    'statut' => 'paye',
-                    'date_paiement' => current_time('mysql'),
-                    'gateway' => 'stripe',
-                    'gateway_reference' => $session['payment_intent'] ?? $session['id'],
-                    'gateway_status' => $session['payment_status'],
-                    'raw_response' => json_encode($session), // On garde une trace pour debug
-                    'date_maj' => current_time('mysql')
+                    'statut'            => 'paye',
+                    'date_paiement'     => current_time('mysql'),
+                    'gateway'           => 'stripe',
+                    'gateway_reference' => $session['payment_intent'] ?? $stripe_id,
+                    'gateway_status'    => $session['payment_status'],
+                    'raw_response'      => json_encode($session),
+                    'date_maj'          => current_time('mysql')
                 ],
-                ['id' => $payment_id]
+                ['id' => $payment->id]
             );
+
+            if ($updated !== false) {
+                error_log(sprintf('[Stripe Webhook] SUCCÈS : Paiement ID %d marqué comme PAYÉ.', $payment->id));
+            } else {
+                error_log(sprintf('[Stripe Webhook] ERREUR SQL lors de la mise à jour du paiement ID %d.', $payment->id));
+            }
+        } else {
+            error_log('[Stripe Webhook] ERREUR CRITIQUE : Aucune ligne de paiement en attente trouvée pour cette réservation.');
         }
 
-        // --- B. Mise à jour de la réservation globale (pc_reservations) ---
-        // On vérifie s'il reste de l'argent à payer
+        // --- B. Mise à jour de la réservation globale ---
         self::update_reservation_status($resa_id);
     }
 
-    /**
-     * Recalcule le statut global de la réservation
-     */
     private static function update_reservation_status($resa_id)
     {
         global $wpdb;
@@ -107,7 +126,7 @@ class PCR_Stripe_Webhook
         $resa = $wpdb->get_row($wpdb->prepare("SELECT montant_total, statut_reservation FROM {$table_res} WHERE id = %d", $resa_id));
         if (!$resa) return;
 
-        // Somme des paiements validés
+        // Total déjà payé
         $paid_amount = $wpdb->get_var($wpdb->prepare(
             "SELECT SUM(montant) FROM {$table_pay} WHERE reservation_id = %d AND statut = 'paye'",
             $resa_id
@@ -117,14 +136,15 @@ class PCR_Stripe_Webhook
         $paid  = (float) $paid_amount;
 
         $new_status = 'non_paye';
-
-        if ($paid >= $total && $total > 0) {
+        // Tolérance de 1€ pour les arrondis
+        if ($paid >= ($total - 1) && $total > 0) {
             $new_status = 'paye';
         } elseif ($paid > 0) {
-            $new_status = 'partiellement_paye'; // Acompte versé
+            $new_status = 'partiellement_paye';
         }
 
-        // On met à jour
+        error_log(sprintf('[Stripe Webhook] Recalcul Statut Résa #%d : Total=%s, Payé=%s => Nouveau statut: %s', $resa_id, $total, $paid, $new_status));
+
         $wpdb->update(
             $table_res,
             ['statut_paiement' => $new_status, 'date_maj' => current_time('mysql')],
