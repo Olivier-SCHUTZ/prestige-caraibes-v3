@@ -2190,7 +2190,7 @@
                 {
                     "key": "field_6919e7994db50",
                     "label": "Méthode de caution",
-                    "name": "pc_caution_mode",
+                    "name": "pc_caution_type",
                     "aria-label": "",
                     "type": "select",
                     "instructions": "Aucune caution = Le propriétaire sans occupe",
@@ -2246,5 +2246,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1764329543
+    "modified": 1764424014
 }

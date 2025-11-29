@@ -129,4 +129,170 @@ class PCR_Stripe_Manager
             'id'      => $body_response['id']   // ID de session (cs_test_...) utile pour le suivi
         ];
     }
+
+    /**
+     * Crée un lien de CAUTION (Pré-autorisation / Empreinte bancaire).
+     * L'argent est bloqué (hold) pendant 7 jours, mais pas débité.
+     */
+    public static function create_caution_link($reservation_id)
+    {
+        $secret_key = self::get_secret_key();
+        if (empty($secret_key)) return ['success' => false, 'message' => 'Clé Stripe manquante.'];
+
+        $resa = PCR_Reservation::get_by_id($reservation_id);
+        if (!$resa) return ['success' => false, 'message' => 'Réservation introuvable.'];
+
+        $amount = (float) $resa->caution_montant;
+        if ($amount <= 0) return ['success' => false, 'message' => 'Montant caution nul.'];
+
+        // Conversion en centimes
+        $amount_cents = round($amount * 100);
+
+        // URLs de retour
+        $base_url = home_url('/');
+        $success_url = add_query_arg([
+            'pc_payment_return' => 'caution_success', // Marqueur spécifique
+            'session_id' => '{CHECKOUT_SESSION_ID}',
+            'resa_id' => $reservation_id
+        ], $base_url);
+
+        $cancel_url = add_query_arg([
+            'pc_payment_return' => 'cancel',
+            'resa_id' => $reservation_id
+        ], $base_url);
+
+        $item_title = get_the_title($resa->item_id);
+
+        $body = [
+            'payment_method_types' => ['card'],
+            'line_items' => [[
+                'price_data' => [
+                    'currency' => 'eur',
+                    'product_data' => [
+                        'name' => "Caution (Empreinte Bancaire) - Réservation #{$reservation_id}",
+                        'description' => "Empreinte pour {$item_title}. Aucun débit immédiat.",
+                    ],
+                    'unit_amount' => $amount_cents,
+                ],
+                'quantity' => 1,
+            ]],
+            'mode' => 'payment',
+
+            // --- C'EST ICI QUE LA MAGIE OPÈRE (HOLD) ---
+            'payment_intent_data' => [
+                'capture_method' => 'manual', // Bloque les fonds sans encaisser
+            ],
+            // -------------------------------------------
+
+            'success_url' => $success_url,
+            'cancel_url' => $cancel_url,
+            'client_reference_id' => $reservation_id,
+            'customer_email' => $resa->email,
+            'metadata' => [
+                'reservation_id' => $reservation_id,
+                'type'           => 'caution', // Marqueur pour le Webhook
+                'plugin_source'  => 'pc-reservation-core'
+            ]
+        ];
+
+        $response = wp_remote_post(self::$api_url . '/checkout/sessions', [
+            'method'    => 'POST',
+            'headers'   => [
+                'Authorization' => 'Bearer ' . $secret_key,
+                'Content-Type'  => 'application/x-www-form-urlencoded',
+            ],
+            'body'      => $body,
+            'timeout'   => 45,
+        ]);
+
+        if (is_wp_error($response)) {
+            return ['success' => false, 'message' => 'Erreur Stripe : ' . $response->get_error_message()];
+        }
+
+        $body_response = json_decode(wp_remote_retrieve_body($response), true);
+        if (isset($body_response['error'])) {
+            return ['success' => false, 'message' => 'Stripe Error: ' . $body_response['error']['message']];
+        }
+
+        return [
+            'success' => true,
+            'url'     => $body_response['url'],
+            'id'      => $body_response['id']
+        ];
+    }
+
+    /**
+     * Libère (Annule) une caution existante.
+     */
+    public static function release_caution($payment_intent_id)
+    {
+        $secret_key = self::get_secret_key();
+        if (empty($payment_intent_id)) return ['success' => false, 'message' => 'ID Caution manquant.'];
+
+        // API Stripe : Cancel
+        $url = self::$api_url . '/payment_intents/' . $payment_intent_id . '/cancel';
+
+        $response = wp_remote_post($url, [
+            'method'    => 'POST',
+            'headers'   => [
+                'Authorization' => 'Bearer ' . $secret_key,
+            ],
+            'timeout'   => 45,
+        ]);
+
+        if (is_wp_error($response)) {
+            return ['success' => false, 'message' => $response->get_error_message()];
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        if (isset($body['error'])) {
+            return ['success' => false, 'message' => $body['error']['message']];
+        }
+
+        return ['success' => true];
+    }
+
+    /**
+     * Encaisse (Capture) tout ou partie de la caution.
+     */
+    public static function capture_caution($payment_intent_id, $amount_eur, $note = '')
+    {
+        $secret_key = self::get_secret_key();
+        $amount_cents = round($amount_eur * 100);
+
+        if ($amount_cents <= 0) return ['success' => false, 'message' => 'Montant invalide.'];
+
+        // API Stripe : Capture
+        $url = self::$api_url . '/payment_intents/' . $payment_intent_id . '/capture';
+
+        $body = [
+            'amount_to_capture' => $amount_cents
+        ];
+
+        // On ajoute la note dans les métadonnées Stripe
+        if (!empty($note)) {
+            $body['metadata'] = ['motif_encaissement' => $note];
+        }
+
+        $response = wp_remote_post($url, [
+            'method'    => 'POST',
+            'headers'   => [
+                'Authorization' => 'Bearer ' . $secret_key,
+                'Content-Type'  => 'application/x-www-form-urlencoded',
+            ],
+            'body'      => $body,
+            'timeout'   => 45,
+        ]);
+
+        if (is_wp_error($response)) {
+            return ['success' => false, 'message' => $response->get_error_message()];
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        if (isset($body['error'])) {
+            return ['success' => false, 'message' => $body['error']['message']];
+        }
+
+        return ['success' => true];
+    }
 }

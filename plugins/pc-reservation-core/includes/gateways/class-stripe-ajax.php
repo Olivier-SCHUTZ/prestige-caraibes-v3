@@ -12,6 +12,10 @@ class PCR_Stripe_Ajax
     {
         // Action pour l'admin connecté
         add_action('wp_ajax_pc_stripe_get_link', [__CLASS__, 'handle_get_link']);
+        // --- NOUVEAU : Caution ---
+        add_action('wp_ajax_pc_stripe_get_caution_link', [__CLASS__, 'handle_get_caution_link']);
+        add_action('wp_ajax_pc_stripe_release_caution', [__CLASS__, 'handle_release_caution']);
+        add_action('wp_ajax_pc_stripe_capture_caution', [__CLASS__, 'handle_capture_caution']);
         // Pas de nopriv ici : c'est l'admin qui génère le lien manuellement.
         // Pour le front, c'est le contrôleur de formulaire qui s'en chargera directement.
     }
@@ -74,5 +78,102 @@ class PCR_Stripe_Ajax
             'url' => $result['url'],
             'id'  => $result['id'] // ID session Stripe
         ]);
+    }
+
+    public static function handle_get_caution_link()
+    {
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Non autorisé.']);
+        }
+
+        $resa_id = isset($_POST['reservation_id']) ? (int) $_POST['reservation_id'] : 0;
+        if ($resa_id <= 0) wp_send_json_error(['message' => 'ID manquant.']);
+
+        if (!class_exists('PCR_Stripe_Manager')) {
+            wp_send_json_error(['message' => 'Stripe Manager absent.']);
+        }
+
+        // Appel au Manager
+        $result = PCR_Stripe_Manager::create_caution_link($resa_id);
+
+        if (!$result['success']) {
+            wp_send_json_error(['message' => $result['message']]);
+        }
+
+        // Mise à jour date demande
+        global $wpdb;
+        $wpdb->update(
+            $wpdb->prefix . 'pc_reservations',
+            ['caution_statut' => 'demande_envoyee', 'caution_date_demande' => current_time('mysql')],
+            ['id' => $resa_id]
+        );
+
+        wp_send_json_success(['url' => $result['url']]);
+    }
+
+    public static function handle_release_caution()
+    {
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Non autorisé.']);
+
+        $resa_id = (int) $_POST['reservation_id'];
+        $ref     = sanitize_text_field($_POST['ref']);
+
+        if (!$resa_id || !$ref) wp_send_json_error(['message' => 'Données manquantes.']);
+
+        if (!class_exists('PCR_Stripe_Manager')) wp_send_json_error(['message' => 'Manager absent.']);
+
+        $res = PCR_Stripe_Manager::release_caution($ref);
+
+        if (!$res['success']) {
+            wp_send_json_error(['message' => $res['message']]);
+        }
+
+        global $wpdb;
+        $wpdb->update(
+            $wpdb->prefix . 'pc_reservations',
+            ['caution_statut' => 'liberee', 'caution_date_liberation' => current_time('mysql')],
+            ['id' => $resa_id]
+        );
+
+        wp_send_json_success(['message' => 'Caution libérée avec succès.']);
+    }
+
+    public static function handle_capture_caution()
+    {
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Non autorisé.']);
+
+        $resa_id = (int) $_POST['reservation_id'];
+        $ref     = sanitize_text_field($_POST['ref']);
+        $amount  = (float) $_POST['amount'];
+        $note    = isset($_POST['note']) ? sanitize_textarea_field($_POST['note']) : '';
+
+        if (!$resa_id || !$ref || $amount <= 0) wp_send_json_error(['message' => 'Données invalides.']);
+
+        $res = PCR_Stripe_Manager::capture_caution($ref, $amount, $note);
+
+        if (!$res['success']) {
+            wp_send_json_error(['message' => $res['message']]);
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'pc_reservations';
+
+        // 1. Mise à jour statut
+        $data_update = ['caution_statut' => 'encaissee'];
+
+        // 2. Ajout dans les notes internes si motif fourni
+        if (!empty($note)) {
+            $old_notes = $wpdb->get_var($wpdb->prepare("SELECT notes_internes FROM {$table} WHERE id = %d", $resa_id));
+            $new_line  = date('d/m/Y') . ' - Encaissement Caution (' . $amount . '€) : ' . $note . "\n";
+            $data_update['notes_internes'] = $new_line . $old_notes;
+        }
+
+        $wpdb->update($table, $data_update, ['id' => $resa_id]);
+
+        wp_send_json_success(['message' => 'Montant prélevé avec succès.']);
     }
 }

@@ -1864,161 +1864,165 @@ if (!function_exists('pc_handle_logement_booking_request')) {
       return;
     }
 
-    // === DÉBUT: VÉRIFICATION ANTI-BOT (Logement Modale) ===
-
-    // 1. Vérification du Honeypot
+    // === VÉRIFICATION ANTI-BOT ===
     if (!empty($_POST['booking_reason_logement'])) {
-      wp_send_json_success(['message' => 'Votre demande a bien été envoyée !']); // Silent fail
+      wp_send_json_success(['message' => 'Votre demande a bien été envoyée !']);
       return;
     }
-
-    // 2. Vérification que la simulation n'est PAS vide ou par défaut (CORRIGÉ)
     $quote_details_raw = $_POST['quote_details'] ?? '';
-    if (
-      empty($quote_details_raw) ||
-      $quote_details_raw === 'Aucune simulation.' ||
-      $quote_details_raw === 'Aucune simulation de devis n\'a été effectuée.'
-    ) {
-      wp_send_json_success(['message' => 'Votre demande a bien été envoyée !']); // Silent fail
+    if (empty($quote_details_raw) || strpos($quote_details_raw, 'Aucune simulation') !== false) {
+      wp_send_json_success(['message' => 'Votre demande a bien été envoyée !']);
       return;
     }
-    // === FIN: VÉRIFICATION ANTI-BOT ===
 
+    // === RÉCUPÉRATION DES DONNÉES ===
     $logement_id = isset($_POST['logement_id']) ? absint($_POST['logement_id']) : 0;
-    $prenom = sanitize_text_field($_POST['prenom'] ?? '');
-    $nom = sanitize_text_field($_POST['nom'] ?? '');
-    $email = sanitize_email($_POST['email'] ?? '');
-    $tel = sanitize_text_field($_POST['tel'] ?? '');
-
-    // On utilise notre variable vérifiée
+    $prenom      = sanitize_text_field($_POST['prenom'] ?? '');
+    $nom         = sanitize_text_field($_POST['nom'] ?? '');
+    $email       = sanitize_email($_POST['email'] ?? '');
+    $tel         = sanitize_text_field($_POST['tel'] ?? '');
+    $adultes     = isset($_POST['adultes']) ? absint($_POST['adultes']) : 0;
+    $enfants     = isset($_POST['enfants']) ? absint($_POST['enfants']) : 0;
+    $bebes       = isset($_POST['bebes']) ? absint($_POST['bebes']) : 0;
+    $message     = sanitize_textarea_field($_POST['message'] ?? '');
     $quote_details = sanitize_textarea_field($quote_details_raw);
-
-    $adultes = isset($_POST['adultes']) ? absint($_POST['adultes']) : 0;
-    $enfants = isset($_POST['enfants']) ? absint($_POST['enfants']) : 0;
-
-    // --- CORRECTION BUG : Ajout des bébés ---
-    $bebes = isset($_POST['bebes']) ? absint($_POST['bebes']) : 0;
-
-    $message = sanitize_textarea_field($_POST['message'] ?? '');
 
     if (!$logement_id || empty($prenom) || empty($nom) || !is_email($email)) {
       wp_send_json_error(['message' => 'Veuillez remplir tous les champs obligatoires.']);
       return;
     }
 
-    // ===== INTELLIGENCE AJOUTÉE : Détection du mode (Direct vs Demande) =====
-    $mode_reservation = 'demande'; // Par défaut
-
+    // === DÉTECTION DU MODE DE RÉSERVATION ===
+    $mode_reservation = 'demande';
     if (function_exists('get_field')) {
       $setting = get_field('mode_reservation', $logement_id);
-
-      // Gestion robuste du format de retour ACF
-      if (is_array($setting)) {
-        $setting = $setting['value'] ?? ($setting[0] ?? '');
-      }
-      $setting = (string) $setting;
-
+      if (is_array($setting)) $setting = $setting['value'] ?? ($setting[0] ?? '');
       if ($setting === 'log_directe' || $setting === 'log_direct') {
         $mode_reservation = 'directe';
-      } elseif ($setting === 'log_channel') {
-        // Optionnel : Bloquer ou traiter comme demande
-        $mode_reservation = 'demande';
       }
     }
 
-    // ===== NOYAU RÉSERVATION : enregistrement dans wp_pc_reservations (si plugin actif) =====
+    // === PRÉPARATION CAUTION (CORRECTION GROUPE ACF) ===
+    $caution_montant = 0;
+    $caution_mode    = 'aucune';
+
+    // 1. Récupération via le GROUPE ACF 'regles_de_paiement'
+    if (function_exists('get_field')) {
+      $rules = get_field('regles_de_paiement', $logement_id);
+
+      if (is_array($rules)) {
+        // Lecture dans le tableau du groupe
+        $caution_montant = isset($rules['pc_caution_amount']) ? (float) $rules['pc_caution_amount'] : 0;
+        $raw_mode        = isset($rules['pc_caution_type'])   ? $rules['pc_caution_type']   : '';
+
+        if (!empty($raw_mode)) {
+          $caution_mode = (string) $raw_mode;
+        }
+      }
+    }
+
+    // 2. Filet de sécurité : Lecture directe base (avec le préfixe du groupe)
+    if ($caution_montant == 0) {
+      $meta_amount = get_post_meta($logement_id, 'regles_de_paiement_pc_caution_amount', true);
+      if (is_numeric($meta_amount)) $caution_montant = (float) $meta_amount;
+    }
+    if ($caution_mode === 'aucune') {
+      $meta_mode = get_post_meta($logement_id, 'regles_de_paiement_pc_caution_type', true);
+      if (!empty($meta_mode)) $caution_mode = (string) $meta_mode;
+    }
+
+    // === CRÉATION DE LA RÉSERVATION ===
     if (class_exists('PCR_Reservation')) {
       $resa_data = [
-        // Identification
         'type'             => 'location',
         'item_id'          => $logement_id,
         'mode_reservation' => $mode_reservation,
         'origine'          => 'site',
 
-        // Dates (pour l’instant probablement vides tant que le JS ne les envoie pas)
-        'date_arrivee'     => isset($_POST['arrival'])   ? sanitize_text_field($_POST['arrival'])   : null,
+        'date_arrivee'     => isset($_POST['arrival']) ? sanitize_text_field($_POST['arrival']) : null,
         'date_depart'      => isset($_POST['departure']) ? sanitize_text_field($_POST['departure']) : null,
 
-        // Personnes
-        'adultes'          => $adultes,
-        'enfants'          => $enfants,
-        'bebes'            => $bebes,
-
-        // Client
-        'prenom'           => $prenom,
-        'nom'              => $nom,
-        'email'            => $email,
-        'telephone'        => $tel,
+        'adultes' => $adultes,
+        'enfants' => $enfants,
+        'bebes' => $bebes,
+        'prenom' => $prenom,
+        'nom' => $nom,
+        'email' => $email,
+        'telephone' => $tel,
         'commentaire_client' => $message,
 
-        // Tarif (sera alimenté correctement quand on aura branché le JS)
         'devise'           => 'EUR',
-        'montant_total'    => isset($_POST['total'])      ? (float) $_POST['total']      : 0,
-        // CORRECTION : on utilise wp_unslash() pour retirer les antislashs ajoutés par WordPress
+        'montant_total'    => isset($_POST['total']) ? (float) $_POST['total'] : 0,
         'detail_tarif'     => isset($_POST['lines_json']) ? wp_kses_post(wp_unslash($_POST['lines_json'])) : null,
 
-        // Statuts initiaux
+        // Données Caution sécurisées
+        'caution_montant' => $caution_montant,
+        'caution_mode'    => $caution_mode,
+        'caution_statut'  => 'non_demande',
+
         'statut_reservation' => ($mode_reservation === 'directe') ? 'reservee' : 'en_attente_traitement',
         'statut_paiement'    => ($mode_reservation === 'directe') ? 'en_attente_paiement' : 'non_paye',
 
-        // Système
-        'date_creation'    => current_time('mysql'),
-        'date_maj'         => current_time('mysql'),
+        'date_creation' => current_time('mysql'),
+        'date_maj'      => current_time('mysql'),
       ];
 
-      // Création de la réservation
       $resa_id = PCR_Reservation::create($resa_data);
+      $payment_url = '';
 
-      $payment_url = ''; // Variable pour stocker l'URL Stripe
-
-      // Génération des paiements selon les règles ACF de la fiche
       if ($resa_id && class_exists('PCR_Payment')) {
         PCR_Payment::generate_for_reservation($resa_id);
 
-        // --- DÉBUT MODIF : GÉNÉRATION DU LIEN STRIPE SI DIRECTE ---
+        // Si réservation directe, on génère le lien de paiement
         if ($mode_reservation === 'directe' && class_exists('PCR_Stripe_Manager')) {
           global $wpdb;
           $table_pay = $wpdb->prefix . 'pc_payments';
-
-          // On récupère le paiement généré (Acompte ou Total) qui est "en_attente"
+          // Récupère le premier paiement en attente
           $payment_row = $wpdb->get_row($wpdb->prepare(
             "SELECT id, montant, type_paiement FROM {$table_pay} WHERE reservation_id = %d AND statut = 'en_attente' ORDER BY id ASC LIMIT 1",
             $resa_id
           ));
 
           if ($payment_row && $payment_row->montant > 0) {
-            $stripe_result = PCR_Stripe_Manager::create_payment_link(
+            $stripe = PCR_Stripe_Manager::create_payment_link(
               $resa_id,
               (float)$payment_row->montant,
               $payment_row->type_paiement
             );
-
-            if ($stripe_result['success']) {
-              $payment_url = $stripe_result['url'];
+            if ($stripe['success']) {
+              $payment_url = $stripe['url'];
             }
           }
         }
-        // --- FIN MODIF ---
       }
     }
-    // ===== FIN NOYAU RÉSERVATION =====
 
+    // === NOTIFICATIONS EMAIL ===
     $logement_title = get_the_title($logement_id);
-    // ... (Laissez votre code d'envoi d'emails ici, inchangé) ...
-    // wp_mail(...);
+    $headers = ['Content-Type: text/plain; charset=UTF-8'];
 
-    // --- RÉPONSE JSON MODIFIÉE ---
-    $response_data = [
-      'message' => 'Votre demande a bien été envoyée ! Un email de confirmation vous a été adressé.'
-    ];
+    // Admin
+    $admin_body = "Nouvelle " . ($mode_reservation === 'directe' ? "RÉSERVATION DIRECTE" : "demande") . ".\n\n";
+    $admin_body .= "Logement : " . $logement_title . "\nClient : " . $prenom . " " . $nom . "\n";
+    $admin_body .= "Simulation :\n" . $quote_details;
+    wp_mail('guadeloupe@prestigecaraibes.com', 'Nouvelle demande - ' . $logement_title, $admin_body, $headers);
 
-    // Si une URL de paiement a été générée, on l'ajoute à la réponse
-    if (!empty($payment_url)) {
-      $response_data['payment_url'] = $payment_url;
-      $response_data['message'] = 'Redirection vers le paiement sécurisé...';
+    // Client
+    $client_subject = ($mode_reservation === 'directe') ? "Confirmation de réservation" : "Confirmation de votre demande";
+    $client_body = "Bonjour " . $prenom . ",\n\nMerci pour votre demande pour " . $logement_title . ".\n";
+    $client_body .= ($mode_reservation === 'directe') ? "Votre réservation est pré-enregistrée." : "Nous revenons vers vous très vite.";
+    if ($email) {
+      wp_mail($email, $client_subject, $client_body, $headers);
     }
 
-    wp_send_json_success($response_data);
+    // === RÉPONSE JSON ===
+    $response = ['message' => 'Votre demande a bien été envoyée ! Un email de confirmation vous a été adressé.'];
+    if (!empty($payment_url)) {
+      $response['payment_url'] = $payment_url;
+      $response['message'] = 'Redirection vers le paiement...';
+    }
+
+    wp_send_json_success($response);
     exit;
   }
 }

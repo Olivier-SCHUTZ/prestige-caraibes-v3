@@ -482,6 +482,24 @@ class PCR_Booking_Engine
             'detail_tarif'          => $detail_tarif,
             'snapshot_politique'    => $pricing['snapshot_politique'] ?: null,
 
+            // --- AJOUT CAUTION (Compatible Groupe ACF) ---
+            'caution_montant' => (function () use ($item) {
+                if (!function_exists('get_field')) return 0;
+                $rules = get_field('regles_de_paiement', (int)$item['item_id']);
+                return isset($rules['pc_caution_amount']) ? (float)$rules['pc_caution_amount'] : 0;
+            })(),
+
+            'caution_mode' => (function () use ($item) {
+                if (!function_exists('get_field')) return 'aucune';
+                $rules = get_field('regles_de_paiement', (int)$item['item_id']);
+                return (isset($rules['pc_caution_type']) && !empty($rules['pc_caution_type']))
+                    ? (string)$rules['pc_caution_type']
+                    : 'aucune';
+            })(),
+
+            'caution_statut' => 'non_demande',
+            // ---------------------------------
+
             'statut_reservation'    => $statuts['reservation'],
             'statut_paiement'       => $statuts['paiement'],
             'notes_internes'        => $meta['notes_internes'] ?: null,

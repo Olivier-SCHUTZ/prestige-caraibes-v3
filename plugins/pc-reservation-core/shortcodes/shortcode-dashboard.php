@@ -1403,14 +1403,83 @@ function pc_resa_dashboard_shortcode($atts)
 
                                             <?php if ($resa->type === 'location') : ?>
                                                 <div class="pc-resa-section-caution">
-                                                    <h5>Caution (logement)</h5>
+                                                    <h5>Caution (Empreinte Bancaire)</h5>
                                                     <?php
-                                                    $caution_value = function_exists('get_field') ? get_field('caution', $resa->item_id) : '';
-                                                    if ($caution_value !== '' && $caution_value !== null) :
+                                                    // On lit les données enregistrées en base (prioritaires)
+                                                    $c_montant = (float) ($resa->caution_montant ?? 0);
+                                                    $c_mode    = $resa->caution_mode ?? 'aucune';
+                                                    $c_statut  = $resa->caution_statut ?? 'non_demande';
+
+                                                    // Mapping labels statut
+                                                    $status_labels = [
+                                                        'non_demande' => 'Non demandée',
+                                                        'demande_envoyee' => 'Demande envoyée',
+                                                        'empreinte_validee' => 'Empreinte validée (Bloqué)',
+                                                        'liberee' => 'Libérée',
+                                                        'encaissee' => 'Encaissée'
+                                                    ];
+                                                    $statut_label = $status_labels[$c_statut] ?? $c_statut;
                                                     ?>
-                                                        <p><strong>Montant de la caution :</strong> <?php echo esc_html(number_format((float) $caution_value, 0, ',', ' ')); ?> €</p>
+
+                                                    <?php if ($c_mode === 'empreinte' && $c_montant > 0) : ?>
+                                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                                            <div>
+                                                                <span style="font-size:1.1em; font-weight:bold;"><?php echo number_format($c_montant, 2, ',', ' '); ?> €</span>
+                                                                <br>
+                                                                <span class="pc-resa-badge" style="font-size:0.75em; margin-top:4px; display:inline-block; background:#f3f4f6; color:#4b5563;">
+                                                                    Statut : <?php echo esc_html($statut_label); ?>
+                                                                </span>
+                                                            </div>
+
+                                                            <div>
+                                                                <?php if ($c_statut === 'non_demande' || $c_statut === 'demande_envoyee') : ?>
+                                                                    <button type="button"
+                                                                        class="pc-resa-payment-action pc-resa-caution-generate"
+                                                                        data-resa-id="<?php echo esc_attr($resa->id); ?>"
+                                                                        style="color:#4f46e5; font-weight:600; cursor:pointer; border:none; background:none;">
+                                                                        🔗 Lien caution
+                                                                    </button>
+                                                                <?php elseif ($c_statut === 'empreinte_validee') : ?>
+                                                                    <div style="display:flex; gap:5px; align-items:center;">
+                                                                        <span style="color:#16a34a; font-weight:600; margin-right:5px;">✅ Validée</span>
+
+                                                                        <button type="button" class="pc-resa-caution-action pc-btn--ghost"
+                                                                            style="font-size:0.75rem; padding:4px 8px; border:1px solid #16a34a; color:#16a34a;"
+                                                                            data-action="release"
+                                                                            data-id="<?php echo $resa->id; ?>"
+                                                                            data-ref="<?php echo esc_attr($resa->caution_reference); ?>">
+                                                                            Libérer
+                                                                        </button>
+
+                                                                        <button type="button" class="pc-resa-caution-action pc-btn--ghost"
+                                                                            style="font-size:0.75rem; padding:4px 8px; border:1px solid #dc2626; color:#dc2626;"
+                                                                            data-action="capture"
+                                                                            data-id="<?php echo $resa->id; ?>"
+                                                                            data-ref="<?php echo esc_attr($resa->caution_reference); ?>"
+                                                                            data-max="<?php echo esc_attr($c_montant); ?>">
+                                                                            Encaisser
+                                                                        </button>
+                                                                    </div>
+                                                                <?php elseif ($c_statut === 'liberee') : ?>
+                                                                    <span style="color:#64748b;">🔓 Libérée</span>
+                                                                <?php elseif ($c_statut === 'encaissee') : ?>
+                                                                    <span style="color:#dc2626; font-weight:600;">💰 Encaissée</span>
+                                                                    <?php
+                                                                    // Recherche de la note d'encaissement dans l'historique
+                                                                    if (!empty($resa->notes_internes)) {
+                                                                        // On cherche la ligne qui commence par une date et contient "Encaissement Caution"
+                                                                        if (preg_match('/^\d{2}\/\d{2}\/\d{4} - Encaissement Caution.*/m', $resa->notes_internes, $matches)) {
+                                                                            echo '<div style="margin-top:4px; font-size:0.85em; color:#ef4444; background:#fef2f2; padding:4px 8px; border-radius:4px; border:1px solid #fee2e2;">' . esc_html($matches[0]) . '</div>';
+                                                                        }
+                                                                    }
+                                                                    ?>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php elseif ($c_mode === 'encaissement') : ?>
+                                                        <p>Caution à encaisser : <?php echo number_format($c_montant, 2, ',', ' '); ?> €</p>
                                                     <?php else : ?>
-                                                        <p><em>Aucune caution configurée pour ce logement.</em></p>
+                                                        <p><em>Pas de gestion de caution (mode: <?php echo esc_html($c_mode); ?>).</em></p>
                                                     <?php endif; ?>
                                                 </div>
                                             <?php endif; ?>
@@ -4558,9 +4627,7 @@ function pc_resa_dashboard_shortcode($atts)
             attachQuoteButtons();
             // --- DEBUT DU NOUVEAU CODE (Bouton Lien Stripe) ---
             document.addEventListener('click', function(e) {
-                // On vérifie si l'élément cliqué (ou son parent) a la classe du bouton
                 const btn = e.target.closest('.pc-resa-payment-generate-link');
-
                 if (btn) {
                     e.preventDefault();
                     const paymentId = btn.getAttribute('data-payment-id');
@@ -4583,20 +4650,15 @@ function pc_resa_dashboard_shortcode($atts)
                         .then(response => response.json())
                         .then(data => {
                             if (data.success && data.data.url) {
-                                // Copie dans le presse-papier
                                 navigator.clipboard.writeText(data.data.url).then(() => {
-                                    // Feedback visuel uniquement sur le bouton (plus pro)
                                     btn.textContent = '✅ Lien copié !';
-                                    btn.style.color = '#16a34a'; // Vert
-
-                                    // On remet le bouton normal après 3 secondes
+                                    btn.style.color = '#16a34a';
                                     setTimeout(() => {
                                         btn.textContent = '🔗 Générer nouveau lien';
-                                        btn.style.color = '#4f46e5'; // Retour couleur normale
+                                        btn.style.color = '#4f46e5';
                                         btn.disabled = false;
                                     }, 3000);
                                 });
-                                // PLUS D'ALERT ICI
                             } else {
                                 alert('Erreur : ' + (data.data && data.data.message ? data.data.message : 'Impossible de créer le lien.'));
                                 btn.textContent = originalText;
@@ -4611,18 +4673,183 @@ function pc_resa_dashboard_shortcode($atts)
                         });
                 }
             });
-        });
-    </script>
 
-    <script>
+            // --- GESTION CAUTION (Empreinte) ---
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.pc-resa-caution-generate');
+                if (btn) {
+                    e.preventDefault();
+                    const resaId = btn.getAttribute('data-resa-id');
+                    const originalText = btn.textContent;
+
+                    if (btn.disabled) return;
+                    btn.textContent = '⏳ ...';
+                    btn.disabled = true;
+
+                    const formData = new URLSearchParams();
+                    formData.append('action', 'pc_stripe_get_caution_link');
+                    formData.append('nonce', pcResaManualNonce);
+                    formData.append('reservation_id', resaId);
+
+                    fetch(pcResaAjaxUrl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.data.url) {
+                                navigator.clipboard.writeText(data.data.url).then(() => {
+                                    btn.textContent = '✅ Copié !';
+                                    btn.style.color = '#16a34a';
+                                    setTimeout(() => {
+                                        btn.textContent = originalText;
+                                        btn.style.color = '#4f46e5';
+                                        btn.disabled = false;
+                                        // Recharger la page pour voir le changement de statut
+                                        window.location.reload();
+                                    }, 1500);
+                                });
+                            } else {
+                                alert('Erreur : ' + (data.data && data.data.message ? data.data.message : 'Impossible.'));
+                                btn.textContent = originalText;
+                                btn.disabled = false;
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Erreur technique.');
+                            btn.textContent = originalText;
+                            btn.disabled = false;
+                        });
+                }
+            });
+
+            // --- GESTION ACTIONS CAUTION (Libérer / Encaisser) ---
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.pc-resa-caution-action');
+                if (!btn) return;
+
+                e.preventDefault();
+                const action = btn.dataset.action;
+                const id = btn.dataset.id;
+                const ref = btn.dataset.ref;
+
+                if (!ref) {
+                    alert('Référence Stripe manquante.');
+                    return;
+                }
+
+                // 1. LIBÉRATION (Pas de changement, simple confirm)
+                if (action === 'release') {
+                    if (!confirm("Voulez-vous libérer (annuler) cette caution maintenant ?\nAction irréversible.")) return;
+
+                    btn.disabled = true;
+                    btn.textContent = '...';
+
+                    const formData = new URLSearchParams();
+                    formData.append('action', 'pc_stripe_release_caution');
+                    formData.append('nonce', pcResaManualNonce);
+                    formData.append('reservation_id', id);
+                    formData.append('ref', ref);
+
+                    fetch(pcResaAjaxUrl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                window.location.reload();
+                            } else {
+                                alert('Erreur : ' + data.data.message);
+                                btn.disabled = false;
+                                btn.textContent = 'Libérer';
+                            }
+                        });
+                }
+
+                // 2. ENCAISSEMENT (Ouverture Popup)
+                else if (action === 'capture') {
+                    const max = btn.dataset.max;
+                    const popup = document.getElementById('pc-capture-caution-popup');
+
+                    // Remplissage du popup
+                    document.getElementById('pc-capture-resa-id').value = id;
+                    document.getElementById('pc-capture-ref').value = ref;
+                    document.getElementById('pc-capture-max-display').textContent = max;
+                    document.getElementById('pc-capture-amount').value = max; // Par défaut tout le montant
+                    document.getElementById('pc-capture-amount').max = max;
+                    document.getElementById('pc-capture-note').value = ''; // Reset note
+
+                    popup.hidden = false;
+                }
+            });
+
+            // --- SOUMISSION DU POPUP D'ENCAISSEMENT ---
+            const captureConfirmBtn = document.getElementById('pc-capture-confirm-btn');
+            if (captureConfirmBtn) {
+                captureConfirmBtn.addEventListener('click', function() {
+                    const id = document.getElementById('pc-capture-resa-id').value;
+                    const ref = document.getElementById('pc-capture-ref').value;
+                    const amount = parseFloat(document.getElementById('pc-capture-amount').value);
+                    const note = document.getElementById('pc-capture-note').value;
+                    const max = parseFloat(document.getElementById('pc-capture-amount').max);
+
+                    if (isNaN(amount) || amount <= 0 || amount > max) {
+                        alert("Montant invalide (Max: " + max + "€)");
+                        return;
+                    }
+                    if (!note.trim()) {
+                        if (!confirm("Voulez-vous vraiment encaisser sans mettre de motif ?")) return;
+                    }
+
+                    const btn = this;
+                    const originalText = btn.textContent;
+                    btn.disabled = true;
+                    btn.textContent = 'Encaissement...';
+
+                    const formData = new URLSearchParams();
+                    formData.append('action', 'pc_stripe_capture_caution');
+                    formData.append('nonce', pcResaManualNonce);
+                    formData.append('reservation_id', id);
+                    formData.append('ref', ref);
+                    formData.append('amount', amount);
+                    formData.append('note', note); // On envoie la note
+
+                    fetch(pcResaAjaxUrl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Plus d'alerte, rechargement direct pour voir la note
+                                window.location.reload();
+                            } else {
+                                alert('Erreur : ' + (data.data.message || 'Inconnue'));
+                                btn.disabled = false;
+                                btn.textContent = originalText;
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Erreur technique.');
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                        });
+                });
+            }
+
+        }); // <--- C'EST ICI QUE CA MANQUAIT (Fermeture du DOMContentLoaded)
+
+        // --- GESTION DES POPUPS (Annulation / Confirmation) ---
         document.addEventListener("click", function(event) {
 
-            /* --- OUVERTURE DU POPUP --- */
+            /* --- OUVERTURE DU POPUP ANNULATION --- */
             const cancelBtn = event.target.closest(".pc-resa-action-cancel-booking");
             if (cancelBtn) {
                 event.preventDefault();
                 const id = cancelBtn.dataset.reservationId;
-
                 const popup = document.getElementById("pc-cancel-reservation-popup");
                 popup.dataset.resaId = id;
                 popup.hidden = false;
@@ -4635,12 +4862,10 @@ function pc_resa_dashboard_shortcode($atts)
                 return;
             }
 
-            /* --- CONFIRMATION ANNULATION --- */
+            /* --- CONFIRMATION ANNULATION (Action réelle) --- */
             if (event.target.matches("[data-pc-popup-confirm]")) {
-
                 const popup = document.getElementById("pc-cancel-reservation-popup");
                 const id = popup.dataset.resaId;
-
                 const body = new URLSearchParams();
                 body.append("action", "pc_cancel_reservation");
                 body.append("nonce", pcResaManualNonce);
@@ -4656,37 +4881,24 @@ function pc_resa_dashboard_shortcode($atts)
                     })
                     .then(r => r.json())
                     .then(json => {
-
                         if (!json || !json.success) {
-                            console.error(json && json.data && json.data.message ?
-                                json.data.message :
-                                "Erreur lors de l’annulation.");
+                            console.error(json && json.data && json.data.message ? json.data.message : "Erreur.");
                             return;
                         }
-
-                        // Ferme le popup
                         popup.hidden = true;
-
-                        // Refresh calendrier
-                        document.dispatchEvent(new CustomEvent("pc:calendar:refresh"));
-
-                        // Recharger la page pour mettre à jour la fiche (statut = annulée)
                         window.location.reload();
-
                     })
                     .catch(() => {
-                        console.error("Erreur réseau lors de l'annulation.");
+                        console.error("Erreur réseau.");
                     });
             }
-            /* --- CONFIRMATION RÉSERVATION --- */
+
+            /* --- CONFIRMATION RÉSERVATION (Passer de Devis à Confirmé) --- */
             const confirmBtn = event.target.closest(".pc-resa-action-confirm-booking");
             if (confirmBtn) {
                 event.preventDefault();
                 const id = confirmBtn.dataset.reservationId;
-
-                if (!confirm('Confirmer cette réservation ? Elle apparaîtra dans le calendrier.')) {
-                    return;
-                }
+                if (!confirm('Confirmer cette réservation ? Elle apparaîtra dans le calendrier.')) return;
 
                 const originalText = confirmBtn.textContent;
                 confirmBtn.textContent = '...';
@@ -4708,9 +4920,6 @@ function pc_resa_dashboard_shortcode($atts)
                     .then(r => r.json())
                     .then(json => {
                         if (json && json.success) {
-                            // Rafraîchir calendrier si présent
-                            document.dispatchEvent(new CustomEvent("pc:calendar:refresh"));
-                            // Recharger la page pour mettre à jour les statuts et boutons
                             window.location.reload();
                         } else {
                             alert(json.data && json.data.message ? json.data.message : 'Erreur.');
@@ -4727,28 +4936,77 @@ function pc_resa_dashboard_shortcode($atts)
             }
         });
     </script>
-    <!-- Popup d’annulation Prestige Caraïbes -->
+
     <div id="pc-cancel-reservation-popup" class="pc-popup-overlay" hidden>
         <div class="pc-popup-box">
             <h3 class="pc-popup-title">Annuler cette réservation ?</h3>
-
             <p class="pc-popup-text">
                 Êtes-vous sûr de vouloir annuler cette réservation ?<br>
-                <small>Si votre client a déjà fait des règlements, pensez au remboursement suivant vos conditions générales.</small>
+                <small>Si le client a déjà payé, pensez au remboursement via Stripe.</small>
             </p>
-
             <div class="pc-popup-actions">
-                <button class="pc-btn pc-btn--primary" data-pc-popup-confirm>
-                    J’annule cette réservation
-                </button>
-                <button class="pc-btn pc-btn--line" data-pc-popup-close>
-                    Revenir
-                </button>
+                <button class="pc-btn pc-btn--primary" data-pc-popup-confirm>Confirmer l'annulation</button>
+                <button class="pc-btn pc-btn--line" data-pc-popup-close>Retour</button>
             </div>
         </div>
     </div>
-<?php
 
+    <div id="pc-capture-caution-popup" class="pc-popup-overlay" hidden>
+        <div class="pc-popup-box" style="max-width: 450px;">
+            <h3 class="pc-popup-title">Encaisser sur la caution</h3>
+
+            <p class="pc-popup-text">
+                Montant total bloqué : <strong id="pc-capture-max-display"></strong> €
+            </p>
+
+            <form id="pc-capture-form" style="text-align:left; margin-bottom:20px;">
+                <input type="hidden" id="pc-capture-resa-id">
+                <input type="hidden" id="pc-capture-ref">
+
+                <label class="pc-label-force">Montant à prélever (€)</label>
+                <input type="number" id="pc-capture-amount" step="0.01" min="1" class="pc-input-force">
+
+                <label class="pc-label-force">Motif / Observation</label>
+                <textarea id="pc-capture-note" rows="3" class="pc-input-force"
+                    placeholder="Ex: Ménage non fait, Casse vaisselle..."></textarea>
+            </form>
+
+            <div class="pc-popup-actions">
+                <button type="button" class="pc-btn pc-btn--primary" id="pc-capture-confirm-btn" style="background:#dc2626; border-color:#dc2626;">
+                    Confirmer l'encaissement
+                </button>
+                <button type="button" class="pc-btn pc-btn--line" onclick="document.getElementById('pc-capture-caution-popup').hidden = true;">
+                    Annuler
+                </button>
+            </div>
+        </div>
+
+        <style>
+            .pc-input-force {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                padding: 12px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 6px !important;
+                font-size: 1.1rem !important;
+                margin-bottom: 15px !important;
+                background: #fff !important;
+                color: #333 !important;
+                height: auto !important;
+            }
+
+            .pc-label-force {
+                display: block !important;
+                font-size: 0.85rem !important;
+                font-weight: 600 !important;
+                margin-bottom: 6px !important;
+                color: #475569 !important;
+            }
+        </style>
+    </div>
+<?php
     return ob_get_clean();
 }
 add_shortcode('pc_resa_dashboard', 'pc_resa_dashboard_shortcode');
