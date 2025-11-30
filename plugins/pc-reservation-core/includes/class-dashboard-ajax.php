@@ -26,6 +26,7 @@ class PCR_Dashboard_Ajax
 
         // AJOUT : Nouvelle action pour confirmer une réservation
         add_action('wp_ajax_pc_confirm_reservation', [__CLASS__, 'ajax_confirm_reservation']);
+        add_action('wp_ajax_pc_send_message', [__CLASS__, 'ajax_send_message']);
     }
 
     public static function handle_manual_reservation()
@@ -973,5 +974,56 @@ class PCR_Dashboard_Ajax
         }
 
         return $events;
+    }
+
+    /**
+     * Envoi d'un message manuel (basé sur un template).
+     */
+    public static function ajax_send_message()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Données
+        $reservation_id = isset($_POST['reservation_id']) ? (int) $_POST['reservation_id'] : 0;
+        $template_id    = isset($_POST['template_id']) ? sanitize_text_field($_POST['template_id']) : ''; // Peut être 'custom'
+
+        // Données message libre
+        $custom_subject = isset($_POST['custom_subject']) ? sanitize_text_field($_POST['custom_subject']) : '';
+        $custom_body    = isset($_POST['custom_body']) ? wp_kses_post($_POST['custom_body']) : '';
+
+        if ($reservation_id <= 0) {
+            wp_send_json_error(['message' => 'ID Réservation manquant.']);
+        }
+
+        if (!class_exists('PCR_Messaging')) {
+            wp_send_json_error(['message' => 'Module Messagerie absent.']);
+        }
+
+        // Préparation des arguments pour le message libre
+        $custom_args = [];
+        if ($template_id === 'custom') {
+            if (empty($custom_subject) || empty($custom_body)) {
+                wp_send_json_error(['message' => 'Sujet et message requis pour l\'envoi manuel.']);
+            }
+            $custom_args = [
+                'sujet' => $custom_subject,
+                'corps' => $custom_body
+            ];
+        } elseif (empty($template_id)) {
+            wp_send_json_error(['message' => 'Veuillez choisir un modèle ou écrire un message.']);
+        }
+
+        // Appel
+        $result = PCR_Messaging::send_message($template_id, $reservation_id, false, 'manuel', $custom_args);
+
+        if (!$result['success']) {
+            wp_send_json_error(['message' => $result['message']]);
+        }
+
+        wp_send_json_success(['message' => 'Message envoyé avec succès.']);
     }
 }

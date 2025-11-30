@@ -116,6 +116,7 @@ class PCR_Reservation_Schema
           reservation_id BIGINT(20) UNSIGNED NOT NULL,
           canal VARCHAR(20) DEFAULT 'email',
           direction VARCHAR(20) DEFAULT 'sortant',
+          type VARCHAR(50) DEFAULT 'automatique',  /* <--- C'EST LA COLONNE MANQUANTE */
           sujet VARCHAR(255) DEFAULT NULL,
           corps LONGTEXT DEFAULT NULL,
           template_code VARCHAR(100) DEFAULT NULL,
@@ -130,7 +131,7 @@ class PCR_Reservation_Schema
           date_envoi DATETIME DEFAULT NULL,
           provider_message_id VARCHAR(191) DEFAULT NULL,
           metadata LONGTEXT DEFAULT NULL,
-          est_automatique TINYINT(1) DEFAULT 0,
+          est_automatique TINYINT(1) DEFAULT 0, /* On le garde pour compatibilité ou on pourra le supprimer plus tard */
           user_id BIGINT(20) UNSIGNED DEFAULT NULL,
           note_interne TEXT DEFAULT NULL,
           date_maj DATETIME NOT NULL,

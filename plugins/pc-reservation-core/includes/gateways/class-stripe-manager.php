@@ -413,4 +413,113 @@ class PCR_Stripe_Manager
             'message' => "Rotation réussie. $cancel_msg"
         ];
     }
+    /**
+     * TÂCHE AUTOMATIQUE (CRON)
+     * Vérifie et renouvelle les cautions qui approchent des 7 jours.
+     * Se déclenche via l'event 'pc_cron_daily_caution_check'.
+     */
+    public static function process_auto_renewals()
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'pc_reservations';
+
+        // On cible les cautions validées il y a 6 jours ou plus (Stripe expire à 7 jours)
+        // La marge de 24h permet de gérer les décalages de cron.
+        $limit_date = date('Y-m-d H:i:s', strtotime('-6 days'));
+
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, caution_montant, caution_reference, notes_internes 
+             FROM {$table} 
+             WHERE caution_statut = 'empreinte_validee' 
+             AND caution_date_validation <= %s",
+            $limit_date
+        ));
+
+        if (empty($rows)) return;
+
+        foreach ($rows as $row) {
+            $log_prefix = date('d/m/Y H:i') . ' [AUTO-CRON] ';
+
+            // Tentative de rotation
+            $res = self::rotate_caution($row->caution_reference, (float)$row->caution_montant, $row->id);
+
+            if ($res['success']) {
+                $new_ref = sanitize_text_field($res['new_ref']);
+                $new_note = $log_prefix . "Renouvellement automatique OK.\nAncienne : {$row->caution_reference}\nNouvelle : $new_ref\n----------------\n" . $row->notes_internes;
+
+                $wpdb->update(
+                    $table,
+                    [
+                        'caution_reference'       => $new_ref,
+                        'caution_date_validation' => current_time('mysql'), // Reset du compteur pour 7 jours
+                        'notes_internes'          => $new_note,
+                        'date_maj'                => current_time('mysql')
+                    ],
+                    ['id' => $row->id]
+                );
+            } else {
+                // En cas d'échec, on loggue l'erreur dans les notes (pour investigation) mais on ne bloque pas les autres
+                $error_msg = isset($res['message']) ? $res['message'] : 'Erreur inconnue';
+                $fail_note = $log_prefix . "ÉCHEC Renouvellement : $error_msg\nAction requise manuellement.\n----------------\n" . $row->notes_internes;
+
+                $wpdb->update(
+                    $table,
+                    ['notes_internes' => $fail_note],
+                    ['id' => $row->id]
+                );
+            }
+        }
+    }
+    /**
+     * CRON : LIBÉRATION AUTOMATIQUE
+     * Libère la caution 7 jours après la date de départ si elle est toujours active.
+     */
+    public static function process_auto_releases()
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'pc_reservations';
+
+        // Cible : Date Départ <= Aujourd'hui - 7 jours
+        // Exemple : Départ le 1er. Le 8, la condition est vraie.
+        $target_date = date('Y-m-d', strtotime('-7 days'));
+
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, caution_reference, notes_internes, date_depart 
+             FROM {$table} 
+             WHERE caution_statut = 'empreinte_validee' 
+             AND date_depart IS NOT NULL 
+             AND date_depart <= %s",
+            $target_date
+        ));
+
+        if (empty($rows)) return;
+
+        foreach ($rows as $row) {
+            $log_prefix = date('d/m/Y H:i') . ' [AUTO-CRON] ';
+
+            // Appel Stripe pour libérer (Cancel)
+            $res = self::release_caution($row->caution_reference);
+
+            if ($res['success']) {
+                $new_note = $log_prefix . "Libération automatique (Départ +7j).\nCaution libérée : {$row->caution_reference}\n----------------\n" . $row->notes_internes;
+
+                $wpdb->update(
+                    $table,
+                    [
+                        'caution_statut'          => 'liberee',
+                        'caution_date_liberation' => current_time('mysql'),
+                        'notes_internes'          => $new_note,
+                        'date_maj'                => current_time('mysql')
+                    ],
+                    ['id' => $row->id]
+                );
+            } else {
+                // En cas d'erreur (ex: déjà expirée ou introuvable), on le note
+                $err = isset($res['message']) ? $res['message'] : 'Erreur';
+                $fail_note = $log_prefix . "ECHEC Libération Auto : $err\n----------------\n" . $row->notes_internes;
+
+                $wpdb->update($table, ['notes_internes' => $fail_note], ['id' => $row->id]);
+            }
+        }
+    }
 }

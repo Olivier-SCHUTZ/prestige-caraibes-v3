@@ -501,6 +501,21 @@ function pc_resa_dashboard_shortcode($atts)
 
     $reservations = PCR_Reservation::get_list($list_args);
 
+    // --- CHARGEMENT DES MESSAGES & TEMPLATES ---
+    $messages_map = [];
+    $templates_list = [];
+
+    // 1. Récupérer les templates disponibles (pour le formulaire d'envoi)
+    $templates_posts = get_posts([
+        'post_type' => 'pc_template',
+        'posts_per_page' => -1,
+        'orderby' => 'title',
+        'order' => 'ASC'
+    ]);
+    foreach ($templates_posts as $tpl) {
+        $templates_list[] = ['id' => $tpl->ID, 'title' => $tpl->post_title];
+    }
+
     if (!empty($reservations)) {
         global $wpdb;
 
@@ -510,11 +525,22 @@ function pc_resa_dashboard_shortcode($atts)
 
         if (!empty($ids)) {
             $placeholders = implode(',', array_fill(0, count($ids), '%d'));
-            $table        = $wpdb->prefix . 'pc_reservations';
-            $sql         = "SELECT id, detail_tarif FROM {$table} WHERE id IN ({$placeholders})";
-            // $wpdb->prepare attend des arguments séparés, on unpacke le tableau d'ids
-            $prepared    = $wpdb->prepare($sql, ...array_values($ids));
-            $detail_rows = $wpdb->get_results($prepared, OBJECT_K);
+
+            // A. Détails tarifs (existant)
+            $table_res    = $wpdb->prefix . 'pc_reservations';
+            $sql_res      = "SELECT id, detail_tarif FROM {$table_res} WHERE id IN ({$placeholders})";
+            $prepared_res = $wpdb->prepare($sql_res, ...array_values($ids));
+            $detail_rows  = $wpdb->get_results($prepared_res, OBJECT_K);
+
+            // B. Messages (NOUVEAU)
+            $table_msg    = $wpdb->prefix . 'pc_messages';
+            $sql_msg      = "SELECT * FROM {$table_msg} WHERE reservation_id IN ({$placeholders}) ORDER BY date_creation DESC";
+            $prepared_msg = $wpdb->prepare($sql_msg, ...array_values($ids));
+            $raw_msgs     = $wpdb->get_results($prepared_msg);
+
+            foreach ($raw_msgs as $msg) {
+                $messages_map[$msg->reservation_id][] = $msg;
+            }
 
             foreach ($reservations as $resa) {
                 $resa_id = isset($resa->id) ? (int) $resa->id : 0;
@@ -1484,6 +1510,18 @@ function pc_resa_dashboard_shortcode($atts)
                                                                 <?php endif; ?>
                                                             </div>
                                                         </div>
+
+                                                        <?php if ($c_statut === 'empreinte_validee') : ?>
+                                                            <div style="background:#f0f9ff; border-left:4px solid #3b82f6; padding:8px 12px; border-radius:4px; font-size:0.8rem; color:#1e3a8a; margin-bottom:12px;">
+                                                                <strong>🤖 Gestion Automatique Active</strong>
+                                                                <ul style="margin:4px 0 0 16px; padding:0; list-style-type:disc; color:#334155;">
+                                                                    <li>Renouvellement auto tous les 6 jours (tant que le client est là).</li>
+                                                                    <li>Libération auto 7 jours après la date de départ.</li>
+                                                                </ul>
+                                                                <em style="display:block; margin-top:4px; font-size:0.75rem; color:#64748b;">(Les boutons manuels ci-dessus restent prioritaires en cas de besoin)</em>
+                                                            </div>
+                                                        <?php endif; ?>
+
                                                     <?php elseif ($c_mode === 'encaissement') : ?>
                                                         <p>Caution à encaisser : <?php echo number_format($c_montant, 2, ',', ' '); ?> €</p>
                                                     <?php else : ?>
@@ -1492,6 +1530,51 @@ function pc_resa_dashboard_shortcode($atts)
                                                 </div>
                                             <?php endif; ?>
                                         </div>
+
+                                        <div class="pc-resa-card__section pc-resa-card__section--full" style="flex: 1 1 100%; max-width: 100%;">
+                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                                <h4 style="margin:0;">💬 Messagerie &amp; Historique</h4>
+                                                <button type="button" class="pc-btn pc-btn--primary pc-resa-open-msg-modal"
+                                                    style="font-size:0.8rem; padding:4px 10px;"
+                                                    data-resa-id="<?php echo $resa->id; ?>"
+                                                    data-client="<?php echo esc_attr($client_name); ?>">
+                                                    ✉️ Envoyer un message
+                                                </button>
+                                            </div>
+
+                                            <div class="pc-resa-messages-list">
+                                                <?php
+                                                $msgs = isset($messages_map[$resa->id]) ? $messages_map[$resa->id] : [];
+                                                if (!empty($msgs)) :
+                                                    foreach ($msgs as $msg) :
+                                                        $is_out = ($msg->direction === 'sortant');
+                                                        $bg = $is_out ? '#f1f5f9' : '#dbeafe'; // Gris = Nous, Bleu = Client (Futur)
+                                                        $align = $is_out ? 'margin-left:auto; margin-right:0;' : 'margin-right:auto; margin-left:0;';
+                                                        $icon = ($msg->canal === 'whatsapp') ? '📱' : '📧';
+                                                        $status_icon = ($msg->statut_envoi === 'envoye') ? '✅' : '⏳';
+                                                ?>
+                                                        <div style="background:<?php echo $bg; ?>; padding:8px 12px; border-radius:8px; max-width:85%; margin-bottom:8px; <?php echo $align; ?> font-size:0.9rem;">
+                                                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748b; margin-bottom:4px;">
+                                                                <span><?php echo $icon; ?> <strong><?php echo esc_html($msg->sujet); ?></strong></span>
+                                                                <span><?php echo date_i18n('d/m H:i', strtotime($msg->date_creation)); ?> <?php echo $status_icon; ?></span>
+                                                            </div>
+                                                            <div style="white-space: pre-wrap; line-height:1.4;"><?php echo wp_trim_words($msg->corps, 20, '...'); ?></div>
+                                                            <?php if (strlen(strip_tags($msg->corps)) > 100): ?>
+                                                                <button type="button" class="pc-msg-see-more"
+                                                                    style="border:none; background:none; color:#3b82f6; font-size:0.75rem; padding:0; cursor:pointer;"
+                                                                    data-action="view-full-message"
+                                                                    data-content="<?php echo esc_attr($msg->corps); ?>">
+                                                                    [Voir plus]
+                                                                </button>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    <?php endforeach;
+                                                else : ?>
+                                                    <p style="font-style:italic; color:#94a3b8; text-align:center; padding:10px;">Aucun message échangé.</p>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+
                                     </div>
 
                                     <!-- Bloc Infos client + Notes internes -->
@@ -3355,13 +3438,6 @@ function pc_resa_dashboard_shortcode($atts)
                         submitBtn.disabled = false;
                         return;
                     }
-
-
-
-
-
-
-
                     let result;
                     try {
                         result = JSON.parse(responseText);
@@ -5001,6 +5077,146 @@ function pc_resa_dashboard_shortcode($atts)
                         confirmBtn.disabled = false;
                     });
             }
+
+            // ============================================================
+            //  NOUVELLE GESTION MESSAGERIE (Templates + Libre + Popups)
+            // ============================================================
+
+            // 1. Écouteur global pour les clics (Délégation)
+            document.addEventListener("click", function(event) {
+
+                // --- A. OUVERTURE POPUP "ENVOYER UN MESSAGE" ---
+                const msgBtn = event.target.closest('.pc-resa-open-msg-modal');
+                if (msgBtn) {
+                    event.preventDefault();
+
+                    // Remplissage des champs cachés
+                    document.getElementById('pc-msg-resa-id').value = msgBtn.dataset.resaId;
+                    document.getElementById('pc-msg-client-name').textContent = msgBtn.dataset.client;
+
+                    // Réinitialisation de l'interface
+                    const tplSelect = document.getElementById('pc-msg-template');
+                    tplSelect.value = "";
+                    document.getElementById('pc-msg-custom-area').style.display = 'none';
+                    document.getElementById('pc-msg-template-hint').style.display = 'block';
+
+                    const feedback = document.getElementById('pc-msg-feedback');
+                    feedback.style.display = 'none';
+                    feedback.className = '';
+
+                    // Affichage Popup
+                    document.getElementById('pc-send-message-popup').hidden = false;
+                    return;
+                }
+
+                // --- B. OUVERTURE POPUP "VOIR PLUS" (Lecture) ---
+                const seeMoreBtn = event.target.closest('[data-action="view-full-message"]');
+                if (seeMoreBtn) {
+                    event.preventDefault();
+                    const content = seeMoreBtn.getAttribute('data-content');
+
+                    // Injection du contenu dans la modale de lecture
+                    const viewer = document.getElementById('pc-read-message-content');
+                    viewer.innerHTML = content; // Affiche le HTML (br, p...)
+
+                    document.getElementById('pc-read-message-popup').hidden = false;
+                    return;
+                }
+            });
+
+            // 2. Gestion du switch "Template" vs "Message Libre"
+            const tplSelect = document.getElementById('pc-msg-template');
+            if (tplSelect) {
+                tplSelect.addEventListener('change', function() {
+                    const isCustom = (this.value === 'custom');
+                    document.getElementById('pc-msg-custom-area').style.display = isCustom ? 'block' : 'none';
+                    document.getElementById('pc-msg-template-hint').style.display = isCustom ? 'none' : 'block';
+                });
+            }
+
+            // 3. Envoi du Message (Avec protection anti-doublon radicale)
+            const msgSendBtn = document.getElementById('pc-msg-send-btn');
+            const feedbackBox = document.getElementById('pc-msg-feedback');
+
+            if (msgSendBtn) {
+                // Astuce : On clone le bouton pour tuer tous les anciens écouteurs parasites (responsables de l'envoi x5)
+                const newBtn = msgSendBtn.cloneNode(true);
+                msgSendBtn.parentNode.replaceChild(newBtn, msgSendBtn);
+
+                newBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Protection visuelle
+                    if (this.disabled) return;
+
+                    // Récupération des valeurs
+                    const id = document.getElementById('pc-msg-resa-id').value;
+                    const templateId = document.getElementById('pc-msg-template').value;
+                    const customSubject = document.getElementById('pc-msg-custom-subject').value;
+                    const customBody = document.getElementById('pc-msg-custom-body').value;
+
+                    // Validation
+                    if (!templateId) {
+                        showFeedback("⚠️ Veuillez choisir un modèle ou 'Nouveau message'.", false);
+                        return;
+                    }
+                    if (templateId === 'custom' && (!customSubject.trim() || !customBody.trim())) {
+                        showFeedback("⚠️ Le sujet et le message sont obligatoires.", false);
+                        return;
+                    }
+
+                    // UI Loading
+                    const originalText = this.textContent;
+                    this.textContent = 'Envoi en cours...';
+                    this.disabled = true;
+                    feedbackBox.style.display = 'none';
+
+                    // Préparation Données
+                    const formData = new URLSearchParams();
+                    formData.append('action', 'pc_send_message');
+                    formData.append('nonce', pcResaManualNonce);
+                    formData.append('reservation_id', id);
+                    formData.append('template_id', templateId);
+
+                    if (templateId === 'custom') {
+                        formData.append('custom_subject', customSubject);
+                        formData.append('custom_body', customBody);
+                    }
+
+                    // Envoi AJAX
+                    fetch(pcResaAjaxUrl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                showFeedback("✅ Message envoyé !", true);
+                                setTimeout(() => {
+                                    document.getElementById('pc-send-message-popup').hidden = true;
+                                    window.location.reload();
+                                }, 1000);
+                            } else {
+                                throw new Error(data.data.message || 'Erreur inconnue');
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            showFeedback("❌ Erreur : " + (err.message || "Technique"), false);
+                            this.textContent = originalText;
+                            this.disabled = false;
+                        });
+                });
+            }
+
+            // Helper pour afficher les messages dans la popup
+            function showFeedback(msg, isSuccess) {
+                if (!feedbackBox) return;
+                feedbackBox.textContent = msg;
+                feedbackBox.style.background = isSuccess ? "#dcfce7" : "#fee2e2";
+                feedbackBox.style.color = isSuccess ? "#15803d" : "#b91c1c";
+                feedbackBox.style.display = 'block';
+            }
         });
     </script>
 
@@ -5101,6 +5317,61 @@ function pc_resa_dashboard_shortcode($atts)
                 <button type="button" class="pc-btn pc-btn--line" onclick="document.getElementById('pc-rotate-caution-popup').hidden = true;">
                     Annuler
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pc-send-message-popup" class="pc-popup-overlay" hidden>
+        <div class="pc-popup-box" style="max-width: 500px; text-align:left; background:#fff; padding:20px; border-radius:8px; margin:50px auto; position:relative;">
+            <h3 class="pc-popup-title">✉️ Envoyer un message</h3>
+            <p>Destinataire : <strong id="pc-msg-client-name">Client</strong></p>
+
+            <form id="pc-msg-form">
+                <input type="hidden" id="pc-msg-resa-id">
+
+                <label style="display:block; margin:10px 0 5px; font-weight:600;">Modèle de message :</label>
+                <select id="pc-msg-template" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <option value="">-- Sélectionner un modèle --</option>
+                    <option value="custom">✍️ Nouveau message (Libre)</option>
+                    <?php foreach ($templates_list as $t) : ?>
+                        <option value="<?php echo esc_attr($t['id']); ?>"><?php echo esc_html($t['title']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+
+                <div id="pc-msg-custom-area" style="display:none; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+                    <label style="display:block; margin-bottom:5px; font-size:0.9rem;">Sujet :</label>
+                    <input type="text" id="pc-msg-custom-subject" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:10px;">
+
+                    <label style="display:block; margin-bottom:5px; font-size:0.9rem;">Message :</label>
+                    <textarea id="pc-msg-custom-body" rows="6" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-family:sans-serif;" placeholder="Bonjour..."></textarea>
+                </div>
+
+                <div id="pc-msg-template-hint" style="background:#fff7ed; border:1px solid #fed7aa; padding:10px; border-radius:6px; font-size:0.85rem; color:#9a3412; margin:15px 0;">
+                    💡 Le message sera personnalisé automatiquement au moment de l'envoi.
+                </div>
+
+                <div id="pc-msg-feedback" style="display:none; padding:10px; border-radius:6px; font-size:0.9rem; margin-bottom:15px; text-align:center;"></div>
+            </form>
+
+            <div class="pc-popup-actions" style="justify-content:flex-end; display:flex; gap:10px;">
+                <button type="button" class="pc-btn pc-btn--line" onclick="document.getElementById('pc-send-message-popup').hidden = true;">
+                    Annuler
+                </button>
+                <button type="button" class="pc-btn pc-btn--primary" id="pc-msg-send-btn">
+                    Envoyer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pc-read-message-popup" class="pc-popup-overlay" hidden>
+        <div class="pc-popup-box" style="max-width: 600px; text-align:left; background:#fff; padding:25px; border-radius:10px; margin:50px auto; position:relative;">
+            <button type="button" onclick="document.getElementById('pc-read-message-popup').hidden = true;"
+                style="position:absolute; top:10px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <h3 class="pc-popup-title" style="margin-top:0;">Détail du message</h3>
+            <div id="pc-read-message-content" style="max-height:60vh; overflow-y:auto; line-height:1.5; font-size:0.95rem; white-space:pre-wrap;"></div>
+            <div style="text-align:right; margin-top:20px;">
+                <button type="button" class="pc-btn pc-btn--secondary" onclick="document.getElementById('pc-read-message-popup').hidden = true;">Fermer</button>
             </div>
         </div>
     </div>

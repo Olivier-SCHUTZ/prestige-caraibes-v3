@@ -79,6 +79,29 @@ add_action('plugins_loaded', function () {
     if (class_exists('PCR_Stripe_Webhook')) {
         PCR_Stripe_Webhook::init();
     }
+
+    // Initialisation Messagerie
+    if (file_exists(PC_RES_CORE_PATH . 'includes/class-messaging.php')) {
+        require_once PC_RES_CORE_PATH . 'includes/class-messaging.php';
+    }
+    if (class_exists('PCR_Messaging')) {
+        PCR_Messaging::init();
+    }
+
+    // --- AUTOMATISATION : CRON JOB (Vérification quotidienne des cautions) ---
+    if (!wp_next_scheduled('pc_cron_daily_caution_check')) {
+        wp_schedule_event(time(), 'daily', 'pc_cron_daily_caution_check');
+    }
+    // 1. Renouvellement (pour ceux qui restent)
+    add_action('pc_cron_daily_caution_check', ['PCR_Stripe_Manager', 'process_auto_renewals']);
+
+    // 2. Libération (pour ceux qui sont partis depuis 7 jours)
+    add_action('pc_cron_daily_caution_check', ['PCR_Stripe_Manager', 'process_auto_releases']);
+
+    // 3. Messagerie Automatique (Vérification des envois J-7, J-1, etc.)
+    if (class_exists('PCR_Messaging')) {
+        add_action('pc_cron_daily_caution_check', ['PCR_Messaging', 'process_auto_messages']);
+    }
 });
 
 // Flag JS : indique au front que le noyau réservation est actif
