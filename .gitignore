@@ -46,6 +46,7 @@ tmp/
 # 4. Ignorer les dossiers de mise à jour
 upgrade/
 temp/
+/vendor
 
 # 5. Ignorer les fichiers de langue générés par WordPress (à la racine)
 # Ceci n'ignorera PAS les dossiers de langue des thèmes/plugins.

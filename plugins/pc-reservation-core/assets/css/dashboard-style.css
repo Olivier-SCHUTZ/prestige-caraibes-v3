@@ -1,0 +1,1048 @@
+.pc-resa-dashboard-wrapper {
+            margin: 2rem 0;
+            font-family: var(--pc-font-body);
+            font-size: var(--pc-text-size);
+            line-height: var(--pc-text-lh);
+            color: var(--pc-color-text);
+        }
+
+        .pc-resa-dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .pc-resa-dashboard-title {
+            margin: 0;
+            font-family: var(--pc-font-title);
+            font-size: var(--pc-h3-size);
+            font-weight: var(--pc-h3-weight);
+            line-height: var(--pc-h3-lh);
+        }
+
+        .pc-resa-dashboard-subtitle {
+            margin: 0.1rem 0 0;
+            font-size: var(--pc-text-small-size);
+            color: var(--pc-color-text-light);
+        }
+
+        .pc-resa-dashboard-header__right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .pc-resa-create-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 0.55rem 1.4rem;
+            font-size: var(--pc-text-small-size);
+            font-weight: 600;
+            font-family: var(--pc-font-body);
+
+            /* Utilise les variables définies dans pc-base.css */
+            background: var(--pc-color-primary);
+            color: var(--pc-color-btn-text);
+
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+            transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* On force aussi toute éventuelle span interne à rester blanche */
+        .pc-resa-create-btn span {
+            color: #ffffff !important;
+        }
+
+        .pc-resa-create-btn:hover {
+            background: var(--pc-color-primary-hover);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .pc-resa-create-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        }
+
+        @media (max-width: 768px) {
+            .pc-resa-dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .pc-resa-dashboard-header__right {
+                width: 100%;
+            }
+
+            .pc-resa-create-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        .pc-resa-filters {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .pc-resa-filters__label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #666;
+        }
+
+        .pc-resa-filter-btn {
+            display: inline-block;
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            border: 1px solid #d0d0d0;
+            background: #f8f8f8;
+            font-size: 0.8rem;
+            text-decoration: none;
+            color: #333;
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .pc-resa-filter-btn.is-active {
+            background: var(--pc-color-primary, #4338ca);
+            border-color: var(--pc-color-primary, #4338ca);
+            color: var(--pc-color-btn-text, #fff);
+            box-shadow: 0 4px 12px rgba(67, 56, 202, 0.2);
+        }
+
+        .pc-resa-filter-btn:hover {
+            background: #e5e7ff;
+        }
+
+        .pc-resa-filters__group {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .pc-resa-filters__group-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .pc-resa-filters select {
+            padding: 0.3rem 0.6rem;
+            border-radius: 999px;
+            border: 1px solid #d0d0d0;
+            font-size: 0.8rem;
+            background: #ffffff;
+            box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06) inset, 0 1px 2px rgba(15, 23, 42, 0.04);
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .pc-resa-filter-reset {
+            margin-left: auto;
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            border: 1px solid var(--pc-color-primary, #4338ca);
+            background: transparent;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--pc-color-primary, #4338ca);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .pc-resa-filter-reset:hover {
+            background: rgba(67, 56, 202, 0.08);
+        }
+
+        .pc-resa-dashboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .pc-resa-dashboard-table thead th {
+            text-align: left;
+            padding: 0.85rem 0.9rem;
+            border-bottom: 2px solid #e0e0e0;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.06em;
+            background: #fafafa;
+        }
+
+        .pc-resa-dashboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .pc-resa-dashboard-table thead th {
+            text-align: left;
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            background: #f8fafc;
+            color: #64748b;
+        }
+
+        .pc-resa-dashboard-table tbody td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+            font-size: 0.9rem;
+        }
+
+        .pc-resa-dashboard-row-detail td {
+            background: #f9fafb;
+        }
+
+        .pc-resa-dashboard-row-toggle:hover td {
+            background: #eff6ff;
+        }
+
+        .pc-resa-card {
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .pc-resa-card__header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .pc-resa-header-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .pc-resa-header-actions .pc-btn {
+            white-space: nowrap;
+        }
+
+        .pc-resa-actions-more {
+            position: relative;
+        }
+
+        .pc-resa-actions-menu {
+            position: absolute;
+            top: calc(100% + 0.25rem);
+            right: 0;
+            min-width: 220px;
+            padding: 0.25rem 0;
+            margin: 0;
+            list-style: none;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15);
+            display: none;
+            z-index: 9;
+        }
+
+        .pc-resa-actions-more.is-open .pc-resa-actions-menu {
+            display: block;
+        }
+
+        .pc-resa-actions-menu li {
+            margin: 0;
+        }
+
+        .pc-resa-actions-menu__link {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 0.45rem 0.9rem;
+            font-size: 0.9rem;
+            text-align: left;
+            cursor: pointer;
+            color: #0f172a;
+        }
+
+        .pc-resa-actions-menu__link:hover,
+        .pc-resa-actions-menu__link:focus-visible {
+            background: #f8fafc;
+            outline: none;
+        }
+
+        .pc-resa-actions-menu__link[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pc-resa-card__header h3 {
+            margin: 0 0 0.25rem;
+            font-size: 1.2rem;
+        }
+
+        .pc-resa-card__header p {
+            margin: 0.15rem 0;
+        }
+
+        .pc-resa-card__body {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .pc-resa-card__col {
+            min-width: 220px;
+            flex: 1;
+        }
+
+        .pc-resa-card__col h4 {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .pc-resa-payments-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--pc-text-size);
+        }
+
+        .pc-resa-payments-table th,
+        .pc-resa-payments-table td {
+            padding: 0.4rem 0.4rem;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .pc-resa-payment-actions {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .pc-resa-payment-action {
+            border: none;
+            background: none;
+            padding: 0;
+            font-size: 0.85rem;
+            color: var(--pc-color-primary, #0f172a);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .pc-resa-payment-action[disabled] {
+            color: #94a3b8;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+
+        .pc-resa-payment-action-placeholder {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .pc-resa-badge {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            background: #e0e7ff;
+            color: #1e293b;
+            border: 1px solid #c7d2fe;
+            white-space: nowrap;
+        }
+
+        .pc-resa-badge--resa {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .pc-resa-badge--pay {
+            background: #ecfdf5;
+            border-color: #bbf7d0;
+            color: #15803d;
+        }
+
+        .pc-resa-card__footer {
+            margin-top: 1.25rem;
+        }
+
+        .pc-resa-extra {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .pc-resa-extra-col h3 {
+            margin: 0 0 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .pc-resa-extra-col p {
+            margin: 0.1rem 0;
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
+
+        .pc-resa-create-title {
+            margin-top: 0;
+            margin-bottom: 0.25rem;
+            font-family: var(--pc-font-title);
+            font-size: var(--pc-h3-size);
+            font-weight: var(--pc-h3-weight);
+            line-height: var(--pc-h3-lh);
+        }
+
+        .pc-resa-create-intro {
+            margin: 0 0 1.25rem;
+            font-size: var(--pc-text-small-size);
+            color: var(--pc-color-text-light);
+        }
+
+        .pc-resa-create-form {
+            margin-top: 0.5rem;
+        }
+
+        .pc-resa-create-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .pc-resa-create-grid--2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .pc-resa-create-grid--3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .pc-resa-create-section {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .pc-resa-create-section h4 {
+            margin: 0 0 0.75rem;
+            font-family: var(--pc-font-title);
+            font-size: var(--pc-h4-size);
+            font-weight: var(--pc-h4-weight);
+            line-height: var(--pc-h4-lh);
+        }
+
+        .pc-resa-create-subsection {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .pc-resa-customqty-list,
+        .pc-resa-options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .pc-resa-field--inline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .pc-resa-field--inline input[type="number"] {
+            max-width: 120px;
+        }
+
+        .pc-resa-options-list .pc-resa-option-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.6rem 0.8rem;
+        }
+
+        .pc-resa-option-item__meta {
+            display: flex;
+            flex-direction: column;
+            row-gap: 0.15rem;
+        }
+
+        .pc-resa-option-item__price {
+            font-weight: 600;
+            color: var(--pc-color-primary, #4338ca);
+        }
+
+        .pc-resa-option-qty {
+            margin-left: 2.2rem;
+        }
+
+        .pc-resa-option-qty input[type="number"] {
+            width: 90px;
+        }
+
+        .pc-resa-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            font-size: var(--pc-text-small-size);
+        }
+
+        .pc-resa-field-label {
+            font-weight: 500;
+            color: var(--pc-color-text-light);
+        }
+
+        .pc-resa-field input,
+        .pc-resa-field select,
+        .pc-resa-field textarea {
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 0.4rem 0.6rem;
+            font-family: var(--pc-font-body);
+            font-size: var(--pc-text-size);
+            width: 100%;
+        }
+
+        .pc-resa-field textarea {
+            min-height: 90px;
+        }
+
+        .pc-resa-create-hint,
+        .pc-resa-field-hint {
+            font-size: 0.8rem;
+            color: var(--pc-color-text-light);
+            margin: 0.2rem 0 0;
+        }
+
+        .pc-resa-create-summary {
+            margin-top: 1.5rem;
+            padding: 1.2rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            background: #f8fafc;
+        }
+
+        .pc-resa-create-summary h4 {
+            margin: 0 0 0.8rem;
+            font-family: var(--pc-font-title);
+            font-size: var(--pc-h4-size);
+        }
+
+        .pc-resa-create-summary-body {
+            border-radius: 0.5rem;
+            background: #fff;
+            padding: 0.75rem 1rem;
+            box-shadow: inset 0 0 0 1px #e2e8f0;
+        }
+
+        .pc-resa-create-summary-body ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .pc-resa-create-summary_body li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .pc-resa-create-summary_body li.pc-resa-summary-sep {
+            border-bottom: none;
+            margin-top: 0.3rem;
+            padding-top: 0.6rem;
+            border-top: 1px solid #edf2f7;
+            font-weight: 600;
+        }
+
+        .pc-resa-create-summary_body li:last-child {
+            border-bottom: none;
+        }
+
+        .pc-resa-create-summary_body li.note {
+            font-style: italic;
+            color: #475569;
+            justify-content: flex-start;
+        }
+
+        .pc-resa-create-summary-total {
+            margin-top: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .pc-resa-create-actions {
+            margin-top: 1.75rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .pc-resa-create-actions__right {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+
+            .pc-resa-create-grid--2,
+            .pc-resa-create-grid--3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pc-resa-view-link .pc-resa-view-icon {
+            margin-right: 6px;
+            display: inline-block;
+            transform: translateY(1px);
+        }
+
+        @media (max-width: 768px) {
+            .pc-resa-extra {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pc-resa-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.45rem 1.1rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+                box-shadow 0.15s ease, transform 0.1s ease;
+        }
+
+        .pc-resa-btn--primary {
+            background: var(--pc-color-primary);
+            color: var(--pc-color-btn-text);
+            border-color: var(--pc-color-primary);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        }
+
+        .pc-resa-btn--primary:hover {
+            background: var(--pc-color-primary-hover, #4338ca);
+        }
+
+        .pc-resa-btn--secondary {
+            background: #f1f5f9;
+            color: #1f2937;
+            border-color: #cbd5f5;
+        }
+
+        .pc-resa-btn--secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .pc-resa-btn--ghost {
+            background: transparent;
+            border-color: #cbd5f5;
+            color: #1f2937;
+        }
+
+        .pc-resa-btn--ghost:hover {
+            background: #f8fafc;
+        }
+
+        .pc-resa-view-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #4338ca;
+            background: #4338ca;
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease,
+                transform 0.1s ease, box-shadow 0.15s ease;
+        }
+
+        .pc-resa-view-link:hover {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .pc-resa-view-link:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .pc-resa-pagination {
+            margin-top: 1rem;
+            display: flex;
+            gap: .4rem;
+            align-items: center;
+        }
+
+        .pc-resa-page-btn {
+            display: inline-block;
+            padding: .35rem .75rem;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: #fff;
+            font-size: .85rem;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .pc-resa-page-btn:hover {
+            background: #f0f0ff;
+        }
+
+        .pc-resa-page-btn.is-active {
+            background: #4338ca;
+            border-color: #3730a3;
+            color: white;
+        }
+
+        .pc-resa-fiche-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .pc-resa-fiche-header-left,
+        .pc-resa-fiche-header-right {
+            font-size: 0.9rem;
+        }
+
+        .pc-resa-fiche-client {
+            margin: 0 0 0.25rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .pc-resa-fiche-contact {
+            margin: 0;
+            line-height: 1.4;
+            color: #475569;
+        }
+
+        .pc-resa-fiche-meta {
+            margin: 0;
+            text-align: right;
+            line-height: 1.4;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .pc-resa-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            justify-content: flex-end;
+            margin-bottom: 0.5rem;
+        }
+
+        .pc-resa-badge--typeflux {
+            background: #0f766e;
+            color: #ecfeff;
+        }
+
+        .pc-resa-badge--origine {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        @media (max-width: 768px) {
+            .pc-resa-fiche-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .pc-resa-fiche-meta {
+                text-align: left;
+            }
+        }
+
+        /* Popup simple */
+        .pc-resa-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+        }
+
+        .pc-resa-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .pc-resa-modal-dialog {
+            position: relative;
+            max-width: 900px;
+            margin: 4rem auto;
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .pc-resa-modal-close {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            border: none;
+            background: none;
+            font-size: 1.7rem;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .pc-resa-card__body {
+                flex-direction: column;
+            }
+
+            .pc-resa-dashboard-table thead {
+                display: table-header-group;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .pc-resa-card__body {
+                flex-direction: column;
+            }
+
+            .pc-resa-dashboard-table thead {
+                display: table-header-group;
+            }
+        }
+
+        .pc-resa-header-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
+            gap: 1.5rem;
+            flex: 1 1 auto;
+        }
+
+        .pc-resa-header-client-name {
+            font-weight: 600;
+        }
+
+        .pc-resa-header-col--client h3 {
+            margin-bottom: 0.25rem;
+        }
+
+        .pc-resa-card__section {
+            flex: 1 1 260px;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.75rem 0.9rem;
+            background: #f9fafb;
+        }
+
+        .pc-resa-card__section h4 {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .pc-resa-card__section h4 {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            font-family: var(--pc-font-title);
+            font-size: var(--pc-h4-size);
+            font-weight: var(--pc-h4-weight);
+            line-height: var(--pc-h4-lh);
+        }
+
+        .pc-resa-devis-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .pc-resa-devis-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.35rem;
+            font-size: 0.9rem;
+        }
+
+        .pc-resa-devis-line-label {
+            font-weight: 500;
+            color: #0f172a;
+        }
+
+        .pc-resa-devis-line-price {
+            color: #0f172a;
+        }
+
+        .pc-resa-devis-separator {
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 0.35rem;
+            margin-top: 0.35rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .pc-resa-devis-total {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid #cbd5e1;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .pc-resa-remise-actions,
+        .pc-resa-plus-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+
+        .pc-resa-create-grid--3-static {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .pc-resa-section-caution {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed #cbd5e1;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .pc-resa-header-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pc-resa-header-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        /* ============================
+        POPUP ANNULATION RÉSERVATION
+        ============================ */
+
+        .pc-popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            /* dark + brand */
+            z-index: 99999;
+            /* toujours au-dessus de tout */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .pc-popup-overlay[hidden] {
+            display: none !important;
+        }
+
+        .pc-popup-box {
+            background: #fff;
+            border-radius: var(--pc-radius, 10px);
+            max-width: 420px;
+            width: 92%;
+            padding: 24px 28px;
+            box-shadow: var(--pc-shadow-soft, 0 12px 32px rgba(0, 0, 0, 0.12));
+            text-align: center;
+        }
+
+        .pc-popup-title {
+            font-family: var(--pc-font-title);
+            color: var(--pc-color-heading);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        .pc-popup-text {
+            color: var(--pc-color-text);
+            font-size: 1rem;
+            line-height: 1.45;
+            margin-bottom: 22px;
+        }
+
+        .pc-popup-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+
+
+            .pc-input-force {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                padding: 12px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 6px !important;
+                font-size: 1.1rem !important;
+                margin-bottom: 15px !important;
+                background: #fff !important;
+                color: #333 !important;
+                height: auto !important;
+            }
+
+            .pc-label-force {
+                display: block !important;
+                font-size: 0.85rem !important;
+                font-weight: 600 !important;
+                margin-bottom: 6px !important;
+                color: #475569 !important;
+            }
