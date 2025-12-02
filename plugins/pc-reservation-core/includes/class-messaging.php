@@ -14,7 +14,6 @@ class PCR_Messaging
         add_action('init', [__CLASS__, 'register_content_types']);
 
         // 2. Page d'options PDF (Design global)
-        add_action('init', [__CLASS__, 'register_pdf_options_page']);
 
         // 3. Champs ACF (Logique conditionnelle & Design)
         add_action('acf/init', [__CLASS__, 'register_template_fields']);
@@ -77,20 +76,6 @@ class PCR_Messaging
             'show_in_menu' => 'edit.php?post_type=pc_template', // Sous-menu de PC Messages
             'supports' => ['title', 'editor'], // Editor = Corps du PDF
         ]);
-    }
-
-    /**
-     * Ajoute la page d'options pour le Design Global
-     */
-    public static function register_pdf_options_page()
-    {
-        if (function_exists('acf_add_options_sub_page')) {
-            acf_add_options_sub_page([
-                'page_title'  => 'Design & Configuration PDF',
-                'menu_title'  => 'Réglages PDF',
-                'parent_slug' => 'edit.php?post_type=pc_template',
-            ]);
-        }
     }
 
     /**
@@ -180,147 +165,6 @@ class PCR_Messaging
                 [['param' => 'post_type', 'operator' => '==', 'value' => 'pc_template']]
             ],
             'position' => 'acf_after_title',
-        ]);
-
-        // =================================================================
-        // 2. RÉGLAGES GLOBAUX PDF (Page d'options) - MISE À JOUR LÉGALE
-        // =================================================================
-        acf_add_local_field_group([
-            'key' => 'group_pc_pdf_global_settings',
-            'title' => 'Design & Mentions Légales',
-            'fields' => [
-                // Onglet Identité
-                [
-                    'key' => 'field_tab_pdf_identity',
-                    'label' => 'Identité Visuelle',
-                    'type' => 'tab',
-                ],
-                [
-                    'key' => 'field_pc_pdf_logo',
-                    'label' => 'Logo',
-                    'name' => 'pc_pdf_logo',
-                    'type' => 'image',
-                    'return_format' => 'array',
-                    'preview_size' => 'medium',
-                ],
-                [
-                    'key' => 'field_pc_pdf_primary_color',
-                    'label' => 'Couleur Principale',
-                    'name' => 'pc_pdf_primary_color',
-                    'type' => 'color_picker',
-                    'default_value' => '#4338ca',
-                ],
-
-                // Onglet Mentions Légales (NOUVEAU)
-                [
-                    'key' => 'field_tab_pdf_legal',
-                    'label' => 'Mentions Légales (Obligatoire)',
-                    'type' => 'tab',
-                ],
-                [
-                    'key' => 'field_pc_legal_name',
-                    'label' => 'Raison Sociale / Nom',
-                    'name' => 'pc_legal_name',
-                    'type' => 'text',
-                    'placeholder' => 'SARL Prestige Caraïbes',
-                ],
-                [
-                    'key' => 'field_pc_legal_address',
-                    'label' => 'Siège Social',
-                    'name' => 'pc_legal_address',
-                    'type' => 'textarea',
-                    'rows' => 2,
-                ],
-                [
-                    'key' => 'field_pc_legal_siret',
-                    'label' => 'SIRET / SIREN',
-                    'name' => 'pc_legal_siret',
-                    'type' => 'text',
-                ],
-                [
-                    'key' => 'field_pc_legal_tva',
-                    'label' => 'Numéro TVA Intracommunautaire',
-                    'name' => 'pc_legal_tva',
-                    'type' => 'text',
-                    'instructions' => 'Si non assujetti, mettre : "TVA non applicable, art. 293 B du CGI".',
-                ],
-                [
-                    'key' => 'field_pc_legal_rcs',
-                    'label' => 'RCS / RM (Ville)',
-                    'name' => 'pc_legal_rcs',
-                    'type' => 'text',
-                    'placeholder' => 'RCS Pointe-à-Pitre',
-                ],
-                [
-                    'key' => 'field_pc_legal_capital',
-                    'label' => 'Capital Social',
-                    'name' => 'pc_legal_capital',
-                    'type' => 'text',
-                    'placeholder' => '1 000 €',
-                ],
-
-                // Onglet Numérotation (NOUVEAU POUR FACTURES)
-                [
-                    'key' => 'field_tab_pdf_numbering',
-                    'label' => 'Numérotation',
-                    'type' => 'tab',
-                ],
-                [
-                    'key' => 'field_pc_invoice_prefix',
-                    'label' => 'Préfixe Facture',
-                    'name' => 'pc_invoice_prefix',
-                    'type' => 'text',
-                    'default_value' => 'FAC-' . date('Y') . '-',
-                    'instructions' => 'Exemple : FAC-2025-',
-                ],
-                [
-                    'key' => 'field_pc_invoice_next',
-                    'label' => 'Prochain Numéro',
-                    'name' => 'pc_invoice_next',
-                    'type' => 'number',
-                    'default_value' => 1,
-                    'instructions' => 'Le compteur s\'incrémentera automatiquement.',
-                ],
-                [
-                    'key' => 'field_pc_quote_prefix',
-                    'label' => 'Préfixe Devis',
-                    'name' => 'pc_quote_prefix',
-                    'type' => 'text',
-                    'default_value' => 'DEV-' . date('Y') . '-',
-                ],
-
-                // Onglet Bibliothèque CGV
-                [
-                    'key' => 'field_tab_pdf_cgv',
-                    'label' => 'Bibliothèque CGV',
-                    'type' => 'tab',
-                ],
-                [
-                    'key' => 'field_pc_pdf_cgv_library',
-                    'label' => 'Vos Conditions Générales',
-                    'name' => 'pc_pdf_cgv_library',
-                    'type' => 'repeater',
-                    'button_label' => 'Ajouter une version CGV',
-                    'layout' => 'row',
-                    'sub_fields' => [
-                        [
-                            'key' => 'field_cgv_title',
-                            'label' => 'Nom interne',
-                            'name' => 'cgv_title',
-                            'type' => 'text',
-                        ],
-                        [
-                            'key' => 'field_cgv_content',
-                            'label' => 'Contenu',
-                            'name' => 'cgv_content',
-                            'type' => 'wysiwyg',
-                        ],
-                    ],
-                ],
-            ],
-            'location' => [
-                [['param' => 'options_page', 'operator' => '==', 'value' => 'acf-options-reglages-pdf']]
-            ],
         ]);
 
         // =================================================================
