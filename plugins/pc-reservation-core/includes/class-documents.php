@@ -598,10 +598,14 @@ class PCR_Documents
         return ob_get_clean();
     }
 
-    // AJOUT AJAX POUR LA LISTE (MANQUANT DANS LE CODE PRECEDENT)
     public static function ajax_get_documents_list()
     {
-        // 1. Sécurité : même nonce que dans le dashboard (pcResaManualNonce)
+        // 1. KARCHER : On efface toutes les notices PHP (ACF, etc) qui traînent avant d'envoyer le JSON
+        // C'est vital car vos logs montrent que des erreurs polluent la sortie.
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
         check_ajax_referer('pc_resa_manual_create', 'nonce');
 
         $resa_id = isset($_POST['reservation_id']) ? (int) $_POST['reservation_id'] : 0;
@@ -612,30 +616,23 @@ class PCR_Documents
         global $wpdb;
         $table = $wpdb->prefix . 'pc_documents';
 
-        // 2. Lecture simple de tous les documents liés à cette réservation
+        // Petite sécu si la table n'existe pas encore
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") != $table) {
+            wp_send_json_success([]);
+        }
+
         $sql = $wpdb->prepare(
-            "
-            SELECT
-                id,
-                reservation_id,
-                type_doc,
-                numero_doc,
-                nom_fichier,
-                url_fichier,
-                date_creation
+            "SELECT id, reservation_id, type_doc, numero_doc, nom_fichier, url_fichier, date_creation
             FROM {$table}
             WHERE reservation_id = %d
-            ORDER BY date_creation DESC, id DESC
-            ",
+            ORDER BY date_creation DESC, id DESC",
             $resa_id
         );
 
         $docs = $wpdb->get_results($sql);
-        if (!is_array($docs)) {
-            $docs = [];
-        }
 
-        wp_send_json_success($docs);
+        // On envoie le JSON propre
+        wp_send_json_success($docs ? $docs : []);
     }
 
     /**

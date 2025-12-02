@@ -1932,29 +1932,47 @@
       modalCloseBackdrop.addEventListener("click", closeResaModal);
     }
 
-    // Boutons "Voir la fiche"
-    document.querySelectorAll(".pc-resa-view-link").forEach((btn) => {
-      btn.addEventListener("click", function (e) {
-        const id = this.getAttribute("data-resa-id");
-        const detailRow = document.querySelector(
-          '.pc-resa-dashboard-row-detail[data-resa-id="' + id + '"]'
+    // ============================================================
+    // DÉCLENCHEUR UNIQUE : OUVERTURE FICHE + CHARGEMENT DOCS
+    // ============================================================
+    document.addEventListener("click", function (e) {
+      // On surveille les clics sur le bouton "Fiche"
+      const btn = e.target.closest(".pc-resa-view-link");
+      if (!btn) return;
+
+      e.preventDefault();
+      const id = btn.getAttribute("data-resa-id");
+      console.log("🖱️ Clic détecté sur Fiche #" + id); // PREUVE DE VIE
+
+      // 1. Récupération du HTML caché
+      const detailRow = document.querySelector(
+        '.pc-resa-dashboard-row-detail[data-resa-id="' + id + '"]'
+      );
+      if (!detailRow) {
+        console.error("❌ Ligne de détail introuvable pour #" + id);
+        return;
+      }
+
+      const card = detailRow.querySelector(".pc-resa-card");
+      if (!card) return;
+
+      // 2. Injection du HTML dans la modale
+      openResaModal(card.innerHTML);
+      console.log("✅ Modale ouverte");
+
+      // 3. Ré-attachement des événements (boutons actions)
+      if (typeof attachQuoteButtons === "function") {
+        attachQuoteButtons();
+      }
+
+      // 4. LANCEMENT DU CHARGEMENT DES DOCUMENTS (immédiat)
+      if (typeof window.pc_reload_documents === "function") {
+        window.pc_reload_documents(id);
+      } else {
+        console.error(
+          "❌ Erreur : La fonction pc_reload_documents est absente"
         );
-
-        if (!detailRow) return;
-
-        const card = detailRow.querySelector(".pc-resa-card");
-        if (!card) return;
-
-        openResaModal(card.innerHTML);
-        // Ré-attache les handlers (boutons Modifier / Renvoyer) présents dans le HTML injecté
-        if (typeof attachQuoteButtons === "function") {
-          attachQuoteButtons();
-        }
-        // Charger la liste des documents pour cette réservation à l'ouverture de la fiche
-        if (typeof loadDocumentsList === "function") {
-          loadDocumentsList(id);
-        }
-      });
+      }
     });
 
     // Ouverture automatique du popup si on arrive depuis le calendrier
@@ -2572,227 +2590,237 @@
     //  GESTION DES DOCUMENTS PDF & FACTURATION
     // ============================================================
 
-    // 1. Charger la liste des documents (Rafraîchissement AJAX)
-    function loadDocumentsList(reservationId, attempt) {
-      attempt = typeof attempt === "number" ? attempt : 0;
-      // On cible spécifiquement le conteneur DANS la modale pour éviter le conflit d'ID avec la ligne cachée du tableau
-      let container = document.querySelector(
-        "#pc-resa-modal #pc-docs-list-" + reservationId
-      );
+    const parseServerJson = (rawText) => {
+      if (!rawText) {
+        return null;
+      }
+      const jsonStart = rawText.indexOf("{");
+      const cleanText = jsonStart >= 0 ? rawText.slice(jsonStart) : rawText;
+      try {
+        return JSON.parse(cleanText);
+      } catch (error) {
+        console.error("[pc-documents] JSON invalide", error, rawText);
+        return null;
+      }
+    };
 
-      // Sécurité : si on ne le trouve pas dans la modale, on cherche l'ID globalement
-      if (!container)
-        container = document.getElementById("pc-docs-list-" + reservationId);
+    const setDocumentsLoading = (container) => {
+      const tbody = container.querySelector(".pc-docs-tbody");
+      if (!tbody) {
+        return;
+      }
+      tbody.innerHTML =
+        '<tr><td colspan="4" style="text-align:center; padding:15px; color:#2271b1;">Chargement...</td></tr>';
+    };
 
-      // Si le container n'existe pas encore (DOM pas prêt), on retente quelques fois
-      if (!container) {
-        if (attempt < 5) {
-          setTimeout(function () {
-            loadDocumentsList(reservationId, attempt + 1);
-          }, 100);
-        }
+    const renderDocumentsRows = (container, documents) => {
+      const tbody = container.querySelector(".pc-docs-tbody");
+      if (!tbody) {
         return;
       }
 
+      if (!Array.isArray(documents) || documents.length === 0) {
+        tbody.innerHTML =
+          '<tr><td colspan="4" style="text-align:center; padding:15px; color:#999;">Aucun document.</td></tr>';
+        return;
+      }
+
+      const rows = documents
+        .map(
+          (doc) =>
+            `<tr>
+              <td style="padding:8px;">${doc.type_doc || ""}</td>
+              <td style="padding:8px;">${doc.nom_fichier || ""}</td>
+              <td style="padding:8px;">${doc.date_creation || ""}</td>
+              <td style="padding:8px; text-align:right;"><a href="${
+                doc.url_fichier
+              }" target="_blank" rel="noopener">👁️ Voir</a></td>
+            </tr>`
+        )
+        .join("");
+      tbody.innerHTML = rows;
+    };
+
+    const showDocumentsError = (container, message) => {
       const tbody = container.querySelector(".pc-docs-tbody");
-      tbody.innerHTML =
-        '<tr><td colspan="4" style="text-align:center; color:#666; padding:15px;">Actualisation...</td></tr>';
+      if (!tbody) {
+        return;
+      }
+      tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">${escapeHtml(
+        message || "Erreur serveur"
+      )}</td></tr>`;
+    };
+
+    window.pc_reload_documents = function (reservationId) {
+      if (!reservationId) {
+        return Promise.resolve(null);
+      }
+
+      const modalContent = document.getElementById("pc-resa-modal-content");
+      if (!modalContent) {
+        return Promise.resolve(null);
+      }
+
+      const container = modalContent.querySelector(
+        '.pc-documents-list-container[data-resa-id="' + reservationId + '"]'
+      );
+      if (!container) {
+        return Promise.resolve(null);
+      }
+
+      setDocumentsLoading(container);
 
       const formData = new URLSearchParams();
       formData.append("action", "pc_get_documents_list");
       formData.append("reservation_id", reservationId);
       formData.append("nonce", pcResaManualNonce);
 
-      fetch(pcResaAjaxUrl, {
+      return fetch(pcResaAjaxUrl, {
         method: "POST",
         body: formData,
       })
-        .then((response) => response.json())
-        .then((json) => {
-          if (json.success && Array.isArray(json.data)) {
-            if (json.data.length === 0) {
-              tbody.innerHTML =
-                '<tr><td colspan="4" style="text-align:center; padding:15px; color:#94a3b8; font-style:italic;">Aucun document généré.</td></tr>';
-            } else {
-              let html = "";
-              json.data.forEach((doc) => {
-                // Formatage de la date (YYYY-MM-DD HH:MM:SS -> DD/MM/YYYY)
-                let dateStr = doc.date_creation || "";
-                if (dateStr.length > 10) {
-                  const [ymd, his] = dateStr.split(" ");
-                  const [y, m, d] = ymd.split("-");
-                  dateStr = `${d}/${m}/${y}`;
-                }
-
-                html += `
-                                <tr style="border-bottom:1px solid #f1f5f9;">
-                                    <td style="padding:8px; vertical-align:middle;">
-                                        <span class="pc-resa-badge" style="background:#e0e7ff; color:#4338ca; font-size:0.7rem; padding:2px 6px;">
-                                            ${doc.type_doc.toUpperCase()}
-                                        </span>
-                                    </td>
-                                    <td style="padding:8px; vertical-align:middle; font-weight:500; color:#334155;">
-                                        ${doc.numero_doc || doc.nom_fichier}
-                                    </td>
-                                    <td style="padding:8px; vertical-align:middle; color:#64748b; font-size:0.85rem;">
-                                        ${dateStr}
-                                    </td>
-                                    <td style="padding:8px; text-align:right;">
-                                        <a href="${
-                                          doc.url_fichier
-                                        }" target="_blank" class="pc-btn pc-btn--ghost" style="padding:4px 8px; font-size:0.75rem; text-decoration:none;">
-                                            👁️ Voir
-                                        </a>
-                                    </td>
-                                </tr>`;
-              });
-              tbody.innerHTML = html;
-            }
-          } else {
-            tbody.innerHTML =
-              '<tr><td colspan="4" style="color:#ef4444; text-align:center; padding:10px;">Erreur de chargement.</td></tr>';
+        .then((response) => response.text())
+        .then((rawText) => {
+          const payload = parseServerJson(rawText);
+          if (!payload || !payload.success) {
+            const message =
+              (payload &&
+                payload.data &&
+                (payload.data.message || payload.data.error)) ||
+              "Erreur lors du chargement des documents.";
+            showDocumentsError(container, message);
+            return null;
           }
-        })
-        .catch((err) => {
-          console.error(err);
-          tbody.innerHTML =
-            '<tr><td colspan="4" style="color:#ef4444; text-align:center; padding:10px;">Erreur réseau.</td></tr>';
-        });
-    }
 
-    // 2. Clic sur "Générer PDF" (Version Finale & Robuste)
+          renderDocumentsRows(container, payload.data);
+          return payload;
+        })
+        .catch((error) => {
+          console.error("[pc-documents] Erreur de chargement", error);
+          showDocumentsError(
+            container,
+            "Erreur technique pendant le chargement des documents."
+          );
+          return null;
+        });
+    };
+
+    const openPdfPreview = (url) => {
+      const modal = document.getElementById("pc-pdf-preview-modal");
+      const iframe = document.getElementById("pc-pdf-iframe");
+
+      if (modal && iframe) {
+        iframe.src = url;
+        modal.style.display = "flex";
+        return;
+      }
+
+      window.open(url, "_blank");
+    };
+
+    const closePdfPreview = () => {
+      const modal = document.getElementById("pc-pdf-preview-modal");
+      const iframe = document.getElementById("pc-pdf-iframe");
+
+      if (modal) {
+        modal.style.display = "none";
+      }
+      if (iframe) {
+        iframe.src = "";
+      }
+    };
+
     document.addEventListener("click", function (e) {
       const btn = e.target.closest(".pc-btn-generate-doc");
-      if (!btn) return;
-      if (btn.disabled) return;
+      if (!btn || btn.disabled) {
+        return;
+      }
 
       e.preventDefault();
 
-      // --- 1. Récupération des données ---
       const wrapper = btn.closest(".pc-doc-actions");
-      // Sécurité : si le wrapper n'est pas trouvé (cas rare), on remonte
-      if (!wrapper) {
-        console.error("Wrapper .pc-doc-actions introuvable");
-        return;
-      }
-
-      const select = wrapper.querySelector(".pc-doc-template-select");
-      const checkbox = wrapper.querySelector(".pc-doc-force-regen");
-
-      const templateId = select.value;
       const reservationId = btn.getAttribute("data-resa-id");
-      const forceRegen = checkbox ? checkbox.checked : false;
+      const templateSelect = wrapper
+        ? wrapper.querySelector(".pc-doc-template-select")
+        : null;
+      const forceCheckbox = wrapper
+        ? wrapper.querySelector(".pc-doc-force-regen")
+        : null;
 
-      // Validation
-      if (!templateId) {
-        alert("⚠️ Veuillez sélectionner un modèle.");
-        select.focus();
-        select.style.borderColor = "#ef4444";
+      if (!reservationId || !templateSelect) {
+        console.error("[pc-documents] Contexte génération incomplet");
         return;
-      } else {
-        select.style.borderColor = "#ccc";
       }
 
-      // --- 2. Interface : Mode Chargement ---
-      const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = "⏳ ...";
+      if (!templateSelect.value) {
+        alert("⚠️ Veuillez sélectionner un modèle.");
+        templateSelect.focus();
+        templateSelect.style.borderColor = "#ef4444";
+        return;
+      }
+      templateSelect.style.borderColor = "#ccc";
 
-      // --- 3. Envoi ---
+      const originalContent = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML =
+        '<span class="spinner is-active" style="float:none;margin:0;"></span>';
+
       const formData = new FormData();
       formData.append("action", "pc_generate_document");
       formData.append("reservation_id", reservationId);
-      formData.append("template_id", templateId);
-      formData.append("force", forceRegen ? "true" : "false");
-      formData.append("nonce", pcResaManualNonce); // Assurez-vous que cette variable globale existe
+      formData.append("template_id", templateSelect.value);
+      formData.append(
+        "force",
+        forceCheckbox && forceCheckbox.checked ? "true" : "false"
+      );
+      formData.append("nonce", pcResaManualNonce);
 
       fetch(pcResaAjaxUrl, {
         method: "POST",
         body: formData,
       })
-        .then((response) => response.text()) // On récupère en texte brut d'abord
-        .then((text) => {
-          try {
-            return JSON.parse(text); // On essaie de parser
-          } catch (e) {
-            console.error("Réponse serveur invalide (PHP Error ?) :", text);
-            throw new Error("Réponse serveur invalide. Vérifiez la console.");
+        .then((response) => response.text())
+        .then((rawText) => {
+          const payload = parseServerJson(rawText);
+          if (
+            !payload ||
+            !payload.success ||
+            !payload.data ||
+            !payload.data.url
+          ) {
+            const message =
+              (payload &&
+                payload.data &&
+                (payload.data.message || payload.data.error)) ||
+              "Impossible de générer le document.";
+            throw new Error(message);
           }
-        })
-        .then((data) => {
-          if (data.success && data.data.url) {
-            // A. Rafraîchissement de la liste
-            // On vérifie que la fonction existe avant de l'appeler
-            if (typeof loadDocumentsList === "function") {
-              loadDocumentsList(reservationId);
-            }
 
-            // B. Ouverture Modale
-            const modal = document.getElementById("pc-pdf-preview-modal");
-            const iframe = document.getElementById("pc-pdf-iframe");
-            if (modal && iframe) {
-              iframe.src = data.data.url;
-              modal.style.display = "flex";
-            } else {
-              // Fallback : Nouvel onglet si la modale n'est pas là
-              window.open(data.data.url, "_blank");
-            }
-          } else {
-            alert(
-              "❌ Erreur : " +
-                (data.data && data.data.message
-                  ? data.data.message
-                  : "Erreur inconnue")
-            );
-          }
+          window.pc_reload_documents(reservationId);
+          openPdfPreview(payload.data.url);
         })
-        .catch((err) => {
-          console.error("Erreur Fetch:", err);
-          alert("❌ Erreur technique : " + err.message);
+        .catch((error) => {
+          console.error("[pc-documents] Erreur génération", error);
+          alert("❌ " + (error.message || "Erreur technique."));
         })
         .finally(() => {
-          // --- 4. NETTOYAGE (S'exécute TOUJOURS) ---
-          // C'est ici que l'on garantit l'arrêt du moulinage
           btn.disabled = false;
-          btn.innerHTML = originalText;
+          btn.innerHTML = originalContent;
         });
     });
 
-    // Gestionnaire de fermeture de la Modale PDF
     const closePdfBtn = document.getElementById("pc-close-pdf-modal");
     if (closePdfBtn) {
-      closePdfBtn.addEventListener("click", function () {
-        const modal = document.getElementById("pc-pdf-preview-modal");
-        const iframe = document.getElementById("pc-pdf-iframe");
-
-        if (modal) modal.style.display = "none";
-        if (iframe) iframe.src = ""; // On vide l'iframe pour ne pas garder le PDF en mémoire
-
-        // Petit bonus : si on veut être sûr que la liste est à jour au moment de la fermeture
-        // on peut relancer un check léger ici, mais loadDocumentsList l'a déjà fait.
-      });
+      closePdfBtn.addEventListener("click", closePdfPreview);
     }
 
-    // Fermeture en cliquant en dehors de la modale (sur le fond gris)
     const pdfModal = document.getElementById("pc-pdf-preview-modal");
     if (pdfModal) {
       pdfModal.addEventListener("click", function (e) {
         if (e.target === this) {
-          document.getElementById("pc-close-pdf-modal").click();
+          closePdfPreview();
         }
       });
     }
-
-    // 3. Déclencheur : Charger la liste à l'ouverture de la Fiche
-    document.addEventListener("click", function (e) {
-      const viewBtn = e.target.closest(".pc-resa-view-link");
-      if (viewBtn) {
-        const id = viewBtn.getAttribute("data-resa-id");
-        // On attend 50ms que la modale s'ouvre et que le HTML soit injecté
-        setTimeout(() => {
-          loadDocumentsList(id);
-        }, 50);
-      }
-    });
   });
 })();
