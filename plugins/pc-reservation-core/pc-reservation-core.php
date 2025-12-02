@@ -29,6 +29,7 @@ require_once PC_RES_CORE_PATH . 'includes/class-settings.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-manager.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-ajax.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-webhook.php';
+require_once PC_RES_CORE_PATH . 'includes/class-documents.php';
 // controller-forms sera branché plus tard quand tu seras prêt
 if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
     require_once PC_RES_CORE_PATH . 'includes/controller-forms.php';
@@ -78,6 +79,11 @@ add_action('plugins_loaded', function () {
     // Initialisation Webhook
     if (class_exists('PCR_Stripe_Webhook')) {
         PCR_Stripe_Webhook::init();
+    }
+
+    // Initialisation Documents
+    if (class_exists('PCR_Documents')) {
+        PCR_Documents::init();
     }
 
     // Initialisation Messagerie

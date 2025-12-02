@@ -46,8 +46,12 @@ tmp/
 # 4. Ignorer les dossiers de mise à jour
 upgrade/
 temp/
-/vendor
 
 # 5. Ignorer les fichiers de langue générés par WordPress (à la racine)
 # Ceci n'ignorera PAS les dossiers de langue des thèmes/plugins.
 /languages/
+
+# 6. Ignorer les fichiers Composer du plugin PC Reservation
+plugins/pc-reservation-core/vendor/
+plugins/pc-reservation-core/composer.phar
+plugins/pc-reservation-core/composer-setup.php

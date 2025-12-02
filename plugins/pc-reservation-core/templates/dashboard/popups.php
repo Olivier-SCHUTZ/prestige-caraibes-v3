@@ -133,3 +133,23 @@ if (! defined('ABSPATH')) {
         </div>
     </div>
 </div>
+
+<div id="pc-pdf-preview-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:99999; align-items:center; justify-content:center;">
+    <div style="background:#fff; width:90%; height:90%; border-radius:8px; display:flex; flex-direction:column; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+
+        <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0; font-size:18px; display:flex; align-items:center; gap:10px;">
+                📄 Prévisualisation du document
+            </h3>
+            <button type="button" id="pc-close-pdf-modal" style="background:none; border:none; font-size:24px; cursor:pointer; color:#666; line-height:1;">&times;</button>
+        </div>
+
+        <div style="flex:1; background:#f0f0f0; padding:0; overflow:hidden; position:relative;">
+            <iframe id="pc-pdf-iframe" src="" style="width:100%; height:100%; border:none;" title="Aperçu PDF"></iframe>
+        </div>
+
+        <div style="padding:10px 15px; background:#f9f9f9; text-align:right; border-top:1px solid #eee;">
+            <button type="button" class="pc-btn pc-btn--ghost" onclick="document.getElementById('pc-close-pdf-modal').click()">Fermer et Actualiser</button>
+        </div>
+    </div>
+</div>

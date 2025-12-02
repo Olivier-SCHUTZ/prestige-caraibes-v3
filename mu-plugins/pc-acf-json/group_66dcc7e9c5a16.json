@@ -1589,6 +1589,29 @@
             "selected": 0
         },
         {
+            "key": "field_692db668fa552",
+            "label": "Taux de TVA applicable",
+            "name": "taux_tva",
+            "aria-label": "",
+            "type": "number",
+            "instructions": "Saisissez le pourcentage de TVA (ex: 20 pour 20%, 8.5 pour 8.5%). Laissez à 0 si non assujetti.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "min": 0,
+            "max": 100,
+            "allow_in_bindings": 0,
+            "placeholder": "",
+            "step": "0.01",
+            "prepend": "",
+            "append": "%"
+        },
+        {
             "key": "field_6919d3b37ec50",
             "label": "Règles de paiement",
             "name": "regles_de_paiement",
@@ -1803,5 +1826,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1763332126
+    "modified": 1764603574
 }
