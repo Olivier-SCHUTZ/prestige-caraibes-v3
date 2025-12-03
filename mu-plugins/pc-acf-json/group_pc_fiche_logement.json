@@ -2006,7 +2006,30 @@
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
-                "width": "",
+                "width": "50",
+                "class": "",
+                "id": ""
+            },
+            "default_value": "",
+            "min": 0,
+            "max": 100,
+            "allow_in_bindings": 0,
+            "placeholder": "",
+            "step": "0.01",
+            "prepend": "",
+            "append": "%"
+        },
+        {
+            "key": "field_692ffbf5ec554",
+            "label": "Taux de TVA applicable ménage",
+            "name": "taux_tva_menage",
+            "aria-label": "",
+            "type": "number",
+            "instructions": "Saisissez le pourcentage de TVA (ex: 20 pour 20%, 8.5 pour 8.5%). Laissez à 0 si non assujetti ou si ménage retour propriétaire.",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "50",
                 "class": "",
                 "id": ""
             },
@@ -2269,5 +2292,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1764603445
+    "modified": 1764752538
 }

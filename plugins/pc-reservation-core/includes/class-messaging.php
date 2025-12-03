@@ -166,50 +166,6 @@ class PCR_Messaging
             ],
             'position' => 'acf_after_title',
         ]);
-
-        // =================================================================
-        // 3. CONFIGURATION DU MODÈLE PDF (CPT) - AJOUT CONTRAT
-        // =================================================================
-        acf_add_local_field_group([
-            'key' => 'group_pc_pdf_template_config',
-            'title' => 'Options du Document',
-            'fields' => [
-                [
-                    'key' => 'field_pc_pdf_doc_type',
-                    'label' => 'Type de document',
-                    'name' => 'pc_pdf_doc_type',
-                    'type' => 'select',
-                    'choices' => [
-                        'devis'   => 'Devis',
-                        'facture' => 'Facture (Génère numéro)',
-                        'contrat' => 'Contrat de Location', // AJOUTÉ ICI
-                        'voucher' => 'Voucher / Bon d\'échange',
-                        'libre'   => 'Document Libre',
-                    ],
-                ],
-                [
-                    'key' => 'field_pc_pdf_append_cgv',
-                    'label' => 'Inclure des CGV ?',
-                    'name' => 'pc_pdf_append_cgv',
-                    'type' => 'select',
-                    'ui' => 1,
-                    'allow_null' => 1,
-                    'placeholder' => 'Ne pas inclure de CGV',
-                    'choices' => [],
-                ],
-                [
-                    'key' => 'field_pc_pdf_preview_btn',
-                    'label' => 'Aperçu',
-                    'name' => 'pc_pdf_preview_btn',
-                    'type' => 'message',
-                    'message' => 'Sauvegardez pour voir l\'aperçu.',
-                ],
-            ],
-            'location' => [
-                [['param' => 'post_type', 'operator' => '==', 'value' => 'pc_pdf_template']]
-            ],
-            'position' => 'side',
-        ]);
     }
 
     /**
@@ -310,35 +266,25 @@ class PCR_Messaging
     }
 
     /**
-     * Gère la requête d'aperçu PDF (Placeholder pour l'instant)
+     * Gère la requête d'aperçu PDF
      */
     public static function handle_pdf_preview_request()
     {
         if (isset($_GET['pc_action']) && $_GET['pc_action'] === 'preview_pdf' && isset($_GET['id'])) {
-            $pdf_id = (int)$_GET['id'];
+            $template_id = (int)$_GET['id'];
 
-            // Vérification simple des droits
+            // Sécurité
             if (!current_user_can('edit_posts')) {
                 wp_die('Accès refusé');
             }
 
-            // ICI viendra plus tard la génération réelle avec TCPDF/Dompdf
-            $content = get_post_field('post_content', $pdf_id);
-            // Données factices pour la preview
-            $fake_data = [
-                '{prenom_client}' => 'Jean',
-                '{nom_client}'    => 'Dupont',
-                '{logement}'      => 'Villa Paradis',
-                '{montant_total}' => '1 500,00 €',
-            ];
-            $html = strtr($content, $fake_data);
-
-            echo '<div style="border:1px solid #ccc; padding:40px; max-width:800px; margin:20px auto; font-family:sans-serif;">';
-            echo '<h1 style="color:red;text-align:center;">MODE APERÇU (HTML BRUT)</h1>';
-            echo '<p style="text-align:center;">Le moteur PDF sera installé à la prochaine étape.</p>';
-            echo '<hr>';
-            echo $html;
-            echo '</div>';
+            // On vérifie que la classe Documents est chargée
+            if (class_exists('PCR_Documents')) {
+                // On appelle la nouvelle méthode de prévisualisation
+                PCR_Documents::preview($template_id);
+            } else {
+                wp_die('Erreur : Moteur PDF (PCR_Documents) introuvable.');
+            }
             exit;
         }
     }

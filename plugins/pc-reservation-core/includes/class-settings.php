@@ -250,6 +250,30 @@ class PCR_Settings
                 ],
 
                 // Onglet Bibliothèque CGV
+                // [NOUVEAU] Onglet Affectation Automatique
+                [
+                    'key' => 'field_tab_pdf_assignment',
+                    'label' => 'Affectation Auto CGV',
+                    'type' => 'tab',
+                ],
+                [
+                    'key' => 'field_pc_cgv_default_location',
+                    'label' => 'CGV par défaut : Logement',
+                    'name' => 'pc_cgv_default_location',
+                    'type' => 'select',
+                    'ui' => 1,
+                    'instructions' => 'Ces CGV seront automatiquement ajoutées aux Factures et Devis de type LOCATION.',
+                    'choices' => [], // Sera rempli dynamiquement
+                ],
+                [
+                    'key' => 'field_pc_cgv_default_experience',
+                    'label' => 'CGV par défaut : Expérience',
+                    'name' => 'pc_cgv_default_experience',
+                    'type' => 'select',
+                    'ui' => 1,
+                    'instructions' => 'Ces CGV seront automatiquement ajoutées aux Factures et Devis de type EXPÉRIENCE.',
+                    'choices' => [], // Sera rempli dynamiquement
+                ],
                 [
                     'key' => 'field_tab_pdf_cgv',
                     'label' => 'Bibliothèque CGV',
