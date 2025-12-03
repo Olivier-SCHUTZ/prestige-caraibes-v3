@@ -81,7 +81,8 @@ class PCR_Documents
                     'type' => 'select',
                     'choices' => [
                         'devis'   => 'Devis',
-                        'facture' => 'Facture',
+                        'facture' => 'Facture (Solde / Totale)',
+                        'facture_acompte' => 'Facture d\'Acompte', // <--- NOUVEAU
                         'avoir'   => 'Avoir (Note de crédit)',
                         'contrat' => 'Contrat de Location',
                         'voucher' => 'Voucher / Bon d\'échange'
@@ -133,24 +134,68 @@ class PCR_Documents
         $resa = PCR_Reservation::get_by_id($reservation_id);
         if (!$resa) return ['success' => false, 'message' => 'Réservation introuvable.'];
 
-        // Récupération du type
+        // Récupération du type demandé
         $type_doc = get_field('pc_doc_type', $template_id) ?: 'document';
 
-        // Gestion du Numéro de document (Incrémentation)
+        // =================================================================
+        // RÈGLE 1 : BLOCAGE FACTURE FINALE SI PAS D'ACOMPTE
+        // =================================================================
+        if ($type_doc === 'facture') {
+            $rules = get_field('regles_de_paiement', $resa->item_id);
+            $mode  = $rules['pc_pay_mode'] ?? '';
+
+            if ($mode === 'acompte_plus_solde') {
+                global $wpdb;
+                $table_doc = $wpdb->prefix . 'pc_documents';
+                // On vérifie si une facture d'acompte existe
+                $has_acompte = $wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$table_doc} WHERE reservation_id = %d AND type_doc = 'facture_acompte'",
+                    $reservation_id
+                ));
+
+                if (!$has_acompte) {
+                    return [
+                        'success' => false,
+                        'message' => 'BLOQUÉ : Vous devez générer la "Facture d\'Acompte" avant de pouvoir créer la facture de solde.'
+                    ];
+                }
+            }
+        }
+
+        // Gestion BDD et Noms de fichiers
         global $wpdb;
         $table_name = $wpdb->prefix . 'pc_documents';
 
-        // Vérif existence pour éviter doublon
+        // Vérif existence
         $existing = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$table_name} WHERE reservation_id = %d AND type_doc = %s LIMIT 1",
             $reservation_id,
             $type_doc
         ));
 
+        // =================================================================
+        // RÈGLE 2 : SMART REGEN (ARCHIVAGE + AVOIR AUTO)
+        // =================================================================
+        if ($existing && $force_regenerate && in_array($type_doc, ['facture', 'facture_acompte'])) {
+
+            // 1. Génération de l'Avoir Automatique (Annule la facture précédente)
+            self::generate_auto_credit_note($existing, $resa);
+
+            // 2. Archivage de l'ancienne facture (On change son type pour libérer la place)
+            // ex: facture -> facture_archived_170999999
+            $archived_type = $type_doc . '_archived_' . time();
+            $wpdb->update($table_name, ['type_doc' => $archived_type], ['id' => $existing->id]);
+
+            // 3. On remet $existing à null pour forcer la création d'une NOUVELLE ligne (Nouveau Numéro)
+            $existing = null;
+        }
+
+        // Si existe encore (pas forcé ou type non fiscal), on renvoie l'existant
         if ($existing && !$force_regenerate) {
             return ['success' => true, 'url' => $existing->url_fichier, 'doc_number' => $existing->numero_doc];
         }
 
+        // Génération du nouveau numéro (Incrémentation)
         $doc_number = ($existing) ? $existing->numero_doc : self::generate_next_number($type_doc);
 
         // AIGUILLAGE DU RENDU (Routing)
@@ -158,8 +203,11 @@ class PCR_Documents
         $html_content = '';
 
         if (in_array($type_doc, ['facture', 'devis', 'avoir'])) {
-            // Documents Financiers
+            // Documents Financiers CLASSIQUES (Solde)
             $html_content = self::render_financial_document($resa, $doc_number, $type_doc, $template_id);
+        } elseif ($type_doc === 'facture_acompte') {
+            // [NOUVEAU] Facture d'Acompte
+            $html_content = self::render_deposit_invoice($resa, $doc_number, $template_id);
         } elseif ($type_doc === 'voucher') {
             // Voucher
             $html_content = self::render_voucher($resa, $doc_number);
@@ -250,7 +298,9 @@ class PCR_Documents
         // Récupération des Taux
         $item_id = $resa->item_id;
         $tva_logement = (float) get_field('taux_tva', $item_id);
-        $tva_menage   = 8.5; // (À remplacer par get_field si champ créé)
+        $tva_menage_field = get_field('taux_tva_menage', $item_id);
+        $tva_menage   = ($tva_menage_field !== '' && $tva_menage_field !== null) ? (float)$tva_menage_field : 8.5; // Fallback à 8.5 si vide
+
         $tva_plus_value = 8.5;
 
         $data = [
@@ -602,6 +652,282 @@ class PCR_Documents
         return ob_get_clean();
     }
 
+    // --- RENDU 4 : FACTURE D'ACOMPTE (Spécifique) ---
+    private static function render_deposit_invoice($resa, $doc_number, $template_id)
+    {
+        // 1. Récupération des Règles de Paiement du Logement
+        $rules = get_field('regles_de_paiement', $resa->item_id);
+
+        $deposit_type = $rules['pc_deposit_type'] ?? 'pourcentage';
+        $deposit_val  = (float) ($rules['pc_deposit_value'] ?? 30);
+
+        // 2. Calcul du Montant de l'Acompte
+        $total_sejour = (float) $resa->montant_total;
+        $montant_acompte_ttc = 0;
+        $label_calcul = "";
+
+        if ($deposit_type === 'montant_fixe') {
+            $montant_acompte_ttc = $deposit_val;
+            $label_calcul = "Forfait fixe";
+        } else {
+            // Pourcentage
+            $montant_acompte_ttc = $total_sejour * ($deposit_val / 100);
+            $label_calcul = "{$deposit_val}% du total";
+        }
+
+        // 3. Calcul HT / TVA (On applique le taux du logement sur l'acompte)
+        $tva_logement = (float) get_field('taux_tva', $resa->item_id);
+
+        $montant_acompte_ht = $montant_acompte_ttc;
+        $montant_acompte_tva = 0;
+
+        if ($tva_logement > 0) {
+            $montant_acompte_ht = $montant_acompte_ttc / (1 + ($tva_logement / 100));
+            $montant_acompte_tva = $montant_acompte_ttc - $montant_acompte_ht;
+        }
+
+        // 4. Construction de l'Observation
+        $nom_logement = get_the_title($resa->item_id);
+        $dates = "du " . date_i18n('d/m/Y', strtotime($resa->date_arrivee)) . " au " . date_i18n('d/m/Y', strtotime($resa->date_depart));
+        $description_ligne = "Acompte ({$label_calcul}) pour la réservation : {$nom_logement} ({$dates})";
+
+        // 5. Visuel
+        $logo_url = get_field('pc_pdf_logo', 'option');
+        $logo = self::get_image_base64($logo_url);
+        $color = get_field('pc_pdf_primary_color', 'option') ?: '#000000';
+        $company = [
+            'name' => get_field('pc_legal_name', 'option'),
+            'address' => get_field('pc_legal_address', 'option'),
+            'siret' => get_field('pc_legal_siret', 'option'),
+            'tva' => get_field('pc_legal_tva', 'option'),
+        ];
+
+        ob_start();
+    ?>
+        <!DOCTYPE html>
+        <html>
+
+        <head>
+            <meta charset="UTF-8">
+            <?php echo self::get_common_css($color); ?>
+        </head>
+
+        <body>
+            <div class="header">
+                <div class="left">
+                    <?php if ($logo): ?><img src="<?php echo $logo; ?>" class="logo"><?php endif; ?>
+                </div>
+                <div class="right doc-info">
+                    <div class="doc-type" style="font-size:18px;">FACTURE D'ACOMPTE</div>
+                    <div class="doc-meta">
+                        <strong>N° :</strong> <?php echo $doc_number; ?><br>
+                        <strong>Date :</strong> <?php echo date_i18n('d/m/Y'); ?><br>
+                        <strong>Réf. Résa :</strong> #<?php echo $resa->id; ?>
+                    </div>
+                </div>
+                <div class="clear"></div>
+            </div>
+
+            <div class="addresses">
+                <div class="addr-box">
+                    <div class="addr-title">Émetteur</div>
+                    <strong><?php echo $company['name']; ?></strong><br>
+                    <?php echo nl2br($company['address']); ?>
+                </div>
+                <div class="addr-box client">
+                    <div class="addr-title">Facturé à</div>
+                    <strong><?php echo $resa->prenom . ' ' . strtoupper($resa->nom); ?></strong><br>
+                    Email : <?php echo $resa->email; ?>
+                </div>
+                <div class="clear"></div>
+            </div>
+
+            <table style="margin-top: 50px;">
+                <thead>
+                    <tr>
+                        <th class="col-desc" width="60%">Désignation</th>
+                        <th class="col-num">Base HT</th>
+                        <th class="col-num">TVA (<?php echo $tva_logement; ?>%)</th>
+                        <th class="col-num">Total TTC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 15px 10px;">
+                            <strong><?php echo $description_ligne; ?></strong><br>
+                            <em style="font-size: 10px; color: #666;">Conformément à vos conditions de réservation.</em>
+                        </td>
+                        <td class="col-num"><?php echo number_format($montant_acompte_ht, 2, ',', ' '); ?> €</td>
+                        <td class="col-num"><?php echo number_format($montant_acompte_tva, 2, ',', ' '); ?> €</td>
+                        <td class="col-num bold"><?php echo number_format($montant_acompte_ttc, 2, ',', ' '); ?> €</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="totals-wrap">
+                <table class="totals-table">
+                    <tr class="total-final">
+                        <td style="border:none;">NET À PAYER</td>
+                        <td style="border:none;" class="col-num"><?php echo number_format($montant_acompte_ttc, 2, ',', ' '); ?> €</td>
+                    </tr>
+                </table>
+                <div class="clear"></div>
+            </div>
+
+            <div class="footer">
+                <?php echo $company['name']; ?> - SIRET : <?php echo $company['siret']; ?> - TVA : <?php echo $company['tva']; ?>
+            </div>
+
+            <?php
+            $cgv_selected_title = '';
+
+            // 1. Logique Automatique
+            if ($resa->type === 'location') {
+                $cgv_selected_title = get_field('pc_cgv_default_location', 'option');
+            } elseif ($resa->type === 'experience') {
+                $cgv_selected_title = get_field('pc_cgv_default_experience', 'option');
+            }
+
+            // 2. Fallback manuel (si aucune règle auto n'a matché, ce qui est rare ici)
+            if (empty($cgv_selected_title)) {
+                $cgv_selected_title = get_field('pc_linked_cgv', $template_id);
+            }
+
+            if ($cgv_selected_title && have_rows('pc_pdf_cgv_library', 'option')) {
+                while (have_rows('pc_pdf_cgv_library', 'option')) {
+                    the_row();
+                    if (get_sub_field('cgv_title') === $cgv_selected_title) {
+                        $cgv_content = get_sub_field('cgv_content');
+
+                        // Saut de page
+                        echo '<div style="page-break-before: always;"></div>';
+
+                        // Affichage propre (Padding 0px)
+                        echo '<div style="position: relative; padding-top: 0px; padding-bottom: 50px;">';
+                        echo '<h3 class="uppercase" style="border-bottom:1px solid #ccc; padding-bottom:5px; margin-bottom:15px;">Conditions Générales (' . $cgv_selected_title . ')</h3>';
+                        echo '<div style="font-size:10px; text-align:justify; color:#444;">' . wpautop($cgv_content) . '</div>';
+                        echo '</div>';
+
+                        break;
+                    }
+                }
+            }
+            ?>
+        </body>
+
+        </html>
+    <?php
+        return ob_get_clean();
+    }
+
+    // --- RENDU 5 : AVOIR (Note de Crédit) ---
+    private static function render_credit_note($resa, $doc_number, $ref_facture_origine, $type_origine)
+    {
+        // On réutilise les calculs financiers standards
+        // Mais visuellement, c'est un Avoir.
+
+        // Si c'était un acompte qu'on annule, on devrait recalculer l'acompte.
+        // Pour faire simple ici, on reprend le tableau financier complet de la résa
+        // Si c'est une facture d'acompte annulée, c'est un cas particulier (V2).
+        // Ici on gère l'annulation de la facture TOTALE standard.
+
+        $fin = self::get_financial_data($resa);
+
+        $logo_url = get_field('pc_pdf_logo', 'option');
+        $logo = self::get_image_base64($logo_url);
+        $color = get_field('pc_pdf_primary_color', 'option') ?: '#000000';
+        $company = [
+            'name' => get_field('pc_legal_name', 'option'),
+            'address' => get_field('pc_legal_address', 'option'),
+            'siret' => get_field('pc_legal_siret', 'option'),
+            'tva' => get_field('pc_legal_tva', 'option'),
+        ];
+
+        ob_start();
+    ?>
+        <!DOCTYPE html>
+        <html>
+
+        <head>
+            <meta charset="UTF-8">
+            <?php echo self::get_common_css($color); ?>
+        </head>
+
+        <body>
+            <div class="header">
+                <div class="left">
+                    <?php if ($logo): ?><img src="<?php echo $logo; ?>" class="logo"><?php endif; ?>
+                </div>
+                <div class="right doc-info">
+                    <div class="doc-type" style="color: #cc0000;">AVOIR</div>
+                    <div class="doc-meta">
+                        <strong>N° :</strong> <?php echo $doc_number; ?><br>
+                        <strong>Date :</strong> <?php echo date_i18n('d/m/Y'); ?><br>
+                        <strong>Annule la facture :</strong> <?php echo $ref_facture_origine; ?>
+                    </div>
+                </div>
+                <div class="clear"></div>
+            </div>
+
+            <div class="addresses">
+                <div class="addr-box">
+                    <div class="addr-title">Émetteur</div>
+                    <strong><?php echo $company['name']; ?></strong><br>
+                    <?php echo nl2br($company['address']); ?>
+                </div>
+                <div class="addr-box client">
+                    <div class="addr-title">Avoir au profit de</div>
+                    <strong><?php echo $resa->prenom . ' ' . strtoupper($resa->nom); ?></strong>
+                </div>
+                <div class="clear"></div>
+            </div>
+
+            <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #cc0000; color: #cc0000; font-size: 11px; text-align: center;">
+                <strong>NOTE DE CRÉDIT</strong><br>
+                Ce document annule et remplace la facture n° <?php echo $ref_facture_origine; ?>.
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-desc">Désignation</th>
+                        <th class="col-num">Montant HT</th>
+                        <th class="col-num">TVA</th>
+                        <th class="col-num">Total TTC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($fin['lines'] as $line): ?>
+                        <tr>
+                            <td><?php echo $line['description']; ?></td>
+                            <td class="col-num"><?php echo number_format($line['total_ht'], 2, ',', ' '); ?> €</td>
+                            <td class="col-num"><?php echo ($line['taux_tva'] > 0) ? $line['taux_tva'] . '%' : '-'; ?></td>
+                            <td class="col-num bold"><?php echo number_format($line['total_ttc'], 2, ',', ' '); ?> €</td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+
+            <div class="totals-wrap">
+                <table class="totals-table">
+                    <tr class="total-final" style="background-color: #cc0000;">
+                        <td style="border:none;">TOTAL AVOIR (TTC)</td>
+                        <td style="border:none;" class="col-num"><?php echo number_format($fin['total_ttc'], 2, ',', ' '); ?> €</td>
+                    </tr>
+                </table>
+                <div class="clear"></div>
+            </div>
+
+            <div class="footer">
+                <?php echo $company['name']; ?> - SIRET : <?php echo $company['siret']; ?>
+            </div>
+        </body>
+
+        </html>
+    <?php
+        return ob_get_clean();
+    }
+
     // --- RENDU 2 : VOUCHER ---
     private static function render_voucher($resa, $doc_number)
     {
@@ -863,6 +1189,60 @@ class PCR_Documents
         $dompdf->stream("apercu-document.pdf", ["Attachment" => 0]); // 0 = Ouvrir dans l'onglet, 1 = Télécharger
         exit;
     }
+
+    /**
+     * Génère un AVOIR automatiquement pour annuler une facture qu'on écrase.
+     */
+    private static function generate_auto_credit_note($old_doc, $resa)
+    {
+        // 1. Numéro de l'Avoir
+        $avoir_number = self::generate_next_number('avoir'); // Utilise le compteur Facture (FAC-xxxx)
+        // Petite astuce : on remplace FAC par AVOIR pour la lisibilité, mais on garde l'incrément comptable
+        $avoir_number = str_replace('FAC-', 'AVOIR-', $avoir_number);
+
+        // 2. Rendu HTML de l'Avoir
+        // On passe l'ancien numéro en référence pour qu'il soit écrit sur le PDF
+        $html_content = self::render_credit_note($resa, $avoir_number, $old_doc->numero_doc, $old_doc->type_doc);
+
+        // 3. Génération PDF (copié-collé du moteur standard)
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Helvetica');
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html_content);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $output = $dompdf->output();
+
+        // 4. Sauvegarde fichier
+        $upload_dir = wp_upload_dir();
+        $rel_path   = '/pc-reservation/documents/' . $resa->id;
+        if (!file_exists($upload_dir['basedir'] . $rel_path)) mkdir($upload_dir['basedir'] . $rel_path, 0755, true);
+
+        $filename = 'AVOIR_' . sanitize_file_name($old_doc->numero_doc) . '.pdf';
+        $file_full_path = $upload_dir['basedir'] . $rel_path . '/' . $filename;
+        $file_url       = $upload_dir['baseurl'] . $rel_path . '/' . $filename;
+
+        file_put_contents($file_full_path, $output);
+
+        // 5. Insertion BDD
+        // On ruse sur le type_doc pour permettre plusieurs avoirs : 'avoir_TIMESTAMP'
+        // Car la colonne type_doc est unique par résa.
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'pc_documents';
+
+        $wpdb->insert($table_name, [
+            'reservation_id' => $resa->id,
+            'type_doc'       => 'avoir_' . time(), // Unique ID
+            'numero_doc'     => $avoir_number,
+            'nom_fichier'    => $filename,
+            'chemin_fichier' => $file_full_path,
+            'url_fichier'    => $file_url,
+            'user_id'        => get_current_user_id(),
+            'date_creation'  => current_time('mysql')
+        ]);
+    }
+
     /**
      * Helper : Convertit l'image en Base64 (Solution Ultime pour Dompdf)
      * Cela contourne tous les problèmes de SSL, de chemins et de permissions.
