@@ -2264,6 +2264,194 @@
                     "save_options": 0
                 }
             ]
+        },
+        {
+            "key": "field_6930b219248f6",
+            "label": "Infos Contrat & Propriétaire",
+            "name": "information_contrat_location",
+            "aria-label": "",
+            "type": "group",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "layout": "row",
+            "sub_fields": [
+                {
+                    "key": "field_6930b2a1248f7",
+                    "label": "Identité du propriétaire",
+                    "name": "log_proprietaire_identite",
+                    "aria-label": "",
+                    "type": "text",
+                    "instructions": "ex : EI VILLA TREZEL si entreprise ou Yves MERCIER si particulier",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "EI VILLA TREZEL",
+                    "prepend": "",
+                    "append": ""
+                },
+                {
+                    "key": "field_6930b32b248f8",
+                    "label": "Adresse du bien loué",
+                    "name": "proprietaire_adresse",
+                    "aria-label": "",
+                    "type": "textarea",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": "",
+                    "allow_in_bindings": 1,
+                    "rows": 6,
+                    "placeholder": "",
+                    "new_lines": "br"
+                },
+                {
+                    "key": "field_6930b54c248fc",
+                    "label": "Équipement logement",
+                    "name": "equipements_contrat",
+                    "aria-label": "",
+                    "type": "textarea",
+                    "instructions": "Piscine, climatisation dans les chambres, Wi-Fi, télévision, électroménager, barbecue, vaisselles, linges de maison (draps et serviettes de bain et toilette).",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": "",
+                    "allow_in_bindings": 1,
+                    "rows": 6,
+                    "placeholder": "Piscine, climatisation, Wi-Fi...",
+                    "new_lines": ""
+                },
+                {
+                    "key": "field_6930b751248fd",
+                    "label": "Descriptif logement",
+                    "name": "description_contrat",
+                    "aria-label": "",
+                    "type": "textarea",
+                    "instructions": "Ex : Villa individuelle avec piscine privée, comprenant 3 chambres, 2 salles de bain, cuisine,\r\nsalon et terrasse privative.",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": "",
+                    "allow_in_bindings": 1,
+                    "rows": 6,
+                    "placeholder": "Villa individuelle avec piscine privée, comprenant 3 chambres...",
+                    "new_lines": ""
+                },
+                {
+                    "key": "field_6930b83a248fe",
+                    "label": "Capacité du logement",
+                    "name": "personne_logement",
+                    "aria-label": "",
+                    "type": "number",
+                    "instructions": "Capacité du logement hors BB",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "25",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "min": "",
+                    "max": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "step": "",
+                    "prepend": "",
+                    "append": ""
+                },
+                {
+                    "key": "field_6930b427248f9",
+                    "label": "Dispose d'une piscine ?",
+                    "name": "has_piscine",
+                    "aria-label": "",
+                    "type": "true_false",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "25",
+                        "class": "",
+                        "id": ""
+                    },
+                    "message": "",
+                    "default_value": 0,
+                    "allow_in_bindings": 0,
+                    "ui_on_text": "Oui",
+                    "ui_off_text": "Non",
+                    "ui": 1
+                },
+                {
+                    "key": "field_6930b4a5248fa",
+                    "label": "Dispose d'un jacuzzi ?",
+                    "name": "has_jacuzzi",
+                    "aria-label": "",
+                    "type": "true_false",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "25",
+                        "class": "",
+                        "id": ""
+                    },
+                    "message": "",
+                    "default_value": 0,
+                    "allow_in_bindings": 0,
+                    "ui_on_text": "Oui",
+                    "ui_off_text": "Non",
+                    "ui": 1
+                },
+                {
+                    "key": "field_6930b4c9248fb",
+                    "label": "Utilise un livret d'accueil numérique ?",
+                    "name": "has_guide_numerique",
+                    "aria-label": "",
+                    "type": "true_false",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "25",
+                        "class": "",
+                        "id": ""
+                    },
+                    "message": "",
+                    "default_value": 0,
+                    "allow_in_bindings": 0,
+                    "ui_on_text": "Oui",
+                    "ui_off_text": "Non",
+                    "ui": 1
+                }
+            ]
         }
     ],
     "location": [
@@ -2292,5 +2480,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1764752538
+    "modified": 1764871951
 }

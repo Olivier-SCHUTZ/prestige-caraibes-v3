@@ -58,6 +58,7 @@ function pc_resa_build_prefill_payload($resa)
     $payload = [
         'id'                    => isset($resa->id) ? (int) $resa->id : 0,
         'type'                  => isset($resa->type) ? $resa->type : '',
+        'source'                => isset($resa->source) ? $resa->source : 'direct',
         'type_flux'             => isset($resa->type_flux) ? $resa->type_flux : '',
         'mode_reservation'      => isset($resa->mode_reservation) ? $resa->mode_reservation : '',
         'item_id'               => isset($resa->item_id) ? (int) $resa->item_id : 0,
@@ -800,6 +801,5 @@ function pc_resa_dashboard_shortcode($atts)
     include $template_base . 'popups.php';
 
     return ob_get_clean();
-
 }
 add_shortcode('pc_resa_dashboard', 'pc_resa_dashboard_shortcode');

@@ -153,3 +153,17 @@ if (! defined('ABSPATH')) {
         </div>
     </div>
 </div>
+
+<div id="pc-invoice-blocked-popup" class="pc-popup-overlay" hidden>
+    <div class="pc-popup-box" style="max-width: 400px; padding: 30px;">
+        <span class="pc-popup-blocked-icon">🚫</span>
+        <h3 class="pc-popup-title pc-popup-blocked-title">Action Bloquée</h3>
+        <p class="pc-popup-text pc-popup-blocked-msg" id="pc-invoice-blocked-msg">
+        </p>
+        <div class="pc-popup-actions">
+            <button type="button" class="pc-btn pc-btn--primary" style="background:#dc2626; border-color:#dc2626;" onclick="document.getElementById('pc-invoice-blocked-popup').hidden = true;">
+                J'ai compris
+            </button>
+        </div>
+    </div>
+</div>

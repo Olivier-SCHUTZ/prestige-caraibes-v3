@@ -28,6 +28,7 @@ class PCR_Reservation_Schema
           item_id BIGINT(20) UNSIGNED NOT NULL,
           mode_reservation VARCHAR(20) DEFAULT 'demande',
           origine VARCHAR(50) DEFAULT 'site',
+          source VARCHAR(50) DEFAULT 'direct',
           ref_externe VARCHAR(100) DEFAULT NULL,
           type_flux VARCHAR(20) NOT NULL DEFAULT 'reservation',
           numero_devis VARCHAR(50) DEFAULT NULL,

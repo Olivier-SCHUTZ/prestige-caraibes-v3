@@ -1364,6 +1364,7 @@
       let currentType = typeSelect
         ? typeSelect.value || "experience"
         : "experience";
+
       if (prefill && prefill.type) {
         currentType = prefill.type;
       }
@@ -2730,6 +2731,7 @@
       }
     };
 
+    // --- GESTION DU CLIC SUR "GÉNÉRER PDF" ---
     document.addEventListener("click", function (e) {
       const btn = e.target.closest(".pc-btn-generate-doc");
       if (!btn || btn.disabled) {
@@ -2782,6 +2784,32 @@
         .then((response) => response.text())
         .then((rawText) => {
           const payload = parseServerJson(rawText);
+
+          // --- GESTION DES POPUPS D'ERREUR (BLOCAGE) ---
+          if (
+            payload &&
+            !payload.success &&
+            payload.data &&
+            (payload.data.error_code === "missing_deposit" ||
+              payload.data.error_code === "document_exists")
+          ) {
+            const popup = document.getElementById("pc-invoice-blocked-popup");
+            const msgEl = document.getElementById("pc-invoice-blocked-msg");
+
+            if (popup && msgEl) {
+              msgEl.innerHTML = payload.data.message; // innerHTML pour permettre des sauts de ligne si besoin
+              popup.hidden = false;
+            } else {
+              alert(payload.data.message);
+            }
+
+            // Réinitialisation du bouton
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            return;
+          }
+          // -----------------------------------------------------------
+
           if (
             !payload ||
             !payload.success ||
@@ -2801,7 +2829,11 @@
         })
         .catch((error) => {
           console.error("[pc-documents] Erreur génération", error);
-          alert("❌ " + (error.message || "Erreur technique."));
+          // Si c'est une erreur technique, on garde l'alerte simple ou console
+          // (L'erreur bloquante est gérée plus haut)
+          if (error.message !== "missing_deposit") {
+            alert("❌ " + (error.message || "Erreur technique."));
+          }
         })
         .finally(() => {
           btn.disabled = false;

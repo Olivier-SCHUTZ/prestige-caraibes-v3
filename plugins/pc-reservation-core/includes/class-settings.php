@@ -248,6 +248,20 @@ class PCR_Settings
                     'type' => 'text',
                     'default_value' => 'DEV-' . date('Y') . '-',
                 ],
+                [
+                    'key' => 'field_pc_credit_note_prefix',
+                    'label' => 'Préfixe Avoir',
+                    'name' => 'pc_credit_note_prefix',
+                    'type' => 'text',
+                    'default_value' => 'AVOIR-' . date('Y') . '-',
+                ],
+                [
+                    'key' => 'field_pc_credit_note_next',
+                    'label' => 'Prochain Numéro Avoir',
+                    'name' => 'pc_credit_note_next',
+                    'type' => 'number',
+                    'default_value' => 1,
+                ],
 
                 // Onglet Bibliothèque CGV
                 // [NOUVEAU] Onglet Affectation Automatique

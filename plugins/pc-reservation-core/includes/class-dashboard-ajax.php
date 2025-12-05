@@ -81,7 +81,6 @@ class PCR_Dashboard_Ajax
 
         $mode_reservation = (isset($_POST['mode_reservation']) && $_POST['mode_reservation'] === 'directe') ? 'directe' : 'demande';
         $type_flux        = (isset($_POST['type_flux']) && $_POST['type_flux'] === 'devis') ? 'devis' : 'reservation';
-
         $remise_label  = sanitize_text_field($_POST['remise_label'] ?? '');
         $remise_amount = isset($_POST['remise_montant']) ? (float) $_POST['remise_montant'] : 0;
         $plus_label    = sanitize_text_field($_POST['plus_label'] ?? '');
