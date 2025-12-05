@@ -339,6 +339,29 @@ if (! defined('ABSPATH')) {
                                                 <?php endif; ?>
                                             </p>
 
+                                            <?php
+                                            $src_val = !empty($resa->source) ? $resa->source : 'direct';
+                                            $src_label = 'Direct / Site';
+                                            switch ($src_val) {
+                                                case 'airbnb':
+                                                    $src_label = 'Airbnb';
+                                                    break;
+                                                case 'booking':
+                                                    $src_label = 'Booking.com';
+                                                    break;
+                                                case 'abritel':
+                                                    $src_label = 'Abritel / Vrbo';
+                                                    break;
+                                                case 'direct':
+                                                    $src_label = 'Direct / Site Web';
+                                                    break;
+                                                default:
+                                                    $src_label = ucfirst($src_val);
+                                            }
+                                            ?>
+                                            <p>
+                                                <strong>Source :</strong> <?php echo esc_html($src_label); ?>
+                                            </p>
                                             <p>
                                                 <strong>Origine :</strong> <?php echo esc_html($origine); ?><br>
                                                 <small>Créée le : <?php echo esc_html($resa->date_creation); ?></small>
@@ -984,6 +1007,19 @@ if (! defined('ABSPATH')) {
                             <option value="devis">Devis</option>
                             <option value="reservation">Réservation confirmée</option>
                         </select>
+                    </label>
+
+                    <label class="pc-resa-field">
+                        <span class="pc-resa-field-label">Source / Plateforme</span>
+                        <select name="source">
+                            <option value="direct" selected>Direct / Site Web / Tél</option>
+                            <option value="airbnb">Airbnb</option>
+                            <option value="booking">Booking.com</option>
+                            <option value="abritel">Abritel / Vrbo</option>
+                        </select>
+                        <span class="pc-resa-field-hint">
+                            Impacte le contrat (Conditions d'annulation & Paiement).
+                        </span>
                     </label>
 
                     <input type="hidden" name="mode_reservation" value="directe">

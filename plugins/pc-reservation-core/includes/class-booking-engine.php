@@ -126,6 +126,7 @@ class PCR_Booking_Engine
         if (empty($payload['context']['type'])) $payload['context']['type'] = $existing->type;
         if (empty($payload['context']['mode_reservation'])) $payload['context']['mode_reservation'] = $existing->mode_reservation;
         if (empty($payload['context']['origine'])) $payload['context']['origine'] = $existing->origine;
+        if (empty($payload['context']['source'])) $payload['context']['source'] = isset($existing->source) ? $existing->source : 'direct';
         if (empty($payload['item']['item_id'])) $payload['item']['item_id'] = $existing->item_id;
         if (empty($payload['item']['date_arrivee'])) $payload['item']['date_arrivee'] = $existing->date_arrivee;
         if (empty($payload['item']['date_depart'])) $payload['item']['date_depart'] = $existing->date_depart;
@@ -275,7 +276,7 @@ class PCR_Booking_Engine
             'type_flux'        => 'reservation',
             'origine'          => 'site',
             'mode_reservation' => 'demande',
-            'source'           => 'front',
+            'source'           => 'direct',
         ];
 
         $item_defaults = [
@@ -457,6 +458,7 @@ class PCR_Booking_Engine
             'mode_reservation'      => $context['mode_reservation'],
             'origine'               => $context['origine'],
             'type_flux'             => $context['type_flux'],
+            'source'                => $context['source'],
             'numero_devis'          => $meta['numero_devis'] ?: null,
             'ref_externe'           => $meta['ref_externe'] ?: null,
 

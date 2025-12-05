@@ -626,6 +626,7 @@
       const sendBtn = form.querySelector(".pc-resa-create-send");
       const typeSelect = form.querySelector('select[name="type"]');
       const typeFluxSelect = form.querySelector('select[name="type_flux"]');
+      const sourceSelect = form.querySelector('select[name="source"]');
       const modeSelect = form.querySelector('select[name="mode_reservation"]');
       const itemSelect = form.querySelector('select[name="item_id"]');
       const tarifSelect = form.querySelector(
@@ -1364,6 +1365,9 @@
       let currentType = typeSelect
         ? typeSelect.value || "experience"
         : "experience";
+      if (sourceSelect && prefill && prefill.source) {
+        sourceSelect.value = prefill.source;
+      }
 
       if (prefill && prefill.type) {
         currentType = prefill.type;
