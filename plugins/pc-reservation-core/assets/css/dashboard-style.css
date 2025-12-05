@@ -1045,3 +1045,21 @@
   margin-bottom: 6px !important;
   color: #475569 !important;
 }
+
+/* --- POPUP DE BLOCAGE FACTURATION --- */
+.pc-popup-blocked-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+.pc-popup-blocked-title {
+  color: #dc2626; /* Rouge */
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+.pc-popup-blocked-msg {
+  color: #334155;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
