@@ -1669,6 +1669,212 @@
             ]
         },
         {
+            "key": "field_693425857049c",
+            "label": "Promotions",
+            "name": "",
+            "aria-label": "",
+            "type": "tab",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "placement": "left",
+            "endpoint": 0,
+            "selected": 0
+        },
+        {
+            "key": "field_693425b17049d",
+            "label": "Promotions & Offres",
+            "name": "pc_promo_blocks",
+            "aria-label": "",
+            "type": "repeater",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "layout": "block",
+            "pagination": 0,
+            "min": 0,
+            "max": 0,
+            "collapsed": "",
+            "button_label": "Ajouter une promotion",
+            "rows_per_page": 20,
+            "sub_fields": [
+                {
+                    "key": "field_693425fe7049e",
+                    "label": "Nom de la promotion",
+                    "name": "nom_de_la_promotion",
+                    "aria-label": "",
+                    "type": "text",
+                    "instructions": "",
+                    "required": 1,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "promo_name",
+                    "maxlength": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "prepend": "",
+                    "append": "",
+                    "parent_repeater": "field_693425b17049d"
+                },
+                {
+                    "key": "field_693426267049f",
+                    "label": "Type de remise",
+                    "name": "promo_type",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "percent": "Pourcentage (%)",
+                        "fixed": "Montant fixe (€)"
+                    },
+                    "default_value": false,
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 0,
+                    "allow_in_bindings": 1,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0,
+                    "parent_repeater": "field_693425b17049d"
+                },
+                {
+                    "key": "field_69342665704a0",
+                    "label": "Valeur",
+                    "name": "promo_value",
+                    "aria-label": "",
+                    "type": "number",
+                    "instructions": "ex: 10 pour 10% ou 50 pour 50€",
+                    "required": 1,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "min": "",
+                    "max": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "step": "",
+                    "prepend": "",
+                    "append": "",
+                    "parent_repeater": "field_693425b17049d"
+                },
+                {
+                    "key": "field_693426ac704a1",
+                    "label": "Offre valable jusqu'au...",
+                    "name": "promo_valid_until",
+                    "aria-label": "",
+                    "type": "date_picker",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "display_format": "d\/m\/Y",
+                    "return_format": "Y-m-d",
+                    "first_day": 1,
+                    "default_to_current_date": 0,
+                    "allow_in_bindings": 0,
+                    "parent_repeater": "field_693425b17049d"
+                },
+                {
+                    "key": "field_693426fa704a2",
+                    "label": "Périodes de séjour concernées",
+                    "name": "promo_periods",
+                    "aria-label": "",
+                    "type": "repeater",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "layout": "table",
+                    "pagination": 0,
+                    "min": 0,
+                    "max": 0,
+                    "collapsed": "",
+                    "button_label": "Ajouter une période",
+                    "rows_per_page": 20,
+                    "sub_fields": [
+                        {
+                            "key": "field_69342734704a3",
+                            "label": "Du...",
+                            "name": "date_from",
+                            "aria-label": "",
+                            "type": "date_picker",
+                            "instructions": "",
+                            "required": 0,
+                            "conditional_logic": 0,
+                            "wrapper": {
+                                "width": "",
+                                "class": "",
+                                "id": ""
+                            },
+                            "display_format": "d\/m\/Y",
+                            "return_format": "Y-m-d",
+                            "first_day": 1,
+                            "default_to_current_date": 0,
+                            "allow_in_bindings": 0,
+                            "parent_repeater": "field_693426fa704a2"
+                        },
+                        {
+                            "key": "field_69342777704a4",
+                            "label": "Au...",
+                            "name": "date_to",
+                            "aria-label": "",
+                            "type": "date_picker",
+                            "instructions": "",
+                            "required": 0,
+                            "conditional_logic": 0,
+                            "wrapper": {
+                                "width": "",
+                                "class": "",
+                                "id": ""
+                            },
+                            "display_format": "d\/m\/Y",
+                            "return_format": "Y-m-d",
+                            "first_day": 1,
+                            "default_to_current_date": 0,
+                            "allow_in_bindings": 0,
+                            "parent_repeater": "field_693426fa704a2"
+                        }
+                    ],
+                    "parent_repeater": "field_693425b17049d"
+                }
+            ]
+        },
+        {
             "key": "tab_host",
             "label": "Hôte",
             "name": "",
@@ -2480,5 +2686,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1764871951
+    "modified": 1765025781
 }

@@ -1,0 +1,173 @@
+/* =========================================
+   1. MASQUAGE DES ÉLÉMENTS ACF NATIFS
+   ========================================= */
+
+/* Masquer les répéteurs d'origine (Saisons et Promos) */
+div[data-key="field_pc_season_blocks_20250826"],
+div[data-key="field_pc_promo_blocks"] {
+  display: none !important;
+}
+
+/* Masquer les onglets (Fallback CSS, le JS le fait aussi) */
+.acf-tab-wrap li a[data-key="tab_promotions"],
+.acf-tab-wrap li a[data-key="tab_tarifs_saison_20250826"] {
+  display: none !important;
+}
+
+/* =========================================
+   2. CONTENEUR PRINCIPAL (LE COCKPIT)
+   ========================================= */
+
+#pc-rate-manager-wrapper {
+  display: flex;
+  background: #fff;
+  border: 1px solid #ccd0d4;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  margin-top: 20px;
+
+  /* CRUCIAL : Hauteur fixe pour définir la fenêtre de vue */
+  height: 850px;
+  min-height: 850px;
+
+  /* Empêche le wrapper de grandir, force le contenu interne à scroller */
+  overflow: hidden;
+}
+
+/* =========================================
+   3. SIDEBAR (OUTILS À GAUCHE)
+   ========================================= */
+
+.pc-rm-sidebar {
+  width: 260px;
+  background: #f8f9fa;
+  border-right: 1px solid #ddd;
+  padding: 20px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  /* Permet de scroller dans les outils si l'écran est petit */
+  overflow-y: auto;
+}
+
+.pc-rm-section h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #23282d;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+/* --- BOUTONS GLISSABLES (Draggable) --- */
+.pc-draggable-event {
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  background-color: #3788d8;
+  color: white;
+  border-radius: 4px;
+  cursor: grab;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid rgba(0, 0, 0, 0.15); /* Bordure plus sombre à gauche */
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.pc-draggable-event:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.pc-draggable-event:active {
+  cursor: grabbing;
+}
+
+/* Couleurs spécifiques */
+.pc-draggable-event[data-color="#3788d8"] {
+  background-color: #3788d8;
+  border-color: #226dc4;
+} /* Bleu (Moyenne) */
+.pc-draggable-event[data-color="#ff9f89"] {
+  background-color: #e67e22;
+  border-color: #d35400;
+} /* Orange (Haute) */
+.pc-draggable-event[data-color="#d9534f"] {
+  background-color: #e74c3c;
+  border-color: #c0392b;
+} /* Rouge (Très Haute) */
+
+/* --- BOUTONS MANUELS --- */
+.pc-rm-btn-group {
+  display: flex;
+  gap: 10px;
+}
+.pc-rm-btn-group .button {
+  flex: 1;
+  justify-content: center;
+}
+.pc-rm-info p {
+  color: #646970;
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+/* =========================================
+   4. ZONE CALENDRIER (À DROITE)
+   ========================================= */
+
+.pc-rm-calendar-container {
+  flex-grow: 1;
+  height: 100%;
+  width: 100%;
+  background: #fff;
+  position: relative;
+
+  /* C'est ICI que se joue le scroll vertical des mois */
+  overflow-y: auto;
+  padding: 20px 30px; /* Un peu d'air autour du calendrier */
+}
+
+/* --- Customisation FullCalendar (Vue MultiMonth) --- */
+
+/* Espacement entre les mois pour que ce soit lisible */
+.fc-multimonth-month {
+  margin-bottom: 50px !important;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+}
+
+/* Titre du mois (Barre grise en haut de chaque mois) */
+.fc-multimonth-title {
+  font-size: 1.2em !important;
+  font-weight: 600 !important;
+  padding: 12px !important;
+  background: #f6f7f7;
+  border-radius: 4px;
+  color: #1d2327;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* Jours de la semaine */
+.fc-col-header-cell {
+  background: #fff;
+  padding: 10px 0;
+  color: #646970;
+  text-transform: uppercase;
+  font-size: 0.85em;
+}
+
+/* Événements dans le calendrier */
+.fc-event {
+  border-radius: 3px;
+  font-size: 0.85em;
+  padding: 2px;
+  cursor: pointer; /* Indique qu'on peut cliquer pour supprimer */
+}
