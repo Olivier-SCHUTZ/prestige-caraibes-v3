@@ -249,3 +249,233 @@ div[data-key="field_pc_promo_blocks"],
   color: #0a0a0a;
   text-shadow: 0 1px 5px rgba(255, 255, 255, 0.9);
 }
+
+/* ... (Garde ton CSS précédent) ... */
+
+/* --- BOUTONS SIDEBAR --- */
+.pc-rm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pc-btn-full {
+  width: 100% !important; /* Force width */
+  justify-content: center !important;
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  height: 40px !important;
+}
+
+/* Style spécifique pour le prix dans le bouton saison */
+.pc-price-tag {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  float: right;
+}
+
+/* --- MODALE (POPUP) --- */
+.pc-modal {
+  display: none; /* Caché par défaut */
+  position: fixed;
+  z-index: 100000; /* TRÈS HAUT pour être au dessus de la barre WP */
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px); /* Effet flou moderne */
+}
+
+.pc-modal-content {
+  background-color: #fff;
+  margin: 10vh auto; /* 10% du haut */
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 500px;
+  max-width: 90%;
+  overflow: hidden;
+  position: relative;
+  animation: pcSlideIn 0.3s ease-out;
+}
+
+@keyframes pcSlideIn {
+  from {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pc-modal-header {
+  padding: 16px 24px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pc-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.pc-close-modal {
+  color: #9ca3af;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.pc-close-modal:hover {
+  color: #111827;
+}
+
+.pc-modal-body {
+  padding: 24px;
+}
+
+.pc-form-group {
+  margin-bottom: 16px;
+}
+.pc-form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #374151;
+}
+.pc-form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.pc-form-group input:focus {
+  border-color: #3b82f6;
+  outline: none;
+  ring: 2px solid #93c5fd;
+}
+
+.pc-form-row {
+  display: flex;
+  gap: 16px;
+}
+.pc-form-row .pc-form-group {
+  flex: 1;
+}
+
+fieldset {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: #f9fafb;
+}
+fieldset legend {
+  font-size: 12px;
+  color: #6b7280;
+  padding: 0 5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pc-modal-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end; /* Boutons à droite */
+  gap: 10px;
+}
+/* Si on affiche le bouton supprimer, on utilise space-between */
+.pc-modal-footer:has(#btn-delete-season-def[style*="block"]) {
+  justify-content: space-between;
+}
+
+/* --- CORRECTIF MODALE --- */
+.pc-modal {
+  display: none; /* JS le passera en flex/block */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100000 !important; /* Force le passage au premier plan */
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+
+  /* Centrage parfait flexbox */
+  align-items: center;
+  justify-content: center;
+}
+
+.pc-modal-content {
+  /* On retire les marges auto si on utilise flexbox */
+  margin: 0;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+/* GESTION DES PÉRIODES */
+#pc-periods-manager {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+#pc-periods-list {
+  margin: 0 0 15px 0;
+  max-height: 100px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+}
+
+#pc-periods-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  margin: 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+#pc-periods-list li:last-child {
+  border-bottom: none;
+}
+
+.pc-del-period-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 0 5px;
+}
+.pc-del-period-btn:hover {
+  color: #b91c1c;
+}
+
+.pc-add-period-box {
+  background: #e2e8f0;
+  padding: 10px;
+  border-radius: 4px;
+}
+.pc-add-period-box label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 4px;
+}
