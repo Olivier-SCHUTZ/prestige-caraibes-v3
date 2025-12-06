@@ -1063,3 +1063,20 @@
   font-size: 0.95rem;
   line-height: 1.5;
 }
+/* AJOUT POUR LE POPUP CHEVAUCHEMENT */
+#pc-overlap-popup .pc-popup-box {
+  animation: pc-shake 0.3s ease-in-out;
+}
+
+@keyframes pc-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}

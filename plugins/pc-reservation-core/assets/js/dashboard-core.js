@@ -823,19 +823,17 @@
         if (!config) {
           return;
         }
+
+        // Récupération des plages occupées
         const disableRanges = Array.isArray(config.icsDisable)
           ? config.icsDisable.filter((range) => range && range.from && range.to)
           : [];
-        const disableRules = disableRanges.length
-          ? [
-              function (date) {
-                const s = formatYMD(date);
-                return disableRanges.some(
-                  (range) => s >= range.from && s <= range.to
-                );
-              },
-            ]
-          : [];
+
+        /* MODIFICATION FORÇAGE : 
+           On ne passe plus "disable" à Flatpickr pour permettre le clic.
+           On utilise onDayCreate pour colorer visuellement les dates occupées.
+        */
+
         const bootCalendar = () => {
           if (typeof window.flatpickr !== "function") {
             setTimeout(bootCalendar, 150);
@@ -844,58 +842,91 @@
           if (window.flatpickr.l10ns && window.flatpickr.l10ns.fr) {
             window.flatpickr.localize(window.flatpickr.l10ns.fr);
           }
-          console.log(
-            "[pc-devis] INIT FLATPICKR DASHBOARD",
-            logementRangeInput,
-            {
-              mode: "range",
-              dateFormat: "d/m/Y",
-              disableRanges,
-            }
-          );
+          console.log("[pc-devis] INIT FLATPICKR DASHBOARD (Mode Permissif)");
+
           logementCalendar = window.flatpickr(logementRangeInput, {
             mode: "range",
             dateFormat: "d/m/Y",
             altInput: false,
             minDate: "today",
-            disable: disableRules,
+            // ON RETIRE CETTE LIGNE POUR RENDRE CLIQUABLE :
+            // disable: disableRules,
+
+            // ON AJOUTE CECI POUR VISUALISER LES BLOCAGES (Rouge clair) :
+            onDayCreate: function (dObj, dStr, fp, dayElem) {
+              const dateYMD = formatYMD(dayElem.dateObj);
+              // Vérifier si cette date est dans une plage disableRanges
+              const isBlocked = disableRanges.some((range) => {
+                return dateYMD >= range.from && dateYMD <= range.to;
+              });
+              if (isBlocked) {
+                dayElem.style.backgroundColor = "#fee2e2"; // Rouge très clair
+                dayElem.style.color = "#b91c1c";
+                dayElem.style.textDecoration = "line-through";
+                dayElem.title = "Période occupée (Forçage possible)";
+              }
+            },
+
             onChange(selectedDates) {
               if (selectedDates.length === 2) {
-                if (arrivalInput) {
-                  arrivalInput.value = formatYMD(selectedDates[0]);
+                const startYMD = formatYMD(selectedDates[0]);
+                const endYMD = formatYMD(selectedDates[1]);
+
+                if (arrivalInput) arrivalInput.value = startYMD;
+                if (departInput) departInput.value = endYMD;
+
+                // --- LOGIQUE DE DETECTION DE CHEVAUCHEMENT ---
+                let hasOverlap = false;
+
+                // On vérifie si la période sélectionnée croise une plage interdite
+                // Logique: (SelectionStart <= RangeEnd) and (SelectionEnd >= RangeStart)
+                if (disableRanges.length > 0) {
+                  hasOverlap = disableRanges.some((range) => {
+                    return startYMD <= range.to && endYMD >= range.from;
+                  });
                 }
-                if (departInput) {
-                  departInput.value = formatYMD(selectedDates[1]);
+
+                if (hasOverlap) {
+                  // Ouvre le popup
+                  const popup = document.getElementById("pc-overlap-popup");
+                  if (popup) {
+                    popup.hidden = false;
+
+                    // Gestion bouton Annuler
+                    const btnCancel =
+                      document.getElementById("pc-overlap-cancel");
+                    btnCancel.onclick = function () {
+                      logementCalendar.clear(); // Efface la sélection
+                      popup.hidden = true;
+                    };
+
+                    // Gestion bouton Confirmer
+                    const btnConfirm =
+                      document.getElementById("pc-overlap-confirm");
+                    btnConfirm.onclick = function () {
+                      popup.hidden = true;
+                      // On peut éventuellement forcer le select flux sur "Devis" ici si tu veux
+                      // if(typeFluxSelect) typeFluxSelect.value = 'devis';
+                    };
+                  }
                 }
+                // ---------------------------------------------
               } else {
-                if (arrivalInput) {
-                  arrivalInput.value = "";
-                }
-                if (departInput) {
-                  departInput.value = "";
-                }
+                if (arrivalInput) arrivalInput.value = "";
+                if (departInput) departInput.value = "";
               }
               updateQuote();
             },
           });
-          if (logementCalendar && logementCalendar.config) {
-            console.log(
-              "[pc-devis] FLATPICKR CONFIG FINALE",
-              logementCalendar.config.disable
-            );
-          }
+
           if (
             rangeToApply &&
             Array.isArray(rangeToApply) &&
             rangeToApply.length === 2
           ) {
             logementCalendar.setDate(rangeToApply, true, "Y-m-d");
-            if (arrivalInput) {
-              arrivalInput.value = rangeToApply[0];
-            }
-            if (departInput) {
-              departInput.value = rangeToApply[1];
-            }
+            if (arrivalInput) arrivalInput.value = rangeToApply[0];
+            if (departInput) departInput.value = rangeToApply[1];
           }
         };
         bootCalendar();

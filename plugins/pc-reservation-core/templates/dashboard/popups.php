@@ -167,3 +167,28 @@ if (! defined('ABSPATH')) {
         </div>
     </div>
 </div>
+
+<div id="pc-overlap-popup" class="pc-popup-overlay" hidden>
+    <div class="pc-popup-box" style="max-width: 450px; border-top: 5px solid #ef4444;">
+        <div style="font-size: 4rem; line-height: 1; margin-bottom: 1rem;">⛔</div>
+        <h3 class="pc-popup-title" style="color: #b91c1c;">Chevauchement détecté !</h3>
+
+        <p class="pc-popup-text" style="font-weight: 500;">
+            Attention, vous sélectionnez une période qui contient déjà des indisponibilités (réservations ou blocages).
+        </p>
+
+        <div style="background: #fef2f2; border: 1px solid #fca5a5; padding: 12px; border-radius: 6px; font-size: 0.9rem; color: #7f1d1d; margin-bottom: 20px; text-align: left;">
+            <strong>Conseil :</strong><br>
+            Laissez le statut sur <u>"Sur devis"</u> ou <u>"Brouillon"</u> pour ne pas créer de conflit technique dans les calendriers externes.<br>
+        </div>
+
+        <div class="pc-popup-actions">
+            <button type="button" class="pc-btn pc-btn--secondary" id="pc-overlap-cancel">
+                Annuler la sélection
+            </button>
+            <button type="button" class="pc-btn pc-btn--primary" id="pc-overlap-confirm" style="background: #dc2626; border-color: #dc2626;">
+                J'ai compris, forcer la date
+            </button>
+        </div>
+    </div>
+</div>
