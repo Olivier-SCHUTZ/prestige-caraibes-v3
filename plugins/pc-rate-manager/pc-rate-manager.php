@@ -100,10 +100,16 @@ class PCRateManager
         wp_enqueue_style('pc-rm-style', plugin_dir_url(__FILE__) . 'assets/css/style.css', [], '1.0');
         wp_enqueue_script('pc-rm-app', plugin_dir_url(__FILE__) . 'assets/js/app.js', ['jquery', 'fullcalendar-js'], '1.0', true);
 
+        // Récupération du PRIX DE BASE (Couche 1)
+        // On cherche la valeur dans le champ ACF 'base_price_from' (nom du champ dans ton JSON)
+        $base_price = get_field('base_price_from', $post->ID);
+        if (!$base_price) $base_price = 0; // Sécurité
+
         // 3. Passer des variables PHP vers JS (Clés des champs ACF)
         wp_localize_script('pc-rm-app', 'pcRmConfig', [
             'field_season_repeater' => 'field_pc_season_blocks_20250826', // Clé du répéteur Saisons
             'field_promo_repeater'  => 'field_pc_promo_blocks',         // Clé du répéteur Promos (le nouveau)
+            'base_price'            => $base_price, // Prix de base de la location
         ]);
     }
 }
