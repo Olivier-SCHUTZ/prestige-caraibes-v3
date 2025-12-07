@@ -264,6 +264,108 @@ jQuery(document).ready(function ($) {
     }
   });
 
+  // --- 3.bis. OUTIL GÉNÉRIQUE : trouver le bouton "Ajouter" d'un répéteur ACF ---
+  function findAcfAddButton($container) {
+    if (!$container || !$container.length) return $();
+
+    // 1. Cas le plus courant : bouton principal dans .acf-input > .acf-repeater > .acf-actions
+    let $btn = $container
+      .find(
+        '> .acf-input > .acf-repeater > .acf-actions [data-event="add-row"]'
+      )
+      .first();
+
+    // 2. Variante : bouton avec classe spécifique repeater (toujours au niveau racine du répéteur)
+    if (!$btn.length) {
+      $btn = $container
+        .find(
+          '> .acf-input > .acf-repeater > .acf-actions .acf-repeater-add-row[data-event="add-row"]'
+        )
+        .first();
+    }
+
+    // 3. Fallback global : n'importe quel bouton "add-row" dans ce container
+    if (!$btn.length) {
+      $btn = $container.find('[data-event="add-row"]').first();
+    }
+
+    return $btn;
+  }
+
+  // --- 3.ter. HELPERS POUR REMPLIR LA NOUVELLE LIGNE ACF ---
+  function setAcfFieldValue($row, fieldName, value) {
+    if (value === undefined || value === null || value === "") return;
+    const $field = $row.find(`[data-name="${fieldName}"]`);
+    if (!$field.length) return;
+
+    // On prend le premier input / textarea / select du champ
+    const $input = $field.find("input, textarea, select").first();
+    if (!$input.length) return;
+
+    $input.val(value).trigger("change");
+  }
+
+  function fillRowInputs($row, keys, vals, type) {
+    if (!$row || !$row.length) return;
+
+    // Nom (commun)
+    if (vals.name) {
+      setAcfFieldValue($row, keys.name, vals.name);
+    }
+
+    if (type === "season") {
+      // Saison : prix, nuits mini, note, invités supp.
+      if (vals.price) setAcfFieldValue($row, keys.price, vals.price);
+      if (vals.minNights)
+        setAcfFieldValue($row, keys.minNights, vals.minNights);
+      if (vals.note) setAcfFieldValue($row, keys.note, vals.note);
+      if (vals.guestFee) setAcfFieldValue($row, keys.guestFee, vals.guestFee);
+      if (vals.guestFrom)
+        setAcfFieldValue($row, keys.guestFrom, vals.guestFrom);
+    } else if (type === "promo") {
+      // Promo : type, valeur, date de validité
+      if (vals.promoType) setAcfFieldValue($row, keys.type, vals.promoType);
+      if (vals.promoValue) setAcfFieldValue($row, keys.value, vals.promoValue);
+
+      if (vals.validUntil) {
+        // Gestion spécifique du datepicker ACF
+        const $dateField = $row.find(
+          `[data-name="${keys.validUntil}"] .acf-date-picker`
+        );
+        if ($dateField.length) {
+          $dateField
+            .find('input[type="hidden"]')
+            .val(vals.validUntil)
+            .trigger("change");
+          $dateField.find("input.input").val(vals.validUntil).trigger("change");
+        } else {
+          // Fallback au cas où : champ simple
+          setAcfFieldValue($row, keys.validUntil, vals.validUntil);
+        }
+      }
+    }
+  }
+
+  // Met à jour une ligne ACF existante (saison ou promo) à partir des valeurs du popup
+  function updateAcfRow(keys, rowId, vals, type) {
+    const $row = $(
+      `div[data-key="${keys.repeater}"] .acf-row[data-id="${rowId}"]`
+    );
+
+    if (!$row.length) {
+      console.warn(
+        "⚠️ updateAcfRow : ligne introuvable pour",
+        keys.repeater,
+        "rowId=",
+        rowId
+      );
+      return;
+    }
+
+    // On réutilise la même logique que pour la création
+    fillRowInputs($row, keys, vals, type);
+  }
+
   // --- 4. FONCTION CRÉATION (DEBUG VISUEL) ---
   function createAcfRowSecure(keys, vals, type, startDate, endDate, callback) {
     // 1. On cible le conteneur du répéteur
@@ -271,10 +373,8 @@ jQuery(document).ready(function ($) {
 
     console.log(`🎯 Cible Répéteur : ${keys.repeater}`);
 
-    // 2. ON CHERCHE LE BOUTON "AJOUTER" (Le plus précis possible)
-    // On cherche dans .acf-actions qui est l'enfant direct du wrapper répéteur
-    // pour éviter de choper les boutons des sous-répéteurs
-    let $btnAdd = $repeater.find("> .acf-actions > .acf-button-add");
+    // 2. ON CHERCHE LE BOUTON "AJOUTER" (via helper générique compatible ACF v6)
+    let $btnAdd = findAcfAddButton($repeater);
 
     // Fallback si la structure HTML varie légèrement
     if ($btnAdd.length === 0) {
@@ -315,34 +415,24 @@ jQuery(document).ready(function ($) {
       // Remplissage
       fillRowInputs($newRow, keys, vals, type);
 
-      // Gestion des dates (Sous-répéteur)
-      if (startDate && endDate) {
-        const $subRep = $newRow.find(`[data-name="${keys.periods}"]`);
-        // Le bouton ajouter du sous-répéteur
-        const $btnSub = $subRep.find(".acf-button-add").first();
+      // On récupère l'ID ACF de la nouvelle ligne (saison ou promo)
+      const newRowId = $newRow.attr("data-id");
 
-        if ($btnSub.length) {
-          waitForNewRow($subRep, function ($newSubRow) {
-            const fromInput = $newSubRow.find(`[data-name="${keys.dateFrom}"]`);
-            fromInput
-              .find('input[type="hidden"]')
-              .val(startDate)
-              .trigger("change");
-            fromInput.find("input.input").val(startDate).trigger("change");
-
-            const toInput = $newSubRow.find(`[data-name="${keys.dateTo}"]`);
-            toInput.find('input[type="hidden"]').val(endDate).trigger("change");
-            toInput.find("input.input").val(endDate).trigger("change");
-
-            if (callback) callback();
-          });
-          $btnSub.click();
-        } else {
-          if (callback) callback();
-        }
-      } else {
-        if (callback) callback();
+      // Gestion des dates : on délègue au helper générique addPeriodToAcf
+      // -> même logique pour Saisons et Promotions
+      if (startDate && endDate && newRowId) {
+        console.log(
+          "🧩 Ajout automatique de période via addPeriodToAcf :",
+          newRowId,
+          startDate,
+          endDate,
+          type
+        );
+        addPeriodToAcf(newRowId, startDate, endDate, type);
       }
+
+      // On termine toujours le cycle du popup
+      if (callback) callback();
     });
 
     // 5. ACTION : LE CLIC RÉEL (Après un petit délai pour que tu voies le rouge)
@@ -354,25 +444,60 @@ jQuery(document).ready(function ($) {
   // --- L'OUTIL MAGIQUE (OBSERVER) ---
   // Cette fonction attend que le DOM change réellement, au lieu de deviner le temps
   function waitForNewRow($container, onSuccess) {
-    // On compte combien on a de lignes AVANT le clic
-    const countBefore = $container.find(
-      "> .acf-table > tbody > .acf-row:not(.acf-clone), > .acf-row:not(.acf-clone)"
-    ).length;
+    if (!$container || !$container.length) {
+      console.warn("waitForNewRow : container vide");
+      if (onSuccess) onSuccess(jQuery());
+      return;
+    }
+
+    // Tous les patterns possibles de lignes ACF v6 (répéteur principal ou sous-répéteur)
+    const ROW_SELECTOR =
+      ".acf-input > .acf-repeater > table.acf-table > tbody > .acf-row:not(.acf-clone), " +
+      ".acf-input > table.acf-table > tbody > .acf-row:not(.acf-clone), " +
+      "> .acf-table > tbody > .acf-row:not(.acf-clone), " +
+      "> .acf-row:not(.acf-clone)";
+
+    // Nombre de lignes AVANT le clic
+    const countBefore = $container.find(ROW_SELECTOR).length;
+    console.log(
+      "👀 waitForNewRow start, countBefore =",
+      countBefore,
+      $container
+    );
+
+    let done = false;
 
     const observer = new MutationObserver(function (mutations, obs) {
-      const $rows = $container.find(
-        "> .acf-table > tbody > .acf-row:not(.acf-clone), > .acf-row:not(.acf-clone)"
-      );
+      const $rows = $container.find(ROW_SELECTOR);
 
       // Si le nombre de lignes a augmenté, c'est que ACF a fini son travail
-      if ($rows.length > countBefore) {
+      if (!done && $rows.length > countBefore) {
+        done = true;
         obs.disconnect(); // On arrête de surveiller pour économiser la mémoire
-        onSuccess($rows.last()); // On renvoie la nouvelle ligne toute fraîche
+        console.log(
+          "✅ Nouvelle ligne détectée par observer, total =",
+          $rows.length
+        );
+        if (onSuccess) onSuccess($rows.last()); // On renvoie la nouvelle ligne toute fraîche
       }
     });
 
-    // On lance la surveillance
-    observer.observe($container[0], { childList: true, subtree: true });
+    // On lance la surveillance (si le container a bien un node DOM)
+    if ($container[0]) {
+      observer.observe($container[0], { childList: true, subtree: true });
+    }
+
+    // Fallback de sécurité : si au bout de 1s rien n'a été détecté, on tente quand même
+    setTimeout(function () {
+      if (done) return;
+
+      const $rows = $container.find(ROW_SELECTOR);
+      done = true;
+      observer.disconnect();
+      console.log("⚠️ Fallback waitForNewRow, lignes trouvées =", $rows.length);
+
+      if (onSuccess) onSuccess($rows.last());
+    }, 1000);
   }
 
   // --- ACTIONS SECONDAIRES ---
@@ -436,16 +561,34 @@ jQuery(document).ready(function ($) {
       `div[data-key="${keys.repeater}"] .acf-row[data-id="${rowId}"]`
     );
     const $subRep = $mainRow.find(`[data-name="${keys.periods}"]`);
-    $subRep.find(".acf-actions .acf-button-add").first().click();
-    setTimeout(function () {
-      const $newRow = $subRep.find(".acf-row:not(.acf-clone)").last();
+
+    // Bouton "Ajouter une période" via helper générique
+    const $btnSub = findAcfAddButton($subRep);
+
+    if (!$btnSub.length) {
+      console.warn(
+        "⚠️ addPeriodToAcf : bouton 'Ajouter une période' introuvable pour",
+        keys.repeater,
+        "rowId=",
+        rowId
+      );
+      return;
+    }
+
+    // On attend la création de la nouvelle ligne, puis on remplit les dates
+    waitForNewRow($subRep, function ($newRow) {
+      if (!$newRow || !$newRow.length) return;
+
       const fromInput = $newRow.find(`[data-name="${keys.dateFrom}"]`);
       fromInput.find('input[type="hidden"]').val(start).trigger("change");
       fromInput.find("input.input").val(start).trigger("change");
+
       const toInput = $newRow.find(`[data-name="${keys.dateTo}"]`);
       toInput.find('input[type="hidden"]').val(end).trigger("change");
       toInput.find("input.input").val(end).trigger("change");
-    }, 300);
+    });
+
+    $btnSub.click();
   }
   function removePeriodFromAcf(rKey, subName, mId, sId) {
     const $r = $(`div[data-key="${rKey}"] .acf-row[data-id="${mId}"]`);
