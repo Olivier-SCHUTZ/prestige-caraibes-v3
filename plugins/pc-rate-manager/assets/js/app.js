@@ -1,612 +1,596 @@
 jQuery(document).ready(function ($) {
-  console.log("🚀 PC Rate Manager : Démarrage du script complet...");
+  console.log("🚀 PC Rate Manager v5.0 : Création Robuste & Dates");
 
-  // =======================================================
-  // 0. CONFIGURATION & SÉCURITÉ
-  // =======================================================
+  if (typeof pcRmConfig === "undefined") return;
 
-  // Vérification de la configuration PHP
-  if (typeof pcRmConfig === "undefined") {
-    console.error(
-      "❌ ERREUR CRITIQUE : La configuration 'pcRmConfig' est manquante."
-    );
-    return;
-  }
-
-  // Éléments du DOM
   const calendarEl = document.getElementById("pc-calendar");
   const seasonListEl = document.getElementById("pc-seasons-list");
 
-  // Clés ACF
-  const repeaterKey = pcRmConfig.field_season_repeater;
+  // CONFIGURATION EXACTE JSON
+  const ACF_KEYS = {
+    season: {
+      repeater: "field_pc_season_blocks_20250826",
+      name: "season_name",
+      price: "season_price",
+      note: "season_note",
+      minNights: "season_min_nights",
+      guestFee: "season_extra_guest_fee",
+      guestFrom: "season_extra_guest_from",
+      periods: "season_periods",
+      dateFrom: "date_from",
+      dateTo: "date_to",
+    },
+    promo: {
+      repeater: "field_693425b17049d",
+      name: "nom_de_la_promotion",
+      type: "promo_type",
+      value: "promo_value",
+      validUntil: "promo_valid_until",
+      periods: "promo_periods",
+      dateFrom: "date_from",
+      dateTo: "date_to",
+    },
+  };
 
-  // Stockage local des données (RowID -> Data Objet)
   let seasonsMap = new Map();
+  let promosMap = new Map();
   let calendarInstance = null;
 
-  // Si le calendrier n'est pas là, on arrête
-  if (!calendarEl) {
-    console.warn(
-      "⚠️ Conteneur #pc-calendar introuvable (peut-être sur une autre page)."
-    );
-    return;
-  }
-
-  // =======================================================
-  // 1. INITIALISATION DU CALENDRIER
-  // =======================================================
-
+  // --- 1. INITIALISATION CALENDRIER ---
   function initCalendar() {
-    console.log("📅 Initialisation de FullCalendar...");
-
-    // On cache l'interface native ACF tout de suite
-    hideNativeACF();
-
     const calendar = new FullCalendar.Calendar(calendarEl, {
-      // --- VUE & NAVIGATION ---
       initialView: "multiMonthYear",
-      multiMonthMaxColumns: 1, // Une seule colonne (scroll vertical)
+      multiMonthMaxColumns: 1,
       locale: "fr",
-      firstDay: 1, // Lundi
-      height: "auto",
+      firstDay: 1,
+      editable: true,
+      droppable: true,
+      eventOverlap: true,
+      eventOrder: "zIndex",
 
-      headerToolbar: {
-        left: "prev,next today",
-        center: "title",
-        right: "", // Pas de changement de vue nécessaire
-      },
-
-      // --- INTERACTIONS ---
-      editable: true, // Permet de déplacer/étirer les événements
-      droppable: true, // Permet de recevoir des éléments externes (Sidebar)
-      eventOverlap: false, // Interdit la superposition
-      selectable: true, // Permet de sélectionner des plages vides (optionnel)
-
-      // --- RENDU DES CELLULES (DESIGN) ---
-
-      // A. Contenu de la case jour (Numéro)
       dayCellContent: function (arg) {
-        // On garde le numéro du jour propre
         return {
           html: `<span class="pc-day-number fc-daygrid-day-number">${arg.dayNumberText}</span>`,
         };
       },
-
-      // B. Montage de la case (Ajout du Prix de Base)
       dayCellDidMount: function (arg) {
         const frame = arg.el.querySelector(".fc-daygrid-day-frame");
-        const basePrice = pcRmConfig.base_price;
-
-        if (frame && basePrice > 0) {
+        if (frame && pcRmConfig.base_price > 0) {
           const priceEl = document.createElement("div");
           priceEl.className = "pc-base-price";
-          priceEl.textContent = basePrice + "€";
+          priceEl.textContent = pcRmConfig.base_price + "€";
           frame.appendChild(priceEl);
         }
       },
-
-      // C. Rendu de l'événement (La Saison Colorée)
       eventContent: function (arg) {
-        const price = arg.event.extendedProps.price;
-        return {
-          html: `
-                    <div class="pc-event-body">
-                        <div class="pc-evt-title">${arg.event.title}</div>
-                        ${
-                          price
-                            ? `<div class="pc-evt-price">${price}€</div>`
-                            : ""
-                        }
-                    </div>`,
-        };
+        const props = arg.event.extendedProps;
+        let html = `<div class="pc-evt-title">${arg.event.title}</div>`;
+        if (props.type === "season") {
+          html += `<div class="pc-evt-price">${props.price}€</div>`;
+        } else if (props.type === "promo") {
+          const valDisplay =
+            props.promoType === "percent"
+              ? `-${props.promoValue}%`
+              : `-${props.promoValue}€`;
+          html += `<div class="pc-evt-promo-badge">${valDisplay}</div>`;
+        }
+        return { html: `<div class="pc-event-body">${html}</div>` };
       },
-
-      // --- ÉVÉNEMENTS (LOGIQUE) ---
-
-      // D. Réception d'un élément de la sidebar (Drag & Drop)
-      drop: function (info) {
-        console.log("📥 Élément déposé depuis la sidebar :", info.dateStr);
-        // Note : FullCalendar crée l'événement visuel automatiquement via 'eventReceive'
-      },
-
-      // E. L'événement est créé (depuis drop ou code)
-      eventReceive: function (info) {
-        // On s'assure que les props sont bien passées
-        console.log("✨ Nouvel événement reçu :", info.event.title);
-
-        // TODO : Ici, on devra déclencher la sauvegarde d'une nouvelle "Période" dans ACF
-        // Pour l'instant c'est visuel, la sauvegarde globale se fait via le bouton "Enregistrer" de la page post
-      },
-
-      // F. Clic sur un événement (Suppression pour l'instant)
       eventClick: function (info) {
-        if (
-          confirm(
-            `Voulez-vous retirer la période "${info.event.title}" du calendrier ?`
-          )
-        ) {
+        const props = info.event.extendedProps;
+        const s = info.event.start.toLocaleDateString("fr-FR");
+        let ed = new Date(info.event.end);
+        ed.setDate(ed.getDate() - 1);
+        const e = ed.toLocaleDateString("fr-FR");
+
+        if (confirm(`Supprimer la période du ${s} au ${e} ?`)) {
+          const keys =
+            props.type === "season" ? ACF_KEYS.season : ACF_KEYS.promo;
+          removePeriodFromAcf(
+            keys.repeater,
+            keys.periods,
+            props.mainRowId,
+            props.periodId
+          );
           info.event.remove();
-          console.log("🗑️ Période retirée visuellement.");
-          // Note : Cela ne supprime pas la saison, juste la période sur le calendrier
+          setTimeout(refreshAllData, 800);
         }
       },
-
-      // G. Redimensionnement ou Déplacement sur le calendrier
-      eventChange: function (info) {
-        console.log("↔️ Période modifiée (resize/move).");
+      eventReceive: function (info) {
+        const start = info.event.startStr;
+        let end = info.event.endStr;
+        if (!end) end = start;
+        else {
+          let d = new Date(end);
+          d.setDate(d.getDate() - 1);
+          end = d.toISOString().split("T")[0];
+        }
+        const props = info.event.extendedProps;
+        if (confirm(`Ajouter cette période à "${info.event.title}" ?`)) {
+          addPeriodToAcf(props.mainRowId, start, end, props.type);
+        }
+        info.event.remove();
       },
     });
-
     calendar.render();
     calendarInstance = calendar;
   }
 
-  // Lance l'init
   initCalendar();
+  setTimeout(refreshAllData, 1000);
 
-  // =======================================================
-  // 2. GESTION DES DONNÉES (LECTURE ACF)
-  // =======================================================
+  // --- 2. GESTION POPUP ---
+  $("#btn-add-new-season").click(function (e) {
+    e.preventDefault();
+    openModal("season", null);
+  });
+  $("#btn-add-promo").click(function (e) {
+    e.preventDefault();
+    openModal("promo", null);
+  });
+  $(document).on("click", ".pc-draggable-event", function (e) {
+    openModal($(this).data("type"), $(this).data("id"));
+  });
+  $("#btn-close-cross").on("click", function () {
+    $("#pc-season-modal").fadeOut(200);
+  });
+  $("#pc-season-modal").on("click", function (e) {
+    if (e.target === this) $(this).fadeOut(200);
+  });
 
-  // On attend un peu que ACF ait fini son rendu JS interne
-  setTimeout(refreshData, 600);
+  function openModal(type, rowId) {
+    const $modal = $("#pc-season-modal");
+    $("#pc-season-form").trigger("reset");
+    $("#pc-entity-type").val(type);
+    $("#pc-edit-row-id").val(rowId || "");
+    $("#pc-periods-list").empty();
 
-  function refreshData() {
-    console.log("🔄 Lecture des données ACF (Refresh)...");
+    // UI Reset
+    $("#btn-add-period-manual").show(); // Toujours visible
 
-    const $repeater = $(`div[data-key="${repeaterKey}"]`);
+    if (type === "season") {
+      $("#pc-modal-title").text(rowId ? "Éditer Saison" : "Nouvelle Saison");
+      $("#pc-group-season-fields").show();
+      $("#pc-group-promo-fields").hide();
+      $("#lbl-name").text("Nom de la saison *");
+    } else {
+      $("#pc-modal-title").text(
+        rowId ? "Éditer Promotion" : "Nouvelle Promotion"
+      );
+      $("#pc-group-season-fields").hide();
+      $("#pc-group-promo-fields").show();
+      $("#lbl-name").text("Nom de la promotion *");
+    }
 
-    // Sécurité si le champ ACF n'existe pas
-    if ($repeater.length === 0) {
-      console.error("❌ Champ Répéteur ACF introuvable : " + repeaterKey);
+    if (rowId) {
+      // --- MODE ÉDITION ---
+      $("#btn-delete-entity").show();
+      // On cache le bouton ajouter manuel si on veut forcer l'usage du calendrier,
+      // mais ici on le laisse pour permettre l'ajout manuel.
+      $("#lbl-period-action").text("Ajouter une période manuelle :");
+
+      const map = type === "season" ? seasonsMap : promosMap;
+      const data = map.get(rowId.toString());
+      if (data) {
+        $("#pc-input-name").val(data.name);
+        if (type === "season") {
+          $("#pc-input-price").val(data.price);
+          $("#pc-input-min-nights").val(data.minNights);
+          $("#pc-input-note").val(data.note);
+          $("#pc-input-guest-fee").val(data.guestFee);
+          $("#pc-input-guest-from").val(data.guestFrom);
+        } else {
+          $("#pc-input-promo-type").val(data.promoType);
+          $("#pc-input-promo-val").val(data.promoValue);
+          $("#pc-input-promo-validity").val(data.validUntil);
+        }
+        if (data.periods) {
+          data.periods.forEach((p) => {
+            const dArr = p.start.split("-");
+            const s = `${dArr[2]}/${dArr[1]}/${dArr[0]}`;
+            const eArr = p.end.split("-");
+            const e = `${eArr[2]}/${eArr[1]}/${eArr[0]}`;
+            $("#pc-periods-list").append(`
+                          <li><span>📅 ${s} au ${e}</span><button class="pc-del-period-btn" data-type="${type}" data-main="${rowId}" data-sub="${p.id}" style="color:red;border:none;background:none;cursor:pointer;">&times;</button></li>
+                      `);
+          });
+        }
+      }
+    } else {
+      // --- MODE CRÉATION ---
+      $("#btn-delete-entity").hide();
+      // On change le texte pour indiquer que ces dates seront utilisées à la création
+      $("#lbl-period-action").text("Définir les dates initiales (Optionnel) :");
+      // On cache le bouton "Ajouter" car ce sera géré par le bouton "Enregistrer"
+      $("#btn-add-period-manual").hide();
+    }
+    $modal.css("display", "flex").hide().fadeIn(200);
+  }
+
+  $("#btn-save-modal-action").click(function (e) {
+    e.preventDefault();
+    const $btn = $(this);
+    const originalText = $btn.text();
+
+    // Feedback visuel
+    $btn.text("⏳ Création en cours...").prop("disabled", true);
+
+    // ... (Tes récupérations de variables vals, type, etc. restent identiques) ...
+    // ...
+    const type = $("#pc-entity-type").val();
+    const rowId = $("#pc-edit-row-id").val();
+    const vals = { name: $("#pc-input-name").val() };
+
+    // ... (Ta logique de validation reste identique) ...
+    // Copie juste les blocs if/else pour récupérer price, note, etc.
+    // ...
+
+    if (type === "season") {
+      vals.price = $("#pc-input-price").val();
+      vals.minNights = $("#pc-input-min-nights").val();
+      vals.note = $("#pc-input-note").val();
+      vals.guestFee = $("#pc-input-guest-fee").val();
+      vals.guestFrom = $("#pc-input-guest-from").val();
+      if (!vals.name || !vals.price) {
+        $btn.text(originalText).prop("disabled", false);
+        return alert("Nom et Prix requis");
+      }
+    } else {
+      vals.promoType = $("#pc-input-promo-type").val();
+      vals.promoValue = $("#pc-input-promo-val").val();
+      vals.validUntil = $("#pc-input-promo-validity").val();
+      if (!vals.name || !vals.promoValue) {
+        $btn.text(originalText).prop("disabled", false);
+        return alert("Nom et Valeur requis");
+      }
+    }
+
+    const newStart = $("#pc-period-start").val();
+    const newEnd = $("#pc-period-end").val();
+    const keys = type === "season" ? ACF_KEYS.season : ACF_KEYS.promo;
+
+    const onComplete = () => {
+      $("#pc-season-modal").fadeOut(200);
+      $btn.text(originalText).prop("disabled", false);
+      setTimeout(refreshAllData, 500);
+    };
+
+    if (rowId) {
+      updateAcfRow(keys, rowId, vals, type);
+      onComplete();
+    } else {
+      // C'EST ICI QUE ÇA CHANGE : APPEL DE LA VERSION SECURE
+      createAcfRowSecure(keys, vals, type, newStart, newEnd, onComplete);
+    }
+  });
+
+  // --- 4. FONCTION CRÉATION (DEBUG VISUEL) ---
+  function createAcfRowSecure(keys, vals, type, startDate, endDate, callback) {
+    // 1. On cible le conteneur du répéteur
+    const $repeater = $(`div[data-key="${keys.repeater}"]`);
+
+    console.log(`🎯 Cible Répéteur : ${keys.repeater}`);
+
+    // 2. ON CHERCHE LE BOUTON "AJOUTER" (Le plus précis possible)
+    // On cherche dans .acf-actions qui est l'enfant direct du wrapper répéteur
+    // pour éviter de choper les boutons des sous-répéteurs
+    let $btnAdd = $repeater.find("> .acf-actions > .acf-button-add");
+
+    // Fallback si la structure HTML varie légèrement
+    if ($btnAdd.length === 0) {
+      console.log("⚠️ Bouton direct non trouvé, recherche large...");
+      $btnAdd = $repeater.find(".acf-button-add").last(); // Souvent le dernier bouton est le principal
+    }
+
+    if ($btnAdd.length === 0) {
+      alert(
+        "ERREUR CRITIQUE : Impossible de trouver le bouton 'Ajouter' dans ACF. Vérifiez que les champs sont bien affichés."
+      );
+      console.error("❌ Bouton introuvable pour : ", keys.repeater);
+      if (callback) callback();
       return;
     }
 
-    // 1. Nettoyage
-    seasonsMap.clear();
-    $(seasonListEl).empty(); // Vide la sidebar
-    if (calendarInstance) {
-      calendarInstance.getEvents().forEach((e) => e.remove()); // Vide le calendrier
-    }
+    // 3. DEBUG VISUEL : On montre à l'utilisateur ce qu'on va cliquer
+    // On scroll jusqu'au bouton
+    $("html, body").animate(
+      {
+        scrollTop: $btnAdd.offset().top - 300,
+      },
+      300
+    );
 
-    // 2. Parcours des lignes ACF
-    const $rows = $repeater.find(".acf-row:not(.acf-clone)");
+    // On met une bordure ROUGE CLIGNOTANTE dessus
+    $btnAdd.css("border", "5px solid red").css("background", "yellow");
 
-    if ($rows.length === 0) {
-      $(seasonListEl).html(
-        '<p class="pc-rm-empty-state">Aucune saison définie.</p>'
+    console.log("👉 CLIC SIMULÉ SUR : ", $btnAdd.text());
+
+    // 4. OBSERVATEUR (On lance l'espion avant de cliquer)
+    waitForNewRow($repeater, function ($newRow) {
+      console.log("✅ VICTOIRE ! Une nouvelle ligne est apparue.");
+
+      // On remet le bouton normal
+      $btnAdd.css("border", "").css("background", "");
+
+      // Remplissage
+      fillRowInputs($newRow, keys, vals, type);
+
+      // Gestion des dates (Sous-répéteur)
+      if (startDate && endDate) {
+        const $subRep = $newRow.find(`[data-name="${keys.periods}"]`);
+        // Le bouton ajouter du sous-répéteur
+        const $btnSub = $subRep.find(".acf-button-add").first();
+
+        if ($btnSub.length) {
+          waitForNewRow($subRep, function ($newSubRow) {
+            const fromInput = $newSubRow.find(`[data-name="${keys.dateFrom}"]`);
+            fromInput
+              .find('input[type="hidden"]')
+              .val(startDate)
+              .trigger("change");
+            fromInput.find("input.input").val(startDate).trigger("change");
+
+            const toInput = $newSubRow.find(`[data-name="${keys.dateTo}"]`);
+            toInput.find('input[type="hidden"]').val(endDate).trigger("change");
+            toInput.find("input.input").val(endDate).trigger("change");
+
+            if (callback) callback();
+          });
+          $btnSub.click();
+        } else {
+          if (callback) callback();
+        }
+      } else {
+        if (callback) callback();
+      }
+    });
+
+    // 5. ACTION : LE CLIC RÉEL (Après un petit délai pour que tu voies le rouge)
+    setTimeout(function () {
+      $btnAdd.click();
+    }, 500);
+  }
+
+  // --- L'OUTIL MAGIQUE (OBSERVER) ---
+  // Cette fonction attend que le DOM change réellement, au lieu de deviner le temps
+  function waitForNewRow($container, onSuccess) {
+    // On compte combien on a de lignes AVANT le clic
+    const countBefore = $container.find(
+      "> .acf-table > tbody > .acf-row:not(.acf-clone), > .acf-row:not(.acf-clone)"
+    ).length;
+
+    const observer = new MutationObserver(function (mutations, obs) {
+      const $rows = $container.find(
+        "> .acf-table > tbody > .acf-row:not(.acf-clone), > .acf-row:not(.acf-clone)"
       );
-    }
 
+      // Si le nombre de lignes a augmenté, c'est que ACF a fini son travail
+      if ($rows.length > countBefore) {
+        obs.disconnect(); // On arrête de surveiller pour économiser la mémoire
+        onSuccess($rows.last()); // On renvoie la nouvelle ligne toute fraîche
+      }
+    });
+
+    // On lance la surveillance
+    observer.observe($container[0], { childList: true, subtree: true });
+  }
+
+  // --- ACTIONS SECONDAIRES ---
+  $("#btn-add-period-manual").click(function () {
+    // Bouton "Ajouter" dans le popup (Mode Édition seulement)
+    const s = $("#pc-period-start").val();
+    const e = $("#pc-period-end").val();
+    const type = $("#pc-entity-type").val();
+    const rId = $("#pc-edit-row-id").val();
+    if (!rId || !s || !e) return alert("Dates manquantes ou mode création");
+    addPeriodToAcf(rId, s, e, type);
+    $("#pc-period-start").val("");
+    $("#pc-period-end").val("");
+    setTimeout(() => {
+      refreshAllData();
+      setTimeout(() => openModal(type, rId), 500);
+    }, 600);
+  });
+
+  $(document).on("click", ".pc-del-period-btn", function (e) {
+    e.preventDefault();
+    const keys =
+      $(this).data("type") === "season" ? ACF_KEYS.season : ACF_KEYS.promo;
+    removePeriodFromAcf(
+      keys.repeater,
+      keys.periods,
+      $(this).data("main"),
+      $(this).data("sub")
+    );
+    setTimeout(() => {
+      refreshAllData();
+      setTimeout(
+        () => openModal($(this).data("type"), $(this).data("main")),
+        500
+      );
+    }, 600);
+  });
+
+  $("#btn-delete-entity").click(function (e) {
+    e.preventDefault();
+    if (!confirm("Supprimer ?")) return;
+    const t = $("#pc-entity-type").val();
+    const k = t === "season" ? ACF_KEYS.season : ACF_KEYS.promo;
+    const $row = $(
+      `div[data-key="${k.repeater}"] .acf-row[data-id="${$(
+        "#pc-edit-row-id"
+      ).val()}"]`
+    );
+    $row.find(".acf-icon.-minus").first().click();
+    setTimeout(function () {
+      $(".acf-tooltip-confirm .acf-button").click();
+    }, 100);
+    $("#pc-season-modal").fadeOut();
+    setTimeout(refreshAllData, 1000);
+  });
+
+  // --- HELPERS ---
+  function addPeriodToAcf(rowId, start, end, type) {
+    const keys = type === "season" ? ACF_KEYS.season : ACF_KEYS.promo;
+    const $mainRow = $(
+      `div[data-key="${keys.repeater}"] .acf-row[data-id="${rowId}"]`
+    );
+    const $subRep = $mainRow.find(`[data-name="${keys.periods}"]`);
+    $subRep.find(".acf-actions .acf-button-add").first().click();
+    setTimeout(function () {
+      const $newRow = $subRep.find(".acf-row:not(.acf-clone)").last();
+      const fromInput = $newRow.find(`[data-name="${keys.dateFrom}"]`);
+      fromInput.find('input[type="hidden"]').val(start).trigger("change");
+      fromInput.find("input.input").val(start).trigger("change");
+      const toInput = $newRow.find(`[data-name="${keys.dateTo}"]`);
+      toInput.find('input[type="hidden"]').val(end).trigger("change");
+      toInput.find("input.input").val(end).trigger("change");
+    }, 300);
+  }
+  function removePeriodFromAcf(rKey, subName, mId, sId) {
+    const $r = $(`div[data-key="${rKey}"] .acf-row[data-id="${mId}"]`);
+    const $sub = $r.find(`[data-name="${subName}"] .acf-row[data-id="${sId}"]`);
+    $sub.find(".acf-icon.-minus").first().click();
+    setTimeout(function () {
+      $(".acf-tooltip-confirm .acf-button").click();
+    }, 100);
+  }
+  function refreshAllData() {
+    if (calendarInstance) calendarInstance.removeAllEvents();
+    $(seasonListEl).empty();
+    readRepeater("season");
+    readRepeater("promo");
+    initDraggable();
+  }
+  function readRepeater(type) {
+    const keys = type === "season" ? ACF_KEYS.season : ACF_KEYS.promo;
+    const $repeater = $(`div[data-key="${keys.repeater}"]`);
+    const $rows = $repeater.find(".acf-row:not(.acf-clone)");
+    const map = type === "season" ? seasonsMap : promosMap;
+    map.clear();
     $rows.each(function () {
       const $row = $(this);
       const rowId = $row.attr("data-id");
-
-      // Lecture des champs
-      const name = $row.find('[data-name="season_name"] input').val();
-      const price = $row.find('[data-name="season_price"] input').val();
-
-      // Champs secondaires
-      const note = $row.find('[data-name="season_note"] input').val();
-      const minNights = $row
-        .find('[data-name="season_min_nights"] input')
-        .val();
-      const guestFee = $row
-        .find('[data-name="season_extra_guest_fee"] input')
-        .val();
-      const guestFrom = $row
-        .find('[data-name="season_extra_guest_from"] input')
-        .val();
-
-      // On ignore les lignes sans nom
-      if (!name) return;
-
-      // Génération couleur
-      const color = stringToColor(name);
-
-      // Stockage dans la Map
-      // --- MODIFICATION START : On lit les périodes pour la modale ---
       const periods = [];
       $row
-        .find('[data-name="season_periods"] .acf-row:not(.acf-clone)')
+        .find(`[data-name="${keys.periods}"] .acf-row:not(.acf-clone)`)
         .each(function () {
-          const dFrom = $(this)
-            .find('[data-name="date_from"] input[type="hidden"]')
+          const f = $(this)
+            .find(`[data-name="${keys.dateFrom}"] input[type="hidden"]`)
             .val();
-          const dTo = $(this)
-            .find('[data-name="date_to"] input[type="hidden"]')
+          const t = $(this)
+            .find(`[data-name="${keys.dateTo}"] input[type="hidden"]`)
             .val();
-          const subId = $(this).attr("data-id");
-          if (dFrom && dTo) {
-            periods.push({ id: subId, start: dFrom, end: dTo });
-          }
+          if (f && t)
+            periods.push({
+              id: $(this).attr("data-id"),
+              start: normalizeDate(f),
+              end: normalizeDate(t),
+            });
         });
-      // -------------------------------------------------------------
-
-      const seasonData = {
-        rowId: rowId,
-        name: name,
-        price: price,
-        note: note,
-        minNights: minNights,
-        guestFee: guestFee,
-        guestFrom: guestFrom,
-        color: color,
-        periods: periods, // <--- On stocke la liste ici
-      };
-
-      seasonsMap.set(rowId.toString(), seasonData);
-
-      createSidebarButton(seasonData);
-      loadPeriodsToCalendar($row, seasonData);
-    });
-
-    // 5. Initialisation du Drag & Drop sur les nouveaux boutons
-    initDraggable();
-  }
-
-  function createSidebarButton(data) {
-    const btnHtml = `
-            <div class="pc-draggable-event" 
-                 data-id="${data.rowId}" 
-                 style="background-color: ${data.color}; border-color: ${data.color};"
-                 title="Cliquez pour éditer, Glissez pour planifier">
-                 <span class="pc-season-name">${data.name}</span>
-                 <span class="pc-price-tag">${data.price}€</span>
-            </div>`;
-    $(seasonListEl).append(btnHtml);
-  }
-
-  function loadPeriodsToCalendar($row, seasonData) {
-    const $periodRows = $row.find(
-      '[data-name="season_periods"] .acf-row:not(.acf-clone)'
-    );
-
-    $periodRows.each(function () {
-      const dateFrom = $(this)
-        .find('[data-name="date_from"] .acf-date-picker input[type="hidden"]')
-        .val();
-      const dateTo = $(this)
-        .find('[data-name="date_to"] .acf-date-picker input[type="hidden"]')
-        .val();
-
-      if (dateFrom && dateTo && calendarInstance) {
-        calendarInstance.addEvent({
-          title: seasonData.name,
-          start: parseAcfDate(dateFrom),
-          // FullCalendar fin exclusive : on ajoute 1 jour
-          end: addDays(parseAcfDate(dateTo), 1),
-          backgroundColor: seasonData.color,
-          borderColor: seasonData.color,
-          allDay: true,
-          extendedProps: {
-            price: seasonData.price,
-            seasonRowId: seasonData.rowId,
-          },
-        });
+      let data = { rowId: rowId, periods: periods, type: type };
+      if (type === "season") {
+        data.name = $row.find(`[data-name="${keys.name}"] input`).val();
+        data.price = $row.find(`[data-name="${keys.price}"] input`).val();
+        data.note = $row.find(`[data-name="${keys.note}"] input`).val();
+        data.minNights = $row
+          .find(`[data-name="${keys.minNights}"] input`)
+          .val();
+        data.guestFee = $row.find(`[data-name="${keys.guestFee}"] input`).val();
+        data.guestFrom = $row
+          .find(`[data-name="${keys.guestFrom}"] input`)
+          .val();
+        data.color = stringToColor(data.name || "S");
+        data.zIndex = 10;
+      } else {
+        data.name = $row.find(`[data-name="${keys.name}"] input`).val();
+        data.promoType = $row.find(`[data-name="${keys.type}"] select`).val();
+        data.promoValue = $row.find(`[data-name="${keys.value}"] input`).val();
+        let rv = $row
+          .find(
+            `[data-name="${keys.validUntil}"] .acf-date-picker input[type="hidden"]`
+          )
+          .val();
+        data.validUntil = normalizeDate(rv);
+        data.color = "#ef4444";
+        data.zIndex = 50;
       }
+      if (!data.name) return;
+      map.set(rowId.toString(), data);
+      createSidebarButton(data);
+      loadPeriodsToCalendar(data);
     });
   }
-
+  function loadPeriodsToCalendar(data) {
+    if (!data.periods) return;
+    data.periods.forEach((p) => {
+      calendarInstance.addEvent({
+        title: data.name,
+        start: p.start,
+        end: addDays(p.end, 1),
+        backgroundColor: data.type === "season" ? data.color : "transparent",
+        borderColor: data.color,
+        className:
+          data.type === "season" ? "pc-event-season" : "pc-event-promo",
+        zIndex: data.zIndex,
+        allDay: true,
+        extendedProps: {
+          type: data.type,
+          mainRowId: data.rowId,
+          periodId: p.id,
+          price: data.price,
+          promoType: data.promoType,
+          promoValue: data.promoValue,
+        },
+      });
+    });
+  }
+  function createSidebarButton(data) {
+    const p = data.type === "season" ? data.price + "€" : "PROMO";
+    $(seasonListEl).append(
+      `<div class="pc-draggable-event" data-id="${data.rowId}" data-type="${data.type}" style="background-color: ${data.color}; border-color: ${data.color};"><span class="pc-season-name">${data.name}</span><span class="pc-price-tag">${p}</span></div>`
+    );
+  }
   function initDraggable() {
-    // Vérification de la librairie Draggable
     if (typeof FullCalendar.Draggable === "undefined") return;
-
-    // On nettoie les anciens draggables si besoin (pas d'API destroy simple, on recrée)
     new FullCalendar.Draggable(seasonListEl, {
       itemSelector: ".pc-draggable-event",
       eventData: function (eventEl) {
         const rowId = eventEl.getAttribute("data-id");
-        const data = seasonsMap.get(rowId);
-
+        const data =
+          eventEl.getAttribute("data-type") === "season"
+            ? seasonsMap.get(rowId)
+            : promosMap.get(rowId);
         if (!data) return {};
-
         return {
           title: data.name,
           backgroundColor: data.color,
           borderColor: data.color,
-          extendedProps: {
-            price: data.price,
-            seasonRowId: rowId,
-          },
+          extendedProps: { type: data.type, mainRowId: rowId },
         };
       },
     });
   }
-
-  // =======================================================
-  // 3. GESTION DU POPUP (MODALE) & ÉDITION
-  // =======================================================
-
-  // A. Ouverture : Nouvelle Saison
-  $(document).on("click", "#btn-add-new-season", function (e) {
-    e.preventDefault();
-    openModal(null);
-  });
-
-  // B. Ouverture : Édition Saison (Clic Sidebar)
-  $(document).on("click", ".pc-draggable-event", function (e) {
-    // On vérifie qu'on ne clique pas juste pour dragger (optionnel)
-    const rowId = $(this).data("id");
-    if (rowId) openModal(rowId);
-  });
-
-  // C. Ouverture : Placeholder Promo
-  $(document).on("click", "#btn-add-promo", function (e) {
-    e.preventDefault();
-    alert("La gestion des Promotions arrive bientôt !");
-  });
-
-  // --- NOUVEAU : AJOUT MANUEL DATE ---
-  $(document).on("click", "#btn-add-period-manual", function (e) {
-    e.preventDefault();
-    const rowId = $("#pc-edit-row-id").val();
-    const start = $("#pc-period-start").val();
-    const end = $("#pc-period-end").val();
-
-    if (!rowId || !start || !end) return alert("Dates manquantes");
-    if (start > end) return alert("La fin doit être après le début");
-
-    addPeriodToAcf(rowId, start, end);
-
-    $("#pc-period-start").val("");
-    $("#pc-period-end").val("");
-
-    setTimeout(() => {
-      refreshData();
-      setTimeout(() => openModal(rowId), 200);
-    }, 300);
-  });
-
-  // --- NOUVEAU : SUPPRESSION DATE (Croix) ---
-  $(document).on("click", ".pc-del-period-btn", function (e) {
-    e.preventDefault();
-    if (!confirm("Supprimer cette période ?")) return;
-
-    const mainId = $(this).data("main-row");
-    const subId = $(this).data("sub-row");
-
-    removePeriodFromAcf(mainId, subId);
-
-    setTimeout(() => {
-      refreshData();
-      setTimeout(() => openModal(mainId), 200);
-    }, 300);
-  });
-
-  // D. Fermeture Modale
-  $(document).on("click", ".pc-close-modal", function () {
-    $("#pc-season-modal").fadeOut(200);
-  });
-  // --- E. SAUVEGARDE (CLIC BOUTON ENREGISTRER) ---
-  $(document).on("click", "#btn-save-modal-action", function (e) {
-    e.preventDefault();
-    console.log("💾 Sauvegarde manuelle déclenchée...");
-
-    const rowId = $("#pc-edit-row-id").val();
-
-    // Validation simple
-    const name = $("#pc-input-name").val();
-    const price = $("#pc-input-price").val();
-
-    if (!name || !price) {
-      alert("Le nom et le prix sont obligatoires !");
-      return;
-    }
-
-    // Récupération des valeurs
-    const vals = {
-      name: name,
-      price: price,
-      note: $("#pc-input-note").val(),
-      minNights: $("#pc-input-min-nights").val(),
-      guestFee: $("#pc-input-guest-fee").val(),
-      guestFrom: $("#pc-input-guest-from").val(),
-    };
-
-    if (rowId) {
-      updateAcfRow(rowId, vals);
-    } else {
-      createAcfRow(vals);
-    }
-
-    $("#pc-season-modal").fadeOut(200);
-    // On attend un peu que ACF mette à jour le DOM avant de rafraîchir
-    setTimeout(refreshData, 500);
-  });
-
-  // FONCTION PRINCIPALE : Ouvrir le formulaire
-  function openModal(rowId = null) {
-    const $modal = $("#pc-season-modal");
-    const $form = $("#pc-season-form");
-
-    if ($modal.length === 0) {
-      // Si tu as bien mis le PHP dans le footer, ça ne devrait plus arriver
-      console.error("Popup introuvable (Vérifie pc-rate-manager.php)");
-      return;
-    }
-
-    $form.trigger("reset");
-    $("#pc-edit-row-id").val("");
-    $("#pc-periods-list").empty(); // On vide l'ancienne liste
-
-    if (rowId && seasonsMap.has(rowId.toString())) {
-      // --- MODE ÉDITION ---
-      const data = seasonsMap.get(rowId.toString());
-
-      $("#pc-modal-title").text("Éditer : " + data.name);
-      $("#pc-edit-row-id").val(rowId);
-
-      $("#pc-input-name").val(data.name);
-      $("#pc-input-price").val(data.price);
-      $("#pc-input-note").val(data.note);
-      $("#pc-input-min-nights").val(data.minNights);
-      $("#pc-input-guest-fee").val(data.guestFee);
-      $("#pc-input-guest-from").val(data.guestFrom);
-
-      // AFFICHER LE GESTIONNAIRE DE PÉRIODES
-      $("#pc-periods-manager").show();
-      $("#btn-delete-season-def").show();
-
-      // Remplir la liste visuelle
-      if (data.periods && data.periods.length > 0) {
-        data.periods.forEach((p) => {
-          // YYYYMMDD -> DD/MM/YYYY
-          const s = p.start.replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1");
-          const e = p.end.replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1");
-
-          $("#pc-periods-list").append(`
-                  <li>
-                      <span>📅 ${s} au ${e}</span>
-                      <button class="pc-del-period-btn" data-main-row="${rowId}" data-sub-row="${p.id}" style="color:red;border:none;background:none;cursor:pointer;">&times;</button>
-                  </li>
-              `);
-        });
-      } else {
-        $("#pc-periods-list").html(
-          '<li style="color:#999;text-align:center;">Aucune date définie</li>'
-        );
-      }
-    } else {
-      // --- MODE CRÉATION ---
-      $("#pc-modal-title").text("Nouvelle Saison");
-      $("#btn-delete-season-def").hide();
-      $("#pc-periods-manager").hide(); // Pas de dates à la création
-    }
-
-    $modal.css("display", "flex").hide().fadeIn(200);
-  }
-
-  function updateAcfRow(rowId, vals) {
-    // On cherche la ligne spécifique dans le répéteur
-    const $row = $(
-      `div[data-key="${repeaterKey}"] .acf-row[data-id="${rowId}"]`
-    );
-
-    if ($row.length) {
-      fillRowInputs($row, vals);
-      console.log("✅ Ligne ACF mise à jour :", rowId);
-    } else {
-      console.error(
-        "❌ Impossible de trouver la ligne ACF à mettre à jour :",
-        rowId
-      );
-    }
-  }
-
-  function createAcfRow(vals) {
-    const $repeater = $(`div[data-key="${repeaterKey}"]`);
-
-    // 1. Clic sur le bouton "Ajouter" natif d'ACF
-    const $addBtn = $repeater.find(".acf-actions .acf-button-add");
-    $addBtn.click();
-
-    // 2. On récupère la NOUVELLE ligne (la dernière non-clone)
-    // ACF ajoute la ligne de manière synchrone (généralement)
-    const $newRow = $repeater.find(".acf-row:not(.acf-clone)").last();
-
-    if ($newRow.length) {
-      fillRowInputs($newRow, vals);
-      console.log("✅ Nouvelle ligne ACF créée.");
-    } else {
-      console.error("❌ Erreur lors de la création de la ligne ACF.");
-    }
-  }
-
-  function fillRowInputs($row, vals) {
-    // Helper pour remplir les champs ACF standards
-    $row.find('[data-name="season_name"] input').val(vals.name);
-    $row.find('[data-name="season_price"] input').val(vals.price);
-    $row.find('[data-name="season_note"] input').val(vals.note);
-    $row.find('[data-name="season_min_nights"] input').val(vals.minNights);
-    $row.find('[data-name="season_extra_guest_fee"] input').val(vals.guestFee);
-    $row
-      .find('[data-name="season_extra_guest_from"] input')
-      .val(vals.guestFrom);
-  }
-
-  // =======================================================
-  // 5. UTILITAIRES & ESTHÉTIQUE
-  // =======================================================
-
-  function hideNativeACF() {
-    // Cache le répéteur Saisons
-    $(`div[data-key="${repeaterKey}"]`).hide();
-
-    // Cache le répéteur Promos (si config présente)
-    if (pcRmConfig.field_promo_repeater) {
-      $(`div[data-key="${pcRmConfig.field_promo_repeater}"]`).hide();
-    }
-
-    // Cache les onglets ACF (Top bar)
-    $(".acf-tab-wrap li a").each(function () {
-      const text = $(this).text();
-      if (text.includes("Tarifs saison") || text.includes("Promotions")) {
-        $(this).parent().hide();
-      }
-    });
-  }
-
-  // Génère une couleur pastel basée sur le nom (déterministe)
   function stringToColor(str) {
     let hash = 0;
-    for (let i = 0; i < str.length; i++) {
+    for (let i = 0; i < str.length; i++)
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const h = Math.abs(hash % 360);
-    return `hsl(${h}, 70%, 45%)`;
+    return `hsl(${Math.abs(hash % 360)}, 70%, 45%)`;
   }
-
-  // YYYYMMDD -> YYYY-MM-DD
-  function parseAcfDate(str) {
-    if (!str || str.length !== 8) return null;
-    return `${str.substring(
-      0,
-      4
-    )}-${str.substring(4, 6)}-${str.substring(6, 8)}`;
+  function normalizeDate(str) {
+    if (!str) return null;
+    if (str.indexOf("-") > -1) return str;
+    if (str.length === 8)
+      return `${str.substring(0, 4)}-${str.substring(4, 6)}-${str.substring(
+        6,
+        8
+      )}`;
+    return null;
   }
-
-  // Ajout de jours à une date (pour la fin exclusive de FullCalendar)
   function addDays(dateStr, days) {
     if (!dateStr) return null;
     let d = new Date(dateStr);
     d.setDate(d.getDate() + days);
     return d.toISOString().split("T")[0];
-  }
-  // --- FONCTIONS TECHNIQUES ACF ---
-
-  function addPeriodToAcf(mainRowId, startYMD, endYMD) {
-    const $repeater = $(`div[data-key="${repeaterKey}"]`);
-    const $mainRow = $repeater.find(`.acf-row[data-id="${mainRowId}"]`);
-
-    // Clic sur "Ajouter période"
-    const $subRep = $mainRow.find('[data-name="season_periods"]');
-    $subRep.find(".acf-actions .acf-button-add").first().click();
-
-    // Remplissage de la nouvelle ligne
-    const $newRow = $subRep.find(".acf-row:not(.acf-clone)").last();
-
-    // Conversion YYYY-MM-DD -> YYYYMMDD pour ACF Hidden
-    const sClean = startYMD.replace(/-/g, "");
-    const eClean = endYMD.replace(/-/g, "");
-
-    $newRow.find('[data-name="date_from"] input[type="hidden"]').val(sClean);
-    $newRow.find('[data-name="date_from"] input.input').val(startYMD); // Visuel
-
-    $newRow.find('[data-name="date_to"] input[type="hidden"]').val(eClean);
-    $newRow.find('[data-name="date_to"] input.input').val(endYMD); // Visuel
-  }
-
-  function removePeriodFromAcf(mainRowId, subRowId) {
-    const $row = $(
-      `div[data-key="${repeaterKey}"] .acf-row[data-id="${mainRowId}"]`
-    );
-    const $subRow = $row.find(
-      `[data-name="season_periods"] .acf-row[data-id="${subRowId}"]`
-    );
-
-    const $btn = $subRow.find(".acf-icon.-minus");
-    if ($btn.length) $btn.click();
-    else $subRow.remove();
   }
 });
