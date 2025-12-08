@@ -41,6 +41,7 @@ jQuery(document).ready(function ($) {
     const calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: "multiMonthYear",
       multiMonthMaxColumns: 1,
+      dayMaxEvents: false,
       locale: "fr",
       firstDay: 1,
       editable: true,
@@ -52,6 +53,9 @@ jQuery(document).ready(function ($) {
         return {
           html: `<span class="pc-day-number fc-daygrid-day-number">${arg.dayNumberText}</span>`,
         };
+      },
+      moreLinkContent: function (args) {
+        return args.num + " Promitions";
       },
       dayCellDidMount: function (arg) {
         const frame = arg.el.querySelector(".fc-daygrid-day-frame");
