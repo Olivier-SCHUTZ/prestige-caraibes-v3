@@ -538,21 +538,76 @@ jQuery(document).ready(function ($) {
 
   $("#btn-delete-entity").click(function (e) {
     e.preventDefault();
-    if (!confirm("Supprimer ?")) return;
-    const t = $("#pc-entity-type").val();
-    const k = t === "season" ? ACF_KEYS.season : ACF_KEYS.promo;
-    const $row = $(
-      `div[data-key="${k.repeater}"] .acf-row[data-id="${$(
-        "#pc-edit-row-id"
-      ).val()}"]`
+
+    openConfirmDialog(
+      "Êtes-vous sûr de vouloir supprimer cette saison/promotion ?",
+      function () {
+        const t = $("#pc-entity-type").val();
+        const k = t === "season" ? ACF_KEYS.season : ACF_KEYS.promo;
+        const $row = $(
+          `div[data-key="${k.repeater}"] .acf-row[data-id="${$(
+            "#pc-edit-row-id"
+          ).val()}"]`
+        );
+
+        // Clic sur la croix ACF de la ligne principale
+        $row
+          .first()
+          .find('> .acf-row-handle [data-event="remove-row"]')
+          .first()[0]
+          .click();
+
+        // Confirme la suppression via la tooltip ACF
+        setTimeout(function () {
+          var $tooltip = $(".acf-tooltip.-confirm:visible");
+          if ($tooltip.length) {
+            var $confirmBtn = $tooltip.find('a[data-event="confirm"]');
+            if ($confirmBtn.length) {
+              $confirmBtn.first()[0].click();
+            }
+          }
+        }, 150);
+
+        $("#pc-season-modal").fadeOut();
+        setTimeout(refreshAllData, 1000);
+      }
     );
-    $row.find(".acf-icon.-minus").first().click();
-    setTimeout(function () {
-      $(".acf-tooltip-confirm .acf-button").click();
-    }, 100);
-    $("#pc-season-modal").fadeOut();
-    setTimeout(refreshAllData, 1000);
   });
+
+  function openConfirmDialog(message, onConfirm) {
+    var $modal = $("#pc-confirm-modal");
+    if (!$modal.length) {
+      if (typeof onConfirm === "function") onConfirm();
+      return;
+    }
+
+    if (message) {
+      $("#pc-confirm-message").text(message);
+    }
+
+    $modal.fadeIn(150);
+
+    function cleanup() {
+      $modal.fadeOut(150);
+      $("#pc-confirm-ok").off("click.pcConfirm");
+      $("#pc-confirm-cancel").off("click.pcConfirm");
+      $(".pc-confirm-close").off("click.pcConfirm");
+    }
+
+    $("#pc-confirm-ok").on("click.pcConfirm", function (e) {
+      e.preventDefault();
+      cleanup();
+      if (typeof onConfirm === "function") onConfirm();
+    });
+
+    $("#pc-confirm-cancel, .pc-confirm-close").on(
+      "click.pcConfirm",
+      function (e) {
+        e.preventDefault();
+        cleanup();
+      }
+    );
+  }
 
   // --- HELPERS ---
   function addPeriodToAcf(rowId, start, end, type) {
@@ -594,9 +649,17 @@ jQuery(document).ready(function ($) {
     const $r = $(`div[data-key="${rKey}"] .acf-row[data-id="${mId}"]`);
     const $sub = $r.find(`[data-name="${subName}"] .acf-row[data-id="${sId}"]`);
     $sub.find(".acf-icon.-minus").first().click();
+
+    // Confirme proprement la suppression ACF (tooltip "Confirmez-vous ?")
     setTimeout(function () {
-      $(".acf-tooltip-confirm .acf-button").click();
-    }, 100);
+      var $tooltip = $(".acf-tooltip.-confirm:visible");
+      if ($tooltip.length) {
+        var $confirmBtn = $tooltip.find('a[data-event="confirm"]');
+        if ($confirmBtn.length) {
+          $confirmBtn.first()[0].click();
+        }
+      }
+    }, 150);
   }
   function refreshAllData() {
     if (calendarInstance) calendarInstance.removeAllEvents();

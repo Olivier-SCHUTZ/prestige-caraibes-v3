@@ -517,3 +517,37 @@ fieldset legend {
 .pc-event-season {
   z-index: 50;
 }
+/* === MODALE CONFIRMATION PC RATE MANAGER === */
+#pc-confirm-modal.pc-modal {
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+}
+
+#pc-confirm-modal .pc-modal-content.pc-modal-small {
+  width: 360px;
+  max-width: 90%;
+  padding: 25px;
+}
+
+#pc-confirm-modal .pc-modal-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+#pc-confirm-modal .pc-modal-body {
+  margin: 20px 0;
+  font-size: 15px;
+}
+
+#pc-confirm-modal .pc-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+#pc-confirm-ok.pc-btn--danger {
+  background: #e03131;
+  color: white;
+}

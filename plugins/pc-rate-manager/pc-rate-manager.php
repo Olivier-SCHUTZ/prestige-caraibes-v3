@@ -170,6 +170,22 @@ class PCRateManager
                 </div>
             </div>
         </div>
+
+        <div id="pc-confirm-modal" class="pc-modal pc-modal-center" style="display:none;">
+            <div class="pc-modal-content pc-modal-small">
+                <div class="pc-modal-header">
+                    <h2>Confirmer la suppression</h2>
+                    <span class="pc-close-modal pc-confirm-close">&times;</span>
+                </div>
+                <div class="pc-modal-body">
+                    <p id="pc-confirm-message">Êtes-vous sûr de vouloir supprimer cet élément&nbsp;?</p>
+                </div>
+                <div class="pc-modal-footer">
+                    <button type="button" class="button" id="pc-confirm-cancel">Annuler</button>
+                    <button type="button" class="button button-link-delete" id="pc-confirm-ok">Supprimer</button>
+                </div>
+            </div>
+        </div>
 <?php
     }
 
