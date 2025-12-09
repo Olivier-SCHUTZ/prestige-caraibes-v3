@@ -768,7 +768,9 @@
                 "Chaussons_eau  Chaussons d'eau": "Chaussons_eau  Chaussons d'eau",
                 "Imperméable": "Imperméable\/coupe vent",
                 "Vêtements": "Vêtements de rechange",
-                "Casquette": "Casquette\/Bob"
+                "Casquette": "Casquette\/Bob",
+                "Snorkeling": "Équipement de snorkeling",
+                "Teeshirt": "Tee-shirts anti UV"
             },
             "default_value": [],
             "return_format": "value",
@@ -1827,5 +1829,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1765313862
+    "modified": 1765316746
 }
