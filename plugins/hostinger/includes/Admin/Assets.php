@@ -172,6 +172,7 @@ class Assets {
                     'hostinger_tools_text_copied_successfully'                => __( 'Text has been copied successfully', 'hostinger' ),
                     'hostinger_tools_free_domain_llm_unavailable'             => __( 'LLM optimization features are not available for temporary subdomains. Connect a domain to unlock these features.', 'hostinger' ),
                     'hostinger_tools_connect_domain_cta'                      => __( 'Connect domain', 'hostinger' ),
+                    'hostinger_tools_copy_agent_url'                          => __( 'Copy agent url', 'hostinger' ),
                 ),
                 'rest_base_url'               => esc_url_raw( rest_url() ),
                 'nonce'                       => wp_create_nonce( 'wp_rest' ),

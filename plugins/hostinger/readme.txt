@@ -3,7 +3,7 @@ Tags: hostinger, tools, maintenance, security, https
 Requires at least: 5.5
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 3.0.55
+Stable tag: 3.0.56
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 Simplified WordPress management. Manage site info, maintenance, security, & redirects.
@@ -607,3 +607,7 @@ Automatic updates should work smoothly, but we still recommend you back up your 
 - Feature: Bump up WP Tested up to Flag
 - Dev: Add code automation workflow
 - Dev: Bump up package versions
+
+3.0.56 (2025-12-09)
+
+- Feature: Add CTA to copy Web2Agent URL to clipboard

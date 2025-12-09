@@ -174,7 +174,14 @@ const llmsSection = computed(() => {
 			isVisible: true,
 			toggleValue: settingsData.value?.optinMcp,
 			learnMoreLink:
-				"https://support.hostinger.com/en/articles/11729400-ai-agent-access-smart-ai-discovery"
+				"https://support.hostinger.com/en/articles/11729400-ai-agent-access-smart-ai-discovery",
+			sideButtons: [{
+				id: "hostinger_tools_optin_mcp_copy_agent_url",
+				text: translate("hostinger_tools_copy_agent_url"),
+				isDisabled: !settingsData.value?.optinMcp,
+				onClick: copyAgentUrl,
+				variant: "outline" as const
+			}],
 		}
 	];
 
@@ -400,6 +407,13 @@ const onUpdateSettings = async (value: boolean, item: SectionItem) => {
 	if (success && settingsData.value) {
 		settingsData.value[id] = value;
 	}
+};
+
+const copyAgentUrl = () => {
+	const domain = location.host;
+	const agentUrl = `websites-agents.hostinger.com/${domain}/mcp`;
+	navigator.clipboard.writeText(agentUrl);
+	toast.success(translate("hostinger_tools_copied_successfully"));
 };
 
 (async () => {
