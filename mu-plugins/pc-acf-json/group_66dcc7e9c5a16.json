@@ -767,7 +767,8 @@
                 "chaussures_marche": "Chaussures de marche",
                 "Chaussons_eau  Chaussons d'eau": "Chaussons_eau  Chaussons d'eau",
                 "Imperméable": "Imperméable\/coupe vent",
-                "Vêtements": "Vêtements de rechange"
+                "Vêtements": "Vêtements de rechange",
+                "Casquette": "Casquette\/Bob"
             },
             "default_value": [],
             "return_format": "value",
@@ -1826,5 +1827,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1764603574
+    "modified": 1765313862
 }

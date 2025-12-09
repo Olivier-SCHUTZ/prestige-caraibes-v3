@@ -454,8 +454,8 @@
             "aria-label": "",
             "type": "checkbox",
             "instructions": "",
-            "required": false,
-            "conditional_logic": false,
+            "required": 0,
+            "conditional_logic": 0,
             "wrapper": {
                 "width": "",
                 "class": "",
@@ -468,14 +468,17 @@
                 "Jardin privé": "Jardin privé",
                 "Jardin commun": "Jardin commun",
                 "Aire de jeux": "Aire de jeux",
-                "Terrain de pétanque": "Terrain de pétanque"
+                "Terrain de pétanque": "Terrain de pétanque",
+                "Citerne de réserve d'eau": "Citerne de réserve d'eau",
+                "Groupe électrogène": "Groupe électrogène"
             },
-            "layout": "vertical",
             "default_value": [],
-            "allow_custom": 0,
-            "save_custom": 0,
-            "toggle": 0,
             "return_format": "value",
+            "allow_custom": 0,
+            "allow_in_bindings": 1,
+            "layout": "vertical",
+            "toggle": 0,
+            "save_custom": 0,
             "custom_choice_button_text": "Ajouter un nouveau choix"
         },
         {
@@ -520,8 +523,8 @@
             "aria-label": "",
             "type": "checkbox",
             "instructions": "",
-            "required": false,
-            "conditional_logic": false,
+            "required": 0,
+            "conditional_logic": 0,
             "wrapper": {
                 "width": "",
                 "class": "",
@@ -536,15 +539,18 @@
                 "Jeux de société": "Jeux de société",
                 "Livres": "Livres",
                 "Chaîne Hi-Fi": "Chaîne Hi-Fi",
+                "Enceintes bluetooth": "Enceintes bluetooth",
                 "TV": "TV",
+                "Android TV": "Android TV",
                 "Streaming disponible (avec votre compte)": "Streaming disponible (avec votre compte)"
             },
-            "layout": "vertical",
             "default_value": [],
-            "allow_custom": 0,
-            "save_custom": 0,
-            "toggle": 0,
             "return_format": "value",
+            "allow_custom": 0,
+            "allow_in_bindings": 1,
+            "layout": "vertical",
+            "toggle": 0,
+            "save_custom": 0,
             "custom_choice_button_text": "Ajouter un nouveau choix"
         },
         {
@@ -554,8 +560,8 @@
             "aria-label": "",
             "type": "checkbox",
             "instructions": "",
-            "required": false,
-            "conditional_logic": false,
+            "required": 0,
+            "conditional_logic": 0,
             "wrapper": {
                 "width": "",
                 "class": "",
@@ -565,6 +571,7 @@
                 "Barbecue à gaz": "Barbecue à gaz",
                 "Barbecue électrique": "Barbecue électrique",
                 "Barbecue au charbon": "Barbecue au charbon",
+                "Plancha": "Plancha",
                 "Mixeur \/ Blender": "Mixeur \/ Blender",
                 "Chaise haute bébé": "Chaise haute bébé",
                 "Cafetière filtre": "Cafetière filtre",
@@ -589,12 +596,13 @@
                 "Vaisselle": "Vaisselle",
                 "Verres": "Verres"
             },
-            "layout": "vertical",
             "default_value": [],
-            "allow_custom": 0,
-            "save_custom": 0,
-            "toggle": 0,
             "return_format": "value",
+            "allow_custom": 0,
+            "allow_in_bindings": 1,
+            "layout": "vertical",
+            "toggle": 0,
+            "save_custom": 0,
             "custom_choice_button_text": "Ajouter un nouveau choix"
         },
         {
@@ -2686,5 +2694,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1765025781
+    "modified": 1765314391
 }
