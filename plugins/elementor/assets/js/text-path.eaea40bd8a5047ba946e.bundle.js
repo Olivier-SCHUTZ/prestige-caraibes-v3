@@ -46,9 +46,10 @@ class TextPathHandler extends elementorModules.frontend.handlers.Base {
   onInit() {
     this.elements = this.getDefaultElements();
     this.fetchSVG().then(() => {
+      const sanitizedId = _dompurify.default.sanitize(this.elements.widgetWrapper.dataset.id);
       // Generate unique IDs using the wrapper's `data-id`.
-      this.pathId = `e-path-${this.elements.widgetWrapper.dataset.id}`;
-      this.textPathId = `e-text-path-${this.elements.widgetWrapper.dataset.id}`;
+      this.pathId = `e-path-${sanitizedId}`;
+      this.textPathId = `e-text-path-${sanitizedId}`;
       if (!this.elements.svg) {
         return;
       }
@@ -1639,4 +1640,4 @@ module.exports = purify;
 /***/ })
 
 }]);
-//# sourceMappingURL=text-path.ffadd93cf796f64a4d61.bundle.js.map
+//# sourceMappingURL=text-path.eaea40bd8a5047ba946e.bundle.js.map

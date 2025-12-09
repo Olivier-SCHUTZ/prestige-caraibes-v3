@@ -489,3 +489,14 @@ Changelog
 3.0.53 (2025-10-09)
 
 - Feature: Learn more destination link changed in LLMS section
+
+3.0.54 (2025-11-20)
+
+- Feature: Update readme
+- Fix: Security issue
+
+3.0.55 (2025-12-02)
+
+- Feature: Bump up WP Tested up to Flag
+- Dev: Add code automation workflow
+- Dev: Bump up package versions

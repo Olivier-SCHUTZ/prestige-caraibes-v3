@@ -538,7 +538,7 @@ function FavoritesActions(props) {
       return;
     }
     eventTracking(props === null || props === void 0 ? void 0 : props.name, props === null || props === void 0 ? void 0 : props.source, 'uncheck');
-    tracking.trackKitlibFavoriteClicked(props.id, props === null || props === void 0 ? void 0 : props.name, function () {
+    tracking.trackKitlibFavoriteClicked(props.id, props === null || props === void 0 ? void 0 : props.name, false, function () {
       return removeFromFavorites.mutate(props.id);
     });
   };
@@ -547,7 +547,7 @@ function FavoritesActions(props) {
       return;
     }
     eventTracking(props === null || props === void 0 ? void 0 : props.name, props === null || props === void 0 ? void 0 : props.source, 'check', props === null || props === void 0 ? void 0 : props.index, props === null || props === void 0 ? void 0 : props.queryParams);
-    tracking.trackKitlibFavoriteClicked(props.id, props === null || props === void 0 ? void 0 : props.name, function () {
+    tracking.trackKitlibFavoriteClicked(props.id, props === null || props === void 0 ? void 0 : props.name, true, function () {
       return addToFavorites.mutate(props.id);
     });
   };
@@ -701,7 +701,7 @@ var _header = _interopRequireDefault(__webpack_require__(/*! ./layout/header */ 
 var _headerBackButton = _interopRequireDefault(__webpack_require__(/*! ./layout/header-back-button */ "../app/modules/kit-library/assets/js/components/layout/header-back-button.js"));
 var _kit = _interopRequireDefault(__webpack_require__(/*! ../models/kit */ "../app/modules/kit-library/assets/js/models/kit.js"));
 var _useDownloadLinkMutation = _interopRequireDefault(__webpack_require__(/*! ../hooks/use-download-link-mutation */ "../app/modules/kit-library/assets/js/hooks/use-download-link-mutation.js"));
-var _useKitCallToAction2 = _interopRequireWildcard(__webpack_require__(/*! ../hooks/use-kit-call-to-action */ "../app/modules/kit-library/assets/js/hooks/use-kit-call-to-action.js"));
+var _useKitCallToAction3 = _interopRequireWildcard(__webpack_require__(/*! ../hooks/use-kit-call-to-action */ "../app/modules/kit-library/assets/js/hooks/use-kit-call-to-action.js"));
 var _useAddKitPromotionUtm = _interopRequireDefault(__webpack_require__(/*! ../hooks/use-add-kit-promotion-utm */ "../app/modules/kit-library/assets/js/hooks/use-add-kit-promotion-utm.js"));
 var _appUi = __webpack_require__(/*! @elementor/app-ui */ "@elementor/app-ui");
 var _settingsContext = __webpack_require__(/*! ../context/settings-context */ "../app/modules/kit-library/assets/js/context/settings-context.js");
@@ -719,21 +719,24 @@ function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r
  * @param {Function} root0.onConnect
  * @param {Function} root0.onClick
  * @param {boolean}  root0.isApplyLoading
+ * @param {Function} root0.onUpgrade
  * @return {Object} result
  */
 function useKitCallToActionButton(model, _ref) {
   var apply = _ref.apply,
     isApplyLoading = _ref.isApplyLoading,
     onConnect = _ref.onConnect,
-    _onClick = _ref.onClick;
-  var _useKitCallToAction = (0, _useKitCallToAction2.default)(model.accessTier),
+    _onClick = _ref.onClick,
+    _ref$onUpgrade = _ref.onUpgrade,
+    onUpgrade = _ref$onUpgrade === void 0 ? function () {} : _ref$onUpgrade;
+  var _useKitCallToAction = (0, _useKitCallToAction3.default)(model.accessTier),
     type = _useKitCallToAction.type,
     subscriptionPlan = _useKitCallToAction.subscriptionPlan;
   var promotionUrl = (0, _useAddKitPromotionUtm.default)(subscriptionPlan.promotion_url, model.id, model.title);
   var _useSettingsContext = (0, _settingsContext.useSettingsContext)(),
     settings = _useSettingsContext.settings;
   return (0, _react.useMemo)(function () {
-    if (type === _useKitCallToAction2.TYPE_CONNECT) {
+    if (type === _useKitCallToAction3.TYPE_CONNECT) {
       return {
         id: 'connect',
         text: __('Apply', 'elementor'),
@@ -749,7 +752,7 @@ function useKitCallToActionButton(model, _ref) {
         includeHeaderBtnClass: false
       };
     }
-    if (type === _useKitCallToAction2.TYPE_PROMOTION && subscriptionPlan) {
+    if (type === _useKitCallToAction3.TYPE_PROMOTION && subscriptionPlan) {
       return {
         id: 'promotion',
         text: settings.is_pro ? 'Upgrade' : "Go ".concat(subscriptionPlan.label),
@@ -759,6 +762,9 @@ function useKitCallToActionButton(model, _ref) {
         size: 'sm',
         url: promotionUrl,
         target: '_blank',
+        onClick: function onClick(e) {
+          onUpgrade === null || onUpgrade === void 0 || onUpgrade(e);
+        },
         includeHeaderBtnClass: false
       };
     }
@@ -857,6 +863,8 @@ function ItemHeader(props) {
     }),
     fetchDownloadLink = _useDownloadLinkMutat2.mutate,
     isDownloadLoading = _useDownloadLinkMutat2.isLoading;
+  var _useKitCallToAction2 = (0, _useKitCallToAction3.default)(props.model.accessTier),
+    subscriptionPlan = _useKitCallToAction2.subscriptionPlan;
   var applyButton = useKitCallToActionButton(props.model, {
     onConnect: function onConnect() {
       return setIsConnectDialogOpen(true);
@@ -871,6 +879,9 @@ function ItemHeader(props) {
         event_type: 'click'
       });
       tracking.trackKitdemoApplyClicked(props.model.id, props.model.title, props.model.accessTier);
+    },
+    onUpgrade: function onUpgrade() {
+      tracking.trackKitdemoUpgradeClicked(props.model.id, props.model.title, subscriptionPlan.label);
     }
   });
   var downloadButton = (0, _react.useMemo)(function () {
@@ -2678,8 +2689,6 @@ var TrackingContext = (0, _react.createContext)();
 var TrackingProvider = exports.TrackingProvider = function TrackingProvider(_ref) {
   var children = _ref.children;
   var tracking = (0, _useKitLibraryTracking.default)();
-
-  // Track library opened when the provider mounts
   (0, _react.useEffect)(function () {
     var urlParams = new URLSearchParams(window.location.search);
     var source = urlParams.get('source') || 'direct';
@@ -3386,12 +3395,13 @@ var useKitLibraryTracking = exports.useKitLibraryTracking = function useKitLibra
     }, trigger);
     trackWithActivity('kitlib_search_submitted', properties, callback);
   }, [addTriggerToProperties, trackWithActivity]);
-  var trackKitlibFavoriteClicked = (0, _react.useCallback)(function (kitId, title) {
-    var callback = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-    var trigger = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'click';
+  var trackKitlibFavoriteClicked = (0, _react.useCallback)(function (kitId, title, favorited) {
+    var callback = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+    var trigger = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 'click';
     var properties = addTriggerToProperties({
       kit_id: kitId,
-      kit_title: title
+      kit_title: title,
+      kit_fav_status: favorited
     }, trigger);
     trackWithActivity('kitlib_favorite_clicked', properties, callback);
   }, [addTriggerToProperties, trackWithActivity]);
@@ -3524,8 +3534,10 @@ var useKitLibraryTracking = exports.useKitLibraryTracking = function useKitLibra
       return;
     }
     sessionEndedRef.current = true;
+    var durationMs = Date.now() - sessionStartTime.current;
+    var durationSeconds = Number((durationMs / 1000).toFixed(2));
     trackMixpanelEvent('kitlib_session_ended', {
-      duration_ms: Date.now() - sessionStartTime.current,
+      duration_s: durationSeconds,
       actions_count: actionsCount.current,
       filters_count: filtersCount.current,
       demo_views: demoViews.current,
@@ -6610,4 +6622,4 @@ var isTierAtLeast = exports.isTierAtLeast = function isTierAtLeast(currentTier, 
 /***/ })
 
 }]);
-//# sourceMappingURL=kit-library.b318572cfbb0d7ab505b.bundle.js.map
+//# sourceMappingURL=kit-library.2e38a4b9ca626956b67f.bundle.js.map

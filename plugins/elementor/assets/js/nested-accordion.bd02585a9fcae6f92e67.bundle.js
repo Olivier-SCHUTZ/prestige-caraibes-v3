@@ -31,7 +31,7 @@ class NestedTitleKeyboardHandler extends _base.default {
   getDefaultSettings() {
     return {
       selectors: {
-        itemTitle: `[id*="e-n-tab-title-${this.getWidgetNumber()}"]`,
+        itemTitle: `[data-tab-title-id*="e-n-tab-title-${this.getWidgetNumber()}"]`,
         itemContainer: `[id*="e-n-tab-content-${this.getWidgetNumber()}"]`
       },
       ariaAttributes: {
@@ -467,4 +467,4 @@ exports["default"] = NestedAccordion;
 /***/ })
 
 }]);
-//# sourceMappingURL=nested-accordion.2e00cc1c2b5899d60aba.bundle.js.map
+//# sourceMappingURL=nested-accordion.bd02585a9fcae6f92e67.bundle.js.map

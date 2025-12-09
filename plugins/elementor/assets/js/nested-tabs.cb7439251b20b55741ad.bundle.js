@@ -154,8 +154,8 @@ class NestedTabs extends _base.default {
       selectors: {
         widgetContainer: `[data-widget-number="${widgetNumber}"]`,
         tabTitle: `[aria-controls*="e-n-tab-content-${widgetNumber}"]`,
-        tabTitleIcon: `[id*="e-n-tab-title-${widgetNumber}"] > .e-n-tab-icon`,
-        tabTitleText: `[id*="e-n-tab-title-${widgetNumber}"] > .e-n-tab-title-text`,
+        tabTitleIcon: `[data-tab-title-id*="e-n-tab-title-${widgetNumber}"] > .e-n-tab-icon`,
+        tabTitleText: `[data-tab-title-id*="e-n-tab-title-${widgetNumber}"] > .e-n-tab-title-text`,
         tabContent: `[data-widget-number="${widgetNumber}"] > .e-n-tabs-content > .e-con`,
         headingContainer: `[data-widget-number="${widgetNumber}"] > .e-n-tabs-heading`,
         activeTabContentContainers: `[id*="e-n-tab-content-${widgetNumber}"].e-active`
@@ -500,4 +500,4 @@ exports["default"] = NestedTabs;
 /***/ })
 
 }]);
-//# sourceMappingURL=nested-tabs.14aec2188f727a179757.bundle.js.map
+//# sourceMappingURL=nested-tabs.cb7439251b20b55741ad.bundle.js.map

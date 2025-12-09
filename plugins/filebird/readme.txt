@@ -4,7 +4,7 @@ Donate link: https://ninjateam.org/wordpress-media-library-folders/
 Tags: wordpress media library folders, wp media folders, media, media folders, file manager
 Requires at least: 3.0
 Tested up to: 6.8
-Stable tag: 6.5.1
+Stable tag: 6.5.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -208,6 +208,10 @@ Happy Organizing! 😍
 
 
 == Changelog ==
+
+= Dec 5, 2025 - Version 6.5.2 =
+- Added: Auto rename when add new folder and it's name exists
+- Improved: Security
 
 = Oct 22, 2025 - Version 6.5.1 =
 - Improved: Security (Access Control Authenticated (Subscriber+))

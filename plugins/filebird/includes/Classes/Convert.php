@@ -90,6 +90,13 @@ class Convert {
 		);
 	}
 	public function ajaxInsertOldData( $request ) {
+		if( !current_user_can( 'manage_options' ) ) {
+			wp_send_json_error(
+				array(
+					'mess' => __( 'You are not authorized to insert old data.', 'filebird' ),
+				)
+			);
+		}
 		$folders = isset( $request ) ? $request->get_params()['folders'] : '';
 		if ( $folders != '' ) {
 			ConvertController::insertToNewTable( $folders );
