@@ -1940,10 +1940,10 @@ add_action('wp_footer', function () {
 }, 99);
 
 /* ============================================================
- * 7.H — JSON-LD Product (pour les fiches Expérience) - v1.1
- * Gère les prix fixes et les services "sur devis".
+ * 7.H — JSON-LD Product (pour les fiches Expérience) - v1.2 CORRIGÉ
+ * Gère les prix complexes (sous-répéteurs ACF) et les services "sur devis".
  * Intègre les avis (aggregateRating + review).
- * Corrige le champ 'brand' pour Merchant Listing.
+ * Fallback automatique si aucun prix n'est trouvé (évite l'absence de schéma).
  * ============================================================ */
 add_action('wp_footer', function () {
   // Garde-fous : uniquement sur les fiches Expérience, pas en admin/éditeur
@@ -1962,17 +1962,20 @@ add_action('wp_footer', function () {
   $getf = function ($key, $default = '') use ($p) {
     if (function_exists('get_field')) {
       $v = get_field($key, $p->ID);
-      if ($v !== null && $v !== false && $v !== '') return is_string($v) ? trim($v) : $v;
+      // On accepte les tableaux (pour les répéteurs), les chaînes et les nombres
+      if ($v !== null && $v !== false && $v !== '') return $v;
     }
     return $default;
   };
+
   $clean_txt = function ($html, $len = 1200) {
     $t = wp_strip_all_tags((string)$html, true);
     $t = preg_replace('/\s+/', ' ', $t);
     if ($len && mb_strlen($t) > $len) $t = rtrim(mb_substr($t, 0, $len - 1)) . '…';
     return $t;
   };
-  $arr_filter = function ($a) { // Filtre récursif pour nettoyer le tableau final
+
+  $arr_filter = function ($a) { // Filtre récursif
     if (!is_array($a)) return $a;
     foreach ($a as $k => $v) {
       if (is_array($v)) $a[$k] = array_filter($v, fn($x) => $x !== null && $x !== '' && $x !== []);
@@ -1985,24 +1988,55 @@ add_action('wp_footer', function () {
   $description = $getf('exp_meta_description') ?: $clean_txt(get_the_excerpt($p->ID));
   $image_url = $getf('exp_hero_desktop') ?: get_the_post_thumbnail_url($p->ID, 'full');
 
-  // --- Logique pour l'offre (prix ou devis) ---
-  $tarifs = $getf('exp_types_de_tarifs', []);
-  if (empty($tarifs) || !is_array($tarifs)) {
-    return; // Pas de tarif, pas de schéma
+  // Correction : si exp_hero_desktop retourne un tableau (ACF image array) ou un ID
+  if (is_array($image_url) && isset($image_url['url'])) {
+    $image_url = $image_url['url'];
+  } elseif (is_numeric($image_url)) {
+    $image_url = wp_get_attachment_image_url($image_url, 'full');
   }
 
-  $first_offer_row = $tarifs[0];
-  $offer_type = $first_offer_row['exp_type'] ?? '';
-  $price_value = (float)($first_offer_row['exp_tarif_adulte'] ?? 0);
+  // --- Logique ROBUSTE pour l'offre (prix ou devis) ---
+  // On récupère le répéteur principal
+  $tarifs = $getf('exp_types_de_tarifs', []);
+
+  // Initialisation par défaut : mode "Sur devis" pour garantir l'affichage
+  $final_price = 0;
+  $is_sur_devis = true;
   $availability_status = $getf('exp_availability', 'InStock');
 
+  // Analyse intelligente des tarifs
+  if (is_array($tarifs) && !empty($tarifs)) {
+    $first_row = $tarifs[0]; // On regarde la première option tarifaire
+    $type_tarif = $first_row['exp_type'] ?? '';
+
+    // Si c'est explicitement marqué "sur-devis"
+    if ($type_tarif === 'sur-devis') {
+      $is_sur_devis = true;
+    }
+    // Sinon, on cherche un prix dans les sous-lignes (exp_tarifs_lignes)
+    else {
+      if (!empty($first_row['exp_tarifs_lignes']) && is_array($first_row['exp_tarifs_lignes'])) {
+        foreach ($first_row['exp_tarifs_lignes'] as $ligne) {
+          $val = (float) ($ligne['tarif_valeur'] ?? 0);
+          if ($val > 0) {
+            $final_price = $val;
+            $is_sur_devis = false;
+            break; // On a trouvé un prix valide, on arrête de chercher
+          }
+        }
+      }
+    }
+  }
+
+  // Construction de l'objet Offer
   $offer_data = [
     '@type' => 'Offer',
     'priceCurrency' => 'EUR',
     'availability' => 'https://schema.org/' . $availability_status,
   ];
 
-  if ($offer_type === 'sur-devis') {
+  if ($is_sur_devis || $final_price <= 0) {
+    // Mode Devis : Prix 0 + Specification
     $offer_data['price'] = '0';
     $offer_data['priceSpecification'] = [
       '@type' => 'PriceSpecification',
@@ -2011,10 +2045,9 @@ add_action('wp_footer', function () {
       'valueAddedTaxIncluded' => 'true',
       'priceType' => 'Tarif sur devis'
     ];
-  } elseif ($price_value > 0) {
-    $offer_data['price'] = $price_value;
   } else {
-    return; // Offre mal configurée (ni devis, ni prix > 0), on arrête.
+    // Mode Prix fixe trouvé
+    $offer_data['price'] = $final_price;
   }
 
   // --- Construction de l'objet principal ---
@@ -2024,21 +2057,21 @@ add_action('wp_footer', function () {
     'name'        => $name,
     'sku'         => (string) $p->ID,
     'url'         => get_permalink($p->ID),
-    'brand'       => ['@type' => 'Brand', 'name' => 'Prestige Caraïbes'], // <-- MODIFICATION ICI
+    'brand'       => ['@type' => 'Brand', 'name' => 'Prestige Caraïbes'],
     'offers'      => $offer_data,
   ];
 
   if ($description) $data['description'] = $description;
   if ($image_url)   $data['image'] = esc_url($image_url);
 
-  // --- Récupération des avis (logique partagée avec VacationRental) ---
+  // --- Récupération des avis (logique inchangée) ---
   $args = [
     'post_type' => 'pc_review',
     'post_status' => 'publish',
-    'posts_per_page' => 5, // Limite pour ne pas surcharger
+    'posts_per_page' => 5,
     'meta_query' => [
       ['key' => 'pc_post_id', 'value' => $p->ID],
-      ['key' => 'pc_source', 'value' => 'internal'] // Uniquement les avis internes
+      ['key' => 'pc_source', 'value' => 'internal']
     ]
   ];
   $review_posts = get_posts($args);
@@ -2071,7 +2104,7 @@ add_action('wp_footer', function () {
   if ($json) {
     echo "\n<script type='application/ld+json' class='pc-seo-product-schema'>{$json}</script>\n";
   }
-}, 98); // Priorité juste avant VacationRental pour garder une logique d'ordre
+}, 98);
 
 // ============================================================
 // 7.F â€” JSON-LD Article / BlogPosting (articles du magazine)
