@@ -123,7 +123,12 @@ function pc_exp_get_villes(): array
         return $villes_cache;
     }
     $villes = [];
-    $experience_ids = new WP_Query(['post_type' => 'experience', 'posts_per_page' => -1, 'fields' => 'ids']);
+    $experience_ids = new WP_Query([
+        'post_type'      => 'experience',
+        'post_status'    => 'publish', // <--- LIGNE AJOUTÉE
+        'posts_per_page' => -1,
+        'fields'         => 'ids'
+    ]);
     if ($experience_ids->have_posts()) {
         foreach ($experience_ids->posts as $post_id) {
             if (have_rows('exp_lieux_horaires_depart', $post_id)) {
@@ -298,7 +303,12 @@ function pc_get_filtered_experiences(array $filters): array
     $prix_max     = isset($filters['prix_max']) && is_numeric($filters['prix_max']) ? floatval($filters['prix_max']) : 99999;
     $page         = isset($filters['page']) ? intval($filters['page']) : 1;
 
-    $args = ['post_type' => 'experience', 'posts_per_page' => -1, 's' => $keyword];
+    $args = [
+        'post_type'      => 'experience',
+        'post_status'    => 'publish', // <--- LIGNE AJOUTÉE
+        'posts_per_page' => -1,
+        's'              => $keyword
+    ];
     if (!empty($category)) {
         $args['tax_query'] = [['taxonomy' => 'categorie_experience', 'field' => 'slug', 'terms' => $category]];
     }
