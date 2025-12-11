@@ -111,6 +111,147 @@
             "placeholder": ""
         },
         {
+            "key": "field_693abe7947b66",
+            "label": "Galerie Photos (Par Catégorie)",
+            "name": "",
+            "aria-label": "",
+            "type": "tab",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "placement": "left",
+            "endpoint": 0,
+            "selected": 0
+        },
+        {
+            "key": "field_693abf0447b67",
+            "label": "Groupes d'images",
+            "name": "groupes_images",
+            "aria-label": "",
+            "type": "repeater",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "layout": "row",
+            "pagination": 0,
+            "min": 0,
+            "max": 0,
+            "collapsed": "",
+            "button_label": "Ajouter un élément",
+            "rows_per_page": 20,
+            "sub_fields": [
+                {
+                    "key": "field_693abf6847b68",
+                    "label": "Catégorie d'images",
+                    "name": "categorie",
+                    "aria-label": "",
+                    "type": "select",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "choices": {
+                        "salon": "Salon",
+                        "cuisine": "Cuisine",
+                        "chambre_1": "Chambre 1",
+                        "chambre_2": "Chambre 2",
+                        "chambre_3": "Chambre 3",
+                        "chambre_4": "Chambre 4",
+                        "salle_de_bain": "Salle de bain",
+                        "terrasse": "Terrasse",
+                        "piscine": "Piscine",
+                        "exterieur": "Extérieur",
+                        "vue": "Vue",
+                        "autre": "Autre (Personnalisé)"
+                    },
+                    "default_value": false,
+                    "return_format": "value",
+                    "multiple": 0,
+                    "allow_null": 1,
+                    "allow_in_bindings": 1,
+                    "ui": 0,
+                    "ajax": 0,
+                    "placeholder": "",
+                    "create_options": 0,
+                    "save_options": 0,
+                    "parent_repeater": "field_693abf0447b67"
+                },
+                {
+                    "key": "field_693abfe847b69",
+                    "label": "Titre personnalisé (si \"Autre\")",
+                    "name": "categorie_personnalisee",
+                    "aria-label": "",
+                    "type": "text",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": [
+                        [
+                            {
+                                "field": "field_693abf6847b68",
+                                "operator": "==",
+                                "value": "autre"
+                            }
+                        ]
+                    ],
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "default_value": "",
+                    "maxlength": "",
+                    "allow_in_bindings": 0,
+                    "placeholder": "",
+                    "prepend": "",
+                    "append": "",
+                    "parent_repeater": "field_693abf0447b67"
+                },
+                {
+                    "key": "field_693ac02f47b6a",
+                    "label": "Images du groupe",
+                    "name": "images_du_groupe",
+                    "aria-label": "",
+                    "type": "gallery",
+                    "instructions": "",
+                    "required": 0,
+                    "conditional_logic": 0,
+                    "wrapper": {
+                        "width": "",
+                        "class": "",
+                        "id": ""
+                    },
+                    "return_format": "array",
+                    "library": "all",
+                    "min": "",
+                    "max": "",
+                    "min_width": "",
+                    "min_height": "",
+                    "min_size": "",
+                    "max_width": "",
+                    "max_height": "",
+                    "max_size": "",
+                    "mime_types": "",
+                    "insert": "append",
+                    "preview_size": "medium",
+                    "parent_repeater": "field_693abf0447b67"
+                }
+            ]
+        },
+        {
             "key": "tab_seo_long",
             "label": "Contenu SEO (long)",
             "name": "",
@@ -2694,5 +2835,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1765314391
+    "modified": 1765458073
 }
