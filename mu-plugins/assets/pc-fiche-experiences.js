@@ -62,6 +62,63 @@ document.addEventListener("DOMContentLoaded", function () {
     const experienceTitle = experienceTitleEl
       ? experienceTitleEl.textContent || ""
       : "";
+
+    // --- NOUVEAU : Met à jour les labels (précision âge) et ajoute les observations ---
+    function updateStaticInputs(typeKey) {
+      const typeConfig = config[typeKey];
+
+      // 1. Nettoyage : On remet les labels par défaut et on supprime les anciennes obs
+      devisWrap
+        .querySelectorAll(".exp-devis-obs-text")
+        .forEach((el) => el.remove());
+
+      const fieldMap = {
+        adulte: { name: "devis_adults", defaultLabel: "Adultes" },
+        enfant: { name: "devis_children", defaultLabel: "Enfants" },
+        bebe: { name: "devis_bebes", defaultLabel: "Bébés" },
+      };
+
+      // Réinitialisation des labels
+      Object.values(fieldMap).forEach((map) => {
+        const input = devisWrap.querySelector(`input[name="${map.name}"]`);
+        if (input) {
+          const label = input.parentElement.querySelector("label");
+          if (label) label.textContent = map.defaultLabel;
+        }
+      });
+
+      if (!typeConfig || !Array.isArray(typeConfig.lines)) return;
+
+      // 2. Injection des nouvelles données depuis la config JSON
+      typeConfig.lines.forEach((line) => {
+        if (fieldMap[line.type]) {
+          const map = fieldMap[line.type];
+          const input = devisWrap.querySelector(`input[name="${map.name}"]`);
+          if (!input) return;
+
+          const fieldContainer = input.parentElement;
+          const label = fieldContainer.querySelector("label");
+
+          // A. Ajout de la Précision à côté du label (ex: "Enfants (3-12 ans)")
+          if (line.precision && label) {
+            label.textContent = `${map.defaultLabel} (${line.precision})`;
+          }
+
+          // B. Ajout de l'Observation en dessous du champ
+          if (line.observation) {
+            const obsDiv = document.createElement("div");
+            obsDiv.className = "exp-devis-obs-text";
+            obsDiv.style.fontSize = "0.85em";
+            obsDiv.style.color = "#666";
+            obsDiv.style.marginTop = "4px";
+            obsDiv.style.fontStyle = "italic";
+            obsDiv.innerHTML = line.observation;
+            fieldContainer.appendChild(obsDiv);
+          }
+        }
+      });
+    }
+
     // --- NEW: masque/affiche les compteurs selon has_counters ---
     function toggleCountersForType(typeKey) {
       const conf = config[typeKey];
@@ -613,16 +670,22 @@ document.addEventListener("DOMContentLoaded", function () {
     [typeSelect, adultsInput, childrenInput, bebesInput].forEach((el) =>
       el.addEventListener("input", calculate)
     );
+
     typeSelect.addEventListener("change", () => {
-      toggleCountersForType(typeSelect.value);
+      const val = typeSelect.value;
+      toggleCountersForType(val);
+      updateStaticInputs(val); // <--- AJOUTÉ : Met à jour les textes
       updateOptions();
       calculate();
     });
+
     if (pdfBtn) pdfBtn.addEventListener("click", generatePDF);
 
     // Initialisation
+    const initVal = typeSelect.value;
     updateOptions();
-    toggleCountersForType(typeSelect.value);
+    toggleCountersForType(initVal);
+    updateStaticInputs(initVal); // <--- AJOUTÉ : Met à jour les textes au chargement
   }
 
   // Active le calculateur

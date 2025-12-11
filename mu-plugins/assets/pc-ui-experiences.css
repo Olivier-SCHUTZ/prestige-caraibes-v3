@@ -362,6 +362,12 @@
   font-size: 16px !important;
 }
 
+.exp-devis-customqty {
+  margin-bottom: 2rem; /* Ajoute de l'espace avant le bloc Options */
+  padding-bottom: 1rem; /* Optionnel : ajoute un peu d'air interne */
+  border-bottom: 1px solid #f0f0f0; /* Optionnel : ajoute un petit trait de séparation discret */
+}
+
 /* Champ quantité des options → même style que A/E/B */
 .exp-devis-checkbox input[type="number"] {
   /* mêmes bases que .exp-devis-field input */

@@ -806,9 +806,9 @@ add_shortcode('experience_booking_bar', function () {
                         </div>
                     </div>
 
-                    <div class="exp-devis-options" id="<?php echo esc_attr($devis_id); ?>-options"></div>
-
                     <div class="exp-devis-customqty" id="<?php echo esc_attr($devis_id); ?>-customqty"></div>
+
+                    <div class="exp-devis-options" id="<?php echo esc_attr($devis_id); ?>-options"></div>
 
                     <div class="exp-devis-result" id="<?php echo esc_attr($devis_id); ?>-result"></div>
 
