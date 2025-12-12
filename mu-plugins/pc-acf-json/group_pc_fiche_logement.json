@@ -2066,20 +2066,21 @@
             "label": "Descriptif hôte",
             "name": "hote_description",
             "aria-label": "",
-            "type": "textarea",
+            "type": "wysiwyg",
             "instructions": "",
-            "required": false,
-            "conditional_logic": false,
+            "required": 0,
+            "conditional_logic": 0,
             "wrapper": {
                 "width": "60",
                 "class": "",
                 "id": ""
             },
-            "rows": 4,
             "default_value": "",
-            "new_lines": "",
-            "maxlength": "",
-            "placeholder": ""
+            "allow_in_bindings": 1,
+            "tabs": "all",
+            "toolbar": "full",
+            "media_upload": 1,
+            "delay": 0
         },
         {
             "key": "tab_overrides",
@@ -2835,5 +2836,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1765458073
+    "modified": 1765548587
 }
