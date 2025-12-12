@@ -224,13 +224,11 @@
 }
 
 /* ============================================================
-   [experience_pricing] — Cartes de tarifs
+   [experience_pricing] — Cartes de tarifs (Style Ticket)
    ============================================================ */
 
-.exp-pricing-section,
 .exp-pricing-grid {
   display: grid;
-  /* Crée une grille responsive pour les cartes de tarifs */
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2rem;
   padding: 2rem 0;
@@ -241,168 +239,327 @@
   border: 1px solid #e0e0e0;
   border-radius: var(--pc-radius, 10px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  overflow: hidden; /* Pour que le header respecte le border-radius */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+.exp-pricing-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
+/* --- EN-TÊTE --- */
 .exp-pricing-title {
   font-family: var(--pc-font-title);
-  background: var(--pc-bg-page, #f9f9f9);
-  padding: 1rem 1.5rem;
+  background: #fff;
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight: 700;
   color: var(--pc-color-heading);
-  border-bottom: 1px solid #e0e0e0;
+  text-align: center;
 }
 
+/* --- CORPS --- */
 .exp-pricing-body {
   padding: 1.5rem;
+  flex-grow: 1;
 }
 
+/* --- NOUVEAU : Wrapper (Ligne + Obs) --- */
+.exp-pricing-wrapper {
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px dashed #e0e0e0; /* La ligne est ici maintenant ! */
+}
+.exp-pricing-wrapper:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+/* La ligne Label/Prix */
 .exp-pricing-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
   gap: 1rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #f0f0f0;
 }
-.exp-pricing-body > .exp-pricing-row:last-child {
+/* IMPORTANT : On enlève la bordure de la ligne car elle est sur le wrapper */
+.exp-pricing-body .exp-pricing-row {
   border-bottom: none;
+  padding: 0;
+  margin-bottom: 2px;
 }
 
-.exp-pricing-label {
-  font-weight: 500;
-}
-.exp-pricing-label small {
-  display: block;
-  font-weight: 400;
-  opacity: 0.7;
-  font-size: 0.85em;
-}
-
-.exp-pricing-amount,
-.exp-pricing-price {
-  font-weight: 400;
+/* Typo */
+.exp-pricing-row .exp-pricing-label {
   font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  flex: 1;
+}
+.exp-pricing-row .exp-pricing-price {
+  font-size: 1.25rem;
+  font-weight: 700;
   color: var(--pc-color-primary);
   white-space: nowrap;
 }
 
-.exp-pricing-label {
-  font-size: 1.1rem;
+/* Notes (observation) */
+.exp-pricing-note {
+  font-size: 0.85rem;
+  color: #888;
+  font-style: italic;
+  margin-top: 2px;
+  line-height: 1.4;
 }
 
+/* --- LE BLOC OPTIONS (Zone Grisée) --- */
+.exp-pricing-options {
+  background-color: #f8f9fa; /* Fond gris */
+  margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.exp-pricing-options-title {
+  margin: 0 0 0.75rem 0;
+  font-family: var(--pc-font-body);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #999;
+}
+
+/* Lignes Options */
+.exp-pricing-row.option {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+.exp-pricing-row.option:last-child {
+  border-bottom: none;
+}
+.exp-pricing-row.option .exp-pricing-label {
+  font-size: 0.95rem;
+  color: #555;
+  font-weight: 400;
+}
+.exp-pricing-row.option .exp-pricing-price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #666;
+}
+
+/* Sur devis */
 .exp-pricing-row.on-demand {
   justify-content: center;
   font-style: italic;
   font-size: 1.1rem;
   padding: 1rem 0;
-}
-
-.exp-pricing-options {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 2px solid var(--pc-color-primary);
-}
-
-.exp-options-title {
-  margin: 0 0 0.5rem 0;
-  font-family: var(--pc-font-title);
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.exp-pricing-amount.not-allowed {
-  font-style: italic;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #c0392b; /* Une couleur rouge sobre */
+  color: #888;
 }
 
 /* ============================================================
-   [experience_devis] — Calculateur de devis
+   [experience_devis] — Calculateur de devis (Refonte v4 - Row/Stepper)
    ============================================================ */
+
 .exp-devis-section {
   padding: 2rem 0;
 }
 
+/* On nettoie le wrapper pour l'intégration modale */
 .exp-devis-wrap {
-  background: var(--pc-bg-page, #f9f9f9);
-  border: 1px solid #e0e0e0;
-  border-radius: var(--pc-radius, 10px);
-  padding: 2rem;
+  background: transparent;
+  padding: 0;
+  border: none;
 }
 
-.exp-devis-title {
-  margin: 0 0 1.5rem 0;
-  font-family: var(--pc-font-title);
-  text-align: left;
+/* 1. Bloc Type (Header) */
+.exp-devis-section-type {
+  background: #f8f9fa;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  margin: -1.5rem -1.5rem 1.5rem -1.5rem; /* Colle aux bords de la modale */
+  border-radius: 10px 10px 0 0; /* Arrondi haut si pas en modale */
+}
+/* En modale, on annule l'arrondi haut pour coller au header */
+.exp-devis-sheet__body .exp-devis-section-type {
+  border-radius: 0;
 }
 
-.exp-devis-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.exp-devis-field label {
+.exp-devis-section-type label {
   display: block;
-  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
   margin-bottom: 0.5rem;
-}
-
-.exp-devis-field input,
-.exp-devis-field select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px !important;
-}
-
-.exp-devis-customqty {
-  margin-bottom: 2rem; /* Ajoute de l'espace avant le bloc Options */
-  padding-bottom: 1rem; /* Optionnel : ajoute un peu d'air interne */
-  border-bottom: 1px solid #f0f0f0; /* Optionnel : ajoute un petit trait de séparation discret */
-}
-
-/* Champ quantité des options → même style que A/E/B */
-.exp-devis-checkbox input[type="number"] {
-  /* mêmes bases que .exp-devis-field input */
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px !important;
-
-  /* adaptés au contexte des options */
-  width: 80px; /* largeur compacte */
-  text-align: center;
-  margin-left: 0.5rem; /* petit espace après le label */
-}
-
-.exp-devis-options {
-  margin-bottom: 1.5rem;
-}
-
-.exp-options-title {
-  margin: 0 0 1rem 0;
-  font-family: var(--pc-font-title);
   font-weight: 600;
 }
+.exp-select-wrapper select {
+  /* 1. Reset total de l'apparence native */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 
-.exp-devis-checkbox {
+  /* 2. Dimensions robustes */
+  width: 100%;
+  height: auto; /* Laisse la hauteur s'adapter au contenu */
+  min-height: 54px; /* On FORCE une hauteur suffisante pour que rien ne dépasse */
+  box-sizing: border-box; /* S'assure que le padding est inclus dans la hauteur */
+
+  /* 3. Espacement et Texte */
+  padding: 0 15px; /* Padding horizontal uniquement */
+
+  /* Astuce : Pour centrer verticalement dans un select, on utilise line-height = min-height */
+  line-height: 54px;
+
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #333;
+
+  /* 4. Bordures et Fond */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  cursor: pointer;
+
+  /* 5. Icône flèche */
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 0.65rem auto;
+}
+
+/* 2. Liste Unifiée (Lignes) */
+.exp-list-container,
+.exp-options-container {
+  margin-bottom: 2rem;
+}
+
+.exp-list-title {
+  font-family: var(--pc-font-title);
+  font-size: 1.1rem;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--pc-color-primary);
+  display: inline-block;
+  color: var(--pc-color-heading);
+}
+
+/* LA LIGNE (Row) : Grid System 2/3 - 1/3 */
+.exp-list-item {
+  display: grid;
+  grid-template-columns: 1fr auto; /* Info flexible - Action fixe */
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.exp-list-item:last-child {
+  border-bottom: none;
+}
+
+/* Colonne GAUCHE (Info) */
+.exp-item-info {
+  display: flex;
+  flex-direction: column;
+}
+.exp-item-label {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--pc-color-heading);
+  cursor: pointer;
+}
+.exp-item-precision {
+  font-weight: 400;
+  color: #555;
+  font-size: 0.95em;
+}
+.exp-item-obs,
+.exp-devis-obs-text {
+  font-size: 0.85rem;
+  color: #888;
+  font-style: italic;
+  margin-top: 2px;
+}
+.exp-item-price {
+  color: var(--pc-color-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 2px;
+}
+
+/* Colonne DROITE (Action / Stepper) */
+.exp-item-action {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 120px;
+}
+
+/* 3. Le Stepper (+ 1 -) */
+.exp-stepper {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  gap: 8px;
 }
-.exp-devis-checkbox input[type="checkbox"] {
-  width: 1.25em;
-  height: 1.25em;
+.exp-stepper-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #333;
+  font-size: 1.2rem;
+  line-height: 1; /* Centrage vertical du signe */
+  padding-bottom: 4px; /* Ajustement fin pour centrer le - et + */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.exp-stepper-btn:hover:not([disabled]) {
+  border-color: var(--pc-color-primary);
+  color: var(--pc-color-primary);
+}
+.exp-stepper-btn[disabled] {
+  opacity: 0.3;
+  cursor: default;
+  border-color: #eee;
+  background: #f9f9f9;
+}
+.exp-stepper input {
+  width: 40px;
+  text-align: center;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: transparent;
+  padding: 0;
+  -moz-appearance: textfield;
+}
+.exp-stepper input::-webkit-outer-spin-button,
+.exp-stepper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
+/* Case Checkbox Simple (pour options sans qté) */
+.exp-checkbox-wrapper input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  /* L'astuce magique : on zoome l'élément de 30% */
+  transform: scale(1.3);
+  transform-origin: center;
+  accent-color: var(--pc-color-primary);
+  cursor: pointer;
+  margin: 0; /* Évite les décalages parasites */
+}
+
+/* 4. Résultat (Conservé tel quel) */
 .exp-devis-result {
   background: #fff;
   border-radius: 8px;
@@ -429,10 +586,6 @@
   font-weight: bold;
   margin-top: 0.5rem;
 }
-.exp-devis-result li.error {
-  color: #c0392b;
-}
-
 .exp-devis-result .exp-result-total {
   display: flex;
   justify-content: space-between;
@@ -444,14 +597,15 @@
   color: var(--pc-color-heading);
 }
 
-/* Style pour le bouton "Télécharger le devis" */
+/* Boutons d'action */
 .exp-devis-actions {
   margin-top: 2rem;
-  text-align: left;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
-
 .exp-devis-actions .pc-btn i {
-  margin-right: 0.5rem; /* Espace entre l'icône et le texte */
+  margin-right: 0.5rem;
 }
 
 /* ============================================================

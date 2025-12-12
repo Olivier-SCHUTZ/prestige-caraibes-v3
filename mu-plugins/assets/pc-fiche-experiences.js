@@ -41,99 +41,262 @@ document.addEventListener("DOMContentLoaded", function () {
    */
   function initExperienceDevis(devisWrap) {
     const config = JSON.parse(devisWrap.dataset.expDevis || "{}");
+
+    // Éléments du DOM
     const typeSelect = devisWrap.querySelector('select[name="devis_type"]');
     const adultsInput = devisWrap.querySelector('input[name="devis_adults"]');
     const childrenInput = devisWrap.querySelector(
       'input[name="devis_children"]'
     );
     const bebesInput = devisWrap.querySelector('input[name="devis_bebes"]');
-    const optionsDiv = devisWrap.querySelector(".exp-devis-options");
-    const customQtyDiv = devisWrap.querySelector(".exp-devis-customqty");
+
+    // Nouveaux conteneurs (via le nouveau HTML PHP)
+    const optionsContainer =
+      devisWrap.querySelector(".exp-options-container") ||
+      devisWrap.querySelector(".exp-devis-options");
+    const customQtyContainer =
+      devisWrap.querySelector(".exp-custom-qty-container") ||
+      devisWrap.querySelector(".exp-devis-customqty");
     const resultDiv = devisWrap.querySelector(".exp-devis-result");
     const pdfBtn = devisWrap.querySelector('[id$="-pdf-btn"]');
+
     const companyInfoEl = devisWrap.querySelector(".exp-devis-company-info");
     const experienceTitleEl = devisWrap.querySelector(
       ".exp-devis-experience-title"
     );
-
     const companyInfo = companyInfoEl
       ? JSON.parse(companyInfoEl.textContent || "{}")
       : {};
     const experienceTitle = experienceTitleEl
       ? experienceTitleEl.textContent || ""
       : "";
+    const pendingLabel =
+      devisWrap.dataset.labelPending || "En attente de devis";
 
-    // --- NOUVEAU : Met à jour les labels (précision âge) et ajoute les observations ---
+    // Variables globales
+    window.currentTotal = 0;
+    window.currentLines = [];
+    window.isSurDevis = false;
+    window.hasValidSimulation = false;
+
+    // --- 1. GESTION DU STEPPER (+/-) ---
+    // Délégation d'événement : gère tous les boutons +/-, même ceux créés dynamiquement
+    devisWrap.addEventListener("click", function (e) {
+      const btn = e.target.closest(".exp-stepper-btn");
+      if (!btn) return;
+
+      const stepper = btn.closest(".exp-stepper");
+      const input = stepper.querySelector("input");
+      const isPlus = btn.classList.contains("plus");
+
+      let val = parseInt(input.value, 10) || 0;
+
+      if (isPlus) {
+        val++;
+      } else {
+        if (val > 0) val--;
+      }
+
+      input.value = val;
+
+      // Active/Désactive le bouton minus
+      const minusBtn = stepper.querySelector(".minus");
+      if (minusBtn) minusBtn.disabled = val <= 0;
+
+      // Déclenche l'événement 'input' pour lancer le calcul
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    // Initialisation des boutons minus au chargement
+    devisWrap.querySelectorAll(".exp-stepper input").forEach((input) => {
+      const val = parseInt(input.value, 10) || 0;
+      const minus = input.parentElement.querySelector(".minus");
+      if (minus) minus.disabled = val <= 0;
+    });
+
+    // --- 2. UPDATE TEXTES STATIQUES (ADULTE/ENFANT) ---
     function updateStaticInputs(typeKey) {
       const typeConfig = config[typeKey];
 
-      // 1. Nettoyage : On remet les labels par défaut et on supprime les anciennes obs
+      // Nettoyage
       devisWrap
-        .querySelectorAll(".exp-devis-obs-text")
-        .forEach((el) => el.remove());
+        .querySelectorAll(".exp-item-obs")
+        .forEach((el) => (el.textContent = ""));
 
       const fieldMap = {
-        adulte: { name: "devis_adults", defaultLabel: "Adultes" },
-        enfant: { name: "devis_children", defaultLabel: "Enfants" },
-        bebe: { name: "devis_bebes", defaultLabel: "Bébés" },
+        adulte: { inputName: "devis_adults", defaultLabel: "Adultes" },
+        enfant: { inputName: "devis_children", defaultLabel: "Enfants" },
+        bebe: { inputName: "devis_bebes", defaultLabel: "Bébés" },
       };
 
-      // Réinitialisation des labels
+      // Reset labels par défaut
       Object.values(fieldMap).forEach((map) => {
-        const input = devisWrap.querySelector(`input[name="${map.name}"]`);
+        const input = devisWrap.querySelector(`input[name="${map.inputName}"]`);
         if (input) {
-          const label = input.parentElement.querySelector("label");
-          if (label) label.textContent = map.defaultLabel;
+          const row = input.closest(".exp-list-item");
+          const labelEl = row ? row.querySelector(".exp-item-label") : null;
+          if (labelEl) labelEl.innerHTML = map.defaultLabel;
         }
       });
 
       if (!typeConfig || !Array.isArray(typeConfig.lines)) return;
 
-      // 2. Injection des nouvelles données depuis la config JSON
+      // Injection données ACF
       typeConfig.lines.forEach((line) => {
         if (fieldMap[line.type]) {
           const map = fieldMap[line.type];
-          const input = devisWrap.querySelector(`input[name="${map.name}"]`);
+          const input = devisWrap.querySelector(
+            `input[name="${map.inputName}"]`
+          );
           if (!input) return;
 
-          const fieldContainer = input.parentElement;
-          const label = fieldContainer.querySelector("label");
+          const row = input.closest(".exp-list-item");
+          const labelEl = row.querySelector(".exp-item-label");
+          const obsEl = row.querySelector(".exp-item-obs");
 
-          // A. Ajout de la Précision à côté du label (ex: "Enfants (3-12 ans)")
-          if (line.precision && label) {
-            label.textContent = `${map.defaultLabel} (${line.precision})`;
+          // Précision (ex: 3-12 ans)
+          if (line.precision && labelEl) {
+            labelEl.innerHTML = `${map.defaultLabel} <span class="exp-item-precision">(${line.precision})</span>`;
           }
-
-          // B. Ajout de l'Observation en dessous du champ
-          if (line.observation) {
-            const obsDiv = document.createElement("div");
-            obsDiv.className = "exp-devis-obs-text";
-            obsDiv.style.fontSize = "0.85em";
-            obsDiv.style.color = "#666";
-            obsDiv.style.marginTop = "4px";
-            obsDiv.style.fontStyle = "italic";
-            obsDiv.innerHTML = line.observation;
-            fieldContainer.appendChild(obsDiv);
+          // Observation (ex: Gratuit)
+          if (line.observation && obsEl) {
+            obsEl.textContent = line.observation;
           }
         }
       });
     }
 
-    // --- NEW: masque/affiche les compteurs selon has_counters ---
+    // --- 3. GÉNÉRATION DYNAMIQUE (OPTIONS & CUSTOM QTY) ---
+    function updateOptions() {
+      const selectedType = typeSelect.value;
+      const typeConfig = config[selectedType];
+
+      // A. Génération Quantités Personnalisées
+      if (customQtyContainer) {
+        customQtyContainer.innerHTML = "";
+        if (typeConfig && Array.isArray(typeConfig.lines)) {
+          let html = "";
+          typeConfig.lines.forEach((ln, idx) => {
+            if (ln.type === "personnalise" && ln.enable_qty) {
+              const id = `lineqty-${selectedType}-${idx}`;
+              // Structure Ligne "Stepper"
+              html += `
+                        <div class="exp-list-item">
+                            <div class="exp-item-info">
+                                <span class="exp-item-label">${ln.label}</span>
+                                <span class="exp-item-price">${formatCurrency(
+                                  ln.price
+                                )}</span>
+                                ${
+                                  ln.observation
+                                    ? `<span class="exp-item-obs">${ln.observation}</span>`
+                                    : ""
+                                }
+                            </div>
+                            <div class="exp-item-action">
+                                <div class="exp-stepper">
+                                    <button type="button" class="exp-stepper-btn minus" disabled>−</button>
+                                    <input type="number" id="${id}" min="0" value="0" readonly>
+                                    <button type="button" class="exp-stepper-btn plus">+</button>
+                                </div>
+                            </div>
+                        </div>`;
+            }
+          });
+          customQtyContainer.innerHTML = html;
+        }
+      }
+
+      // B. Génération Options
+      if (optionsContainer) {
+        optionsContainer.innerHTML = "";
+        if (typeConfig && typeConfig.options && typeConfig.options.length > 0) {
+          let html = '<h4 class="exp-list-title">Options</h4>';
+
+          typeConfig.options.forEach(function (opt, index) {
+            const id = `opt-${selectedType}-${index}`;
+            const withQty = !!opt.enable_qty;
+            const priceTxt = formatCurrency(opt.price);
+
+            if (withQty) {
+              // OPTION AVEC QUANTITÉ (Stepper)
+              html += `
+                    <div class="exp-list-item">
+                        <div class="exp-item-info">
+                            <label for="${id}" class="exp-item-label">${opt.label}</label>
+                            <span class="exp-item-price">+${priceTxt}</span>
+                        </div>
+                        <div class="exp-item-action">
+                            <input type="checkbox" id="${id}" 
+                                   data-price="${opt.price}" 
+                                   data-label="${opt.label}" 
+                                   data-enable-qty="1" 
+                                   style="display:none;">
+                            
+                            <div class="exp-stepper">
+                                <button type="button" class="exp-stepper-btn minus" disabled>−</button>
+                                <input type="number" class="exp-opt-qty" data-for="${id}" min="0" value="0" readonly>
+                                <button type="button" class="exp-stepper-btn plus">+</button>
+                            </div>
+                        </div>
+                    </div>`;
+            } else {
+              // OPTION SIMPLE (Checkbox)
+              html += `
+                    <div class="exp-list-item">
+                        <div class="exp-item-info">
+                            <label for="${id}" class="exp-item-label">${opt.label}</label>
+                            <span class="exp-item-price">+${priceTxt}</span>
+                        </div>
+                        <div class="exp-item-action">
+                            <div class="exp-checkbox-wrapper">
+                                <input type="checkbox" id="${id}" 
+                                       data-price="${opt.price}" 
+                                       data-label="${opt.label}" 
+                                       data-enable-qty="">
+                            </div>
+                        </div>
+                    </div>`;
+            }
+          });
+          optionsContainer.innerHTML = html;
+
+          // Logique de réattachement pour les options
+          optionsContainer
+            .querySelectorAll('input[type="checkbox"][data-enable-qty=""]')
+            .forEach((cb) => {
+              cb.addEventListener("change", calculate);
+            });
+          optionsContainer
+            .querySelectorAll(".exp-opt-qty")
+            .forEach((qtyInput) => {
+              qtyInput.addEventListener("input", function () {
+                const targetId = this.dataset.for;
+                const checkbox = document.getElementById(targetId);
+                const val = parseInt(this.value) || 0;
+                if (checkbox) checkbox.checked = val > 0;
+                calculate();
+              });
+            });
+        }
+      }
+
+      // C. Écouteurs sur Custom Qty
+      if (customQtyContainer) {
+        customQtyContainer.querySelectorAll("input").forEach((inp) => {
+          inp.addEventListener("input", calculate);
+        });
+      }
+      calculate();
+    }
+
+    // Affiche/Masque les compteurs A/E/B si le type ne les utilise pas
     function toggleCountersForType(typeKey) {
       const conf = config[typeKey];
       const show = !!(conf && conf.has_counters);
-      const countersBlock = devisWrap.querySelector(".exp-devis-counters"); // wrapper PHP
+      const countersBlock = devisWrap.querySelector(".exp-devis-counters");
       if (countersBlock) countersBlock.style.display = show ? "" : "none";
     }
-
-    // Variables globales pour le partage entre modules
-    window.currentTotal = 0;
-    window.currentLines = [];
-    window.isSurDevis = false;
-    window.hasValidSimulation = false;
-    const pendingLabel =
-      devisWrap.dataset.labelPending || "En attente de devis";
 
     function calculate() {
       const selectedType = typeSelect.value;
@@ -146,16 +309,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
       let total = 0;
       let lines = [];
-      let hasError = false;
       let resultHTML = '<h4 class="exp-result-title">Résumé du devis</h4><ul>';
 
-      // NEW: logique robuste basée sur le code interne
       const code =
         typeConfig && typeConfig.code ? typeConfig.code : selectedType;
       const isSurDevis = code === "sur-devis";
       window.isSurDevis = isSurDevis;
 
-      // NEW: lignes tarifaires structurées (adulte/enfant/bebe/personnalise)
       const tarifLines = Array.isArray(typeConfig.lines)
         ? typeConfig.lines
         : [];
@@ -164,148 +324,114 @@ document.addEventListener("DOMContentLoaded", function () {
         tarifLines.forEach((ln, idx) => {
           const t = ln.type;
           const unit = Number(ln.price) || 0;
-
-          // Quantités selon le type
           let qty = 1;
-          if (t === "adulte") qty = parseInt(adultsInput.value, 10) || 0;
-          if (t === "enfant") qty = parseInt(childrenInput.value, 10) || 0;
-          if (t === "bebe") qty = parseInt(bebesInput.value, 10) || 0;
 
-          // Si pas de quantité pour A/E/B, rien à ajouter/afficher
-          if ((t === "adulte" || t === "enfant" || t === "bebe") && qty <= 0) {
-            if (ln.observation) {
-              resultHTML += `<li class="note"><em>${ln.observation}</em></li>`;
-            }
+          if (t === "adulte") qty = adults;
+          if (t === "enfant") qty = children;
+          if (t === "bebe") qty = bebes;
+
+          // Skip si qté 0
+          if ((t === "adulte" || t === "enfant" || t === "bebe") && qty <= 0)
             return;
+
+          // Cas Custom Qty
+          if (t === "personnalise" && ln.enable_qty) {
+            const qtyInput = customQtyContainer
+              ? customQtyContainer.querySelector(
+                  `#lineqty-${selectedType}-${idx}`
+                )
+              : null;
+            qty = parseInt(qtyInput && qtyInput.value, 10) || 0;
+            if (qty <= 0) return;
           }
 
-          // Sur devis : pas de somme, affichage "pending"
           if (isSurDevis) {
-            let labelQty;
-            if (t === "personnalise") {
-              const qtyInput = customQtyDiv
-                ? customQtyDiv.querySelector(`#lineqty-${selectedType}-${idx}`)
-                : null;
-              const q = ln.enable_qty
-                ? parseInt(qtyInput && qtyInput.value, 10) || 0
-                : 1;
-              labelQty = ln.enable_qty ? `${q} ${ln.label}` : ln.label;
-            } else {
-              labelQty = `${qty} ${ln.label}`;
-            }
+            const labelQty =
+              t === "personnalise" && !ln.enable_qty
+                ? ln.label
+                : `${qty} × ${ln.label}`;
             lines.push({ label: labelQty, price: pendingLabel });
             resultHTML += `<li><span>${labelQty}</span><span class="exp-price--pending">${pendingLabel}</span></li>`;
-            if (ln.observation) {
-              resultHTML += `<li class="note"><em>${ln.observation}</em></li>`;
-            }
-            return; // pas de cumul
-          }
-
-          // Cas standard (prix)
-          if (t === "bebe" && unit === 0) {
-            const labelQty = `${qty} ${ln.label}`;
-            lines.push({ label: labelQty, price: "Gratuit" });
-            resultHTML += `<li><span>${labelQty}</span><span>Gratuit</span></li>`;
-          } else if (t === "personnalise") {
-            if (ln.enable_qty) {
-              const qtyInput = customQtyDiv
-                ? customQtyDiv.querySelector(`#lineqty-${selectedType}-${idx}`)
-                : null;
-              const q = parseInt(qtyInput && qtyInput.value, 10) || 0;
-              const sub = q * unit;
+          } else {
+            if (t === "bebe" && unit === 0) {
+              const labelQty = `${qty} × ${ln.label}`;
+              lines.push({ label: labelQty, price: "Gratuit" });
+              resultHTML += `<li><span>${labelQty}</span><span>Gratuit</span></li>`;
+            } else {
+              const sub =
+                t === "personnalise" && !ln.enable_qty ? unit : qty * unit;
               total += sub;
-              const labelQty = `${q} ${ln.label}`;
+              const labelQty =
+                t === "personnalise" && !ln.enable_qty
+                  ? ln.label
+                  : `${qty} × ${ln.label}`;
               lines.push({ label: labelQty, price: formatCurrency(sub) });
               resultHTML += `<li><span>${labelQty}</span><span>${formatCurrency(
                 sub
               )}</span></li>`;
-            } else {
-              total += unit; // forfait 1x
-              lines.push({ label: ln.label, price: formatCurrency(unit) });
-              resultHTML += `<li><span>${ln.label}</span><span>${formatCurrency(
-                unit
-              )}</span></li>`;
             }
-          } else {
-            const sub = qty * unit;
-            total += sub;
-            const labelQty = `${qty} ${ln.label}`;
-            lines.push({ label: labelQty, price: formatCurrency(sub) });
-            resultHTML += `<li><span>${labelQty}</span><span>${formatCurrency(
-              sub
-            )}</span></li>`;
-          }
-
-          if (ln.observation) {
-            resultHTML += `<li class="note"><em>${ln.observation}</em></li>`;
           }
         });
-      } else {
-        // (fallback rare si pas migré) — laisser vide
       }
 
-      // 🔹 NOUVEAU : Frais fixes (toujours appliqués si présents)
+      // Frais fixes
       const fixedFees = Array.isArray(typeConfig.fixed_fees)
         ? typeConfig.fixed_fees
         : [];
-
       if (fixedFees.length > 0) {
-        // séparateur visuel dans le résumé
         lines.push({ label: "Frais fixes", price: "", isSeparator: true });
         resultHTML += `<li class="separator"><strong>Frais fixes</strong></li>`;
-
         fixedFees.forEach((fee) => {
-          const label = fee.label || "Frais fixe";
           const price = Number(fee.price) || 0;
-
           if (isSurDevis) {
-            // Sur devis : on n'ajoute pas au total, on affiche "En attente de devis"
-            lines.push({ label, price: pendingLabel });
-            resultHTML += `<li><span>${label}</span><span class="exp-price--pending">${pendingLabel}</span></li>`;
+            lines.push({ label: fee.label, price: pendingLabel });
+            resultHTML += `<li><span>${fee.label}</span><span class="exp-price--pending">${pendingLabel}</span></li>`;
           } else {
             total += price;
-            lines.push({ label, price: formatCurrency(price) });
-            resultHTML += `<li><span>${label}</span><span>${formatCurrency(
+            lines.push({ label: fee.label, price: formatCurrency(price) });
+            resultHTML += `<li><span>${fee.label}</span><span>${formatCurrency(
               price
             )}</span></li>`;
           }
         });
       }
 
-      // Options cochées
-      const checkedOptions = optionsDiv.querySelectorAll("input:checked");
-      if (checkedOptions.length) {
-        lines.push({ label: "Options", price: "", isSeparator: true });
-        resultHTML += `<li class="separator"><strong>Options</strong></li>`;
-        checkedOptions.forEach((opt) => {
-          const enableQty = opt.dataset.enableQty === "1";
-          let q = 1;
-          if (enableQty) {
-            const qtyInput = optionsDiv.querySelector(
-              `.exp-opt-qty[data-for="${opt.id}"]`
-            );
-            q = parseInt(qtyInput && qtyInput.value, 10) || 1;
-          }
-          const labelWithQty = enableQty
-            ? `${opt.dataset.label} × ${q}`
-            : opt.dataset.label;
-
-          if (isSurDevis) {
-            lines.push({ label: labelWithQty, price: pendingLabel });
-            resultHTML += `<li><span>${labelWithQty}</span><span class="exp-price--pending">${pendingLabel}</span></li>`;
-          } else {
-            const unit = parseFloat(opt.dataset.price) || 0;
-            const sub = unit * q;
-            total += sub;
-            lines.push({ label: labelWithQty, price: formatCurrency(sub) });
-            resultHTML += `<li><span>${labelWithQty}</span><span>${formatCurrency(
-              sub
-            )}</span></li>`;
-          }
-        });
+      // Options
+      if (optionsContainer) {
+        const checkedOptions = optionsContainer.querySelectorAll(
+          "input[type='checkbox']:checked"
+        );
+        if (checkedOptions.length) {
+          lines.push({ label: "Options", price: "", isSeparator: true });
+          resultHTML += `<li class="separator"><strong>Options</strong></li>`;
+          checkedOptions.forEach((opt) => {
+            const enableQty = opt.dataset.enableQty === "1";
+            let q = 1;
+            let labelWithQty = opt.dataset.label;
+            if (enableQty) {
+              const targetId = opt.id;
+              const qtyInput = optionsContainer.querySelector(
+                `.exp-opt-qty[data-for="${targetId}"]`
+              );
+              q = parseInt(qtyInput && qtyInput.value, 10) || 1;
+              labelWithQty = `${q} × ${opt.dataset.label}`;
+            }
+            if (isSurDevis) {
+              lines.push({ label: labelWithQty, price: pendingLabel });
+              resultHTML += `<li><span>${labelWithQty}</span><span class="exp-price--pending">${pendingLabel}</span></li>`;
+            } else {
+              const unit = parseFloat(opt.dataset.price) || 0;
+              const sub = unit * q;
+              total += sub;
+              lines.push({ label: labelWithQty, price: formatCurrency(sub) });
+              resultHTML += `<li><span>${labelWithQty}</span><span>${formatCurrency(
+                sub
+              )}</span></li>`;
+            }
+          });
+        }
       }
 
-      // Total
       if (isSurDevis) {
         resultHTML += `</ul><div class="exp-result-total"><span>Total</span><span class="exp-price--pending">${pendingLabel}</span></div>`;
       } else {
@@ -313,89 +439,23 @@ document.addEventListener("DOMContentLoaded", function () {
           total
         )}</span></div>`;
       }
-
       if (resultDiv) resultDiv.innerHTML = resultHTML;
 
-      // Expose pour le FAB et la modale de contact
       window.currentTotal = isSurDevis ? 0 : total;
       window.currentLines = lines;
-
-      const qty = adults + children + bebes;
+      // Validation simple: au moins 1 personne ou 1 item
+      const qtyTotal = adults + children + bebes;
       window.hasValidSimulation = isSurDevis
-        ? qty > 0 && !hasError
-        : total > 0 && !hasError;
-
-      // Trigger pour mettre à jour le FAB et la modale de contact
+        ? qtyTotal > 0 || lines.length > 0
+        : total > 0;
       devisWrap.dispatchEvent(new CustomEvent("devisUpdated"));
     }
 
-    function updateOptions() {
-      const selectedType = typeSelect.value;
-      const typeConfig = config[selectedType];
-      if (optionsDiv) {
-        optionsDiv.innerHTML = "";
-        if (typeConfig && typeConfig.options && typeConfig.options.length > 0) {
-          let optionsHTML =
-            '<h4 class="exp-options-title">Options disponibles</h4>';
-          typeConfig.options.forEach(function (opt, index) {
-            const id = `opt-${selectedType}-${index}`;
-            const withQty = !!opt.enable_qty;
-            optionsHTML += `<div class="exp-devis-checkbox">
-    <input type="checkbox" id="${id}"
-           data-price="${opt.price}"
-           data-label="${opt.label}"
-           data-enable-qty="${withQty ? "1" : ""}">
-    <label for="${id}">${opt.label} (+${formatCurrency(opt.price)})</label>
-    ${
-      withQty
-        ? `<input type="number" class="exp-opt-qty" data-for="${id}" min="1" value="1" style="width:80px;margin-left:8px;">`
-        : ""
-    }
-  </div>`;
-          });
-          optionsDiv.innerHTML = optionsHTML;
-          optionsDiv
-            .querySelectorAll('input[type="checkbox"]')
-            .forEach((cb) => {
-              cb.addEventListener("change", calculate);
-            });
-          optionsDiv.querySelectorAll(".exp-opt-qty").forEach((qty) => {
-            qty.addEventListener("input", calculate);
-          });
-        }
-      }
-      // (NOUVEAU) Champs de quantité pour lignes "personnalise" avec enable_qty
-      if (customQtyDiv) {
-        customQtyDiv.innerHTML = "";
-        if (typeConfig && Array.isArray(typeConfig.lines)) {
-          let html = "";
-          typeConfig.lines.forEach((ln, idx) => {
-            if (ln.type === "personnalise" && ln.enable_qty) {
-              const id = `lineqty-${selectedType}-${idx}`;
-              html += `<div class="exp-devis-field">
-          <label for="${id}">${ln.label}</label>
-          <input type="number" id="${id}" min="0" value="0" />
-        </div>`;
-            }
-          });
-          if (html) {
-            customQtyDiv.innerHTML = `<h4 class="exp-options-title">Quantités personnalisées</h4>${html}`;
-            customQtyDiv
-              .querySelectorAll("input")
-              .forEach((inp) => inp.addEventListener("input", calculate));
-          }
-        }
-      }
-      calculate(); // Recalculer après la mise à jour des options (au cas où le type change)
-    }
-
+    // --- Génération PDF (Inchangée) ---
     function generatePDF() {
-      if (!window.jspdf) {
-        return alert("La librairie PDF n'est pas chargée.");
-      }
-      if (!window.hasValidSimulation) {
-        return alert("Veuillez d'abord effectuer une simulation valide.");
-      }
+      if (!window.jspdf) return alert("Librairie PDF manquante.");
+      if (!window.hasValidSimulation)
+        return alert("Veuillez effectuer une simulation valide.");
 
       try {
         const { jsPDF } = window.jspdf;
@@ -404,64 +464,42 @@ document.addEventListener("DOMContentLoaded", function () {
         const a = parseInt(adultsInput.value, 10) || 0;
         const c = parseInt(childrenInput.value, 10) || 0;
 
-        // --- Bloc en-tête (logo + adresse + contact) -> renvoie le Y bas du bloc
+        // Entête
         const headerBottomY = (function drawHeaderBox() {
-          const marginLeft = 12; // X du cadre
-          const marginTop = 10; // Y du cadre
+          const marginLeft = 12;
+          const marginTop = 10;
           const radius = 3;
-          let boxW = 110; // élargi pour respirer
+          let boxW = 110;
           const padTop = 4;
           const padBottom = 6;
           const padX = 3;
-          const gapLogoText = 4; // espace entre bas du logo et texte
-          const logoW = 40; // largeur affichée du logo (mm)
-
-          // --- Mesure du logo (hauteur réelle à partir des props de l'image)
-          let logoH = 12; // fallback
+          const gapLogoText = 4;
+          const logoW = 40;
+          let logoH = 12;
           if (companyInfo.logo_data) {
             try {
               const props = doc.getImageProperties(companyInfo.logo_data);
-              if (props && props.width && props.height) {
-                logoH = (logoW * props.height) / props.width; // en mm
-              }
-            } catch (e) {
-              /* fallback 12mm */
-            }
+              if (props && props.width && props.height)
+                logoH = (logoW * props.height) / props.width;
+            } catch (e) {}
           }
-
-          // --- Prépare le texte (wrapping + éventuelle réduction à 9pt)
-          const PT2MM = 0.3527778;
-          let bodyFS = 10;
-          const lineH = 1.2;
-
           const rawLines = [
             (companyInfo.address || "").trim(),
             (companyInfo.city || "").trim(),
-            (companyInfo.phone || "+590 690 63 11 81").trim(),
-            (companyInfo.email || "guadeloupe@prestigecaraibes.com").trim(),
+            (companyInfo.phone || "").trim(),
+            (companyInfo.email || "").trim(),
           ].filter(Boolean);
-
-          const maxTextWidth = boxW - padX * 2;
           doc.setFont("helvetica", "normal");
-          doc.setFontSize(bodyFS);
+          doc.setFontSize(10);
+          const wrapped = doc.splitTextToSize(
+            rawLines.join("\n"),
+            boxW - padX * 2
+          );
+          const textBlockH = Math.max(1, wrapped.length) * 4.2;
+          const boxH =
+            padTop + Math.max(logoH, gapLogoText + textBlockH) + padBottom;
 
-          let wrapped = doc.splitTextToSize(rawLines.join("\n"), maxTextWidth);
-          if (wrapped.length > 6) {
-            bodyFS = 9;
-            doc.setFontSize(bodyFS);
-            wrapped = doc.splitTextToSize(rawLines.join("\n"), maxTextWidth);
-          }
-
-          const lineHMM = bodyFS * PT2MM * lineH;
-          const textBlockH = Math.max(1, wrapped.length) * lineHMM;
-
-          // --- Hauteur finale du cadre : padding + max(logo, texte)
-          const innerH = Math.max(logoH, gapLogoText + textBlockH);
-          const boxH = padTop + innerH + padBottom;
-
-          // --- Cadre (fond + bordure + ombre)
           doc.setDrawColor(180);
-          doc.setLineWidth(0.25);
           doc.setFillColor(255, 255, 255);
           doc.roundedRect(
             marginLeft,
@@ -472,65 +510,33 @@ document.addEventListener("DOMContentLoaded", function () {
             radius,
             "FD"
           );
-
-          doc.setDrawColor(220);
-          doc.setLineWidth(0.1);
-          doc.line(
-            marginLeft + 1,
-            marginTop + boxH + 1,
-            marginLeft + boxW + 1,
-            marginTop + boxH + 1
+          if (companyInfo.logo_data)
+            doc.addImage(
+              companyInfo.logo_data,
+              "PNG",
+              marginLeft + padX,
+              marginTop + padTop,
+              logoW,
+              logoH
+            );
+          doc.text(
+            wrapped,
+            marginLeft + padX,
+            marginTop + padTop + logoH + gapLogoText
           );
-
-          // --- Logo
-          if (companyInfo.logo_data) {
-            try {
-              const x = marginLeft + padX;
-              const y = marginTop + padTop;
-              doc.addImage(
-                companyInfo.logo_data,
-                "PNG",
-                x,
-                y,
-                logoW,
-                0,
-                undefined,
-                "NONE"
-              );
-            } catch (e) {
-              console.warn("Logo non chargé :", e);
-            }
-          }
-
-          // --- Texte (sous le logo mesuré)
-          const textX = marginLeft + padX;
-          const textY = marginTop + padTop + logoH + gapLogoText;
-          doc.text(wrapped, textX, textY, { align: "left" });
-
-          return marginTop + boxH; // Y bas du cadre
+          return marginTop + boxH;
         })();
 
-        const gapAfterHeader = 6; // mm d'air sous le cadre
-        const sepY = headerBottomY + gapAfterHeader;
-
+        const sepY = headerBottomY + 6;
         doc.line(15, sepY, 195, sepY);
-
-        // Contenu (titre + date) positionné dynamiquement
         let yCursor = sepY + 8;
         doc.setFontSize(12);
-        // Ligne de titre
         doc.text(`Estimation pour : ${experienceTitle}`, 15, yCursor);
         doc.text(`Date : ${date}`, 195, yCursor, { align: "right" });
-
-        // Espace supplémentaire avant la ligne "Pour..."
-        const gapAfterTitle = 6; // ajoute ~6 mm d’air
-        const peopleY = yCursor + gapAfterTitle;
-
         doc.setFontSize(10);
-        doc.text(`Pour ${a} adulte(s) et ${c} enfant(s)`, 15, peopleY);
+        doc.text(`Pour ${a} adulte(s) et ${c} enfant(s)`, 15, yCursor + 6);
 
-        // Et on aligne le bloc suivant juste en dessous
-        let y = peopleY + 12;
+        let y = yCursor + 18;
         doc.setFont("helvetica", "bold");
         doc.text("Description", 15, y);
         doc.text("Montant", 195, y, { align: "right" });
@@ -547,11 +553,10 @@ document.addEventListener("DOMContentLoaded", function () {
           } else {
             doc.setFont("helvetica", "normal");
             doc.text(line.label, 15, y);
-            if (line.price) {
+            if (line.price)
               doc.text(formatCurrencyPDF(line.price), 195, y, {
                 align: "right",
               });
-            }
             y += 7;
           }
         });
@@ -562,130 +567,56 @@ document.addEventListener("DOMContentLoaded", function () {
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
         doc.text("Total Estimé (TTC)", 15, y);
+        doc.text(
+          formatCurrencyPDF(
+            window.isSurDevis ? pendingLabel : window.currentTotal
+          ),
+          195,
+          y,
+          { align: "right" }
+        );
 
-        // Gère le cas "Sur devis" dans le PDF
-        const totalText = window.isSurDevis
-          ? pendingLabel
-          : formatCurrency(window.currentTotal);
-        doc.text(formatCurrencyPDF(window.currentTotal), 195, y, {
-          align: "right",
-        });
-
+        // Footer & CGV
         y = 270;
         doc.line(15, y, 195, y);
-
         doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
         const legalLines = [
-          "SAS PRESTIGE CARAÏBES - 166C LOT. LES HAUTS DE JABRUN - 97111 MORNE A L'EAU, Guadeloupe",
-          "N°TVA FR74948081351 - SIREN 948 081 351 00017 - RCS 948 081 351 R.C.S. Pointe-a-pitre",
-          "Capital de 1 000,00 € - APE 96.09Z",
+          "SAS PRESTIGE CARAÏBES - 166C LOT. LES HAUTS DE JABRUN - 97111 MORNE A L'EAU",
+          "N°TVA FR74948081351 - SIREN 948 081 351",
         ];
+        legalLines.forEach((ln, i) =>
+          doc.text(ln, 105, y + 6 + i * 4, { align: "center" })
+        );
 
-        // Ecrit les 3 lignes en bas à gauche
-        let fy = y + 6;
-        const pageWidth = doc.internal.pageSize.getWidth();
-        legalLines.forEach(function (ln, i) {
-          doc.text(ln, pageWidth / 2, fy + i * 5.5, { align: "center" });
-        });
-
-        // --- CGV depuis ACF (companyInfo.*) : ajoute des pages après la page devis ---
-        (function appendTermsAndPaginate() {
-          const termsRaw =
-            (companyInfo &&
-              (companyInfo.cgv_experience ||
-                companyInfo.cgv ||
-                companyInfo.terms ||
-                companyInfo.terms_text ||
-                companyInfo.conditions_generales)) ||
-            "";
-
-          if (!termsRaw || typeof termsRaw !== "string") return;
-
-          // --- Paramètres généraux ---
-          const marginLeft = 15;
-          const marginRight = 15;
-          const contentWidth =
-            doc.internal.pageSize.getWidth() - marginLeft - marginRight;
-          const pageHeight = doc.internal.pageSize.getHeight();
-          const bodyFontSize = 10;
-          const lineHeight = 1.2;
-          const topY = 20; // départ du texte (on commence plus haut car plus d'entête)
-          const bottomMargin = 40; // un peu plus pour ne jamais toucher le pied
-
-          // --- Nettoyage du texte ---
-          const cleaned = termsRaw
-            .replace(/\r\n/g, "\n")
-            .replace(/\n{3,}/g, "\n\n");
-
-          // --- Calcul du nombre de lignes par page ---
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(bodyFontSize);
-          const allLines = doc.splitTextToSize(cleaned, contentWidth);
-
-          const PT_TO_MM = 0.3527777778;
-          const lineHeightMM = bodyFontSize * lineHeight * PT_TO_MM;
-          const usableHeight = pageHeight - topY - bottomMargin;
-          const linesPerPage = Math.max(
-            1,
-            Math.floor(usableHeight / lineHeightMM)
-          );
-
-          // --- Pagination et rendu ---
-          for (let start = 0; start < allLines.length; start += linesPerPage) {
-            const chunk = allLines.slice(start, start + linesPerPage);
-            doc.addPage();
-
-            // (Plus d'entête ici — supprimé à ta demande)
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(bodyFontSize);
-            doc.text(chunk, marginLeft, topY, {
-              maxWidth: contentWidth,
-              align: "left",
-              lineHeightFactor: lineHeight,
-            });
-
-            // --- Pied légal centré ---
-            const fy = pageHeight - 36;
-            doc.setFontSize(8);
-            const pageWidth = doc.internal.pageSize.getWidth();
-            legalLines.forEach(function (ln, i) {
-              doc.text(ln, pageWidth / 2, fy + i * 5.5, { align: "center" });
-            });
-          }
-        })();
-
-        // --- Sauvegarde du PDF ---
         doc.save(
           `estimation-${experienceTitle
             .replace(/[^a-z0-9]/gi, "_")
             .toLowerCase()}.pdf`
         );
       } catch (e) {
-        console.error("Erreur détaillée lors de la création du PDF:", e);
-        alert("Une erreur est survenue lors de la génération du PDF.");
+        alert("Erreur PDF: " + e.message);
       }
     }
 
-    // Écouteurs d'événements pour le calcul
-    [typeSelect, adultsInput, childrenInput, bebesInput].forEach((el) =>
-      el.addEventListener("input", calculate)
-    );
-
+    // Event Listeners principaux
     typeSelect.addEventListener("change", () => {
       const val = typeSelect.value;
       toggleCountersForType(val);
-      updateStaticInputs(val); // <--- AJOUTÉ : Met à jour les textes
+      updateStaticInputs(val);
       updateOptions();
       calculate();
     });
+    // On écoute aussi 'input' sur devisWrap (dispatché par les steppers)
+    devisWrap.addEventListener("input", calculate);
 
     if (pdfBtn) pdfBtn.addEventListener("click", generatePDF);
 
     // Initialisation
     const initVal = typeSelect.value;
-    updateOptions();
     toggleCountersForType(initVal);
-    updateStaticInputs(initVal); // <--- AJOUTÉ : Met à jour les textes au chargement
+    updateStaticInputs(initVal);
+    updateOptions();
   }
 
   // Active le calculateur
