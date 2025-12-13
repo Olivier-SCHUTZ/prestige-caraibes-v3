@@ -454,8 +454,8 @@
   display: grid;
   grid-template-columns: 1fr auto; /* Info flexible - Action fixe */
   gap: 1rem;
-  align-items: center;
-  padding: 0.75rem 0;
+  align-items: flex-start; /* Important pour aligner en haut si le texte est long */
+  padding: 1rem 0; /* Espacement vertical augmenté pour aérer */
   border-bottom: 1px solid #f0f0f0;
 }
 .exp-list-item:last-child {
@@ -466,30 +466,60 @@
 .exp-item-info {
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
+
+/* 1. LE NOM (Adulte, Enfant...) */
+/* L'ajout de #exp-devis-sheet (ID) donne la priorité naturelle sans forcer */
+#exp-devis-sheet .exp-devis-wrap .exp-item-name {
+  display: block;
+  font-family: var(--pc-font-title, sans-serif);
+  font-size: 1.1rem; /* ~21px */
+  font-weight: 700;
+  color: var(--pc-color-heading, #1b3b5f);
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+/* --- TYPOGRAPHIE OPTIONS (Skipper, etc.) --- */
+/* C'est l'ancienne classe, utilisée pour les options en bas */
 .exp-item-label {
-  font-weight: 600;
-  font-size: 1rem;
-  color: var(--pc-color-heading);
+  display: block;
+  font-size: 1.1rem; /* Taille standard un peu plus petite */
+  font-weight: 600; /* Semi-gras */
+  color: var(--pc-color-heading, #333);
   cursor: pointer;
+  margin-bottom: 0.25rem;
 }
+
+/* 2. LE PRIX */
+#exp-devis-sheet .exp-devis-wrap .exp-item-price {
+  display: block;
+  font-family: var(--pc-font-title, sans-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--pc-color-primary, #007a92);
+  margin-bottom: 0.25rem;
+}
+
+/* 3. L'OBSERVATION (Femme enceinte, âge...) */
+#exp-devis-sheet .exp-devis-wrap .exp-item-obs {
+  display: block; /* Le JS le mettait parfois en inline, ceci le corrige */
+  width: 100%;
+  font-family: var(--pc-font-body, serif);
+  font-size: 0.9rem;
+  color: var(--pc-color-text, #3a3a3a);
+  font-style: italic;
+  opacity: 0.85;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Précision (ex: âge enfant) si présente dans le label */
 .exp-item-precision {
   font-weight: 400;
-  color: #555;
-  font-size: 0.95em;
-}
-.exp-item-obs,
-.exp-devis-obs-text {
-  font-size: 0.85rem;
-  color: #888;
-  font-style: italic;
-  margin-top: 2px;
-}
-.exp-item-price {
-  color: var(--pc-color-primary);
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-top: 2px;
+  color: #666;
+  font-size: 0.9em;
 }
 
 /* Colonne DROITE (Action / Stepper) */

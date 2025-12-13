@@ -808,52 +808,11 @@ add_shortcode('experience_booking_bar', function () {
                     <div class="exp-list-container">
                         <h4 class="exp-list-title">Participants</h4>
 
-                        <div class="exp-devis-counters" id="<?php echo esc_attr($devis_id); ?>-counters">
+                        <div id="<?php echo esc_attr($devis_id); ?>-dynamic-lines" class="exp-dynamic-lines"></div>
 
-                            <div class="exp-list-item">
-                                <div class="exp-item-info">
-                                    <span class="exp-item-label">Adultes</span>
-                                    <span class="exp-item-obs"></span>
-                                </div>
-                                <div class="exp-item-action">
-                                    <div class="exp-stepper">
-                                        <button type="button" class="exp-stepper-btn minus" disabled>−</button>
-                                        <input type="number" id="<?php echo esc_attr($devis_id); ?>-adults" name="devis_adults" min="0" value="1" readonly>
-                                        <button type="button" class="exp-stepper-btn plus">+</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="exp-list-item">
-                                <div class="exp-item-info">
-                                    <span class="exp-item-label">Enfants</span>
-                                    <span class="exp-item-obs"></span>
-                                </div>
-                                <div class="exp-item-action">
-                                    <div class="exp-stepper">
-                                        <button type="button" class="exp-stepper-btn minus" disabled>−</button>
-                                        <input type="number" id="<?php echo esc_attr($devis_id); ?>-children" name="devis_children" min="0" value="0" readonly>
-                                        <button type="button" class="exp-stepper-btn plus">+</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="exp-list-item">
-                                <div class="exp-item-info">
-                                    <span class="exp-item-label">Bébés</span>
-                                    <span class="exp-item-obs"></span>
-                                </div>
-                                <div class="exp-item-action">
-                                    <div class="exp-stepper">
-                                        <button type="button" class="exp-stepper-btn minus" disabled>−</button>
-                                        <input type="number" id="<?php echo esc_attr($devis_id); ?>-bebes" name="devis_bebes" min="0" value="0" readonly>
-                                        <button type="button" class="exp-stepper-btn plus">+</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="<?php echo esc_attr($devis_id); ?>-customqty" class="exp-custom-qty-container"></div>
+                        <input type="hidden" name="devis_adults" id="<?php echo esc_attr($devis_id); ?>-adults" value="0">
+                        <input type="hidden" name="devis_children" id="<?php echo esc_attr($devis_id); ?>-children" value="0">
+                        <input type="hidden" name="devis_bebes" id="<?php echo esc_attr($devis_id); ?>-bebes" value="0">
                     </div>
 
                     <div id="<?php echo esc_attr($devis_id); ?>-options" class="exp-options-container"></div>

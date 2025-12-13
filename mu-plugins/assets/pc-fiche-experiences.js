@@ -36,30 +36,43 @@ document.addEventListener("DOMContentLoaded", function () {
    * ===================================================================
    * PARTIE 1 : Le calculateur de devis [experience_devis]
    * ===================================================================
-   * NOTE : Cette partie est quasi-inchangée. Elle fonctionne
-   * parfaitement à l'intérieur de la nouvelle bottom-sheet.
    */
   function initExperienceDevis(devisWrap) {
     const config = JSON.parse(devisWrap.dataset.expDevis || "{}");
 
-    // Éléments du DOM
+    // --- 1. SÉLECTION DES ÉLÉMENTS DU DOM ---
+
+    // Le sélecteur de type (Demi-journée, Journée...)
     const typeSelect = devisWrap.querySelector('select[name="devis_type"]');
-    const adultsInput = devisWrap.querySelector('input[name="devis_adults"]');
-    const childrenInput = devisWrap.querySelector(
+
+    // Les inputs cachés pour envoyer les totaux au serveur (Backend Compatibility)
+    // Assure-toi que ces champs existent bien dans ton HTML (modifié précédemment)
+    const totalAdultsInput = devisWrap.querySelector(
+      'input[name="devis_adults"]'
+    );
+    const totalChildrenInput = devisWrap.querySelector(
       'input[name="devis_children"]'
     );
-    const bebesInput = devisWrap.querySelector('input[name="devis_bebes"]');
+    const totalBebesInput = devisWrap.querySelector(
+      'input[name="devis_bebes"]'
+    );
 
-    // Nouveaux conteneurs (via le nouveau HTML PHP)
+    // Le conteneur principal où l'on va injecter les lignes (Adultes, Enfants...) dynamiquement
+    // On utilise .exp-dynamic-lines (nouveau) ou fallback sur l'ancien ID si le HTML n'est pas à jour
+    const dynamicContainer =
+      devisWrap.querySelector(".exp-dynamic-lines") ||
+      devisWrap.querySelector(".exp-devis-counters");
+
+    // Le conteneur des options (reste séparé pour la clarté)
     const optionsContainer =
       devisWrap.querySelector(".exp-options-container") ||
       devisWrap.querySelector(".exp-devis-options");
-    const customQtyContainer =
-      devisWrap.querySelector(".exp-custom-qty-container") ||
-      devisWrap.querySelector(".exp-devis-customqty");
+
+    // Éléments d'affichage des résultats
     const resultDiv = devisWrap.querySelector(".exp-devis-result");
     const pdfBtn = devisWrap.querySelector('[id$="-pdf-btn"]');
 
+    // Infos pour le PDF
     const companyInfoEl = devisWrap.querySelector(".exp-devis-company-info");
     const experienceTitleEl = devisWrap.querySelector(
       ".exp-devis-experience-title"
@@ -73,14 +86,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const pendingLabel =
       devisWrap.dataset.labelPending || "En attente de devis";
 
-    // Variables globales
+    // Variables globales à la fonction
     window.currentTotal = 0;
     window.currentLines = [];
     window.isSurDevis = false;
     window.hasValidSimulation = false;
 
-    // --- 1. GESTION DU STEPPER (+/-) ---
-    // Délégation d'événement : gère tous les boutons +/-, même ceux créés dynamiquement
+    // --- 2. GESTION GLOBALE DES STEPPERS (+/-) ---
+    // Délégation d'événement : fonctionne sur les éléments créés dynamiquement
     devisWrap.addEventListener("click", function (e) {
       const btn = e.target.closest(".exp-stepper-btn");
       if (!btn) return;
@@ -107,119 +120,99 @@ document.addEventListener("DOMContentLoaded", function () {
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
 
-    // Initialisation des boutons minus au chargement
-    devisWrap.querySelectorAll(".exp-stepper input").forEach((input) => {
-      const val = parseInt(input.value, 10) || 0;
-      const minus = input.parentElement.querySelector(".minus");
-      if (minus) minus.disabled = val <= 0;
-    });
-
-    // --- 2. UPDATE TEXTES STATIQUES (ADULTE/ENFANT) ---
-    function updateStaticInputs(typeKey) {
-      const typeConfig = config[typeKey];
-
-      // Nettoyage
-      devisWrap
-        .querySelectorAll(".exp-item-obs")
-        .forEach((el) => (el.textContent = ""));
-
-      const fieldMap = {
-        adulte: { inputName: "devis_adults", defaultLabel: "Adultes" },
-        enfant: { inputName: "devis_children", defaultLabel: "Enfants" },
-        bebe: { inputName: "devis_bebes", defaultLabel: "Bébés" },
-      };
-
-      // Reset labels par défaut
-      Object.values(fieldMap).forEach((map) => {
-        const input = devisWrap.querySelector(`input[name="${map.inputName}"]`);
-        if (input) {
-          const row = input.closest(".exp-list-item");
-          const labelEl = row ? row.querySelector(".exp-item-label") : null;
-          if (labelEl) labelEl.innerHTML = map.defaultLabel;
-        }
-      });
-
-      if (!typeConfig || !Array.isArray(typeConfig.lines)) return;
-
-      // Injection données ACF
-      typeConfig.lines.forEach((line) => {
-        if (fieldMap[line.type]) {
-          const map = fieldMap[line.type];
-          const input = devisWrap.querySelector(
-            `input[name="${map.inputName}"]`
-          );
-          if (!input) return;
-
-          const row = input.closest(".exp-list-item");
-          const labelEl = row.querySelector(".exp-item-label");
-          const obsEl = row.querySelector(".exp-item-obs");
-
-          // Précision (ex: 3-12 ans)
-          if (line.precision && labelEl) {
-            labelEl.innerHTML = `${map.defaultLabel} <span class="exp-item-precision">(${line.precision})</span>`;
-          }
-          // Observation (ex: Gratuit)
-          if (line.observation && obsEl) {
-            obsEl.textContent = line.observation;
-          }
-        }
-      });
-    }
-
-    // --- 3. GÉNÉRATION DYNAMIQUE (OPTIONS & CUSTOM QTY) ---
-    function updateOptions() {
+    // --- 3. FONCTION CŒUR : GÉNÉRATION DYNAMIQUE DU FORMULAIRE ---
+    function renderFormItems() {
       const selectedType = typeSelect.value;
       const typeConfig = config[selectedType];
 
-      // A. Génération Quantités Personnalisées
-      if (customQtyContainer) {
-        customQtyContainer.innerHTML = "";
+      // A. Vidage et Remplissage du conteneur principal (Participants)
+      if (dynamicContainer) {
+        dynamicContainer.innerHTML = "";
+
         if (typeConfig && Array.isArray(typeConfig.lines)) {
           let html = "";
+
           typeConfig.lines.forEach((ln, idx) => {
-            if (ln.type === "personnalise" && ln.enable_qty) {
-              const id = `lineqty-${selectedType}-${idx}`;
-              // Structure Ligne "Stepper"
+            // Catégories standards (avec boutons +/-)
+            const isStandard = ["adulte", "enfant", "bebe"].includes(ln.type);
+
+            // Catégorie personnalisée AVEC quantité (avec boutons +/-)
+            const isCustomQty = ln.type === "personnalise" && ln.enable_qty;
+
+            // Catégorie personnalisée SANS quantité (Ligne fixe obligatoire)
+            const isFixed = ln.type === "personnalise" && !ln.enable_qty;
+
+            // On affiche si c'est l'un des trois cas
+            if (isStandard || isCustomQty || isFixed) {
+              const uniqueId = `qty-${selectedType}-${idx}`;
+              const priceTxt = formatCurrency(ln.price);
+
+              // --- Construction HTML ---
+
+              // 1. Partie GAUCHE (Nom, Prix, Observation)
+              let obsHtml = "";
+              if (ln.observation) {
+                obsHtml = `<span class="exp-item-obs">${ln.observation}</span>`;
+              }
+
+              let leftColumn = `
+                      <div class="exp-item-info">
+                          <label for="${uniqueId}" class="exp-item-name">${ln.label}</label>
+                          <span class="exp-item-price">${priceTxt}</span>
+                          ${obsHtml}
+                      </div>`;
+
+              // 2. Partie DROITE (Action)
+              let rightColumn = "";
+
+              if (isFixed) {
+                // CAS FIXE : Pas de boutons, juste une valeur 1 cachée pour le calcul
+                // Tu peux changer "1" par "Inclus" ou une icône si tu préfères visuellement
+                rightColumn = `
+                      <div class="exp-item-action">
+                          <span style="font-size:0.9rem; font-weight:600; color:#0e2b5c;">1</span>
+                          <input type="hidden" class="exp-dyn-qty" id="${uniqueId}" value="1">
+                      </div>`;
+              } else {
+                // CAS STANDARD : Le Stepper (+ 1 -)
+                let defVal = 0;
+                if (ln.type === "adulte" && idx === 0) defVal = 1;
+
+                rightColumn = `
+                      <div class="exp-item-action">
+                          <div class="exp-stepper">
+                              <button type="button" class="exp-stepper-btn minus" ${
+                                defVal <= 0 ? "disabled" : ""
+                              }>−</button>
+                              <input type="number" class="exp-dyn-qty" id="${uniqueId}" min="0" value="${defVal}" readonly>
+                              <button type="button" class="exp-stepper-btn plus">+</button>
+                          </div>
+                      </div>`;
+              }
+
+              // Assemblage de la ligne
               html += `
-                        <div class="exp-list-item">
-                            <div class="exp-item-info">
-                                <span class="exp-item-label">${ln.label}</span>
-                                <span class="exp-item-price">${formatCurrency(
-                                  ln.price
-                                )}</span>
-                                ${
-                                  ln.observation
-                                    ? `<span class="exp-item-obs">${ln.observation}</span>`
-                                    : ""
-                                }
-                            </div>
-                            <div class="exp-item-action">
-                                <div class="exp-stepper">
-                                    <button type="button" class="exp-stepper-btn minus" disabled>−</button>
-                                    <input type="number" id="${id}" min="0" value="0" readonly>
-                                    <button type="button" class="exp-stepper-btn plus">+</button>
-                                </div>
-                            </div>
-                        </div>`;
+                  <div class="exp-list-item" data-line-index="${idx}" data-line-type="${ln.type}">
+                      ${leftColumn}
+                      ${rightColumn}
+                  </div>`;
             }
           });
-          customQtyContainer.innerHTML = html;
+          dynamicContainer.innerHTML = html;
         }
       }
 
-      // B. Génération Options
+      // B. Génération des Options (Reste inchangé, je l'inclus pour la complétude)
       if (optionsContainer) {
         optionsContainer.innerHTML = "";
         if (typeConfig && typeConfig.options && typeConfig.options.length > 0) {
           let html = '<h4 class="exp-list-title">Options</h4>';
-
           typeConfig.options.forEach(function (opt, index) {
             const id = `opt-${selectedType}-${index}`;
             const withQty = !!opt.enable_qty;
             const priceTxt = formatCurrency(opt.price);
 
             if (withQty) {
-              // OPTION AVEC QUANTITÉ (Stepper)
               html += `
                     <div class="exp-list-item">
                         <div class="exp-item-info">
@@ -227,12 +220,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             <span class="exp-item-price">+${priceTxt}</span>
                         </div>
                         <div class="exp-item-action">
-                            <input type="checkbox" id="${id}" 
-                                   data-price="${opt.price}" 
-                                   data-label="${opt.label}" 
-                                   data-enable-qty="1" 
-                                   style="display:none;">
-                            
+                            <input type="checkbox" id="${id}" data-price="${opt.price}" data-label="${opt.label}" data-enable-qty="1" style="display:none;">
                             <div class="exp-stepper">
                                 <button type="button" class="exp-stepper-btn minus" disabled>−</button>
                                 <input type="number" class="exp-opt-qty" data-for="${id}" min="0" value="0" readonly>
@@ -241,7 +229,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                     </div>`;
             } else {
-              // OPTION SIMPLE (Checkbox)
               html += `
                     <div class="exp-list-item">
                         <div class="exp-item-info">
@@ -250,10 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                         <div class="exp-item-action">
                             <div class="exp-checkbox-wrapper">
-                                <input type="checkbox" id="${id}" 
-                                       data-price="${opt.price}" 
-                                       data-label="${opt.label}" 
-                                       data-enable-qty="">
+                                <input type="checkbox" id="${id}" data-price="${opt.price}" data-label="${opt.label}" data-enable-qty="">
                             </div>
                         </div>
                     </div>`;
@@ -261,7 +245,6 @@ document.addEventListener("DOMContentLoaded", function () {
           });
           optionsContainer.innerHTML = html;
 
-          // Logique de réattachement pour les options
           optionsContainer
             .querySelectorAll('input[type="checkbox"][data-enable-qty=""]')
             .forEach((cb) => {
@@ -281,122 +264,121 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       }
 
-      // C. Écouteurs sur Custom Qty
-      if (customQtyContainer) {
-        customQtyContainer.querySelectorAll("input").forEach((inp) => {
+      // C. Écouteur sur les nouveaux champs dynamiques (Standard et Fixes)
+      if (dynamicContainer) {
+        dynamicContainer.querySelectorAll(".exp-dyn-qty").forEach((inp) => {
+          // Pour les champs hidden (fixes), l'event input ne se déclenche pas seul,
+          // mais calculate() est appelé juste après de toute façon.
+          // On garde l'écouteur pour les champs steppers.
           inp.addEventListener("input", calculate);
         });
       }
+
+      // On lance le calcul initial (important pour prendre en compte la ligne fixe value="1" immédiatement)
       calculate();
     }
 
-    // Affiche/Masque les compteurs A/E/B si le type ne les utilise pas
-    function toggleCountersForType(typeKey) {
-      const conf = config[typeKey];
-      const show = !!(conf && conf.has_counters);
-      const countersBlock = devisWrap.querySelector(".exp-devis-counters");
-      if (countersBlock) countersBlock.style.display = show ? "" : "none";
-    }
-
+    // --- 4. FONCTION DE CALCUL ---
     function calculate() {
       const selectedType = typeSelect.value;
       const typeConfig = config[selectedType];
       if (!typeConfig) return;
 
-      const adults = parseInt(adultsInput.value, 10) || 0;
-      const children = parseInt(childrenInput.value, 10) || 0;
-      const bebes = parseInt(bebesInput.value, 10) || 0;
-
       let total = 0;
       let lines = [];
       let resultHTML = '<h4 class="exp-result-title">Résumé du devis</h4><ul>';
 
-      const code =
-        typeConfig && typeConfig.code ? typeConfig.code : selectedType;
+      const code = typeConfig.code ? typeConfig.code : selectedType;
       const isSurDevis = code === "sur-devis";
       window.isSurDevis = isSurDevis;
 
-      const tarifLines = Array.isArray(typeConfig.lines)
-        ? typeConfig.lines
+      // Variables temporaires pour sommer les catégories (pour le Backend)
+      let sumAdults = 0;
+      let sumChildren = 0;
+      let sumBebes = 0;
+
+      // A. Parcours des participants (Lignes dynamiques)
+      const items = dynamicContainer
+        ? dynamicContainer.querySelectorAll(".exp-list-item")
         : [];
 
-      if (tarifLines.length > 0) {
-        tarifLines.forEach((ln, idx) => {
-          const t = ln.type;
-          const unit = Number(ln.price) || 0;
-          let qty = 1;
+      items.forEach((item) => {
+        const idx = parseInt(item.dataset.lineIndex);
+        const type = item.dataset.lineType; // 'adulte', 'enfant', 'bebe', 'personnalise'
+        const qtyInput = item.querySelector(".exp-dyn-qty");
+        const qty = parseInt(qtyInput ? qtyInput.value : 0) || 0;
 
-          if (t === "adulte") qty = adults;
-          if (t === "enfant") qty = children;
-          if (t === "bebe") qty = bebes;
+        // Récupération des données tarifaires originales
+        const ln = typeConfig.lines[idx];
+        if (!ln) return;
 
-          // Skip si qté 0
-          if ((t === "adulte" || t === "enfant" || t === "bebe") && qty <= 0)
-            return;
+        // Incrément des totaux par catégorie
+        if (type === "adulte") sumAdults += qty;
+        if (type === "enfant") sumChildren += qty;
+        if (type === "bebe") sumBebes += qty;
 
-          // Cas Custom Qty
-          if (t === "personnalise" && ln.enable_qty) {
-            const qtyInput = customQtyContainer
-              ? customQtyContainer.querySelector(
-                  `#lineqty-${selectedType}-${idx}`
-                )
-              : null;
-            qty = parseInt(qtyInput && qtyInput.value, 10) || 0;
-            if (qty <= 0) return;
-          }
+        // Si quantité 0, on ne met pas dans le résumé visuel
+        if (qty <= 0) return;
 
-          if (isSurDevis) {
-            const labelQty =
-              t === "personnalise" && !ln.enable_qty
-                ? ln.label
-                : `${qty} × ${ln.label}`;
-            lines.push({ label: labelQty, price: pendingLabel });
-            resultHTML += `<li><span>${labelQty}</span><span class="exp-price--pending">${pendingLabel}</span></li>`;
+        const unit = Number(ln.price) || 0;
+
+        if (isSurDevis) {
+          const labelQty = `${qty} × ${ln.label}`;
+          lines.push({ label: labelQty, price: pendingLabel });
+          resultHTML += `<li><span>${labelQty}</span><span class="exp-price--pending">${pendingLabel}</span></li>`;
+        } else {
+          // Cas particulier : Bébé gratuit
+          if (type === "bebe" && unit === 0) {
+            const labelQty = `${qty} × ${ln.label}`;
+            lines.push({ label: labelQty, price: "Gratuit" });
+            resultHTML += `<li><span>${labelQty}</span><span>Gratuit</span></li>`;
           } else {
-            if (t === "bebe" && unit === 0) {
-              const labelQty = `${qty} × ${ln.label}`;
-              lines.push({ label: labelQty, price: "Gratuit" });
-              resultHTML += `<li><span>${labelQty}</span><span>Gratuit</span></li>`;
-            } else {
-              const sub =
-                t === "personnalise" && !ln.enable_qty ? unit : qty * unit;
-              total += sub;
-              const labelQty =
-                t === "personnalise" && !ln.enable_qty
-                  ? ln.label
-                  : `${qty} × ${ln.label}`;
-              lines.push({ label: labelQty, price: formatCurrency(sub) });
-              resultHTML += `<li><span>${labelQty}</span><span>${formatCurrency(
-                sub
-              )}</span></li>`;
-            }
+            const sub = qty * unit;
+            total += sub;
+            const labelQty = `${qty} × ${ln.label}`;
+            lines.push({ label: labelQty, price: formatCurrency(sub) });
+            resultHTML += `<li><span>${labelQty}</span><span>${formatCurrency(
+              sub
+            )}</span></li>`;
           }
-        });
-      }
+        }
+      });
 
-      // Frais fixes
+      // B. Mise à jour des inputs HIDDEN (Communication avec PHP)
+      if (totalAdultsInput) totalAdultsInput.value = sumAdults;
+      if (totalChildrenInput) totalChildrenInput.value = sumChildren;
+      if (totalBebesInput) totalBebesInput.value = sumBebes;
+
+      // C. Frais fixes
       const fixedFees = Array.isArray(typeConfig.fixed_fees)
         ? typeConfig.fixed_fees
         : [];
       if (fixedFees.length > 0) {
-        lines.push({ label: "Frais fixes", price: "", isSeparator: true });
-        resultHTML += `<li class="separator"><strong>Frais fixes</strong></li>`;
-        fixedFees.forEach((fee) => {
-          const price = Number(fee.price) || 0;
-          if (isSurDevis) {
-            lines.push({ label: fee.label, price: pendingLabel });
-            resultHTML += `<li><span>${fee.label}</span><span class="exp-price--pending">${pendingLabel}</span></li>`;
-          } else {
-            total += price;
-            lines.push({ label: fee.label, price: formatCurrency(price) });
-            resultHTML += `<li><span>${fee.label}</span><span>${formatCurrency(
-              price
-            )}</span></li>`;
-          }
-        });
+        // On affiche les frais fixes seulement s'il y a au moins 1 personne sélectionnée
+        const totalPeople = sumAdults + sumChildren + sumBebes;
+
+        // Ou si c'est un custom qty > 0 (cas rare mais possible)
+        // Condition : il faut qu'il y ait de l'activité dans le devis
+        if (totalPeople > 0 || (items.length > 0 && window.currentTotal > 0)) {
+          lines.push({ label: "Frais fixes", price: "", isSeparator: true });
+          resultHTML += `<li class="separator"><strong>Frais fixes</strong></li>`;
+          fixedFees.forEach((fee) => {
+            const price = Number(fee.price) || 0;
+            if (isSurDevis) {
+              lines.push({ label: fee.label, price: pendingLabel });
+              resultHTML += `<li><span>${fee.label}</span><span class="exp-price--pending">${pendingLabel}</span></li>`;
+            } else {
+              total += price;
+              lines.push({ label: fee.label, price: formatCurrency(price) });
+              resultHTML += `<li><span>${
+                fee.label
+              }</span><span>${formatCurrency(price)}</span></li>`;
+            }
+          });
+        }
       }
 
-      // Options
+      // D. Options
       if (optionsContainer) {
         const checkedOptions = optionsContainer.querySelectorAll(
           "input[type='checkbox']:checked"
@@ -432,6 +414,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       }
 
+      // E. Affichage Final
       if (isSurDevis) {
         resultHTML += `</ul><div class="exp-result-total"><span>Total</span><span class="exp-price--pending">${pendingLabel}</span></div>`;
       } else {
@@ -441,17 +424,21 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       if (resultDiv) resultDiv.innerHTML = resultHTML;
 
+      // Mise à jour des variables globales pour le PDF et le bouton de résa
       window.currentTotal = isSurDevis ? 0 : total;
       window.currentLines = lines;
-      // Validation simple: au moins 1 personne ou 1 item
-      const qtyTotal = adults + children + bebes;
+
+      // Validation : Simulation valide si au moins 1 personne (ou coût > 0)
+      const hasPeople = sumAdults + sumChildren + sumBebes > 0;
       window.hasValidSimulation = isSurDevis
-        ? qtyTotal > 0 || lines.length > 0
-        : total > 0;
+        ? hasPeople
+        : total > 0 || hasPeople;
+
+      // Déclenche un event pour que le bouton FAB se mette à jour
       devisWrap.dispatchEvent(new CustomEvent("devisUpdated"));
     }
 
-    // --- Génération PDF (Inchangée) ---
+    // --- 5. GÉNÉRATION PDF (Inchangée mais incluse pour le bloc complet) ---
     function generatePDF() {
       if (!window.jspdf) return alert("Librairie PDF manquante.");
       if (!window.hasValidSimulation)
@@ -461,8 +448,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         const date = new Date().toLocaleDateString("fr-FR");
-        const a = parseInt(adultsInput.value, 10) || 0;
-        const c = parseInt(childrenInput.value, 10) || 0;
+
+        // On récupère les totaux depuis les inputs hidden qu'on a mis à jour
+        const a = parseInt(totalAdultsInput ? totalAdultsInput.value : 0) || 0;
+        const c =
+          parseInt(totalChildrenInput ? totalChildrenInput.value : 0) || 0;
 
         // Entête
         const headerBottomY = (function drawHeaderBox() {
@@ -534,7 +524,10 @@ document.addEventListener("DOMContentLoaded", function () {
         doc.text(`Estimation pour : ${experienceTitle}`, 15, yCursor);
         doc.text(`Date : ${date}`, 195, yCursor, { align: "right" });
         doc.setFontSize(10);
-        doc.text(`Pour ${a} adulte(s) et ${c} enfant(s)`, 15, yCursor + 6);
+
+        let subText = `Pour ${a} adulte(s)`;
+        if (c > 0) subText += ` et ${c} enfant(s)`;
+        doc.text(subText, 15, yCursor + 6);
 
         let y = yCursor + 18;
         doc.setFont("helvetica", "bold");
@@ -599,24 +592,20 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    // Event Listeners principaux
+    // --- 6. INITIALISATION & LISTENERS ---
+
+    // Changement de type de tarif -> Re-génération complète du formulaire
     typeSelect.addEventListener("change", () => {
-      const val = typeSelect.value;
-      toggleCountersForType(val);
-      updateStaticInputs(val);
-      updateOptions();
-      calculate();
+      renderFormItems();
     });
-    // On écoute aussi 'input' sur devisWrap (dispatché par les steppers)
+
+    // Écoute de l'événement 'input' global pour les steppers (au cas où)
     devisWrap.addEventListener("input", calculate);
 
     if (pdfBtn) pdfBtn.addEventListener("click", generatePDF);
 
-    // Initialisation
-    const initVal = typeSelect.value;
-    toggleCountersForType(initVal);
-    updateStaticInputs(initVal);
-    updateOptions();
+    // Premier chargement
+    renderFormItems();
   }
 
   // Active le calculateur
