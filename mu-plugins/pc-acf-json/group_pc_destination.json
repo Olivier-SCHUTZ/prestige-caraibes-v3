@@ -297,7 +297,7 @@
             "tabs": "all",
             "toolbar": "full",
             "media_upload": 0,
-            "delay": 1
+            "delay": 0
         },
         {
             "key": "field_dest_slogan",
@@ -377,10 +377,10 @@
                     },
                     "default_value": "",
                     "allow_in_bindings": 1,
-                    "tabs": "visual",
-                    "toolbar": "basic",
+                    "tabs": "all",
+                    "toolbar": "full",
                     "media_upload": 0,
-                    "delay": 1,
+                    "delay": 0,
                     "parent_repeater": "field_dest_infos"
                 },
                 {
@@ -464,10 +464,10 @@
                     },
                     "default_value": "",
                     "allow_in_bindings": 1,
-                    "tabs": "visual",
-                    "toolbar": "basic",
+                    "tabs": "all",
+                    "toolbar": "full",
                     "media_upload": 0,
-                    "delay": 1,
+                    "delay": 0,
                     "parent_repeater": "field_dest_faq"
                 }
             ]
@@ -763,5 +763,6 @@
     "active": true,
     "description": "Champs pour la fiche Destination (ville).",
     "show_in_rest": 0,
-    "modified": 1759212676
+    "display_title": "",
+    "modified": 1765801720
 }
