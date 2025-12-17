@@ -341,7 +341,7 @@
   border-radius: 6px;
 }
 
-/* Off-canvas */
+/* Off-canvas (mobile premium) */
 .pc-offcanvas {
   position: fixed;
   inset: 0;
@@ -352,23 +352,29 @@
 .pc-offcanvas__overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(10, 20, 30, 0.55);
   opacity: 0;
-  transition: opacity 0.18s ease;
+  transition: opacity 0.2s ease;
 }
+
 .pc-offcanvas__panel {
   position: absolute;
   right: 0;
   top: 0;
   bottom: 0;
-  width: min(420px, 92vw);
+  width: min(460px, 92vw);
   background: #fff;
-  transform: translateX(12px);
+  transform: translateX(16px);
   opacity: 0;
-  transition: transform 0.18s ease, opacity 0.18s ease;
+  transition: transform 0.22s ease, opacity 0.22s ease;
   display: flex;
   flex-direction: column;
+
+  /* “5 étoiles” */
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: -18px 0 40px rgba(0, 0, 0, 0.18);
 }
+
 .pc-offcanvas__top {
   display: flex;
   align-items: center;
@@ -376,68 +382,186 @@
   padding: 14px 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
+
 .pc-offcanvas__logo {
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.2px;
   color: var(--pc-color-heading);
 }
+
 .pc-offcanvas__close {
-  border: 0;
-  background: none;
-  padding: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   cursor: pointer;
 }
+
 .pc-offcanvas__close svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
 .pc-oc-nav {
   overflow: auto;
-  padding: 14px 16px 20px;
+  padding: 14px 16px 22px;
 }
+
+/* Search (mobile offcanvas) */
+.pc-oc-search {
+  margin: 6px 0 14px;
+}
+
+.pc-oc-search__wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.pc-oc-search__input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-size: 1rem;
+  color: var(--pc-color-heading);
+}
+
+.pc-oc-search__btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--pc-color-accent);
+  color: #fff;
+}
+
+.pc-oc-search__btn:hover {
+  transform: scale(1.02);
+}
+
 .pc-oc-nav__list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
+
+/* Bouton accordéon (catégories) : plus premium, moins “bloc blanc” */
 .pc-oc-nav__btn {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 10px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  background: #fff;
+
+  padding: 14px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+
+  background: rgba(0, 0, 0, 0.02);
   cursor: pointer;
-  font-weight: 600;
+
+  font-weight: 700;
+  font-size: 1.05rem;
   color: var(--pc-color-heading);
 }
-.pc-oc-nav__btn svg {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.16s ease;
+
+.pc-oc-nav__btn:active {
+  transform: scale(0.99);
 }
+
+.pc-oc-nav__btn svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.18s ease;
+}
+
 .pc-oc-nav__btn[aria-expanded="true"] svg {
   transform: rotate(180deg);
 }
 
 .pc-oc-nav__panel {
-  padding: 10px 6px 14px 6px;
+  padding: 10px 10px 14px;
 }
+
 .pc-oc-nav__group {
-  padding: 10px 4px;
+  padding: 10px 0 8px;
 }
+
+/* ===========================
+   Offcanvas — "blocs" premium (séparations comme desktop)
+   =========================== */
+
+/* Chaque groupe devient une carte */
+.pc-oc-nav__group {
+  padding: 16px 14px;
+  margin: 12px 0;
+
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
+}
+
+/* Séparation naturelle entre groupes (sans traits agressifs) */
+.pc-oc-nav__group:first-child {
+  margin-top: 6px;
+}
+.pc-oc-nav__group:last-child {
+  margin-bottom: 6px;
+}
+
+/* Titre de groupe plus "desktop-like" */
 .pc-oc-nav__group-title {
-  font-weight: 600;
-  margin: 4px 0 10px;
-  color: var(--pc-color-heading);
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(27, 59, 95, 0.78);
 }
+
+/* Liste de liens : plus lisible, plus luxueux */
+.pc-oc-nav__sublinks {
+  gap: 8px; /* au lieu de 10, plus “dense premium” */
+}
+
+/* Liens en "rows" avec hover doux */
+.pc-oc-nav__link {
+  display: block;
+  padding: 10px 10px;
+  border-radius: 12px;
+
+  color: var(--pc-color-heading);
+  text-decoration: none;
+
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.pc-oc-nav__link:hover {
+  text-decoration: none; /* on enlève le style “site basique” */
+  background: rgba(0, 122, 146, 0.07);
+  transform: translateX(2px);
+}
+
 .pc-oc-nav__sublinks {
   list-style: none;
   padding: 0;
@@ -446,15 +570,24 @@
   flex-direction: column;
   gap: 10px;
 }
+
 .pc-oc-nav__link {
   text-decoration: none;
-  color: var(--pc-color-text);
+  color: var(--pc-color-heading);
   font-family: var(--pc-font-body);
+  font-size: 1.02rem;
+  line-height: 1.25;
 }
+
+.pc-oc-nav__link:hover {
+  text-decoration: underline;
+}
+
 .pc-oc-nav__link--parent {
   display: inline-block;
-  margin: 6px 0 8px;
-  font-weight: 600;
+  margin: 8px 0 10px;
+  font-weight: 800;
+  color: var(--pc-color-heading);
 }
 
 /* Offcanvas open state */
@@ -494,24 +627,29 @@ body.pc-oc-open .pc-offcanvas__panel {
    =========================== */
 
 .pc-hg__search {
-  background-color: var(--pc-color-primary);
-  color: #ffffff !important;
-
-  border-radius: 999px;
-  padding: 12px 22px;
-
-  font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.02em;
-
+  margin-left: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  transition: transform 0.18s ease, box-shadow 0.18s ease,
-    background-color 0.18s ease;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 0;
 
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+  background: var(--pc-color-accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1;
+  text-decoration: none;
+
+  transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* évite le violet/bleu des liens visités */
+.pc-hg__search:visited {
+  color: #fff;
 }
 
 /* Hover desktop */
@@ -722,4 +860,52 @@ body.pc-oc-open .pc-offcanvas__panel {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
   }
+}
+
+/* Offcanvas – zone recherche */
+.pc-offcanvas__search {
+  padding: 14px 16px 6px;
+}
+.pc-offcanvas__search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+/* Offcanvas – blocs de sous-menus (design type desktop) */
+.pc-oc-nav__panel {
+  padding: 10px 16px 16px;
+}
+
+.pc-oc-nav__group {
+  background: #fff;
+  border: 1px solid rgba(12, 35, 64, 0.12);
+  border-radius: 16px;
+  padding: 14px 14px 10px;
+  margin: 12px 0;
+  box-shadow: 0 6px 18px rgba(12, 35, 64, 0.06);
+}
+
+.pc-oc-nav__group-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 0 0 10px;
+  color: #0c2340;
+}
+
+.pc-oc-nav__sublinks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-oc-nav__sublinks li + li {
+  border-top: 1px solid rgba(12, 35, 64, 0.08);
+}
+
+.pc-oc-nav__link {
+  display: block;
+  padding: 10px 2px;
+  text-decoration: none;
 }

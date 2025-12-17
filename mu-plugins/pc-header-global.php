@@ -428,11 +428,14 @@ function pc_hg_render_offcanvas(array $tree, array $cfg): string
             }
 
             if (!$has_grandchildren) {
+                $out .= '<div class="pc-oc-nav__group pc-oc-nav__group--flat">';
+                $out .= '<div class="pc-oc-nav__group-title">' . esc_html($title) . '</div>';
                 $out .= '<ul class="pc-oc-nav__sublinks">';
                 foreach ($it->children as $link) {
                     $out .= '<li><a class="pc-oc-nav__link" href="' . esc_url($link->url) . '">' . esc_html($link->title) . '</a></li>';
                 }
                 $out .= '</ul>';
+                $out .= '</div>';
             } else {
                 foreach ($it->children as $col) {
                     $col_title = trim((string)$col->title);
