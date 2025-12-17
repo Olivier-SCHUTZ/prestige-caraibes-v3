@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: PC - Header Assets Loader
  * Description: Charge pc-base.css (racine mu-plugins) puis pc-header.css (mu-plugins/assets) pour le header Elementor.
@@ -9,8 +10,11 @@
 if (!defined('ABSPATH')) exit;
 
 if (!function_exists('pc_header_enqueue_assets')) {
-  function pc_header_enqueue_assets() {
+  function pc_header_enqueue_assets()
+  {
     if (is_admin()) return;
+    // LOCAL: couper les assets legacy du header pour éviter les conflits avec pc-header-global
+    if (defined('PC_DISABLE_LEGACY_HEADER') && PC_DISABLE_LEGACY_HEADER) return;
 
     $dir_url  = plugin_dir_url(__FILE__);
     $dir_path = __DIR__;

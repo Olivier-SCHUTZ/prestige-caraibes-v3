@@ -1,67 +1,91 @@
-(function() {
-  'use strict';
+(function () {
+  "use strict";
 
   // Fonction pour trouver le conteneur racine du header de manière robuste
   function findHeaderRoot() {
+    const hg = document.querySelector("[data-pc-hg]");
+    const elHeader =
+      document.querySelector("header.elementor-location-header") ||
+      document.querySelector(".elementor-location-header");
+
+    // Si Elementor encapsule le shortcode, on pilote le wrapper (le vrai “bloc header”)
+    if (elHeader && hg && elHeader.contains(hg)) {
+      return elHeader;
+    }
+
+    // Fallbacks
     return (
-      document.querySelector('.elementor-location-header') ||
-      document.querySelector('header#site-header') || // Cible plus spécifique
-      document.querySelector('header')
+      hg ||
+      document.querySelector("#pc-header.pc-hg") ||
+      document.querySelector("#pc-header") ||
+      elHeader ||
+      document.querySelector("header#site-header") || // Cible plus spécifique
+      document.querySelector("header")
     );
   }
 
   // S'exécute quand le DOM est prêt
   function onReady(fn) {
-    if (document.readyState !== 'loading') {
+    if (document.readyState !== "loading") {
       fn();
     } else {
-      document.addEventListener('DOMContentLoaded', fn, { once: true });
+      document.addEventListener("DOMContentLoaded", fn, { once: true });
     }
   }
 
-  onReady(function() {
+  onReady(function () {
     const header = findHeaderRoot();
     if (!header) {
-      console.warn('[PC Header Smart] Aucun conteneur de header principal n\'a été trouvé.');
-      return;
-    }
-    
-    // Désactiver en mode édition Elementor
-    if (document.body.classList.contains('elementor-editor-active')) {
-      console.log('[PC Header Smart] Mode éditeur Elementor détecté, script désactivé.');
+      console.warn(
+        "[PC Header Smart] Aucun conteneur de header principal n'a été trouvé."
+      );
       return;
     }
 
+    // Désactiver en mode édition Elementor
+    if (document.body.classList.contains("elementor-editor-active")) {
+      console.log(
+        "[PC Header Smart] Mode éditeur Elementor détecté, script désactivé."
+      );
+      return;
+    }
+
+    // Marquer explicitement la cible pilotée par le smart header (CSS stable)
+    header.classList.add("pc-hg-smart");
+
     // --- Paramètres ---
     let lastY = window.scrollY;
-    const solidOffset = 24;   // Seuil en pixels pour passer le header en mode "solide" (fond blanc)
-    const hideOffset = 150;   // Seuil en pixels après lequel le header peut commencer à se cacher
-    const delta = 10;         // Sensibilité du scroll (hystérésis) pour éviter les changements saccadés
+    const solidOffset = 24; // Seuil en pixels pour passer le header en mode "solide" (fond blanc)
+    const hideOffset = 150; // Seuil en pixels après lequel le header peut commencer à se cacher
+    const delta = 10; // Sensibilité du scroll (hystérésis) pour éviter les changements saccadés
     let ticking = false;
     let idleTimer = null;
-    const idleMs = 3000;      // Temps d'inactivité en millisecondes avant de cacher le header
+    const idleMs = 3000; // Temps d'inactivité en millisecondes avant de cacher le header
 
     // --- Fonctions d'état ---
     function setSolidState() {
       if (window.scrollY > solidOffset) {
-        header.classList.add('pc-solid');
+        header.classList.add("pc-solid");
       } else {
-        header.classList.remove('pc-solid');
+        header.classList.remove("pc-solid");
       }
     }
 
     function setHiddenState(isHidden) {
       if (isHidden) {
         // Ne pas cacher si la souris est sur le header ou si un élément y a le focus
-        if (header.matches(':hover') || header.contains(document.activeElement)) {
+        if (
+          header.matches(":hover") ||
+          header.contains(document.activeElement)
+        ) {
           return;
         }
-        header.classList.add('pc-hidden');
+        header.classList.add("pc-hidden");
       } else {
-        header.classList.remove('pc-hidden');
+        header.classList.remove("pc-hidden");
       }
     }
-    
+
     // Planifie le masquage du header après inactivité
     function scheduleIdleHide() {
       clearTimeout(idleTimer);
@@ -101,24 +125,28 @@
     }
 
     // --- Initialisation et écouteurs d'événements ---
-    
+
     // Appliquer l'état initial au chargement
     setSolidState();
     scheduleIdleHide();
-    
-    window.addEventListener('scroll', onScroll, { passive: true });
-    
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
     // Le header doit toujours réapparaître lors d'une interaction directe
-    header.addEventListener('mouseenter', () => {
-      clearTimeout(idleTimer);
-      setHiddenState(false);
-    }, { passive: true });
-    
-    header.addEventListener('focusin', () => {
+    header.addEventListener(
+      "mouseenter",
+      () => {
+        clearTimeout(idleTimer);
+        setHiddenState(false);
+      },
+      { passive: true }
+    );
+
+    header.addEventListener("focusin", () => {
       clearTimeout(idleTimer);
       setHiddenState(false);
     });
 
-    console.log('[PC Header Smart] Initialisé avec succès.');
+    console.log("[PC Header Smart] Initialisé avec succès.");
   });
 })();

@@ -1,0 +1,583 @@
+/* ==========================================
+   Prestige Caraïbes — HEADER GLOBAL (v1)
+   - Un seul HTML (desktop/tablette/mobile)
+   - Mega menu + Off-canvas accessible
+   ========================================== */
+
+/* Visually hidden (accessibility) */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Wrapper */
+#pc-header.pc-hg {
+  position: relative;
+  z-index: 999;
+  font-family: var(--pc-font-title);
+}
+
+/* Top bar */
+.pc-hg__bar {
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+.pc-hg__bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+.pc-hg__tel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--pc-color-text);
+  text-decoration: none;
+  font-family: var(--pc-font-title);
+  font-weight: 500;
+}
+.pc-hg__icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.pc-hg__social-link {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.85);
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+    border-color 0.18s ease, background 0.18s ease;
+}
+
+.pc-hg__social-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0, 0, 0, 0.22);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+.pc-hg__social-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1), 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+.pc-hg__social-ico svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: currentColor;
+}
+
+.pc-hg__social-link {
+  color: var(--pc-color-heading);
+}
+
+/* Main bar */
+.pc-hg__main {
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+.pc-hg__main-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 0;
+}
+
+.pc-hg__logo {
+  display: flex;
+  align-items: center;
+}
+.pc-hg__logo a {
+  color: inherit;
+  text-decoration: none;
+}
+.pc-hg__logo img {
+  height: 44px;
+  width: auto;
+  display: block;
+}
+
+/* Desktop nav */
+.pc-nav {
+  flex: 1;
+}
+.pc-nav__list {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+}
+.pc-nav__link,
+.pc-nav__btn {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--pc-color-heading);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 10px 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.pc-nav__btn svg,
+.pc-nav__trigger svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pc-nav__trigger {
+  border: 0;
+  background: none;
+  padding: 10px 4px;
+  cursor: pointer;
+  color: var(--pc-color-heading);
+}
+
+.pc-hg__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pc-hg__burger {
+  display: none;
+  border: 0;
+  background: none;
+  padding: 8px;
+  cursor: pointer;
+}
+.pc-hg__burger-ico svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Mega panels */
+.pc-hg__panels {
+  position: relative;
+}
+.pc-mega {
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-text-size);
+  line-height: var(--pc-text-lh);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  padding: 18px 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+}
+.pc-mega.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.pc-mega__inner {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+/* Panels “simples” (Destinations / Expériences) : blocs auto */
+.pc-mega--default .pc-mega__inner {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1100px) {
+  .pc-mega--default .pc-mega__inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767.98px) {
+  .pc-mega--default .pc-mega__inner {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pc-mega--default .pc-mega__col {
+}
+/* Carte "premium" (même esprit que Locations) */
+.pc-mega__col {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.pc-mega__col:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.86);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+.pc-mega__title {
+  font-family: var(--pc-font-title);
+  font-size: var(--pc-h4-size);
+  font-weight: var(--pc-h4-weight);
+  line-height: var(--pc-h4-lh);
+
+  color: var(--pc-color-primary); /* BLEU MARQUE */
+
+  margin: 0 0 14px 0; /* ESPACEMENT IDENTIQUE PARTOUT */
+}
+.pc-mega__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* rythme premium, constant */
+}
+.pc-mega__list a {
+  color: var(--pc-color-text);
+  text-decoration: none;
+  font-family: var(--pc-font-body);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+.pc-mega__list a:hover {
+  color: var(--pc-color-primary);
+}
+
+.pc-mega__placeholder {
+  font-family: var(--pc-font-body);
+  color: var(--pc-color-muted);
+}
+
+/* Off-canvas */
+.pc-offcanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+.pc-offcanvas__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.pc-offcanvas__panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(420px, 92vw);
+  background: #fff;
+  transform: translateX(12px);
+  opacity: 0;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+  display: flex;
+  flex-direction: column;
+}
+.pc-offcanvas__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+.pc-offcanvas__logo {
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--pc-color-heading);
+}
+.pc-offcanvas__close {
+  border: 0;
+  background: none;
+  padding: 8px;
+  cursor: pointer;
+}
+.pc-offcanvas__close svg {
+  width: 22px;
+  height: 22px;
+}
+
+.pc-oc-nav {
+  overflow: auto;
+  padding: 14px 16px 20px;
+}
+.pc-oc-nav__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pc-oc-nav__btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--pc-color-heading);
+}
+.pc-oc-nav__btn svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.16s ease;
+}
+.pc-oc-nav__btn[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.pc-oc-nav__panel {
+  padding: 10px 6px 14px 6px;
+}
+.pc-oc-nav__group {
+  padding: 10px 4px;
+}
+.pc-oc-nav__group-title {
+  font-weight: 600;
+  margin: 4px 0 10px;
+  color: var(--pc-color-heading);
+}
+.pc-oc-nav__sublinks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pc-oc-nav__link {
+  text-decoration: none;
+  color: var(--pc-color-text);
+  font-family: var(--pc-font-body);
+}
+.pc-oc-nav__link--parent {
+  display: inline-block;
+  margin: 6px 0 8px;
+  font-weight: 600;
+}
+
+/* Offcanvas open state */
+body.pc-oc-open .pc-offcanvas {
+  pointer-events: auto;
+}
+body.pc-oc-open .pc-offcanvas__overlay {
+  opacity: 1;
+}
+body.pc-oc-open .pc-offcanvas__panel {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .pc-hg__bar {
+    display: none;
+  }
+  .pc-nav {
+    display: none;
+  }
+  .pc-hg__burger {
+    display: inline-flex;
+  }
+  .pc-hg__main-inner {
+    justify-content: space-between;
+  }
+  .pc-mega {
+    display: none !important;
+  }
+}
+
+/* ===========================
+   Header CTA — Rechercher
+   Base desktop / global
+   =========================== */
+
+.pc-hg__search {
+  background-color: var(--pc-color-primary);
+  color: #ffffff !important;
+
+  border-radius: 999px;
+  padding: 12px 22px;
+
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+    background-color 0.18s ease;
+
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+
+/* Hover desktop */
+.pc-hg__search:hover {
+  color: #ffffff !important;
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
+}
+
+/* Focus accessible */
+.pc-hg__search:focus-visible {
+  outline: none;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35),
+    0 12px 26px rgba(0, 0, 0, 0.18);
+}
+
+@media (max-width: 767.98px) {
+  .pc-hg__search {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+}
+
+/* ===========================
+   Top bar — container full width
+   =========================== */
+.pc-hg__container {
+  width: 100%;
+  max-width: 100%;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* ===========================
+   Top bar — Search suggest
+   =========================== */
+.pc-hg__bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pc-hg__social {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pc-hg__topsearch {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.pc-hg__searchbox {
+  width: min(520px, 100%);
+  position: relative;
+}
+
+.pc-hg__searchinput {
+  width: 100%;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  padding: 0 14px;
+  font-family: var(--pc-font-body);
+  color: var(--pc-color-heading);
+  background: rgba(255, 255, 255, 0.85);
+  outline: none;
+}
+
+.pc-hg__searchinput:focus {
+  border-color: rgba(0, 0, 0, 0.28);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+.pc-hg__searchlist {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 2000;
+}
+
+.pc-hg__searchopt {
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pc-hg__searchopt.is-active {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.pc-hg__searchtitle {
+  font-weight: 600;
+  color: var(--pc-color-heading);
+}
+
+.pc-hg__searchmeta {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+/* Mobile: top bar hidden (déjà le cas), donc rien à faire */
+
+/* ==========================================
+   SMART HEADER STATES (pc-solid / pc-hidden)
+   La cible est définie par le JS via .pc-hg-smart
+   ========================================== */
+
+.pc-hg-smart {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  will-change: transform;
+}
+
+.pc-hg-smart.pc-solid {
+  background: #fff;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.pc-hg-smart.pc-hidden {
+  transform: translateY(-100%);
+}
