@@ -388,6 +388,7 @@
   justify-content: center;
   padding: 0;
   cursor: pointer;
+  margin-left: 10px;
 }
 
 .pc-offcanvas__close svg {
@@ -395,14 +396,101 @@
   height: 20px;
 }
 
+.pc-offcanvas__meta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pc-offcanvas__tel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--pc-color-heading);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1;
+  opacity: 0.92;
+  transition: opacity 0.18s ease;
+}
+
+.pc-offcanvas__tel-txt {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pc-offcanvas__tel:hover {
+  opacity: 1;
+}
+
+.pc-offcanvas__tel-ico svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pc-offcanvas__social {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-offcanvas__social-link {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+
+  color: var(--pc-color-heading);
+  text-decoration: none;
+
+  opacity: 0.9;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.pc-offcanvas__social-link:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.pc-offcanvas__social-link svg {
+  width: 18px;
+  height: 18px;
+}
+
 .pc-oc-nav {
   overflow: auto;
   padding: 14px 16px 22px;
 }
 
-/* Search (mobile offcanvas) */
+/* Search unifiée (off-canvas) */
+.pc-offcanvas__search {
+  padding: 12px 16px 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.pc-hg__searchbox--oc {
+  width: 100%;
+}
+
+.pc-hg__searchbox--oc .pc-hg__searchinput {
+  height: 44px;
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Search (mobile offcanvas) — legacy (désactivé : remplacé par search unifiée) */
 .pc-oc-search {
-  margin: 6px 0 14px;
+  display: none;
 }
 
 .pc-oc-search__wrap {
@@ -544,8 +632,8 @@ body.pc-oc-open .pc-offcanvas__panel {
   border-radius: 999px;
   border: 0;
 
-  background: var(--pc-color-accent);
-  color: #fff;
+  background: var(--pc-color-primary);
+  color: #fff !important;
   font-weight: 600;
   font-size: 1rem;
   line-height: 1;
@@ -562,7 +650,8 @@ body.pc-oc-open .pc-offcanvas__panel {
 
 /* Hover desktop */
 .pc-hg__search:hover {
-  color: #ffffff !important;
+  background: var(--pc-color-primary);
+  color: #fff !important;
   transform: translateY(-1px) scale(1.04);
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
 }
@@ -621,6 +710,7 @@ body.pc-oc-open .pc-offcanvas__panel {
 .pc-hg__searchinput {
   width: 100%;
   height: 40px;
+  font-size: 16px;
   border-radius: 999px;
   border: 1px solid rgba(0, 0, 0, 0.14);
   padding: 0 14px;
@@ -695,8 +785,12 @@ body.pc-oc-open .pc-offcanvas__panel {
   left: 0;
   width: 100%;
   z-index: 1000;
-  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  transition: none;
   will-change: transform;
+}
+
+#pc-header.pc-hg-ready .pc-hg-smart {
+  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 /* État initial (haut de page) : fond blanc semi-transparent + texte bleu */
@@ -737,6 +831,9 @@ body.pc-oc-open .pc-offcanvas__panel {
    (panneau plein viewport + scroll interne propre)
 ========================================= */
 @media (max-width: 767.98px) {
+  .pc-hg__searchinput {
+    font-size: 16px !important;
+  }
   /* Garantit un viewport fiable sur mobile */
   .pc-offcanvas {
     height: 100dvh;

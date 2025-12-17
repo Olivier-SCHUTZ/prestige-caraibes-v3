@@ -396,7 +396,35 @@ function pc_hg_render_offcanvas(array $tree, array $cfg): string
     $out .= '  <div class="pc-offcanvas__panel" role="dialog" aria-modal="true" aria-label="Menu">';
     $out .= '    <div class="pc-offcanvas__top">';
     $out .= '      <a class="pc-offcanvas__logo" href="' . esc_url(home_url('/')) . '">' . esc_html(get_bloginfo('name')) . '</a>';
+    $out .= '      <div class="pc-offcanvas__meta" aria-label="Contact">';
+    $out .= '        <a class="pc-offcanvas__tel" href="' . esc_url($cfg['tel_href']) . '">';
+    $out .= '          <span class="pc-offcanvas__tel-ico" aria-hidden="true">' . pc_hg_svg('phone') . '</span>';
+    $out .= '          <span class="pc-offcanvas__tel-txt">' . esc_html($cfg['tel_label']) . '</span>';
+    $out .= '        </a>';
+
+    $out .= '        <div class="pc-offcanvas__social" aria-label="Réseaux sociaux">';
+    $wanted = ['whatsapp', 'instagram', 'facebook'];
+    foreach ($wanted as $k) {
+        foreach ($cfg['social'] as $s) {
+            if (!isset($s['key'], $s['href'])) continue;
+            if ($s['key'] !== $k) continue;
+
+            $label = isset($s['label']) ? $s['label'] : ucfirst($s['key']);
+            $out .= '          <a class="pc-offcanvas__social-link" href="' . esc_url($s['href']) . '" target="_blank" rel="noopener" aria-label="' . esc_attr($label) . '">';
+            $out .=                pc_hg_svg($s['key']);
+            $out .= '          </a>';
+            break;
+        }
+    }
+    $out .= '        </div>';
+    $out .= '      </div>';
     $out .= '      <button class="pc-offcanvas__close" type="button" data-pc-oc-close aria-label="Fermer">' . pc_hg_svg('close') . '</button>';
+    $out .= '    </div>';
+    $out .= '    <div class="pc-offcanvas__search" aria-label="Rechercher">';
+    $out .= '      <div class="pc-hg__searchbox pc-hg__searchbox--oc" data-pc-hg-searchbox>';
+    $out .= '        <input class="pc-hg__searchinput" type="search" placeholder="Rechercher une villa, destination, expérience…" autocomplete="off" inputmode="search" />';
+    $out .= '        <div class="pc-hg__searchlist" hidden></div>';
+    $out .= '      </div>';
     $out .= '    </div>';
 
     $out .= '    <nav class="pc-oc-nav" aria-label="Navigation principale">';
