@@ -4,19 +4,6 @@
    - Mega menu + Off-canvas accessible
    ========================================== */
 
-/* Visually hidden (accessibility) */
-.sr-only {
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 /* Wrapper */
 #pc-header.pc-hg {
   position: relative;
@@ -494,93 +481,14 @@
   transform: rotate(180deg);
 }
 
-.pc-oc-nav__panel {
-  padding: 10px 10px 14px;
-}
-
-.pc-oc-nav__group {
-  padding: 10px 0 8px;
-}
-
 /* ===========================
    Offcanvas — "blocs" premium (séparations comme desktop)
    =========================== */
-
-/* Chaque groupe devient une carte */
-.pc-oc-nav__group {
-  padding: 16px 14px;
-  margin: 12px 0;
-
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 18px;
-
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
-}
-
-/* Séparation naturelle entre groupes (sans traits agressifs) */
 .pc-oc-nav__group:first-child {
   margin-top: 6px;
 }
 .pc-oc-nav__group:last-child {
   margin-bottom: 6px;
-}
-
-/* Titre de groupe plus "desktop-like" */
-.pc-oc-nav__group-title {
-  margin: 0 0 12px;
-  padding-bottom: 10px;
-
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(27, 59, 95, 0.78);
-}
-
-/* Liste de liens : plus lisible, plus luxueux */
-.pc-oc-nav__sublinks {
-  gap: 8px; /* au lieu de 10, plus “dense premium” */
-}
-
-/* Liens en "rows" avec hover doux */
-.pc-oc-nav__link {
-  display: block;
-  padding: 10px 10px;
-  border-radius: 12px;
-
-  color: var(--pc-color-heading);
-  text-decoration: none;
-
-  transition: background 0.18s ease, transform 0.18s ease;
-}
-
-.pc-oc-nav__link:hover {
-  text-decoration: none; /* on enlève le style “site basique” */
-  background: rgba(0, 122, 146, 0.07);
-  transform: translateX(2px);
-}
-
-.pc-oc-nav__sublinks {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.pc-oc-nav__link {
-  text-decoration: none;
-  color: var(--pc-color-heading);
-  font-family: var(--pc-font-body);
-  font-size: 1.02rem;
-  line-height: 1.25;
-}
-
-.pc-oc-nav__link:hover {
-  text-decoration: underline;
 }
 
 .pc-oc-nav__link--parent {
@@ -810,14 +718,6 @@ body.pc-oc-open .pc-offcanvas__panel {
   transform: translateY(-100%);
 }
 
-.pc-hg-smart.pc-solid {
-  background: #fff;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-}
-
-.pc-hg-smart.pc-hidden {
-  transform: translateY(-100%);
-}
 @media (max-width: 1100px) {
   .pc-mega {
     width: calc(100vw - 32px);
@@ -834,43 +734,27 @@ body.pc-oc-open .pc-offcanvas__panel {
 
 /* =========================================
    FIX OFFCANVAS MOBILE : ouverture incomplète
-   (forcer un panneau plein viewport + scroll interne)
+   (panneau plein viewport + scroll interne propre)
 ========================================= */
 @media (max-width: 767.98px) {
-  /* Le conteneur offcanvas doit couvrir tout le viewport */
+  /* Garantit un viewport fiable sur mobile */
   .pc-offcanvas {
-    position: fixed !important;
-    inset: 0 !important;
-    height: 100dvh !important; /* meilleur que 100vh sur mobile */
+    height: 100dvh;
   }
 
-  /* Le panneau doit être plein écran, pas "100%" d'un parent */
-  .pc-oc__panel {
-    position: fixed !important;
-    inset: 0 !important; /* top/right/bottom/left = 0 */
-    height: 100dvh !important;
-    max-height: none !important;
-    overflow: hidden !important; /* scroll sur le contenu interne */
+  /* Le panneau doit occuper tout le viewport */
+  .pc-offcanvas__panel {
+    height: 100dvh;
+    max-height: 100dvh;
   }
 
-  /* Le contenu du panneau doit pouvoir scroller */
-  .pc-oc__content {
-    height: 100% !important;
-    max-height: none !important;
-    overflow-y: auto !important;
+  /* Scroll interne : le nav prend l’espace restant et scrolle */
+  .pc-oc-nav {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
-}
-
-/* Offcanvas – zone recherche */
-.pc-offcanvas__search {
-  padding: 14px 16px 6px;
-}
-.pc-offcanvas__search-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
 }
 
 /* Offcanvas – blocs de sous-menus (design type desktop) */
@@ -888,6 +772,11 @@ body.pc-oc-open .pc-offcanvas__panel {
 }
 
 .pc-oc-nav__group-title {
+  padding-bottom: 10px;
+
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   font-weight: 700;
   font-size: 0.95rem;
   margin: 0 0 10px;
@@ -898,6 +787,9 @@ body.pc-oc-open .pc-offcanvas__panel {
   margin: 0;
   padding: 0;
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* plus “dense premium” */
 }
 
 .pc-oc-nav__sublinks li + li {
@@ -908,4 +800,11 @@ body.pc-oc-open .pc-offcanvas__panel {
   display: block;
   padding: 10px 2px;
   text-decoration: none;
+  border-radius: 12px;
+  color: var(--pc-color-heading);
+  font-family: var(--pc-font-body);
+  font-size: 1.02rem;
+  line-height: 1.25;
+
+  transition: background 0.18s ease, transform 0.18s ease;
 }
