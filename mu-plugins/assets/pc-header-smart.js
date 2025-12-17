@@ -61,6 +61,8 @@
     let ticking = false;
     let idleTimer = null;
     const idleMs = 3000; // Temps d'inactivité en millisecondes avant de cacher le header
+    // Détection mobile
+    const isMobile = window.matchMedia("(max-width: 767.98px)").matches;
 
     // --- Fonctions d'état ---
     function setSolidState() {
@@ -72,8 +74,14 @@
     }
 
     function setHiddenState(isHidden) {
+      // En mobile : pas de logique hover / focus
+      if (isMobile) {
+        header.classList.toggle("pc-hidden", !!isHidden);
+        return;
+      }
+
+      // Desktop : logique actuelle conservée
       if (isHidden) {
-        // Ne pas cacher si la souris est sur le header ou si un élément y a le focus
         if (
           header.matches(":hover") ||
           header.contains(document.activeElement)
@@ -88,6 +96,7 @@
 
     // Planifie le masquage du header après inactivité
     function scheduleIdleHide() {
+      if (isMobile) return; // pas d’idle hide en mobile
       clearTimeout(idleTimer);
       if (window.scrollY > hideOffset) {
         idleTimer = setTimeout(() => setHiddenState(true), idleMs);
@@ -133,19 +142,23 @@
     window.addEventListener("scroll", onScroll, { passive: true });
 
     // Le header doit toujours réapparaître lors d'une interaction directe
-    header.addEventListener(
-      "mouseenter",
-      () => {
+    if (!isMobile) {
+      header.addEventListener(
+        "mouseenter",
+        () => {
+          clearTimeout(idleTimer);
+          setHiddenState(false);
+        },
+        { passive: true }
+      );
+    }
+
+    if (!isMobile) {
+      header.addEventListener("focusin", () => {
         clearTimeout(idleTimer);
         setHiddenState(false);
-      },
-      { passive: true }
-    );
-
-    header.addEventListener("focusin", () => {
-      clearTimeout(idleTimer);
-      setHiddenState(false);
-    });
+      });
+    }
 
     console.log("[PC Header Smart] Initialisé avec succès.");
   });

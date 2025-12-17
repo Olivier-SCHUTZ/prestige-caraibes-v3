@@ -308,8 +308,13 @@ function pc_hg_render_mega_panels(array $tree, array $cfg): string
         $slug  = pc_hg_slugify($title);
         $panel_id = 'pc-panel-' . $slug;
 
-        $is_locations = (mb_strtolower($title) === 'locations');
-        $panel_class = $is_locations ? 'pc-mega pc-mega--locations' : 'pc-mega pc-mega--default';
+        $key = mb_strtolower($title);
+
+        $is_locations = ($key === 'locations');
+        $is_magazine  = ($key === 'magazine');
+
+        $panel_class =
+            $is_locations ? 'pc-mega pc-mega--locations' : ($is_magazine ? 'pc-mega pc-mega--magazine' : 'pc-mega pc-mega--default');
 
         $out .= '<section id="' . esc_attr($panel_id) . '" class="' . esc_attr($panel_class) . '" aria-hidden="true" tabindex="-1" data-pc-mega>';
         $out .= '<div class="pc-container pc-mega__inner">';

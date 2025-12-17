@@ -11,12 +11,12 @@
 .pc-dd__btn {
   display: inline-flex;
   align-items: center;
-  gap: .35rem;
+  gap: 0.35rem;
   padding: 10px 16px;
-  border: 1px solid #1B3B5F; /* La couleur sera héritée du header */
+  border: 1px solid #1b3b5f; /* La couleur sera héritée du header */
   border-radius: var(--pc-radius, 10px);
-  background: #FFFFFF;
-  color: #1B3B5F;
+  background: #ffffff;
+  color: #1b3b5f;
   font-family: var(--pc-font-body);
   font-size: var(--pc-btn-text-size);
   font-weight: var(--pc-btn-text-weight);
@@ -27,12 +27,11 @@
   height: 14px;
 }
 .pc-dd__btn .pc-dd__chev {
-  transition: transform .2s ease;
+  transition: transform 0.2s ease;
 }
 .pc-dd[aria-expanded="true"] .pc-dd__btn .pc-dd__chev {
   transform: rotate(180deg);
 }
-
 
 /* --- Le panneau déroulant --- */
 .pc-dd__panel {
@@ -42,13 +41,41 @@
   min-width: 280px;
   max-width: min(92vw, 360px);
   background: #fff;
-  color: var(--pc-color-heading, #1B3B5F);
+  color: var(--pc-color-heading, #1b3b5f);
   border-radius: 12px;
   padding: 8px;
-  border: 1px solid #EAEAEA;
-  box-shadow: 0 20px 40px rgba(0,0,0,.18);
+  border: 1px solid #eaeaea;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
   z-index: 10050;
 }
+
+/* Header Global : panel "concierge" premium */
+#pc-header .pc-dd__panel {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.94),
+    rgba(255, 255, 255, 0.9)
+  );
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12), 0 10px 20px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  padding: 10px;
+}
+
+/* Header Global : input plus premium */
+#pc-header .pc-dd__search input.pc-dd__filter {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 11px 12px;
+}
+#pc-header .pc-dd__search input.pc-dd__filter:focus {
+  border-color: rgba(212, 175, 55, 0.55);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16);
+}
+
 .pc-dd__panel[hidden] {
   display: none;
 }
@@ -82,7 +109,7 @@
 .pc-dd__search {
   display: flex;
   align-items: center;
-  gap: .4rem;
+  gap: 0.4rem;
   padding: 8px 10px;
   border-radius: 10px;
   text-decoration: none;
@@ -90,34 +117,32 @@
   font-weight: 600;
 }
 
-/* --- Style du bouton au survol ou quand le panel est ouvert --- */
-/* (Réagit aux couleurs du header : blanc/bleu -> or) */
-header.pc-solid .pc-dd[aria-expanded="true"] .pc-dd__btn,
-header.pc-solid .pc-dd__btn:hover {
-    color: #D4AF37;
-    border-color: #D4AF37;
-}
-header:not(.pc-solid) .pc-dd[aria-expanded="true"] .pc-dd__btn,
-header:not(.pc-solid) .pc-dd__btn:hover {
-    color: #F1F1F1;
-    border-color: #F1F1F1;
+/* --- Header Global : hover/open = accent or (pas de blanc) --- */
+#pc-header .pc-dd[aria-expanded="true"] .pc-dd__btn,
+#pc-header .pc-dd__btn:hover {
+  color: #d4af37;
+  border-color: #d4af37;
 }
 
 /* Champ de recherche du dropdown */
-.pc-dd__search input.pc-dd__filter{
-  width:100%;
-  padding:10px 12px;
-  border:1px solid #E0E0E0;
-  border-radius:10px;
+.pc-dd__search input.pc-dd__filter {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
   font: inherit;
-  outline:0;
+  outline: 0;
   margin: 4px 0 8px;
 }
-.pc-dd__search input.pc-dd__filter:focus{
-  border-color:#D4AF37;
-  box-shadow:0 0 0 3px rgba(212,175,55,.18);
+.pc-dd__search input.pc-dd__filter:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
 }
 
 /* Filtrage / sélection clavier */
-.pc-dd__item[hidden]{ display:none !important; }
-.pc-dd__item.is-sel a{ background:#f5f6f8; }
+.pc-dd__item[hidden] {
+  display: none !important;
+}
+.pc-dd__item.is-sel a {
+  background: #f5f6f8;
+}

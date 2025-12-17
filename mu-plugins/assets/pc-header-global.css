@@ -174,31 +174,43 @@
   position: relative;
 }
 .pc-mega {
-  font-family: var(--pc-font-body);
-  font-size: var(--pc-text-size);
-  line-height: var(--pc-text-lh);
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  background: #fff;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
-  padding: 18px 0;
+  left: 50%;
+  top: calc(100% + 12px);
+  transform: translateX(-50%) translateY(-6px);
+
+  width: min(1200px, calc(100vw - 64px));
+  padding: 28px;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.92),
+    rgba(255, 255, 255, 0.88)
+  );
+
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(0, 0, 0, 0.06);
+
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-6px);
-  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
 }
+
 .pc-mega.is-open {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
 }
 .pc-mega__inner {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  gap: 24px;
 }
 /* Panels “simples” (Destinations / Expériences) : blocs auto */
 .pc-mega--default .pc-mega__inner {
@@ -219,57 +231,114 @@
 }
 /* Carte "premium" (même esprit que Locations) */
 .pc-mega__col {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 14px;
-  padding: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 18px;
+  padding: 22px;
 
-  backdrop-filter: blur(12px) saturate(1.2);
-  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
 
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease,
-    border-color 0.18s ease;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .pc-mega__col:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1.5px);
   background: rgba(255, 255, 255, 0.86);
+
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.12), 0 8px 18px rgba(0, 0, 0, 0.08);
+
   border-color: rgba(0, 0, 0, 0.1);
 }
 .pc-mega__title {
   font-family: var(--pc-font-title);
-  font-size: var(--pc-h4-size);
-  font-weight: var(--pc-h4-weight);
-  line-height: var(--pc-h4-lh);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 
-  color: var(--pc-color-primary); /* BLEU MARQUE */
+  color: var(--pc-color-primary);
 
-  margin: 0 0 14px 0; /* ESPACEMENT IDENTIQUE PARTOUT */
+  margin: 0 0 18px 0;
 }
 .pc-mega__list {
   list-style: none;
   padding: 0;
   margin: 0;
+
   display: flex;
   flex-direction: column;
-  gap: 12px; /* rythme premium, constant */
+  gap: 14px;
 }
 .pc-mega__list a {
   color: var(--pc-color-text);
   text-decoration: none;
   font-family: var(--pc-font-body);
   font-size: 1rem;
-  line-height: 1.35;
+  line-height: 1.5;
+
+  display: inline-flex;
+  align-items: center;
+
+  transition: color 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .pc-mega__list a:hover {
   color: var(--pc-color-primary);
+  transform: translateX(4px);
 }
 
 .pc-mega__placeholder {
   font-family: var(--pc-font-body);
   color: var(--pc-color-muted);
+}
+
+/* ===========================
+   Mega — Variantes (Desktop)
+   =========================== */
+
+/* LOCATIONS : colonne experte "Par nom du logement" */
+.pc-mega--locations .pc-mega__col--par-nom-du-logement {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.96),
+    rgba(245, 248, 252, 0.96)
+  );
+
+  border: 1px solid rgba(212, 175, 55, 0.22);
+
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.12), 0 10px 22px rgba(0, 0, 0, 0.08);
+
+  position: relative;
+}
+
+.pc-mega--locations .pc-mega__col--par-nom-du-logement .pc-mega__list a:hover {
+  transform: translateX(6px);
+}
+
+.pc-mega--locations .pc-mega__col--par-nom-du-logement::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(212, 175, 55, 0.14);
+  pointer-events: none;
+}
+
+/* MAGAZINE : bloc éditorial (une seule colonne) */
+.pc-mega--magazine .pc-mega__inner {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pc-mega--magazine .pc-mega__col {
+  max-width: 520px;
+}
+
+.pc-mega a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 146, 0.18);
+  border-radius: 6px;
 }
 
 /* Off-canvas */
@@ -279,6 +348,7 @@
   z-index: 10000;
   pointer-events: none;
 }
+
 .pc-offcanvas__overlay {
   position: absolute;
   inset: 0;
@@ -542,7 +612,17 @@ body.pc-oc-open .pc-offcanvas__panel {
 }
 
 .pc-hg__searchopt.is-active {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(0, 122, 146, 0.08);
+}
+
+.pc-hg__searchopt {
+  transition: background 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pc-hg__searchopt:hover {
+  background: rgba(0, 122, 146, 0.06);
+  transform: translateX(4px);
 }
 
 .pc-hg__searchtitle {
@@ -573,6 +653,25 @@ body.pc-oc-open .pc-offcanvas__panel {
   will-change: transform;
 }
 
+/* État initial (haut de page) : fond blanc semi-transparent + texte bleu */
+.pc-hg-smart {
+  background: rgba(255, 255, 255, 0.7);
+  color: #1b3b5f;
+  box-shadow: none;
+  backdrop-filter: saturate(140%) blur(8px);
+}
+
+/* État "solide" (quand on scrolle) */
+.pc-hg-smart.pc-solid {
+  background: #fff;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* État "caché" (scroll down / inactivité) */
+.pc-hg-smart.pc-hidden {
+  transform: translateY(-100%);
+}
+
 .pc-hg-smart.pc-solid {
   background: #fff;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
@@ -580,4 +679,47 @@ body.pc-oc-open .pc-offcanvas__panel {
 
 .pc-hg-smart.pc-hidden {
   transform: translateY(-100%);
+}
+@media (max-width: 1100px) {
+  .pc-mega {
+    width: calc(100vw - 32px);
+    padding: 22px;
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .pc-mega {
+    display: none !important; /* Off-canvas uniquement */
+  }
+}
+
+/* =========================================
+   FIX OFFCANVAS MOBILE : ouverture incomplète
+   (forcer un panneau plein viewport + scroll interne)
+========================================= */
+@media (max-width: 767.98px) {
+  /* Le conteneur offcanvas doit couvrir tout le viewport */
+  .pc-offcanvas {
+    position: fixed !important;
+    inset: 0 !important;
+    height: 100dvh !important; /* meilleur que 100vh sur mobile */
+  }
+
+  /* Le panneau doit être plein écran, pas "100%" d'un parent */
+  .pc-oc__panel {
+    position: fixed !important;
+    inset: 0 !important; /* top/right/bottom/left = 0 */
+    height: 100dvh !important;
+    max-height: none !important;
+    overflow: hidden !important; /* scroll sur le contenu interne */
+  }
+
+  /* Le contenu du panneau doit pouvoir scroller */
+  .pc-oc__content {
+    height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
 }
