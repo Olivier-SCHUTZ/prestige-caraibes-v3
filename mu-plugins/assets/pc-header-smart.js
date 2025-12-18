@@ -52,6 +52,10 @@
 
     // Marquer explicitement la cible pilotée par le smart header (CSS stable)
     header.classList.add("pc-hg-smart");
+    // Active les transitions seulement après le 1er rendu (évite le flash au refresh)
+    requestAnimationFrame(() => {
+      header.classList.add("pc-hg-ready");
+    });
 
     // --- Paramètres ---
     let lastY = window.scrollY;

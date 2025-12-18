@@ -789,7 +789,7 @@ body.pc-oc-open .pc-offcanvas__panel {
   will-change: transform;
 }
 
-#pc-header.pc-hg-ready .pc-hg-smart {
+#pc-header.pc-hg-smart.pc-hg-ready {
   transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 

@@ -532,7 +532,7 @@ function pc_header_global_shortcode($atts = []): string
 
     ob_start();
 ?>
-    <div id="pc-header" class="pc-hg" data-pc-hg>
+    <div id="pc-header" class="pc-hg pc-hg-smart" data-pc-hg>
         <div class="pc-hg__bar" aria-hidden="false">
             <div class="pc-hg__container pc-hg__bar-inner">
 
