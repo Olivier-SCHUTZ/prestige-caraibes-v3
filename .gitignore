@@ -51,14 +51,14 @@ temp/
 # Ceci n'ignorera PAS les dossiers de langue des thèmes/plugins.
 /languages/
 
+# 6bis. Ignorer tous les plugins tiers (Elementor, ACF Pro, WP Rocket, etc.)
+plugins/*
+
+# Autoriser uniquement les plugins maison (versionnés)
+!plugins/pc-rate-manager/
+!plugins/pc-reservation-core/
+
 # 6. Ignorer les fichiers Composer du plugin PC Reservation
 plugins/pc-reservation-core/vendor/
 plugins/pc-reservation-core/composer.phar
 plugins/pc-reservation-core/composer-setup.php
-
-# 6bis. Ignorer tous les plugins tiers (Elementor, WP Rocket, etc.)
-plugins/*
-
-# Plugins maison (versionnés)
-!plugins/pc-reservation-core/
-!plugins/pc-rate-manager/
