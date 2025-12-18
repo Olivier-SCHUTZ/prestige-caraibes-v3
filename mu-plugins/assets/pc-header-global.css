@@ -10,6 +10,17 @@
   position: relative;
   z-index: 999;
   font-family: var(--pc-font-title);
+  /* Supprimé ici car géré par le CSS critique pour plus de rapidité */
+}
+
+/* Assurer que l'icône FB ne dépasse jamais son conteneur même si le CSS charge mal */
+.pc-hg__social-ico {
+  width: 18px;
+  height: 18px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Top bar */
