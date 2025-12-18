@@ -2,62 +2,51 @@
 # .gitignore pour Prestige Caraïbes (Racine: /wp-content/)
 # =========================================================
 
-# Fichiers système et IDE
+# --- SYSTÈME & IDE ---
 .DS_Store
 .cache
 .vscode/
 .idea/
-Thumbs.db
-desktop.ini
-
-# Fichiers de log et de configuration temporaires
-debug.log
-error.log
 *.log
 *.swp
 
-# Fichiers de dépendances
-node_modules/
-
-# --- WordPress & Plugins (Contenu Généré) ---
-
-# 1. Ignorer TOUT le contenu généré par l'utilisateur
-# (Médias, etc. Doit être synchronisé depuis la Prod, jamais via Git)
+# --- DOSSIERS WP STANDARDS (À IGNORER) ---
 uploads/
-
-# 2. Ignorer les sauvegardes et exports (uniquement à la racine)
-# (Updraft, All-in-One, etc.)
+upgrade/
+cache/
+languages/
 updraft/
 ai1wm-backups/
-/*.sql
-/*.zip
-/*.gz
-
-# 3. Ignorer les caches
-# (WP Rocket, Elementor, Litespeed, etc.)
-cache/
-wp-rocket-config/
-litespeed/
-et-cache/
 wflogs/
 *-cache/
-tmp/
 
-# 4. Ignorer les dossiers de mise à jour
-upgrade/
-temp/
-
-# 5. Ignorer les fichiers de langue générés par WordPress (à la racine)
-# Ceci n'ignorera PAS les dossiers de langue des thèmes/plugins.
-/languages/
-
-# Ignorer tous les plugins tiers
+# --- PLUGINS ---
+# 1. Ignorer tous les plugins
 plugins/*
 
-# Autoriser tous les plugins maison (préfixe pc-)
+# 2. Autoriser le dossier parent pour que les exceptions fonctionnent
+!plugins/
+
+# 3. Autoriser tes plugins maison
 !plugins/pc-*/
 
-# 6. Ignorer les fichiers Composer du plugin PC Reservation
+# 4. Ignorer les dépendances lourdes dans tes plugins
 plugins/pc-reservation-core/vendor/
-plugins/pc-reservation-core/composer.phar
+
+# --- MU-PLUGINS ---
+# On s'assure que tout ce qui est dans mu-plugins remonte
+!mu-plugins/
+
+# --- WP ROCKET ---
+# On ignore tout le dossier de config (tes fichiers .json et .html de la capture)
+wp-rocket-config/
+
+# --- COMPOSER (Nettoyage) ---
+# On ignore les fichiers d'installation de composer
 plugins/pc-reservation-core/composer-setup.php
+plugins/pc-reservation-core/composer.phar
+
+# --- THEMES ---
+# Par défaut, tout est suivi dans themes/. 
+# Si tu veux n'en suivre qu'un seul, on peut restreindre, 
+# mais sinon, Git suivra tout le dossier themes/ par défaut.
