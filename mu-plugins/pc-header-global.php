@@ -17,7 +17,8 @@ if (!defined('ABSPATH')) exit;
 function pc_hg_config(): array
 {
     $cfg = [
-        'menu_name'      => 'Menu Principal V3',
+        'menu_name'          => 'Menu Principal V3',
+        'menu_services_name' => 'Menu Services',
 
         // Page “Recherche” existante (CTA)
         'search_url'     => '/recherche-de-logements/',
@@ -389,7 +390,7 @@ function pc_hg_render_mega_panels(array $tree, array $cfg): string
     return $out;
 }
 
-function pc_hg_render_offcanvas(array $tree, array $cfg): string
+function pc_hg_render_offcanvas(array $tree, array $cfg, array $services_tree = []): string
 {
     $out  = '<div class="pc-offcanvas" id="pc-offcanvas" aria-hidden="true" tabindex="-1">';
     $out .= '  <div class="pc-offcanvas__overlay" data-pc-oc-close tabindex="-1"></div>';
@@ -494,6 +495,39 @@ function pc_hg_render_offcanvas(array $tree, array $cfg): string
         $out .= '</li>';
     }
 
+    /* --- ÉDITION DU MENU SERVICES MOBILE AVEC RELIEF --- */
+    if (!empty($services_tree)) {
+        $out .= '<li class="pc-oc-divider" style="margin: 20px 16px; border-top: 1px solid rgba(0,0,0,0.08); list-style:none;"></li>';
+
+        foreach ($services_tree as $it) {
+            $title = trim((string)$it->title);
+            $url   = (string)$it->url;
+            $has_children = !empty($it->children);
+            $slug = pc_hg_slugify($title);
+            $acc_id = 'pc-oc-' . $slug;
+
+            $out .= '<li class="pc-oc-nav__item">';
+            if ($has_children) {
+                $out .= '<button class="pc-oc-nav__btn" type="button" aria-expanded="false" aria-controls="' . esc_attr($acc_id) . '" data-pc-oc-acc>';
+                $out .= '<span>' . esc_html($title) . '</span>' . pc_hg_svg('chev-down');
+                $out .= '</button>';
+
+                // On ajoute la classe "pc-oc-nav__panel--relief" pour le CSS
+                $out .= '<div class="pc-oc-nav__panel pc-oc-nav__panel--relief" id="' . esc_attr($acc_id) . '" hidden>';
+                // Cette div crée la "carte blanche" opaque
+                $out .= '<div class="pc-oc-nav__card">';
+                foreach ($it->children as $link) {
+                    $out .= '<a class="pc-oc-nav__link" href="' . esc_url($link->url) . '">' . esc_html($link->title) . '</a>';
+                }
+                $out .= '</div>';
+                $out .= '</div>';
+            } else {
+                $out .= '<a class="pc-oc-nav__link" href="' . esc_url($url) . '">' . esc_html($title) . '</a>';
+            }
+            $out .= '</li>';
+        }
+    }
+
     $out .= '      </ul>';
     $out .= '    </nav>';
     $out .= '  </div>';
@@ -523,6 +557,8 @@ function pc_header_global_shortcode($atts = []): string
 
     $items = pc_hg_get_menu_items($cfg['menu_name']);
     $tree  = pc_hg_build_tree($items);
+    $services_items = pc_hg_get_menu_items($cfg['menu_services_name']);
+    $services_tree  = pc_hg_build_tree($services_items);
 
     if (!$tree) {
         return '<div id="pc-header" class="pc-hg"><div class="pc-container"><p style="margin:0;padding:12px">Menu introuvable : ' . esc_html($cfg['menu_name']) . '</p></div></div>';
@@ -544,6 +580,12 @@ function pc_header_global_shortcode($atts = []): string
                         </a>
                     <?php endforeach; ?>
                 </div>
+
+                <nav class="pc-hg__services-desktop" aria-label="Services complémentaires">
+                    <ul class="pc-nav__list">
+                        <?php echo pc_hg_render_nav($services_tree); ?>
+                    </ul>
+                </nav>
 
                 <div class="pc-hg__topsearch">
                     <label class="sr-only" for="pc-hg-search">Recherche</label>
@@ -594,9 +636,10 @@ function pc_header_global_shortcode($atts = []): string
 
         <div class="pc-hg__panels" aria-hidden="false">
             <?php echo pc_hg_render_mega_panels($tree, $cfg); ?>
+            <?php echo pc_hg_render_mega_panels($services_tree, $cfg); ?>
         </div>
 
-        <?php echo pc_hg_render_offcanvas($tree, $cfg); ?>
+        <?php echo pc_hg_render_offcanvas($tree, $cfg, $services_tree); ?>
     </div>
 <?php
     return ob_get_clean();

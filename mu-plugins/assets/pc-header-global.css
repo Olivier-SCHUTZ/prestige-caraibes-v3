@@ -917,3 +917,95 @@ body.pc-oc-open .pc-offcanvas__panel {
 
   transition: background 0.18s ease, transform 0.18s ease;
 }
+
+/* --- MENU SERVICES : DESIGN DOUBLE COUCHE (VERSION PROPRE) --- */
+
+/* 1. Le conteneur "Glass" (le fond transparent et flou) */
+#pc-header #pc-panel-nos-services.pc-mega {
+  top: 52px;
+  left: 125px;
+  transform: translateY(-10px);
+  width: 320px;
+  padding: 18px;
+
+  /* Styles Glassmorphism */
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.92),
+    rgba(255, 255, 255, 0.88)
+  );
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+}
+
+/* Position finale à l'ouverture */
+#pc-header #pc-panel-nos-services.pc-mega.is-open {
+  transform: translateY(0);
+}
+
+/* 2. La structure interne */
+#pc-header #pc-panel-nos-services .pc-mega__inner {
+  display: block;
+}
+
+/* 3. La colonne "Opaque" (la carte blanche) */
+#pc-header #pc-panel-nos-services .pc-mega__col {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+
+  /* On annule les effets de survol/déplacement par défaut */
+  transform: none;
+}
+
+/* 4. Typographie et textes */
+#pc-header #pc-panel-nos-services .pc-mega__title {
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+  color: var(--pc-color-primary);
+}
+
+#pc-header #pc-panel-nos-services .pc-mega__list a {
+  font-family: var(--pc-font-body);
+  font-size: 1rem;
+  color: var(--pc-color-text);
+  padding: 4px 0;
+}
+
+/* --- DESIGN RELIEF MOBILE (NOS SERVICES) --- */
+
+/* Le fond du panneau (Effet verre / transparent) */
+#pc-header .pc-oc-nav__panel--relief {
+  background: rgba(0, 0, 0, 0.03); /* Léger fond pour créer le contraste */
+  padding: 12px 16px;
+  border-radius: 0 0 16px 16px;
+}
+
+/* La carte blanche en relief */
+#pc-header .pc-oc-nav__card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 10px 16px;
+
+  /* L'ombre qui crée l'effet de relief */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+/* Style des liens à l'intérieur de la carte relief */
+#pc-header .pc-oc-nav__card .pc-oc-nav__link {
+  padding: 12px 0;
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* Supprime la bordure du dernier lien */
+#pc-header .pc-oc-nav__card .pc-oc-nav__link:last-child {
+  border-bottom: none;
+}
