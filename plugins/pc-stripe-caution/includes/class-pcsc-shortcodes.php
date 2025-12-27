@@ -657,79 +657,182 @@ class PCSC_Shortcodes
         ob_start();
     ?>
         <style>
-            .pc-thx-wrap {
-                max-width: 600px;
-                margin: 40px auto;
-                padding: 40px;
-                background: #ffffff;
-                border-radius: 12px;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-                text-align: center;
+            .pc-wrap {
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                border: 1px solid #f0f0f0;
+                max-width: 900px;
+                margin: 20px auto;
+                background: #fff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
             }
 
-            .pc-thx-icon {
-                font-size: 50px;
-                color: #10b981;
-                margin-bottom: 20px;
-                display: inline-block;
-                animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            }
-
-            .pc-thx-title {
-                font-size: 24px;
-                color: #111827;
-                margin: 0 0 15px 0;
-                font-weight: 700;
-            }
-
-            .pc-thx-text {
+            .pc-input {
+                width: 100%;
+                padding: 12px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-sizing: border-box;
+                margin-bottom: 10px;
                 font-size: 16px;
-                color: #4b5563;
-                line-height: 1.6;
-                margin-bottom: 25px;
             }
 
-            .pc-thx-note {
-                font-size: 13px;
-                color: #6b7280;
+            /* Font 16px évite le zoom auto sur iPhone */
+            .pc-btn {
+                padding: 12px 16px;
+                border-radius: 5px;
+                border: none;
+                cursor: pointer;
+                color: white;
+                font-weight: bold;
+                text-decoration: none;
+                display: inline-block;
+                text-align: center;
+            }
+
+            .pc-btn-primary {
+                background: #2563eb;
+                color: white;
+            }
+
+            .pc-btn-success {
+                background: #059669;
+                color: white;
+            }
+
+            .pc-btn-danger {
+                background: #dc2626;
+                color: white;
+            }
+
+            .pc-btn-outline {
+                background: transparent;
+                border: 1px solid #d1d5db;
+                color: #374151;
+            }
+
+            .pc-alert {
+                padding: 10px;
+                margin-bottom: 15px;
+                border-radius: 5px;
+            }
+
+            .pc-alert-success {
+                background: #d1fae5;
+                color: #065f46;
+                border: 1px solid #a7f3d0;
+            }
+
+            .pc-alert-error {
+                background: #fee2e2;
+                color: #991b1b;
+                border: 1px solid #fecaca;
+            }
+
+            .pc-label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 5px;
+                color: #374151;
+            }
+
+            .pc-card {
                 background: #f9fafb;
                 padding: 15px;
-                border-radius: 8px;
-                margin-bottom: 30px;
+                border-radius: 6px;
                 border: 1px solid #e5e7eb;
+                margin-bottom: 15px;
             }
 
-            .pc-thx-btn {
-                display: inline-block;
-                background: #2563eb;
-                color: #ffffff !important;
-                /* FORCE LE BLANC */
-                text-decoration: none;
-                padding: 12px 25px;
-                border-radius: 30px;
+            /* GRILLE RESPONSIVE */
+            .pc-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th,
+            td {
+                padding: 12px 8px;
+                border-bottom: 1px solid #eee;
+                text-align: left;
+                font-size: 14px;
+            }
+
+            .pc-badge {
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 12px;
                 font-weight: 600;
-                transition: background 0.2s;
-                box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
             }
 
-            .pc-thx-btn:hover {
-                background: #1d4ed8;
-                color: #ffffff !important;
-                /* FORCE LE BLANC AU SURVOL */
-                transform: translateY(-1px);
+            .status-draft {
+                background: #e5e7eb;
+                color: #374151;
             }
 
-            @keyframes popIn {
-                from {
-                    transform: scale(0);
-                    opacity: 0;
+            .status-setup_ok {
+                background: #ffedd5;
+                color: #9a3412;
+                border: 1px solid #fed7aa;
+            }
+
+            .status-authorized {
+                background: #dbeafe;
+                color: #1e40af;
+                border: 1px solid #bfdbfe;
+            }
+
+            .status-released {
+                background: #f3f4f6;
+                color: #9ca3af;
+                text-decoration: line-through;
+            }
+
+            .status-captured {
+                background: #d1fae5;
+                color: #065f46;
+            }
+
+            .status-setup_link_created {
+                background: #fff7ed;
+                color: #9a3412;
+            }
+
+            /* VERSION MOBILE (< 600px) */
+            @media (max-width: 600px) {
+                .pc-grid {
+                    grid-template-columns: 1fr;
                 }
 
-                to {
-                    transform: scale(1);
-                    opacity: 1;
+                /* Une seule colonne */
+                .pc-wrap {
+                    margin: 10px;
+                    padding: 15px;
+                }
+
+                .pc-header {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 10px;
+                }
+
+                .pc-btn {
+                    width: 100%;
+                    box-sizing: border-box;
+                    margin-bottom: 5px;
+                }
+
+                /* Boutons larges faciles à toucher */
+
+                /* Tableau scrollable horizontalement sur mobile */
+                div[style*="overflow-x:auto"] {
+                    -webkit-overflow-scrolling: touch;
                 }
             }
         </style>
