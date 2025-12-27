@@ -25,17 +25,32 @@ class PCSC_Shortcodes
 
     private static function get_url(array $params = []): string
     {
-        // 1. Si on est dans l'interface Admin (Menu "Cautions Stripe")
+        // 1. Si on est dans le menu Admin WP
         if (is_admin() && isset($_GET['page']) && $_GET['page'] === 'pc-stripe-caution') {
-            $base_url = admin_url('admin.php?page=pc-stripe-caution');
+            $base = admin_url('admin.php?page=pc-stripe-caution');
         }
-        // 2. Sinon, on est sur le site public (Mobile / Page dédiée)
+        // 2. Sinon on est sur le site public (Page dédiée / Mobile)
         else {
             global $wp;
-            $base_url = home_url($wp->request);
+            $base = home_url($wp->request);
         }
 
-        return add_query_arg($params, $base_url);
+        return add_query_arg($params, $base);
+    }
+
+    // --- NOUVELLE FONCTION ---
+    private static function safe_redirect(string $url): void
+    {
+        // Si les en-têtes ne sont pas encore envoyés, on utilise PHP (rapide)
+        if (!headers_sent()) {
+            wp_safe_redirect($url);
+            exit;
+        } else {
+            // Si c'est trop tard pour PHP (cas fréquent en Admin), on utilise JS
+            echo "<script>window.location.href = '" . esc_url_raw($url) . "';</script>";
+            echo "<div style='padding:20px; text-align:center;'>Redirection... <a href='" . esc_url($url) . "'>Cliquez ici</a></div>";
+            exit;
+        }
     }
 
     private static function eur_to_cents($input): int
@@ -66,8 +81,7 @@ class PCSC_Shortcodes
 
                     if ($action === 'delete_case') {
                         PCSC_DB::delete_case($case_id);
-                        wp_safe_redirect(self::get_url(['msg' => 'done']));
-                        exit;
+                        self::safe_redirect(self::get_url(['msg' => 'done']));
                     }
 
                     if ($action === 'create_case') {
@@ -86,8 +100,7 @@ class PCSC_Shortcodes
                             'date_arrivee' => $arr ?: null,
                             'date_depart' => $dep ?: null,
                         ]);
-                        wp_safe_redirect(self::get_url(['case_id' => $new_id]));
-                        exit;
+                        self::safe_redirect(self::get_url(['case_id' => $new_id]));
                     }
 
                     $case = PCSC_DB::get_case($case_id);
@@ -124,8 +137,7 @@ class PCSC_Shortcodes
                             'last_error' => null
                         ]);
                         PCSC_DB::append_note($case_id, "Lien généré pour client ($stripe_cust_id).");
-                        wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
-                        exit;
+                        self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
 
                     if ($action === 'take_hold') {
@@ -154,8 +166,7 @@ class PCSC_Shortcodes
                             PCSC_Mailer::send_hold_confirmation($case['customer_email'], $case['booking_ref'], (int)$case['amount'], $d_txt);
                             PCSC_DB::append_note($case_id, 'Email confirmation envoyé au client.');
                         }
-                        wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
-                        exit;
+                        self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
 
                     if ($action === 'capture') {
@@ -170,8 +181,7 @@ class PCSC_Shortcodes
                         $status = ($cap_amount === (int)$case['amount']) ? 'captured' : 'capture_partial';
                         PCSC_DB::update_case($case_id, ['status' => $status, 'last_error' => null]);
                         PCSC_DB::append_note($case_id, "Encaissement effectué: " . ($cap_amount / 100) . "€. Note: $note");
-                        wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
-                        exit;
+                        self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
 
                     if ($action === 'release') {
@@ -184,15 +194,13 @@ class PCSC_Shortcodes
                             PCSC_Mailer::send_release_confirmation($case['customer_email'], $case['booking_ref']);
                             PCSC_DB::append_note($case_id, 'Email libération envoyé au client.');
                         }
-                        wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
-                        exit;
+                        self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
 
                     if ($action === 'rotate') {
                         $res = PCSC_DB::rotate_silent($case_id, "Rotation manuelle.");
                         if (!$res['ok']) throw new Exception($res['error']);
-                        wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
-                        exit;
+                        self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
                 } catch (Exception $e) {
                     $error = $e->getMessage();
