@@ -93,6 +93,13 @@ class PCSC_DB
         $wpdb->update($table, $data, ['id' => $id]);
     }
 
+    // --- AJOUT : Suppression ---
+    public static function delete_case(int $id): void
+    {
+        global $wpdb;
+        $wpdb->delete(self::table(), ['id' => $id]);
+    }
+
     public static function append_note(int $id, string $note): void
     {
         $case = self::get_case($id);
@@ -135,7 +142,11 @@ class PCSC_DB
 
         if ($res['ok']) {
             self::update_case($id, ['status' => 'released', 'last_error' => null]);
-            self::append_note($id, 'Libération automatique J+7 effectuée.');
+
+            // --- AJOUT EMAIL CLIENT ---
+            if (class_exists('PCSC_Mailer')) {
+                PCSC_Mailer::send_release_confirmation($case['customer_email'], $case['booking_ref']);
+            }
         } else {
             self::update_case($id, ['last_error' => $res['error']]);
             self::append_note($id, 'Échec libération auto: ' . $res['error']);
@@ -165,6 +176,16 @@ class PCSC_DB
 
             $depart_ts = strtotime($case['date_depart'] . ' 12:00:00');
             $now = time();
+            if (class_exists('PCSC_Mailer')) {
+                $days_since_depart = ($now - $depart_ts) / DAY_IN_SECONDS;
+                // Entre 5.5 et 6.5 jours après le départ = le 6ème jour (la veille du 7ème)
+                if ($days_since_depart >= 5.5 && $days_since_depart < 6.5) {
+                    if (strpos($case['internal_notes'], 'Mail rappel J-1') === false) {
+                        PCSC_Mailer::send_admin_reminder_release($case['booking_ref'], $case['date_depart']);
+                        self::append_note($id, 'Mail rappel J-1 envoyé à l\'admin.');
+                    }
+                }
+            }
 
             // Si déjà après départ+7 => la libération sera gérée par cron_release_single si planifié
             if ($now > ($depart_ts + 7 * DAY_IN_SECONDS)) continue;

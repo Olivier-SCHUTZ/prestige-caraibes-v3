@@ -49,6 +49,14 @@ class PCSC_Webhooks
 
                     PCSC_DB::update_case($case_id, $update_data);
                     PCSC_DB::append_note($case_id, "Webhook OK : Carte ($pm) confirmée.");
+                    // --- AJOUT EMAIL ADMIN ---
+                    if (class_exists('PCSC_Mailer')) {
+                        $case = PCSC_DB::get_case($case_id);
+                        if ($case) {
+                            PCSC_Mailer::send_admin_card_saved($case['booking_ref'], $case['customer_email']);
+                            PCSC_DB::append_note($case_id, "Mail alerte Admin envoyé.");
+                        }
+                    }
                 }
             }
         }

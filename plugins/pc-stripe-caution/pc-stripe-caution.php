@@ -17,6 +17,7 @@ require_once PCSC_PLUGIN_DIR . 'includes/class-pcsc-db.php';
 require_once PCSC_PLUGIN_DIR . 'includes/class-pcsc-stripe.php';
 require_once PCSC_PLUGIN_DIR . 'includes/class-pcsc-shortcodes.php';
 require_once PCSC_PLUGIN_DIR . 'includes/class-pcsc-webhooks.php';
+require_once PCSC_PLUGIN_DIR . 'includes/class-pcsc-mailer.php';
 
 register_activation_hook(__FILE__, ['PCSC_DB', 'activate']);
 

@@ -55,7 +55,12 @@ class PCSC_Shortcodes
                 try {
                     $action = sanitize_text_field($_POST['pcsc_action']);
                     $case_id = isset($_POST['case_id']) ? (int)$_POST['case_id'] : 0;
-
+                    // --- AJOUT SUPPRESSION ---
+                    if ($action === 'delete_case') {
+                        PCSC_DB::delete_case($case_id);
+                        wp_safe_redirect(self::get_url(['msg' => 'done']));
+                        exit;
+                    }
                     // 1. CRÉATION
                     if ($action === 'create_case') {
                         $ref = sanitize_text_field($_POST['booking_ref']);
@@ -162,6 +167,12 @@ class PCSC_Shortcodes
                         ]);
                         PCSC_DB::append_note($case_id, 'Caution prise (Hold actif).');
                         PCSC_DB::schedule_release($case_id);
+                        // --- AJOUT EMAIL ---
+                        if (class_exists('PCSC_Mailer')) {
+                            $d_txt = $case['date_depart'] ? date('d/m/Y', strtotime($case['date_depart']) + (7 * DAY_IN_SECONDS)) : 'J+7 après départ';
+                            PCSC_Mailer::send_hold_confirmation($case['customer_email'], $case['booking_ref'], (int)$case['amount'], $d_txt);
+                            PCSC_DB::append_note($case_id, 'Email confirmation envoyé au client.');
+                        }
 
                         wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                         exit;
@@ -197,6 +208,11 @@ class PCSC_Shortcodes
 
                         PCSC_DB::update_case($case_id, ['status' => 'released', 'last_error' => null]);
                         PCSC_DB::append_note($case_id, "Caution libérée manuellement.");
+                        // --- AJOUT EMAIL ---
+                        if (class_exists('PCSC_Mailer')) {
+                            PCSC_Mailer::send_release_confirmation($case['customer_email'], $case['booking_ref']);
+                            PCSC_DB::append_note($case_id, 'Email libération envoyé au client.');
+                        }
 
                         wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                         exit;
@@ -467,8 +483,15 @@ class PCSC_Shortcodes
                             <td><?php echo $amt; ?> €</td>
                             <td><span class="pc-badge <?php echo $cls; ?>"><?php echo esc_html($c['status']); ?></span></td>
                             <td><?php echo $c['date_depart'] ? date('d/m', strtotime($c['date_depart'])) : '-'; ?></td>
-                            <td>
+                            <td style="white-space: nowrap;">
                                 <a href="<?php echo esc_url(self::get_url(['case_id' => $c['id']])); ?>" class="pc-btn pc-btn-outline" style="padding:6px 10px; font-size:12px;">Ouvrir</a>
+
+                                <form method="post" style="display:inline-block; margin:0; margin-left:5px;" onsubmit="return confirm('Supprimer définitivement ce dossier ?');">
+                                    <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
+                                    <input type="hidden" name="pcsc_action" value="delete_case">
+                                    <input type="hidden" name="case_id" value="<?php echo $c['id']; ?>">
+                                    <button type="submit" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0;" title="Supprimer">❌</button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>
