@@ -25,11 +25,17 @@ class PCSC_Shortcodes
 
     private static function get_url(array $params = []): string
     {
-        $url = remove_query_arg(array_keys($_GET));
-        if (isset($_GET['page']) && $_GET['page'] === 'pc-stripe-caution') {
-            $url = add_query_arg('page', 'pc-stripe-caution', admin_url('admin.php'));
+        // 1. Si on est dans l'interface Admin (Menu "Cautions Stripe")
+        if (is_admin() && isset($_GET['page']) && $_GET['page'] === 'pc-stripe-caution') {
+            $base_url = admin_url('admin.php?page=pc-stripe-caution');
         }
-        return add_query_arg($params, $url);
+        // 2. Sinon, on est sur le site public (Mobile / Page dédiée)
+        else {
+            global $wp;
+            $base_url = home_url($wp->request);
+        }
+
+        return add_query_arg($params, $base_url);
     }
 
     private static function eur_to_cents($input): int
