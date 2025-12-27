@@ -6,6 +6,8 @@ class PCSC_Shortcodes
     public static function init(): void
     {
         add_shortcode('pc_caution_admin', [__CLASS__, 'render_admin']);
+        add_shortcode('pc_caution_merci', [__CLASS__, 'render_thankyou']);
+        add_action('admin_menu', [__CLASS__, 'register_menu']);
     }
 
     private static function check_access(): void
@@ -23,8 +25,15 @@ class PCSC_Shortcodes
 
     private static function get_url(array $params = []): string
     {
-        $current_url = remove_query_arg(array_keys($_GET));
-        return add_query_arg($params, $current_url);
+        // On récupère l'URL actuelle
+        $url = remove_query_arg(array_keys($_GET));
+
+        // Si on est dans l'admin, on DOIT garder le paramètre 'page'
+        if (isset($_GET['page']) && $_GET['page'] === 'pc-stripe-caution') {
+            $url = add_query_arg('page', 'pc-stripe-caution', admin_url('admin.php'));
+        }
+
+        return add_query_arg($params, $url);
     }
 
     private static function eur_to_cents($input): int
@@ -641,6 +650,131 @@ class PCSC_Shortcodes
 
             </div>
         </div>
+    <?php
+    }
+    public static function render_thankyou($atts): string
+    {
+        ob_start();
+    ?>
+        <style>
+            .pc-thx-wrap {
+                max-width: 600px;
+                margin: 40px auto;
+                padding: 40px;
+                background: #ffffff;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+                text-align: center;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                border: 1px solid #f0f0f0;
+            }
+
+            .pc-thx-icon {
+                font-size: 50px;
+                color: #10b981;
+                margin-bottom: 20px;
+                display: inline-block;
+                animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+
+            .pc-thx-title {
+                font-size: 24px;
+                color: #111827;
+                margin: 0 0 15px 0;
+                font-weight: 700;
+            }
+
+            .pc-thx-text {
+                font-size: 16px;
+                color: #4b5563;
+                line-height: 1.6;
+                margin-bottom: 25px;
+            }
+
+            .pc-thx-note {
+                font-size: 13px;
+                color: #6b7280;
+                background: #f9fafb;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+                border: 1px solid #e5e7eb;
+            }
+
+            .pc-thx-btn {
+                display: inline-block;
+                background: #2563eb;
+                color: #ffffff !important;
+                /* FORCE LE BLANC */
+                text-decoration: none;
+                padding: 12px 25px;
+                border-radius: 30px;
+                font-weight: 600;
+                transition: background 0.2s;
+                box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+            }
+
+            .pc-thx-btn:hover {
+                background: #1d4ed8;
+                color: #ffffff !important;
+                /* FORCE LE BLANC AU SURVOL */
+                transform: translateY(-1px);
+            }
+
+            @keyframes popIn {
+                from {
+                    transform: scale(0);
+                    opacity: 0;
+                }
+
+                to {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+        </style>
+
+        <div class="pc-thx-wrap">
+            <div class="pc-thx-icon">✅</div>
+
+            <h1 class="pc-thx-title">Carte enregistrée avec succès</h1>
+
+            <p class="pc-thx-text">
+                Merci ! Vos coordonnées bancaires ont bien été sécurisées pour la caution.<br>
+                Vous recevrez un <strong>email de confirmation</strong> dès que la somme sera officiellement bloquée (Hold) avant votre arrivée.
+            </p>
+
+            <div class="pc-thx-note">
+                🔒 <strong>Sécurité & Confidentialité</strong><br>
+                Vos informations sont chiffrées par Stripe. Aucune somme n'est débitée immédiatement.
+                L'empreinte bancaire sera supprimée automatiquement après la libération de la caution.
+            </div>
+
+            <a href="/recherche-dexperiences/" class="pc-thx-btn">
+                ✨ Découvrir nos expériences
+            </a>
+        </div>
 <?php
+        return ob_get_clean();
+    }
+    // --- GESTION DU MENU ADMIN ---
+
+    public static function register_menu(): void
+    {
+        add_menu_page(
+            'Gestion Cautions',      // Titre de la page
+            'Cautions Stripe',       // Titre du menu (gauche)
+            'manage_options',        // Capacité requise (Admin)
+            'pc-stripe-caution',     // Slug de l'URL
+            [__CLASS__, 'render_menu_page'], // Fonction qui affiche le contenu
+            'dashicons-shield',      // Icône (Bouclier)
+            56                       // Position (juste avant Outils)
+        );
+    }
+
+    public static function render_menu_page(): void
+    {
+        // On réutilise simplement notre fonction existante !
+        echo self::render_admin([]);
     }
 }
