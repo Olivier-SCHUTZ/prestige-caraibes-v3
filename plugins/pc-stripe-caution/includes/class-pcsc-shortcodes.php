@@ -103,6 +103,11 @@ class PCSC_Shortcodes
                         }
                         // --- CORRECTION FIN ---
 
+                        // --- PRÉPARATION DU MESSAGE CLIENT ---
+                        $fmt_amount = number_format($case['amount'] / 100, 2, ',', ' ');
+                        $fmt_date = $case['date_depart'] ? date('d/m/Y', strtotime($case['date_depart'])) : 'non définie';
+                        $message_client = "Caution réf. " . $case['booking_ref'] . " de " . $fmt_amount . " €. Libérable après le " . $fmt_date . ".";
+
                         $res = PCSC_Stripe::create_checkout_setup_session([
                             'success_url' => home_url('/caution-merci/?case_id=' . $case_id),
                             'cancel_url'  => home_url('/caution-annulee/?case_id=' . $case_id),
@@ -112,6 +117,8 @@ class PCSC_Shortcodes
                                 'pc_case_id' => $case_id,
                                 'booking_ref' => $case['booking_ref'],
                             ],
+                            // AJOUT : On envoie le message à notre fonction Stripe
+                            'checkout_message' => $message_client
                         ]);
 
                         if (!$res['ok']) throw new Exception($res['error']);

@@ -63,6 +63,12 @@ class PCSC_Stripe
             $body['customer_email'] = $params['customer_email'];
         }
 
+        // --- AJOUT POUR AFFICHER LE TEXTE SUR LA PAGE STRIPE ---
+        if (!empty($params['checkout_message'])) {
+            $body['custom_text[submit][message]'] = $params['checkout_message'];
+        }
+        // -------------------------------------------------------
+
         if (!empty($params['metadata']) && is_array($params['metadata'])) {
             foreach ($params['metadata'] as $k => $v) {
                 $body["metadata[{$k}]"] = (string)$v;
@@ -88,6 +94,9 @@ class PCSC_Stripe
         $customer_id = (string)($params['customer_id'] ?? '');
         $pm_id = (string)($params['payment_method_id'] ?? '');
 
+        // --- AJOUT : Récupération ID dossier ---
+        $case_id = $params['metadata']['pc_case_id'] ?? 'N/A';
+
         if ($amount < 100) return ['ok' => false, 'error' => 'Montant trop faible (min 1€).'];
         if (!$customer_id || !$pm_id) return ['ok' => false, 'error' => 'Paramètres manquants (Customer/PM).'];
 
@@ -99,7 +108,7 @@ class PCSC_Stripe
             'confirm' => 'true',
             'off_session' => 'true',
             'capture_method' => 'manual',
-            'description' => 'Caution - Prestige Caraïbes',
+            'description' => 'Caution #' . $case_id . ' - Prestige Caraïbes',
         ];
 
         if (!empty($params['metadata'])) {
