@@ -25,22 +25,17 @@ class PCSC_Shortcodes
 
     private static function get_url(array $params = []): string
     {
-        // On récupère l'URL actuelle
         $url = remove_query_arg(array_keys($_GET));
-
-        // Si on est dans l'admin, on DOIT garder le paramètre 'page'
         if (isset($_GET['page']) && $_GET['page'] === 'pc-stripe-caution') {
             $url = add_query_arg('page', 'pc-stripe-caution', admin_url('admin.php'));
         }
-
         return add_query_arg($params, $url);
     }
 
     private static function eur_to_cents($input): int
     {
         $clean = str_replace([',', ' '], ['.', ''], (string)$input);
-        $float = (float)$clean;
-        return (int) round($float * 100);
+        return (int) round((float)$clean * 100);
     }
 
     public static function render_admin($atts): string
@@ -51,12 +46,10 @@ class PCSC_Shortcodes
         $message = '';
         $error = '';
 
-        // Gestion message après redirection
         if (isset($_GET['msg']) && $_GET['msg'] === 'done') {
             $message = "Action effectuée avec succès.";
         }
 
-        // --- GESTION DES ACTIONS POST ---
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['pcsc_action'])) {
             if (!check_admin_referer('pcsc_admin_action', 'pcsc_nonce')) {
                 $error = 'Sécurité: Session expirée. Veuillez recharger la page.';
@@ -64,13 +57,13 @@ class PCSC_Shortcodes
                 try {
                     $action = sanitize_text_field($_POST['pcsc_action']);
                     $case_id = isset($_POST['case_id']) ? (int)$_POST['case_id'] : 0;
-                    // --- AJOUT SUPPRESSION ---
+
                     if ($action === 'delete_case') {
                         PCSC_DB::delete_case($case_id);
                         wp_safe_redirect(self::get_url(['msg' => 'done']));
                         exit;
                     }
-                    // 1. CRÉATION
+
                     if ($action === 'create_case') {
                         $ref = sanitize_text_field($_POST['booking_ref']);
                         $email = sanitize_email($_POST['customer_email']);
@@ -78,9 +71,7 @@ class PCSC_Shortcodes
                         $arr = sanitize_text_field($_POST['date_arrivee']);
                         $dep = sanitize_text_field($_POST['date_depart']);
 
-                        if (!$ref || !$email || $amount <= 0) {
-                            throw new Exception("Champs obligatoires manquants ou montant invalide.");
-                        }
+                        if (!$ref || !$email || $amount <= 0) throw new Exception("Champs obligatoires manquants.");
 
                         $new_id = PCSC_DB::insert_case([
                             'booking_ref' => $ref,
@@ -89,7 +80,6 @@ class PCSC_Shortcodes
                             'date_arrivee' => $arr ?: null,
                             'date_depart' => $dep ?: null,
                         ]);
-
                         wp_safe_redirect(self::get_url(['case_id' => $new_id]));
                         exit;
                     }
@@ -97,27 +87,15 @@ class PCSC_Shortcodes
                     $case = PCSC_DB::get_case($case_id);
                     if (!$case) throw new Exception("Dossier introuvable.");
 
-                    // 2. GÉNÉRER LIEN (C'est ici qu'on ajoute la correction CLIENT)
                     if ($action === 'create_setup_link') {
-
-                        // --- CORRECTION DÉBUT : On crée le client Stripe MAINTENANT ---
                         $stripe_cust_id = $case['stripe_customer_id'];
-
                         if (empty($stripe_cust_id)) {
-                            // Appel à la nouvelle fonction dans class-pcsc-stripe.php
                             $cust_res = PCSC_Stripe::create_customer($case['customer_email'], $case['booking_ref']);
-
-                            if (!$cust_res['ok']) {
-                                throw new Exception("Erreur lors de la création du client Stripe : " . $cust_res['error']);
-                            }
-
+                            if (!$cust_res['ok']) throw new Exception("Erreur création client Stripe : " . $cust_res['error']);
                             $stripe_cust_id = $cust_res['id'];
-                            // On sauvegarde immédiatement l'ID Client
                             PCSC_DB::update_case($case_id, ['stripe_customer_id' => $stripe_cust_id]);
                         }
-                        // --- CORRECTION FIN ---
 
-                        // --- PRÉPARATION DU MESSAGE CLIENT ---
                         $fmt_amount = number_format($case['amount'] / 100, 2, ',', ' ');
                         $fmt_date = $case['date_depart'] ? date('d/m/Y', strtotime($case['date_depart'])) : 'non définie';
                         $message_client = "Caution réf. " . $case['booking_ref'] . " de " . $fmt_amount . " €. Libérable après le " . $fmt_date . ".";
@@ -125,13 +103,9 @@ class PCSC_Shortcodes
                         $res = PCSC_Stripe::create_checkout_setup_session([
                             'success_url' => home_url('/caution-merci/?case_id=' . $case_id),
                             'cancel_url'  => home_url('/caution-annulee/?case_id=' . $case_id),
-                            'customer_email' => $case['customer_email'], // Fallback
-                            'customer_id' => $stripe_cust_id,            // ON LIE LE LIEN AU CLIENT
-                            'metadata' => [
-                                'pc_case_id' => $case_id,
-                                'booking_ref' => $case['booking_ref'],
-                            ],
-                            // AJOUT : On envoie le message à notre fonction Stripe
+                            'customer_email' => $case['customer_email'],
+                            'customer_id' => $stripe_cust_id,
+                            'metadata' => ['pc_case_id' => $case_id, 'booking_ref' => $case['booking_ref']],
                             'checkout_message' => $message_client
                         ]);
 
@@ -143,27 +117,19 @@ class PCSC_Shortcodes
                             'stripe_setup_url' => $res['url'],
                             'last_error' => null
                         ]);
-
-                        PCSC_DB::append_note($case_id, "Client Stripe ($stripe_cust_id) vérifié/créé. Lien généré.");
-
+                        PCSC_DB::append_note($case_id, "Lien généré pour client ($stripe_cust_id).");
                         wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                         exit;
                     }
 
-                    // 3. HOLD
                     if ($action === 'take_hold') {
-                        if (empty($case['stripe_customer_id']) || empty($case['stripe_payment_method_id'])) {
-                            throw new Exception("Le client n'a pas encore enregistré sa carte (Setup incomplet).");
-                        }
+                        if (empty($case['stripe_customer_id']) || empty($case['stripe_payment_method_id'])) throw new Exception("Carte non enregistrée.");
 
                         $res = PCSC_Stripe::create_manual_hold_off_session([
                             'amount' => (int)$case['amount'],
                             'customer_id' => $case['stripe_customer_id'],
                             'payment_method_id' => $case['stripe_payment_method_id'],
-                            'metadata' => [
-                                'pc_case_id' => $case_id,
-                                'booking_ref' => $case['booking_ref']
-                            ]
+                            'metadata' => ['pc_case_id' => $case_id, 'booking_ref' => $case['booking_ref']]
                         ]);
 
                         if (!$res['ok']) throw new Exception($res['error']);
@@ -176,25 +142,21 @@ class PCSC_Shortcodes
                         ]);
                         PCSC_DB::append_note($case_id, 'Caution prise (Hold actif).');
                         PCSC_DB::schedule_release($case_id);
-                        // --- AJOUT EMAIL ---
+
                         if (class_exists('PCSC_Mailer')) {
                             $d_txt = $case['date_depart'] ? date('d/m/Y', strtotime($case['date_depart']) + (7 * DAY_IN_SECONDS)) : 'J+7 après départ';
                             PCSC_Mailer::send_hold_confirmation($case['customer_email'], $case['booking_ref'], (int)$case['amount'], $d_txt);
                             PCSC_DB::append_note($case_id, 'Email confirmation envoyé au client.');
                         }
-
                         wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                         exit;
                     }
 
-                    // 4. CAPTURE
                     if ($action === 'capture') {
                         $cap_amount = self::eur_to_cents($_POST['capture_amount_eur']);
                         $note = sanitize_textarea_field($_POST['capture_note']);
                         $pi_id = $case['stripe_payment_intent_id'];
-
-                        if (empty($pi_id)) throw new Exception("Aucune caution active à encaisser.");
-                        if ($cap_amount <= 0 || $cap_amount > (int)$case['amount']) throw new Exception("Montant invalide.");
+                        if (empty($pi_id) || $cap_amount <= 0 || $cap_amount > (int)$case['amount']) throw new Exception("Erreur capture.");
 
                         $res = PCSC_Stripe::capture_payment_intent($pi_id, $cap_amount);
                         if (!$res['ok']) throw new Exception($res['error']);
@@ -202,36 +164,27 @@ class PCSC_Shortcodes
                         $status = ($cap_amount === (int)$case['amount']) ? 'captured' : 'capture_partial';
                         PCSC_DB::update_case($case_id, ['status' => $status, 'last_error' => null]);
                         PCSC_DB::append_note($case_id, "Encaissement effectué: " . ($cap_amount / 100) . "€. Note: $note");
-
                         wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                         exit;
                     }
 
-                    // 5. RELEASE
                     if ($action === 'release') {
-                        $pi_id = $case['stripe_payment_intent_id'];
-                        if (empty($pi_id)) throw new Exception("Rien à libérer.");
-
-                        $res = PCSC_Stripe::cancel_payment_intent($pi_id);
+                        $res = PCSC_Stripe::cancel_payment_intent($case['stripe_payment_intent_id']);
                         if (!$res['ok']) throw new Exception($res['error']);
-
                         PCSC_DB::update_case($case_id, ['status' => 'released', 'last_error' => null]);
                         PCSC_DB::append_note($case_id, "Caution libérée manuellement.");
-                        // --- AJOUT EMAIL ---
+
                         if (class_exists('PCSC_Mailer')) {
                             PCSC_Mailer::send_release_confirmation($case['customer_email'], $case['booking_ref']);
                             PCSC_DB::append_note($case_id, 'Email libération envoyé au client.');
                         }
-
                         wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                         exit;
                     }
 
-                    // 6. ROTATE
                     if ($action === 'rotate') {
-                        $res = PCSC_DB::rotate_silent($case_id, "Rotation manuelle demandée.");
+                        $res = PCSC_DB::rotate_silent($case_id, "Rotation manuelle.");
                         if (!$res['ok']) throw new Exception($res['error']);
-
                         wp_safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                         exit;
                     }
@@ -241,23 +194,26 @@ class PCSC_Shortcodes
             }
         }
 
-        // --- AFFICHAGE (UI DÉTAILLÉE) ---
         ob_start();
         $case_id_view = isset($_GET['case_id']) ? (int)$_GET['case_id'] : 0;
 ?>
-
         <style>
-            .pc-wrap {
+            #pc-admin-root {
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                max-width: 800px;
-                margin: 20px auto;
+                background: #f0f2f5;
+                padding: 10px;
+            }
+
+            #pc-admin-root .pc-wrap {
+                max-width: 900px;
+                margin: 0 auto;
                 background: #fff;
                 padding: 20px;
                 border-radius: 8px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
             }
 
-            .pc-header {
+            #pc-admin-root .pc-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -266,7 +222,7 @@ class PCSC_Shortcodes
                 padding-bottom: 15px;
             }
 
-            .pc-btn {
+            #pc-admin-root .pc-btn {
                 display: inline-block;
                 padding: 10px 16px;
                 border-radius: 6px;
@@ -275,49 +231,50 @@ class PCSC_Shortcodes
                 border: none;
                 cursor: pointer;
                 font-size: 14px;
+                text-align: center;
             }
 
-            .pc-btn-primary {
+            #pc-admin-root .pc-btn-primary {
                 background: #2563eb;
                 color: white;
             }
 
-            .pc-btn-success {
+            #pc-admin-root .pc-btn-success {
                 background: #059669;
                 color: white;
             }
 
-            .pc-btn-danger {
+            #pc-admin-root .pc-btn-danger {
                 background: #dc2626;
                 color: white;
             }
 
-            .pc-btn-outline {
+            #pc-admin-root .pc-btn-outline {
                 background: transparent;
                 border: 1px solid #d1d5db;
                 color: #374151;
             }
 
-            .pc-alert {
+            #pc-admin-root .pc-alert {
                 padding: 12px;
                 border-radius: 6px;
                 margin-bottom: 20px;
                 font-weight: 500;
             }
 
-            .pc-alert-success {
+            #pc-admin-root .pc-alert-success {
                 background: #d1fae5;
                 color: #065f46;
                 border: 1px solid #a7f3d0;
             }
 
-            .pc-alert-error {
+            #pc-admin-root .pc-alert-error {
                 background: #fee2e2;
                 color: #991b1b;
                 border: 1px solid #fecaca;
             }
 
-            .pc-input {
+            #pc-admin-root .pc-input {
                 width: 100%;
                 padding: 12px;
                 border: 1px solid #d1d5db;
@@ -327,20 +284,14 @@ class PCSC_Shortcodes
                 margin-bottom: 10px;
             }
 
-            .pc-label {
+            #pc-admin-root .pc-label {
                 display: block;
                 font-weight: 600;
                 margin-bottom: 5px;
                 color: #374151;
             }
 
-            .pc-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 15px;
-            }
-
-            .pc-card {
+            #pc-admin-root .pc-card {
                 background: #f9fafb;
                 padding: 15px;
                 border-radius: 6px;
@@ -348,77 +299,155 @@ class PCSC_Shortcodes
                 margin-bottom: 15px;
             }
 
-            .pc-table {
-                width: 100%;
-                border-collapse: collapse;
+            #pc-admin-root .pc-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
             }
 
-            .pc-table th {
+            #pc-admin-root table.pc-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 0;
+            }
+
+            #pc-admin-root table.pc-table th {
                 text-align: left;
-                padding: 10px;
+                padding: 12px 10px;
                 border-bottom: 2px solid #e5e7eb;
                 color: #6b7280;
                 font-size: 12px;
                 text-transform: uppercase;
             }
 
-            .pc-table td {
+            #pc-admin-root table.pc-table td {
                 padding: 12px 10px;
                 border-bottom: 1px solid #f3f4f6;
+                vertical-align: middle;
+                background: transparent;
             }
 
-            .pc-badge {
+            #pc-admin-root .pc-badge {
                 padding: 4px 8px;
                 border-radius: 12px;
-                font-size: 12px;
+                font-size: 11px;
                 font-weight: 600;
+                text-transform: uppercase;
+                display: inline-block;
             }
 
-            .status-draft {
+            #pc-admin-root .status-draft {
                 background: #e5e7eb;
                 color: #374151;
             }
 
-            .status-setup_ok {
+            #pc-admin-root .status-setup_ok {
                 background: #ffedd5;
                 color: #9a3412;
                 border: 1px solid #fed7aa;
             }
 
-            .status-authorized {
+            #pc-admin-root .status-authorized {
                 background: #dbeafe;
                 color: #1e40af;
                 border: 1px solid #bfdbfe;
             }
 
-            .status-released {
+            #pc-admin-root .status-released {
                 background: #f3f4f6;
                 color: #9ca3af;
                 text-decoration: line-through;
             }
 
-            .status-captured {
+            #pc-admin-root .status-captured {
                 background: #d1fae5;
                 color: #065f46;
             }
 
-            .status-setup_link_created {
+            #pc-admin-root .status-setup_link_created {
                 background: #fff7ed;
                 color: #9a3412;
             }
+
+            /* --- MOBILE RESPONSIVE --- */
+            @media (max-width: 600px) {
+                #pc-admin-root .pc-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                #pc-admin-root .pc-wrap {
+                    padding: 15px;
+                }
+
+                #pc-admin-root table.pc-table,
+                #pc-admin-root table.pc-table tbody,
+                #pc-admin-root table.pc-table tr,
+                #pc-admin-root table.pc-table td {
+                    display: block;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+
+                #pc-admin-root table.pc-table thead {
+                    display: none;
+                }
+
+                #pc-admin-root table.pc-table tr {
+                    margin-bottom: 15px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    background: #fff;
+                    padding: 15px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                }
+
+                #pc-admin-root table.pc-table td {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    text-align: right;
+                    padding: 8px 0;
+                    border-bottom: 1px solid #f9fafb;
+                    font-size: 14px;
+                }
+
+                #pc-admin-root table.pc-table td:last-child {
+                    border-bottom: none;
+                    display: block;
+                    text-align: center;
+                    margin-top: 10px;
+                }
+
+                #pc-admin-root table.pc-table td::before {
+                    content: attr(data-label);
+                    font-weight: 600;
+                    color: #6b7280;
+                    text-transform: uppercase;
+                    font-size: 11px;
+                    margin-right: 10px;
+                }
+
+                #pc-admin-root table.pc-table td[data-label="Actions"]::before {
+                    display: none;
+                }
+
+                #pc-admin-root .pc-btn {
+                    width: 100%;
+                    margin-bottom: 5px;
+                }
+            }
         </style>
 
-        <div class="pc-wrap">
-            <?php if ($message): ?><div class="pc-alert pc-alert-success"><?php echo esc_html($message); ?></div><?php endif; ?>
-            <?php if ($error): ?><div class="pc-alert pc-alert-error"><?php echo esc_html($error); ?></div><?php endif; ?>
+        <div id="pc-admin-root">
+            <div class="pc-wrap">
+                <?php if ($message): ?><div class="pc-alert pc-alert-success"><?php echo esc_html($message); ?></div><?php endif; ?>
+                <?php if ($error): ?><div class="pc-alert pc-alert-error"><?php echo esc_html($error); ?></div><?php endif; ?>
 
-            <?php if ($case_id_view): ?>
-                <?php self::render_case_detail($case_id_view); ?>
-            <?php else: ?>
-                <?php self::render_dashboard(); ?>
-            <?php endif; ?>
+                <?php if ($case_id_view): self::render_case_detail($case_id_view);
+                else: self::render_dashboard();
+                endif; ?>
+            </div>
         </div>
-
     <?php
         return ob_get_clean();
     }
@@ -438,34 +467,16 @@ class PCSC_Shortcodes
             <form method="post" class="pc-grid">
                 <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                 <input type="hidden" name="pcsc_action" value="create_case">
-
-                <div>
-                    <label class="pc-label">Référence Réservation</label>
-                    <input type="text" name="booking_ref" class="pc-input" required placeholder="ex: 2024-ABC">
-                </div>
-                <div>
-                    <label class="pc-label">Email Client</label>
-                    <input type="email" name="customer_email" class="pc-input" required placeholder="client@email.com">
-                </div>
-                <div>
-                    <label class="pc-label">Montant Caution (€)</label>
-                    <input type="text" inputmode="decimal" name="amount_eur" class="pc-input" required placeholder="ex: 500">
-                </div>
+                <div><label class="pc-label">Référence Réservation</label><input type="text" name="booking_ref" class="pc-input" required placeholder="ex: 2024-ABC"></div>
+                <div><label class="pc-label">Email Client</label><input type="email" name="customer_email" class="pc-input" required placeholder="client@email.com"></div>
+                <div><label class="pc-label">Montant Caution (€)</label><input type="text" inputmode="decimal" name="amount_eur" class="pc-input" required placeholder="ex: 500"></div>
                 <div>
                     <div class="pc-grid" style="gap:5px;">
-                        <div>
-                            <label class="pc-label">Arrivée</label>
-                            <input type="date" name="date_arrivee" class="pc-input">
-                        </div>
-                        <div>
-                            <label class="pc-label">Départ</label>
-                            <input type="date" name="date_depart" class="pc-input">
-                        </div>
+                        <div><label class="pc-label">Arrivée</label><input type="date" name="date_arrivee" class="pc-input"></div>
+                        <div><label class="pc-label">Départ</label><input type="date" name="date_depart" class="pc-input"></div>
                     </div>
                 </div>
-                <div style="grid-column: 1 / -1;">
-                    <button type="submit" class="pc-btn pc-btn-primary" style="width:100%;">Créer le dossier</button>
-                </div>
+                <div style="grid-column: 1 / -1;"><button type="submit" class="pc-btn pc-btn-primary" style="width:100%;">Créer le dossier</button></div>
             </form>
         </div>
 
@@ -487,14 +498,13 @@ class PCSC_Shortcodes
                         $cls = 'status-' . $c['status'];
                     ?>
                         <tr>
-                            <td><b><?php echo esc_html($c['booking_ref']); ?></b></td>
-                            <td><?php echo esc_html($c['customer_email']); ?></td>
-                            <td><?php echo $amt; ?> €</td>
-                            <td><span class="pc-badge <?php echo $cls; ?>"><?php echo esc_html($c['status']); ?></span></td>
-                            <td><?php echo $c['date_depart'] ? date('d/m', strtotime($c['date_depart'])) : '-'; ?></td>
-                            <td style="white-space: nowrap;">
+                            <td data-label="Réf"><b><?php echo esc_html($c['booking_ref']); ?></b></td>
+                            <td data-label="Client"><?php echo esc_html($c['customer_email']); ?></td>
+                            <td data-label="Montant"><?php echo $amt; ?> €</td>
+                            <td data-label="Statut"><span class="pc-badge <?php echo $cls; ?>"><?php echo esc_html($c['status']); ?></span></td>
+                            <td data-label="Départ"><?php echo $c['date_depart'] ? date('d/m', strtotime($c['date_depart'])) : '-'; ?></td>
+                            <td data-label="Actions" style="white-space: nowrap;">
                                 <a href="<?php echo esc_url(self::get_url(['case_id' => $c['id']])); ?>" class="pc-btn pc-btn-outline" style="padding:6px 10px; font-size:12px;">Ouvrir</a>
-
                                 <form method="post" style="display:inline-block; margin:0; margin-left:5px;" onsubmit="return confirm('Supprimer définitivement ce dossier ?');">
                                     <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                                     <input type="hidden" name="pcsc_action" value="delete_case">
@@ -520,13 +530,10 @@ class PCSC_Shortcodes
         $status = $case['status'];
     ?>
         <div class="pc-header">
-            <div>
-                <a href="<?php echo esc_url(self::get_url()); ?>" style="text-decoration:none; color:#6b7280; font-size:14px;">← Retour liste</a>
+            <div><a href="<?php echo esc_url(self::get_url()); ?>" style="text-decoration:none; color:#6b7280; font-size:14px;">← Retour liste</a>
                 <h2 style="margin:5px 0 0;"><?php echo esc_html($case['booking_ref']); ?></h2>
             </div>
-            <div>
-                <span class="pc-badge status-<?php echo $status; ?>" style="font-size:14px; padding:6px 12px;"><?php echo esc_html($status); ?></span>
-            </div>
+            <div><span class="pc-badge status-<?php echo $status; ?>" style="font-size:14px; padding:6px 12px;"><?php echo esc_html($status); ?></span></div>
         </div>
 
         <div class="pc-grid">
@@ -536,33 +543,22 @@ class PCSC_Shortcodes
                     <p><strong>Email:</strong> <?php echo esc_html($case['customer_email']); ?></p>
                     <p><strong>Caution:</strong> <?php echo number_format($case['amount'] / 100, 2, ',', ' '); ?> €</p>
                     <p><strong>Départ:</strong> <?php echo esc_html($case['date_depart']); ?></p>
-                    <?php if ($case['last_error']): ?>
-                        <div class="pc-alert pc-alert-error" style="font-size:13px; margin-top:10px;">
-                            <strong>Dernière erreur :</strong><br>
-                            <?php echo esc_html($case['last_error']); ?>
-                        </div>
-                    <?php endif; ?>
+                    <?php if ($case['last_error']): ?><div class="pc-alert pc-alert-error" style="font-size:13px; margin-top:10px;"><strong>Dernière erreur :</strong><br><?php echo esc_html($case['last_error']); ?></div><?php endif; ?>
                 </div>
 
                 <div class="pc-card">
                     <h4 style="margin-top:0;">Lien Client (Setup)</h4>
                     <?php if ($case['stripe_setup_url']): ?>
                         <input type="text" readonly class="pc-input" value="<?php echo esc_attr($case['stripe_setup_url']); ?>" onclick="this.select()">
-                        <small style="color:#6b7280;">Envoyez ce lien au client pour qu'il enregistre sa carte.</small>
-
                         <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
                             <form method="post">
                                 <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                                 <input type="hidden" name="pcsc_action" value="create_setup_link">
                                 <input type="hidden" name="case_id" value="<?php echo $id; ?>">
-                                <button type="submit" class="pc-btn pc-btn-outline" style="font-size:12px; width:100%;" onclick="return confirm('Attention: cela va créer un NOUVEAU lien. Continuer ?');">
-                                    ↻ Regénérer un nouveau lien
-                                </button>
+                                <button type="submit" class="pc-btn pc-btn-outline" style="font-size:12px; width:100%;" onclick="return confirm('Regénérer un lien ?');">↻ Regénérer</button>
                             </form>
                         </div>
-
                     <?php else: ?>
-                        <p style="color:#6b7280; font-style:italic;">Lien non généré.</p>
                         <form method="post">
                             <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                             <input type="hidden" name="pcsc_action" value="create_setup_link">
@@ -582,13 +578,7 @@ class PCSC_Shortcodes
                 <div class="pc-card" style="border-left: 4px solid #2563eb;">
                     <h3 style="margin-top:0; color:#1e40af;">1. Bloquer les fonds (Hold)</h3>
                     <p style="font-size:14px; color:#6b7280;">Effectue une demande d'autorisation off-session.</p>
-
-                    <?php if ($status === 'setup_ok'): ?>
-                        <div class="pc-alert pc-alert-success" style="margin-bottom:10px; font-size:13px;">
-                            Carte enregistrée ! Prêt à prendre la caution.
-                        </div>
-                    <?php endif; ?>
-
+                    <?php if ($status === 'setup_ok'): ?><div class="pc-alert pc-alert-success" style="margin-bottom:10px; font-size:13px;">Carte enregistrée ! Prêt à prendre la caution.</div><?php endif; ?>
                     <?php if (in_array($status, ['setup_ok', 'setup_link_created', 'released'])): ?>
                         <form method="post">
                             <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
@@ -596,11 +586,7 @@ class PCSC_Shortcodes
                             <input type="hidden" name="case_id" value="<?php echo $id; ?>">
                             <button type="submit" class="pc-btn pc-btn-primary" style="width:100%;">Prendre la caution</button>
                         </form>
-                    <?php elseif ($status === 'draft'): ?>
-                        <p style="color:#b45309;">Attente lien généré ou carte enregistrée.</p>
-                    <?php else: ?>
-                        <p style="color:#059669;">Caution déjà active.</p>
-                    <?php endif; ?>
+                    <?php elseif ($status === 'draft'): ?><p style="color:#b45309;">Attente lien généré ou carte enregistrée.</p><?php else: ?><p style="color:#059669;">Caution déjà active.</p><?php endif; ?>
                 </div>
 
                 <?php if (in_array($status, ['authorized', 'rotated', 'rotation_failed'])): ?>
@@ -618,18 +604,14 @@ class PCSC_Shortcodes
                 <?php if (in_array($status, ['authorized', 'rotated', 'capture_partial'])): ?>
                     <div class="pc-card" style="border-left: 4px solid #dc2626;">
                         <h3 style="margin-top:0; color:#991b1b;">2. Encaisser (Capture)</h3>
-                        <p style="font-size:14px; color:#6b7280;">Débit réel de la carte. Irréversible.</p>
                         <form method="post">
                             <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                             <input type="hidden" name="pcsc_action" value="capture">
                             <input type="hidden" name="case_id" value="<?php echo $id; ?>">
-
                             <label class="pc-label">Montant à encaisser (€)</label>
                             <input type="text" inputmode="decimal" name="capture_amount_eur" class="pc-input" placeholder="ex: 250,00" required>
-
                             <label class="pc-label">Motif (Note)</label>
                             <input type="text" name="capture_note" class="pc-input" placeholder="ex: Nettoyage sup.">
-
                             <button type="submit" class="pc-btn pc-btn-danger" style="width:100%; margin-top:10px;" onclick="return confirm('Êtes-vous sûr de vouloir DEBITER la carte ?');">CONFIRMER LE DEBIT</button>
                         </form>
                     </div>
@@ -638,7 +620,6 @@ class PCSC_Shortcodes
                 <?php if (in_array($status, ['authorized', 'rotated', 'capture_partial'])): ?>
                     <div class="pc-card" style="border-left: 4px solid #059669;">
                         <h3 style="margin-top:0; color:#065f46;">3. Libérer la caution</h3>
-                        <p style="font-size:14px; color:#6b7280;">Annule l'empreinte bancaire.</p>
                         <form method="post">
                             <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                             <input type="hidden" name="pcsc_action" value="release">
@@ -647,237 +628,118 @@ class PCSC_Shortcodes
                         </form>
                     </div>
                 <?php endif; ?>
-
             </div>
         </div>
     <?php
     }
+
     public static function render_thankyou($atts): string
     {
         ob_start();
     ?>
         <style>
-            .pc-wrap {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                max-width: 900px;
-                margin: 20px auto;
-                background: #fff;
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            }
-
-            .pc-input {
-                width: 100%;
-                padding: 12px;
-                border: 1px solid #ccc;
-                border-radius: 5px;
-                box-sizing: border-box;
-                margin-bottom: 10px;
-                font-size: 16px;
-            }
-
-            /* Font 16px évite le zoom auto sur iPhone */
-            .pc-btn {
-                padding: 12px 16px;
-                border-radius: 5px;
-                border: none;
-                cursor: pointer;
-                color: white;
-                font-weight: bold;
-                text-decoration: none;
-                display: inline-block;
+            #pc-thx-root .pc-thx-wrap {
+                max-width: 600px;
+                margin: 40px auto;
+                padding: 40px;
+                background: #ffffff !important;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
                 text-align: center;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                border: 1px solid #f0f0f0;
             }
 
-            .pc-btn-primary {
-                background: #2563eb;
-                color: white;
+            #pc-thx-root .pc-thx-icon {
+                font-size: 50px;
+                color: #10b981;
+                margin-bottom: 20px;
+                display: inline-block;
+                animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             }
 
-            .pc-btn-success {
-                background: #059669;
-                color: white;
+            #pc-thx-root .pc-thx-title {
+                font-size: 24px;
+                color: #111827;
+                margin: 0 0 15px 0;
+                font-weight: 700;
             }
 
-            .pc-btn-danger {
-                background: #dc2626;
-                color: white;
+            #pc-thx-root .pc-thx-text {
+                font-size: 16px;
+                color: #4b5563;
+                line-height: 1.6;
+                margin-bottom: 25px;
             }
 
-            .pc-btn-outline {
-                background: transparent;
-                border: 1px solid #d1d5db;
-                color: #374151;
-            }
-
-            .pc-alert {
-                padding: 10px;
-                margin-bottom: 15px;
-                border-radius: 5px;
-            }
-
-            .pc-alert-success {
-                background: #d1fae5;
-                color: #065f46;
-                border: 1px solid #a7f3d0;
-            }
-
-            .pc-alert-error {
-                background: #fee2e2;
-                color: #991b1b;
-                border: 1px solid #fecaca;
-            }
-
-            .pc-label {
-                display: block;
-                font-weight: 600;
-                margin-bottom: 5px;
-                color: #374151;
-            }
-
-            .pc-card {
+            #pc-thx-root .pc-thx-note {
+                font-size: 13px;
+                color: #6b7280;
                 background: #f9fafb;
                 padding: 15px;
-                border-radius: 6px;
+                border-radius: 8px;
+                margin-bottom: 30px;
                 border: 1px solid #e5e7eb;
-                margin-bottom: 15px;
             }
 
-            /* GRILLE RESPONSIVE */
-            .pc-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 15px;
-            }
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-
-            th,
-            td {
-                padding: 12px 8px;
-                border-bottom: 1px solid #eee;
-                text-align: left;
-                font-size: 14px;
-            }
-
-            .pc-badge {
-                padding: 4px 8px;
-                border-radius: 12px;
-                font-size: 12px;
+            #pc-thx-root .pc-thx-btn {
+                display: inline-block;
+                background: #2563eb !important;
+                color: #ffffff !important;
+                text-decoration: none;
+                padding: 12px 25px;
+                border-radius: 30px;
                 font-weight: 600;
+                transition: background 0.2s;
+                box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
             }
 
-            .status-draft {
-                background: #e5e7eb;
-                color: #374151;
+            #pc-thx-root .pc-thx-btn:hover {
+                background: #1d4ed8 !important;
+                color: #ffffff !important;
+                transform: translateY(-1px);
             }
 
-            .status-setup_ok {
-                background: #ffedd5;
-                color: #9a3412;
-                border: 1px solid #fed7aa;
-            }
-
-            .status-authorized {
-                background: #dbeafe;
-                color: #1e40af;
-                border: 1px solid #bfdbfe;
-            }
-
-            .status-released {
-                background: #f3f4f6;
-                color: #9ca3af;
-                text-decoration: line-through;
-            }
-
-            .status-captured {
-                background: #d1fae5;
-                color: #065f46;
-            }
-
-            .status-setup_link_created {
-                background: #fff7ed;
-                color: #9a3412;
-            }
-
-            /* VERSION MOBILE (< 600px) */
-            @media (max-width: 600px) {
-                .pc-grid {
-                    grid-template-columns: 1fr;
+            @keyframes popIn {
+                from {
+                    transform: scale(0);
+                    opacity: 0;
                 }
 
-                /* Une seule colonne */
-                .pc-wrap {
-                    margin: 10px;
-                    padding: 15px;
-                }
-
-                .pc-header {
-                    flex-direction: column;
-                    align-items: flex-start;
-                    gap: 10px;
-                }
-
-                .pc-btn {
-                    width: 100%;
-                    box-sizing: border-box;
-                    margin-bottom: 5px;
-                }
-
-                /* Boutons larges faciles à toucher */
-
-                /* Tableau scrollable horizontalement sur mobile */
-                div[style*="overflow-x:auto"] {
-                    -webkit-overflow-scrolling: touch;
+                to {
+                    transform: scale(1);
+                    opacity: 1;
                 }
             }
         </style>
 
-        <div class="pc-thx-wrap">
-            <div class="pc-thx-icon">✅</div>
-
-            <h1 class="pc-thx-title">Carte enregistrée avec succès</h1>
-
-            <p class="pc-thx-text">
-                Merci ! Vos coordonnées bancaires ont bien été sécurisées pour la caution.<br>
-                Vous recevrez un <strong>email de confirmation</strong> dès que la somme sera officiellement bloquée (Hold) avant votre arrivée.
-            </p>
-
-            <div class="pc-thx-note">
-                🔒 <strong>Sécurité & Confidentialité</strong><br>
-                Vos informations sont chiffrées par Stripe. Aucune somme n'est débitée immédiatement.
-                L'empreinte bancaire sera supprimée automatiquement après la libération de la caution.
+        <div id="pc-thx-root">
+            <div class="pc-thx-wrap">
+                <div class="pc-thx-icon">✅</div>
+                <h1 class="pc-thx-title">Carte enregistrée avec succès</h1>
+                <p class="pc-thx-text">
+                    Merci ! Vos coordonnées bancaires ont bien été sécurisées pour la caution.<br>
+                    Vous recevrez un <strong>email de confirmation</strong> dès que la somme sera officiellement bloquée (Hold) avant votre arrivée.
+                </p>
+                <div class="pc-thx-note">
+                    🔒 <strong>Sécurité & Confidentialité</strong><br>
+                    Vos informations sont chiffrées par Stripe. Aucune somme n'est débitée immédiatement.
+                    L'empreinte bancaire sera supprimée automatiquement après la libération de la caution.
+                </div>
+                <a href="/recherche-dexperiences/" class="pc-thx-btn">✨ Découvrir nos expériences</a>
             </div>
-
-            <a href="/recherche-dexperiences/" class="pc-thx-btn">
-                ✨ Découvrir nos expériences
-            </a>
         </div>
 <?php
         return ob_get_clean();
     }
-    // --- GESTION DU MENU ADMIN ---
 
     public static function register_menu(): void
     {
-        add_menu_page(
-            'Gestion Cautions',      // Titre de la page
-            'Cautions Stripe',       // Titre du menu (gauche)
-            'manage_options',        // Capacité requise (Admin)
-            'pc-stripe-caution',     // Slug de l'URL
-            [__CLASS__, 'render_menu_page'], // Fonction qui affiche le contenu
-            'dashicons-shield',      // Icône (Bouclier)
-            56                       // Position (juste avant Outils)
-        );
+        add_menu_page('Gestion Cautions', 'Cautions Stripe', 'manage_options', 'pc-stripe-caution', [__CLASS__, 'render_menu_page'], 'dashicons-shield', 56);
     }
 
     public static function render_menu_page(): void
     {
-        // On réutilise simplement notre fonction existante !
         echo self::render_admin([]);
     }
 }
