@@ -181,6 +181,15 @@ class PCSC_Shortcodes
                         $status = ($cap_amount === (int)$case['amount']) ? 'captured' : 'capture_partial';
                         PCSC_DB::update_case($case_id, ['status' => $status, 'last_error' => null]);
                         PCSC_DB::append_note($case_id, "Encaissement effectué: " . ($cap_amount / 100) . "€. Note: $note");
+                        if (class_exists('PCSC_Mailer')) {
+                            PCSC_Mailer::send_capture_confirmation(
+                                $case['customer_email'],
+                                $case['booking_ref'],
+                                $cap_amount,
+                                $note // On passe la note saisie par l'admin
+                            );
+                            PCSC_DB::append_note($case_id, "Email de retenue envoyé au client.");
+                        }
                         self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
 

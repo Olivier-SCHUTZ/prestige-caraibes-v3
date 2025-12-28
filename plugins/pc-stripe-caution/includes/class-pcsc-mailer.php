@@ -56,6 +56,30 @@ class PCSC_Mailer
         self::send($email, "Caution libérée - Réf $ref", $body);
     }
 
+    public static function send_capture_confirmation(string $email, string $ref, int $amount_cents, string $reason): void
+    {
+        $amount = number_format($amount_cents / 100, 2, ',', ' ');
+        // Si aucun motif n'est donné, on met un texte par défaut
+        $motif = $reason ?: "Frais de remise en état / Manquements constatés";
+
+        $body = "<p>Bonjour,</p>
+                 <p>Nous vous informons de la clôture de votre caution pour le séjour <strong>$ref</strong>.</p>
+                 
+                 <div style='background: #fff7ed; border-left: 4px solid #ea580c; padding: 15px; margin: 20px 0;'>
+                    <p style='margin: 0; color: #9a3412; font-size: 16px;'><strong>Une retenue a été appliquée.</strong></p>
+                    <ul style='margin: 10px 0 0 20px; color: #431407;'>
+                        <li style='margin-bottom: 5px;'><strong>Montant débité :</strong> $amount €</li>
+                        <li><strong>Motif :</strong> $motif</li>
+                    </ul>
+                 </div>
+                 
+                 <p>Le reste de votre empreinte bancaire (si applicable) a été libéré automatiquement.</p>
+                 <p>Pour toute question concernant cette opération, n'hésitez pas à nous contacter.</p>
+                 <p>Cordialement,<br>L'équipe Prestige Caraïbes</p>";
+
+        self::send($email, "Clôture caution (Retenue appliquée) - Réf $ref", $body);
+    }
+
     // --- EMAILS ADMIN ---
 
     public static function send_admin_card_saved(string $ref, string $email): void
