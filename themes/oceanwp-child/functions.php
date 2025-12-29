@@ -89,3 +89,20 @@ add_filter('wp_get_attachment_image_attributes', function ($attr) {
 
 /** 6) OceanWP : désactiver barre de titre de page */
 add_filter('ocean_display_page_header', '__return_false');
+
+// --- CONFIGURATION SMTP GLOBALE (OVH) ---
+add_action('phpmailer_init', function ($phpmailer) {
+    if (defined('PC_SMTP_HOST') && defined('PC_SMTP_PASS')) {
+        $phpmailer->isSMTP();
+        $phpmailer->Host       = PC_SMTP_HOST;
+        $phpmailer->SMTPAuth   = true;
+        $phpmailer->Port       = PC_SMTP_PORT;
+        $phpmailer->Username   = PC_SMTP_USER;
+        $phpmailer->Password   = PC_SMTP_PASS;
+        $phpmailer->SMTPSecure = 'ssl'; // Port 465 = ssl
+
+        // Force l'expéditeur pour éviter les blocages
+        $phpmailer->From       = PC_SMTP_FROM;
+        $phpmailer->FromName   = PC_SMTP_NAME;
+    }
+});
