@@ -106,3 +106,21 @@ add_action('phpmailer_init', function ($phpmailer) {
         $phpmailer->FromName   = PC_SMTP_NAME;
     }
 });
+
+/* --- DÉBUT : Personnalisation de l'expéditeur des emails --- */
+
+// 1. Changer l'adresse email d'expédition (remplace wordpress@...)
+add_filter('wp_mail_from', 'custom_wp_mail_from');
+function custom_wp_mail_from($original_email_address)
+{
+    return 'guadeloupe@prestigecaraibes.com';
+}
+
+// 2. Changer le nom de l'expéditeur (remplace "WordPress")
+add_filter('wp_mail_from_name', 'custom_wp_mail_from_name');
+function custom_wp_mail_from_name($original_email_from)
+{
+    return 'Prestige Caraïbes';
+}
+
+/* --- FIN : Personnalisation de l'expéditeur --- */
