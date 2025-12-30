@@ -28,6 +28,31 @@ class PCSC_Mailer
 
     // --- EMAILS CLIENTS ---
 
+    // --- AJOUT : ENVOI LIEN SETUP ---
+    public static function send_setup_link(string $email, string $ref, int $amount_cents, string $url): void
+    {
+        $amount = number_format($amount_cents / 100, 2, ',', ' ');
+        $btn_color = '#183C3C'; // Couleur charte
+
+        $body = "<p>Bonjour,</p>
+                 <p>Afin de finaliser votre dossier de réservation (Réf: <strong>$ref</strong>), nous vous invitons à procéder à l'enregistrement de votre caution de <strong>$amount €</strong>.</p>
+                 <p>Merci de cliquer sur le bouton ci-dessous pour sécuriser l'empreinte bancaire via notre partenaire Stripe (aucun débit n'est effectué immédiatement) :</p>
+                 
+                 <div style='text-align: center; margin: 30px 0;'>
+                    <a href='" . esc_url($url) . "' style='background-color: $btn_color; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>Déposer ma caution en ligne</a>
+                 </div>
+
+                 <p style='font-size: 12px; color: #999; text-align: center; margin-top: 20px;'>
+                    Si le bouton ne fonctionne pas, vous pouvez copier ce lien dans votre navigateur :<br>
+                    <a href='" . esc_url($url) . "' style='color: #666; text-decoration: underline; word-break: break-all;'>" . esc_url($url) . "</a>
+                 </p>
+                 
+                 <p>Nous restons à votre disposition pour toute question.</p>
+                 <p>Cordialement,<br>L'équipe Prestige Caraïbes</p>";
+
+        self::send($email, "Lien de caution sécurisée - Réf $ref", $body);
+    }
+
     public static function send_hold_confirmation(string $email, string $ref, int $amount_cents, string $date_release_txt): void
     {
         $amount = number_format($amount_cents / 100, 2, ',', ' ');

@@ -67,8 +67,9 @@ class PCSC_Shortcodes
         $message = '';
         $error = '';
 
-        if (isset($_GET['msg']) && $_GET['msg'] === 'done') {
-            $message = "Action effectuée avec succès.";
+        if (isset($_GET['msg'])) {
+            if ($_GET['msg'] === 'done') $message = "Action effectuée avec succès.";
+            if ($_GET['msg'] === 'email_sent') $message = "Email envoyé avec succès au client.";
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['pcsc_action'])) {
@@ -106,6 +107,24 @@ class PCSC_Shortcodes
                     $case = PCSC_DB::get_case($case_id);
                     if (!$case) throw new Exception("Dossier introuvable.");
 
+                    // --- AJOUT : ACTION ENVOI EMAIL ---
+                    if ($action === 'send_setup_link_email') {
+                        if (empty($case['stripe_setup_url'])) throw new Exception("Aucun lien généré à envoyer.");
+
+                        if (class_exists('PCSC_Mailer')) {
+                            PCSC_Mailer::send_setup_link(
+                                $case['customer_email'],
+                                $case['booking_ref'],
+                                (int)$case['amount'],
+                                $case['stripe_setup_url']
+                            );
+                            PCSC_DB::append_note($case_id, "Lien setup envoyé par email à " . $case['customer_email']);
+                            self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'email_sent']));
+                        } else {
+                            throw new Exception("Module Mailer non activé.");
+                        }
+                    }
+                    // ----------------------------------
                     if ($action === 'create_setup_link') {
                         $stripe_cust_id = $case['stripe_customer_id'];
                         if (empty($stripe_cust_id)) {
@@ -573,6 +592,12 @@ class PCSC_Shortcodes
                     <h4 style="margin-top:0;">Lien Client (Setup)</h4>
                     <?php if ($case['stripe_setup_url']): ?>
                         <input type="text" readonly class="pc-input" value="<?php echo esc_attr($case['stripe_setup_url']); ?>" onclick="this.select()">
+                        <form method="post" style="margin-top:10px;">
+                            <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
+                            <input type="hidden" name="pcsc_action" value="send_setup_link_email">
+                            <input type="hidden" name="case_id" value="<?php echo $id; ?>">
+                            <button type="submit" class="pc-btn" style="background-color: #183C3C; color: white; width: 100%;">✉️ Envoyer le lien par mail</button>
+                        </form>
                         <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
                             <form method="post">
                                 <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
