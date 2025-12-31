@@ -5,6 +5,15 @@ class PCSC_Stripe
 {
     private static function secret_key(): string
     {
+        // 1. Priorité aux réglages plugin (si la classe existe et qu'une valeur est sauvée)
+        if (class_exists('PCSC_Settings')) {
+            $key_from_settings = PCSC_Settings::get_option('stripe_secret_key');
+            if (!empty($key_from_settings)) {
+                return $key_from_settings;
+            }
+        }
+
+        // 2. Fallback historique : wp-config.php
         return defined('PC_STRIPE_SECRET_KEY') ? PC_STRIPE_SECRET_KEY : '';
     }
 

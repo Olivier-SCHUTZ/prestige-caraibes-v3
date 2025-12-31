@@ -149,7 +149,8 @@ class PCSC_DB
             }
         } else {
             self::update_case($id, ['last_error' => $res['error']]);
-            self::append_note($id, 'Échec libération auto: ' . $res['error']);
+            // TRADUCTION ICI
+            self::append_note($id, sprintf(__('Auto-release failed: %s', 'pc-stripe-caution'), $res['error']));
         }
     }
 
@@ -180,9 +181,11 @@ class PCSC_DB
                 $days_since_depart = ($now - $depart_ts) / DAY_IN_SECONDS;
                 // Entre 5.5 et 6.5 jours après le départ = le 6ème jour (la veille du 7ème)
                 if ($days_since_depart >= 5.5 && $days_since_depart < 6.5) {
-                    if (strpos($case['internal_notes'], 'Mail rappel J-1') === false) {
+                    // Note: on vérifie une chaine partielle, donc on cherche "D-1 reminder" ou l'ancienne version française pour compatibilité
+                    if (strpos($case['internal_notes'], 'Mail rappel J-1') === false && strpos($case['internal_notes'], 'D-1 reminder') === false) {
                         PCSC_Mailer::send_admin_reminder_release($case['booking_ref'], $case['date_depart']);
-                        self::append_note($id, 'Mail rappel J-1 envoyé à l\'admin.');
+                        // TRADUCTION ICI
+                        self::append_note($id, __('D-1 reminder email sent to admin.', 'pc-stripe-caution'));
                     }
                 }
             }
@@ -194,17 +197,19 @@ class PCSC_DB
             $updated_ts = strtotime($case['updated_at'] ?: $case['created_at']);
             if ($now < $updated_ts + 6 * DAY_IN_SECONDS) continue;
 
-            self::rotate_silent($id, 'Rotation quotidienne automatique.');
+            // TRADUCTION ICI
+            self::rotate_silent($id, __('Automatic daily rotation.', 'pc-stripe-caution'));
         }
     }
 
     public static function rotate_silent(int $id, string $reason = ''): array
     {
         $case = self::get_case($id);
-        if (!$case) return ['ok' => false, 'error' => 'Dossier introuvable'];
+        // TRADUCTION ICI
+        if (!$case) return ['ok' => false, 'error' => __('Case not found', 'pc-stripe-caution')];
 
         if (empty($case['stripe_customer_id']) || empty($case['stripe_payment_method_id'])) {
-            return ['ok' => false, 'error' => 'PaymentMethod non disponible (setup non terminé).'];
+            return ['ok' => false, 'error' => __('PaymentMethod not available (setup incomplete).', 'pc-stripe-caution')];
         }
 
         $old_pi = (string)$case['stripe_payment_intent_id'];
@@ -219,7 +224,8 @@ class PCSC_DB
         $cancel = PCSC_Stripe::cancel_payment_intent($old_pi);
         if (!$cancel['ok']) {
             self::update_case($id, ['status' => 'rotation_failed', 'last_error' => $cancel['error']]);
-            self::append_note($id, 'Rotation: échec annulation PI précédent: ' . $cancel['error']);
+            // TRADUCTION ICI
+            self::append_note($id, sprintf(__('Rotation: Previous PI cancellation failed: %s', 'pc-stripe-caution'), $cancel['error']));
             return ['ok' => false, 'error' => $cancel['error']];
         }
 
@@ -240,7 +246,8 @@ class PCSC_DB
             $err = $create['error'];
             // Plan B : si nécessite action, on marquera requires_action et on générera un lien assisté ensuite (si tu veux)
             self::update_case($id, ['status' => 'rotation_requires_action', 'last_error' => $err]);
-            self::append_note($id, 'Rotation: nécessite action ou échec PI off-session: ' . $err);
+            // TRADUCTION ICI
+            self::append_note($id, sprintf(__('Rotation: Requires action or off-session PI failed: %s', 'pc-stripe-caution'), $err));
             return ['ok' => false, 'error' => $err];
         }
 
@@ -253,7 +260,8 @@ class PCSC_DB
             'last_error' => null,
         ]);
 
-        self::append_note($id, trim('Rotation silencieuse OK. ' . $reason));
+        // TRADUCTION ICI
+        self::append_note($id, trim(__('Silent rotation OK.', 'pc-stripe-caution') . ' ' . $reason));
         return ['ok' => true, 'payment_intent_id' => $new_pi];
     }
 }

@@ -18,10 +18,15 @@ require_once PCSC_PLUGIN_DIR . 'includes/class-pcsc-stripe.php';
 require_once PCSC_PLUGIN_DIR . 'includes/class-pcsc-shortcodes.php';
 require_once PCSC_PLUGIN_DIR . 'includes/class-pcsc-webhooks.php';
 require_once PCSC_PLUGIN_DIR . 'includes/class-pcsc-mailer.php';
+require_once PCSC_PLUGIN_DIR . 'includes/class-pcsc-settings.php'; // <--- NOUVEAU
 
 register_activation_hook(__FILE__, ['PCSC_DB', 'activate']);
 
 add_action('init', function () {
+    // Chargement des traductions (dossier /languages)
+    load_plugin_textdomain('pc-stripe-caution', false, dirname(plugin_basename(__FILE__)) . '/languages');
+
+    PCSC_Settings::init();
     PCSC_Shortcodes::init();
     PCSC_Webhooks::init();
 });

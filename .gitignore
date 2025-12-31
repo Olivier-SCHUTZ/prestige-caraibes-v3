@@ -20,6 +20,8 @@ ai1wm-backups/
 wflogs/
 *-cache/
 
+!plugins/pc-stripe-caution/languages/
+
 # --- PLUGINS ---
 # 1. Ignorer tous les plugins
 plugins/*

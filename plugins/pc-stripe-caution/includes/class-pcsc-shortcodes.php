@@ -13,7 +13,7 @@ class PCSC_Shortcodes
     private static function check_access(): void
     {
         if (!current_user_can('manage_options')) {
-            wp_die('Accès refusé. Vous devez être administrateur.');
+            wp_die(__('Access denied. You must be an administrator.', 'pc-stripe-caution'));
         }
     }
 
@@ -25,30 +25,23 @@ class PCSC_Shortcodes
 
     private static function get_url(array $params = []): string
     {
-        // 1. Si on est dans le menu Admin WP
         if (is_admin() && isset($_GET['page']) && $_GET['page'] === 'pc-stripe-caution') {
             $base = admin_url('admin.php?page=pc-stripe-caution');
-        }
-        // 2. Sinon on est sur le site public (Page dédiée / Mobile)
-        else {
+        } else {
             global $wp;
             $base = home_url($wp->request);
         }
-
         return add_query_arg($params, $base);
     }
 
-    // --- NOUVELLE FONCTION ---
     private static function safe_redirect(string $url): void
     {
-        // Si les en-têtes ne sont pas encore envoyés, on utilise PHP (rapide)
         if (!headers_sent()) {
             wp_safe_redirect($url);
             exit;
         } else {
-            // Si c'est trop tard pour PHP (cas fréquent en Admin), on utilise JS
             echo "<script>window.location.href = '" . esc_url_raw($url) . "';</script>";
-            echo "<div style='padding:20px; text-align:center;'>Redirection... <a href='" . esc_url($url) . "'>Cliquez ici</a></div>";
+            echo "<div style='padding:20px; text-align:center;'>" . esc_html__('Redirecting...', 'pc-stripe-caution') . " <a href='" . esc_url($url) . "'>" . esc_html__('Click here', 'pc-stripe-caution') . "</a></div>";
             exit;
         }
     }
@@ -68,13 +61,13 @@ class PCSC_Shortcodes
         $error = '';
 
         if (isset($_GET['msg'])) {
-            if ($_GET['msg'] === 'done') $message = "Action effectuée avec succès.";
-            if ($_GET['msg'] === 'email_sent') $message = "Email envoyé avec succès au client.";
+            if ($_GET['msg'] === 'done') $message = __('Action successful.', 'pc-stripe-caution');
+            if ($_GET['msg'] === 'email_sent') $message = __('Email sent successfully to the customer.', 'pc-stripe-caution');
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['pcsc_action'])) {
             if (!check_admin_referer('pcsc_admin_action', 'pcsc_nonce')) {
-                $error = 'Sécurité: Session expirée. Veuillez recharger la page.';
+                $error = __('Security: Session expired. Please reload the page.', 'pc-stripe-caution');
             } else {
                 try {
                     $action = sanitize_text_field($_POST['pcsc_action']);
@@ -92,7 +85,7 @@ class PCSC_Shortcodes
                         $arr = sanitize_text_field($_POST['date_arrivee']);
                         $dep = sanitize_text_field($_POST['date_depart']);
 
-                        if (!$ref || !$email || $amount <= 0) throw new Exception("Champs obligatoires manquants.");
+                        if (!$ref || !$email || $amount <= 0) throw new Exception(__('Missing required fields.', 'pc-stripe-caution'));
 
                         $new_id = PCSC_DB::insert_case([
                             'booking_ref' => $ref,
@@ -105,11 +98,10 @@ class PCSC_Shortcodes
                     }
 
                     $case = PCSC_DB::get_case($case_id);
-                    if (!$case) throw new Exception("Dossier introuvable.");
+                    if (!$case) throw new Exception(__('Case not found.', 'pc-stripe-caution'));
 
-                    // --- AJOUT : ACTION ENVOI EMAIL ---
                     if ($action === 'send_setup_link_email') {
-                        if (empty($case['stripe_setup_url'])) throw new Exception("Aucun lien généré à envoyer.");
+                        if (empty($case['stripe_setup_url'])) throw new Exception(__('No generated link to send.', 'pc-stripe-caution'));
 
                         if (class_exists('PCSC_Mailer')) {
                             PCSC_Mailer::send_setup_link(
@@ -118,28 +110,30 @@ class PCSC_Shortcodes
                                 (int)$case['amount'],
                                 $case['stripe_setup_url']
                             );
-                            PCSC_DB::append_note($case_id, "Lien setup envoyé par email à " . $case['customer_email']);
+                            PCSC_DB::append_note($case_id, "Setup link sent by email to " . $case['customer_email']);
                             self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'email_sent']));
                         } else {
-                            throw new Exception("Module Mailer non activé.");
+                            throw new Exception(__('Mailer module not active.', 'pc-stripe-caution'));
                         }
                     }
-                    // ----------------------------------
+
                     if ($action === 'create_setup_link') {
                         $stripe_cust_id = $case['stripe_customer_id'];
                         if (empty($stripe_cust_id)) {
                             $cust_res = PCSC_Stripe::create_customer($case['customer_email'], $case['booking_ref']);
-                            if (!$cust_res['ok']) throw new Exception("Erreur création client Stripe : " . $cust_res['error']);
+                            if (!$cust_res['ok']) throw new Exception(__('Stripe customer creation error: ', 'pc-stripe-caution') . $cust_res['error']);
                             $stripe_cust_id = $cust_res['id'];
                             PCSC_DB::update_case($case_id, ['stripe_customer_id' => $stripe_cust_id]);
                         }
 
                         $fmt_amount = number_format($case['amount'] / 100, 2, ',', ' ');
-                        $fmt_date = $case['date_depart'] ? date('d/m/Y', strtotime($case['date_depart'])) : 'non définie';
-                        $message_client = "Caution réf. " . $case['booking_ref'] . " de " . $fmt_amount . " €. Libérable après le " . $fmt_date . ".";
+                        $fmt_date = $case['date_depart'] ? date_i18n(get_option('date_format'), strtotime($case['date_depart'])) : __('undefined', 'pc-stripe-caution');
+
+                        // Message affiché sur Stripe (Checkout)
+                        $message_client = sprintf(__('Deposit ref. %s of %s %s. Releasable after %s.', 'pc-stripe-caution'), $case['booking_ref'], $fmt_amount, 'EUR', $fmt_date);
 
                         $res = PCSC_Stripe::create_checkout_setup_session([
-                            'success_url' => home_url('/caution-merci/?case_id=' . $case_id),
+                            'success_url' => home_url('/caution-merci/?case_id=' . $case_id), // Idéalement à changer par une option plus tard
                             'cancel_url'  => home_url('/caution-annulee/?case_id=' . $case_id),
                             'customer_email' => $case['customer_email'],
                             'customer_id' => $stripe_cust_id,
@@ -155,12 +149,12 @@ class PCSC_Shortcodes
                             'stripe_setup_url' => $res['url'],
                             'last_error' => null
                         ]);
-                        PCSC_DB::append_note($case_id, "Lien généré pour client ($stripe_cust_id).");
+                        PCSC_DB::append_note($case_id, "Link generated for customer ($stripe_cust_id).");
                         self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
 
                     if ($action === 'take_hold') {
-                        if (empty($case['stripe_customer_id']) || empty($case['stripe_payment_method_id'])) throw new Exception("Carte non enregistrée.");
+                        if (empty($case['stripe_customer_id']) || empty($case['stripe_payment_method_id'])) throw new Exception(__('Card not saved.', 'pc-stripe-caution'));
 
                         $res = PCSC_Stripe::create_manual_hold_off_session([
                             'amount' => (int)$case['amount'],
@@ -177,13 +171,13 @@ class PCSC_Shortcodes
                             'currency' => 'eur',
                             'last_error' => null
                         ]);
-                        PCSC_DB::append_note($case_id, 'Caution prise (Hold actif).');
+                        PCSC_DB::append_note($case_id, 'Deposit taken (Hold active).');
                         PCSC_DB::schedule_release($case_id);
 
                         if (class_exists('PCSC_Mailer')) {
-                            $d_txt = $case['date_depart'] ? date('d/m/Y', strtotime($case['date_depart']) + (7 * DAY_IN_SECONDS)) : 'J+7 après départ';
+                            $d_txt = $case['date_depart'] ? date_i18n(get_option('date_format'), strtotime($case['date_depart']) + (7 * DAY_IN_SECONDS)) : __('D+7 after departure', 'pc-stripe-caution');
                             PCSC_Mailer::send_hold_confirmation($case['customer_email'], $case['booking_ref'], (int)$case['amount'], $d_txt);
-                            PCSC_DB::append_note($case_id, 'Email confirmation envoyé au client.');
+                            PCSC_DB::append_note($case_id, 'Confirmation email sent to customer.');
                         }
                         self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
@@ -192,22 +186,22 @@ class PCSC_Shortcodes
                         $cap_amount = self::eur_to_cents($_POST['capture_amount_eur']);
                         $note = sanitize_textarea_field($_POST['capture_note']);
                         $pi_id = $case['stripe_payment_intent_id'];
-                        if (empty($pi_id) || $cap_amount <= 0 || $cap_amount > (int)$case['amount']) throw new Exception("Erreur capture.");
+                        if (empty($pi_id) || $cap_amount <= 0 || $cap_amount > (int)$case['amount']) throw new Exception(__('Capture error.', 'pc-stripe-caution'));
 
                         $res = PCSC_Stripe::capture_payment_intent($pi_id, $cap_amount);
                         if (!$res['ok']) throw new Exception($res['error']);
 
                         $status = ($cap_amount === (int)$case['amount']) ? 'captured' : 'capture_partial';
                         PCSC_DB::update_case($case_id, ['status' => $status, 'last_error' => null]);
-                        PCSC_DB::append_note($case_id, "Encaissement effectué: " . ($cap_amount / 100) . "€. Note: $note");
+                        PCSC_DB::append_note($case_id, "Capture success: " . ($cap_amount / 100) . "€. Note: $note");
                         if (class_exists('PCSC_Mailer')) {
                             PCSC_Mailer::send_capture_confirmation(
                                 $case['customer_email'],
                                 $case['booking_ref'],
                                 $cap_amount,
-                                $note // On passe la note saisie par l'admin
+                                $note
                             );
-                            PCSC_DB::append_note($case_id, "Email de retenue envoyé au client.");
+                            PCSC_DB::append_note($case_id, "Charge email sent to customer.");
                         }
                         self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
@@ -216,17 +210,17 @@ class PCSC_Shortcodes
                         $res = PCSC_Stripe::cancel_payment_intent($case['stripe_payment_intent_id']);
                         if (!$res['ok']) throw new Exception($res['error']);
                         PCSC_DB::update_case($case_id, ['status' => 'released', 'last_error' => null]);
-                        PCSC_DB::append_note($case_id, "Caution libérée manuellement.");
+                        PCSC_DB::append_note($case_id, "Deposit released manually.");
 
                         if (class_exists('PCSC_Mailer')) {
                             PCSC_Mailer::send_release_confirmation($case['customer_email'], $case['booking_ref']);
-                            PCSC_DB::append_note($case_id, 'Email libération envoyé au client.');
+                            PCSC_DB::append_note($case_id, 'Release email sent to customer.');
                         }
                         self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
 
                     if ($action === 'rotate') {
-                        $res = PCSC_DB::rotate_silent($case_id, "Rotation manuelle.");
+                        $res = PCSC_DB::rotate_silent($case_id, "Manual rotation.");
                         if (!$res['ok']) throw new Exception($res['error']);
                         self::safe_redirect(self::get_url(['case_id' => $case_id, 'msg' => 'done']));
                     }
@@ -411,7 +405,6 @@ class PCSC_Shortcodes
                 color: #9a3412;
             }
 
-            /* --- MOBILE RESPONSIVE --- */
             @media (max-width: 600px) {
                 #pc-admin-root .pc-grid {
                     grid-template-columns: 1fr;
@@ -501,24 +494,24 @@ class PCSC_Shortcodes
         $cases = $wpdb->get_results("SELECT * FROM {$table} ORDER BY id DESC LIMIT 50", ARRAY_A);
     ?>
         <div class="pc-header">
-            <h2 style="margin:0;">Tableau des cautions</h2>
+            <h2 style="margin:0;"><?php _e('Deposit Management', 'pc-stripe-caution'); ?></h2>
         </div>
 
         <div class="pc-card">
-            <h3 style="margin-top:0;">Nouveau dossier</h3>
+            <h3 style="margin-top:0;"><?php _e('New Case', 'pc-stripe-caution'); ?></h3>
             <form method="post" class="pc-grid">
                 <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                 <input type="hidden" name="pcsc_action" value="create_case">
-                <div><label class="pc-label">Référence Réservation</label><input type="text" name="booking_ref" class="pc-input" required placeholder="ex: 2024-ABC"></div>
-                <div><label class="pc-label">Email Client</label><input type="email" name="customer_email" class="pc-input" required placeholder="client@email.com"></div>
-                <div><label class="pc-label">Montant Caution (€)</label><input type="text" inputmode="decimal" name="amount_eur" class="pc-input" required placeholder="ex: 500"></div>
+                <div><label class="pc-label"><?php _e('Booking Ref', 'pc-stripe-caution'); ?></label><input type="text" name="booking_ref" class="pc-input" required placeholder="ex: 2024-ABC"></div>
+                <div><label class="pc-label"><?php _e('Customer Email', 'pc-stripe-caution'); ?></label><input type="email" name="customer_email" class="pc-input" required placeholder="client@email.com"></div>
+                <div><label class="pc-label"><?php _e('Deposit Amount (€)', 'pc-stripe-caution'); ?></label><input type="text" inputmode="decimal" name="amount_eur" class="pc-input" required placeholder="ex: 500"></div>
                 <div>
                     <div class="pc-grid" style="gap:5px;">
-                        <div><label class="pc-label">Arrivée</label><input type="date" name="date_arrivee" class="pc-input"></div>
-                        <div><label class="pc-label">Départ</label><input type="date" name="date_depart" class="pc-input"></div>
+                        <div><label class="pc-label"><?php _e('Arrival', 'pc-stripe-caution'); ?></label><input type="date" name="date_arrivee" class="pc-input"></div>
+                        <div><label class="pc-label"><?php _e('Departure', 'pc-stripe-caution'); ?></label><input type="date" name="date_depart" class="pc-input"></div>
                     </div>
                 </div>
-                <div style="grid-column: 1 / -1;"><button type="submit" class="pc-btn pc-btn-primary" style="width:100%;">Créer le dossier</button></div>
+                <div style="grid-column: 1 / -1;"><button type="submit" class="pc-btn pc-btn-primary" style="width:100%;"><?php _e('Create Case', 'pc-stripe-caution'); ?></button></div>
             </form>
         </div>
 
@@ -526,12 +519,12 @@ class PCSC_Shortcodes
             <table class="pc-table">
                 <thead>
                     <tr>
-                        <th>Réf</th>
-                        <th>Client</th>
-                        <th>Montant</th>
-                        <th>Statut</th>
-                        <th>Départ</th>
-                        <th>Action</th>
+                        <th><?php _e('Ref', 'pc-stripe-caution'); ?></th>
+                        <th><?php _e('Customer', 'pc-stripe-caution'); ?></th>
+                        <th><?php _e('Amount', 'pc-stripe-caution'); ?></th>
+                        <th><?php _e('Status', 'pc-stripe-caution'); ?></th>
+                        <th><?php _e('Departure', 'pc-stripe-caution'); ?></th>
+                        <th><?php _e('Action', 'pc-stripe-caution'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -540,18 +533,18 @@ class PCSC_Shortcodes
                         $cls = 'status-' . $c['status'];
                     ?>
                         <tr>
-                            <td data-label="Réf"><b><?php echo esc_html($c['booking_ref']); ?></b></td>
-                            <td data-label="Client"><?php echo esc_html($c['customer_email']); ?></td>
-                            <td data-label="Montant"><?php echo $amt; ?> €</td>
-                            <td data-label="Statut"><span class="pc-badge <?php echo $cls; ?>"><?php echo esc_html($c['status']); ?></span></td>
-                            <td data-label="Départ"><?php echo $c['date_depart'] ? date('d/m', strtotime($c['date_depart'])) : '-'; ?></td>
-                            <td data-label="Actions" style="white-space: nowrap;">
-                                <a href="<?php echo esc_url(self::get_url(['case_id' => $c['id']])); ?>" class="pc-btn pc-btn-outline" style="padding:6px 10px; font-size:12px;">Ouvrir</a>
-                                <form method="post" style="display:inline-block; margin:0; margin-left:5px;" onsubmit="return confirm('Supprimer définitivement ce dossier ?');">
+                            <td data-label="<?php _e('Ref', 'pc-stripe-caution'); ?>"><b><?php echo esc_html($c['booking_ref']); ?></b></td>
+                            <td data-label="<?php _e('Customer', 'pc-stripe-caution'); ?>"><?php echo esc_html($c['customer_email']); ?></td>
+                            <td data-label="<?php _e('Amount', 'pc-stripe-caution'); ?>"><?php echo $amt; ?> €</td>
+                            <td data-label="<?php _e('Status', 'pc-stripe-caution'); ?>"><span class="pc-badge <?php echo $cls; ?>"><?php echo esc_html($c['status']); ?></span></td>
+                            <td data-label="<?php _e('Departure', 'pc-stripe-caution'); ?>"><?php echo $c['date_depart'] ? date('d/m', strtotime($c['date_depart'])) : '-'; ?></td>
+                            <td data-label="<?php _e('Actions', 'pc-stripe-caution'); ?>" style="white-space: nowrap;">
+                                <a href="<?php echo esc_url(self::get_url(['case_id' => $c['id']])); ?>" class="pc-btn pc-btn-outline" style="padding:6px 10px; font-size:12px;"><?php _e('Open', 'pc-stripe-caution'); ?></a>
+                                <form method="post" style="display:inline-block; margin:0; margin-left:5px;" onsubmit="return confirm('<?php _e('Permanently delete this case?', 'pc-stripe-caution'); ?>');">
                                     <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                                     <input type="hidden" name="pcsc_action" value="delete_case">
                                     <input type="hidden" name="case_id" value="<?php echo $c['id']; ?>">
-                                    <button type="submit" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0;" title="Supprimer">❌</button>
+                                    <button type="submit" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0;" title="<?php _e('Delete', 'pc-stripe-caution'); ?>">❌</button>
                                 </form>
                             </td>
                         </tr>
@@ -566,13 +559,13 @@ class PCSC_Shortcodes
     {
         $case = PCSC_DB::get_case($id);
         if (!$case) {
-            echo '<p>Dossier introuvable.</p> <a href="' . esc_url(self::get_url()) . '" class="pc-btn pc-btn-outline">Retour</a>';
+            echo '<p>' . __('Case not found.', 'pc-stripe-caution') . '</p> <a href="' . esc_url(self::get_url()) . '" class="pc-btn pc-btn-outline">' . __('Back', 'pc-stripe-caution') . '</a>';
             return;
         }
         $status = $case['status'];
     ?>
         <div class="pc-header">
-            <div><a href="<?php echo esc_url(self::get_url()); ?>" style="text-decoration:none; color:#6b7280; font-size:14px;">← Retour liste</a>
+            <div><a href="<?php echo esc_url(self::get_url()); ?>" style="text-decoration:none; color:#6b7280; font-size:14px;">← <?php _e('Back to list', 'pc-stripe-caution'); ?></a>
                 <h2 style="margin:5px 0 0;"><?php echo esc_html($case['booking_ref']); ?></h2>
             </div>
             <div><span class="pc-badge status-<?php echo $status; ?>" style="font-size:14px; padding:6px 12px;"><?php echo esc_html($status); ?></span></div>
@@ -581,29 +574,29 @@ class PCSC_Shortcodes
         <div class="pc-grid">
             <div>
                 <div class="pc-card">
-                    <h4 style="margin-top:0;">Détails</h4>
-                    <p><strong>Email:</strong> <?php echo esc_html($case['customer_email']); ?></p>
-                    <p><strong>Caution:</strong> <?php echo number_format($case['amount'] / 100, 2, ',', ' '); ?> €</p>
-                    <p><strong>Départ:</strong> <?php echo esc_html($case['date_depart']); ?></p>
-                    <?php if ($case['last_error']): ?><div class="pc-alert pc-alert-error" style="font-size:13px; margin-top:10px;"><strong>Dernière erreur :</strong><br><?php echo esc_html($case['last_error']); ?></div><?php endif; ?>
+                    <h4 style="margin-top:0;"><?php _e('Details', 'pc-stripe-caution'); ?></h4>
+                    <p><strong><?php _e('Email:', 'pc-stripe-caution'); ?></strong> <?php echo esc_html($case['customer_email']); ?></p>
+                    <p><strong><?php _e('Deposit:', 'pc-stripe-caution'); ?></strong> <?php echo number_format($case['amount'] / 100, 2, ',', ' '); ?> €</p>
+                    <p><strong><?php _e('Departure:', 'pc-stripe-caution'); ?></strong> <?php echo esc_html($case['date_depart']); ?></p>
+                    <?php if ($case['last_error']): ?><div class="pc-alert pc-alert-error" style="font-size:13px; margin-top:10px;"><strong><?php _e('Last Error:', 'pc-stripe-caution'); ?></strong><br><?php echo esc_html($case['last_error']); ?></div><?php endif; ?>
                 </div>
 
                 <div class="pc-card">
-                    <h4 style="margin-top:0;">Lien Client (Setup)</h4>
+                    <h4 style="margin-top:0;"><?php _e('Customer Link (Setup)', 'pc-stripe-caution'); ?></h4>
                     <?php if ($case['stripe_setup_url']): ?>
                         <input type="text" readonly class="pc-input" value="<?php echo esc_attr($case['stripe_setup_url']); ?>" onclick="this.select()">
                         <form method="post" style="margin-top:10px;">
                             <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                             <input type="hidden" name="pcsc_action" value="send_setup_link_email">
                             <input type="hidden" name="case_id" value="<?php echo $id; ?>">
-                            <button type="submit" class="pc-btn" style="background-color: #183C3C; color: white; width: 100%;">✉️ Envoyer le lien par mail</button>
+                            <button type="submit" class="pc-btn" style="background-color: #183C3C; color: white; width: 100%;"><?php _e('✉️ Send link by email', 'pc-stripe-caution'); ?></button>
                         </form>
                         <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
                             <form method="post">
                                 <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                                 <input type="hidden" name="pcsc_action" value="create_setup_link">
                                 <input type="hidden" name="case_id" value="<?php echo $id; ?>">
-                                <button type="submit" class="pc-btn pc-btn-outline" style="font-size:12px; width:100%;" onclick="return confirm('Regénérer un lien ?');">↻ Regénérer</button>
+                                <button type="submit" class="pc-btn pc-btn-outline" style="font-size:12px; width:100%;" onclick="return confirm('<?php _e('Regenerate link?', 'pc-stripe-caution'); ?>');"><?php _e('↻ Regenerate', 'pc-stripe-caution'); ?></button>
                             </form>
                         </div>
                     <?php else: ?>
@@ -611,68 +604,68 @@ class PCSC_Shortcodes
                             <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                             <input type="hidden" name="pcsc_action" value="create_setup_link">
                             <input type="hidden" name="case_id" value="<?php echo $id; ?>">
-                            <button type="submit" class="pc-btn pc-btn-primary" style="width:100%;">Générer le lien Setup</button>
+                            <button type="submit" class="pc-btn pc-btn-primary" style="width:100%;"><?php _e('Generate Setup Link', 'pc-stripe-caution'); ?></button>
                         </form>
                     <?php endif; ?>
                 </div>
 
                 <div class="pc-card">
-                    <h4 style="margin-top:0;">Notes internes</h4>
+                    <h4 style="margin-top:0;"><?php _e('Internal Notes', 'pc-stripe-caution'); ?></h4>
                     <div style="background:#fff; border:1px solid #eee; padding:10px; height:150px; overflow-y:auto; font-size:13px; white-space:pre-wrap;"><?php echo esc_html($case['internal_notes']); ?></div>
                 </div>
             </div>
 
             <div>
                 <div class="pc-card" style="border-left: 4px solid #2563eb;">
-                    <h3 style="margin-top:0; color:#1e40af;">1. Bloquer les fonds (Hold)</h3>
-                    <p style="font-size:14px; color:#6b7280;">Effectue une demande d'autorisation off-session.</p>
-                    <?php if ($status === 'setup_ok'): ?><div class="pc-alert pc-alert-success" style="margin-bottom:10px; font-size:13px;">Carte enregistrée ! Prêt à prendre la caution.</div><?php endif; ?>
+                    <h3 style="margin-top:0; color:#1e40af;"><?php _e('1. Block Funds (Hold)', 'pc-stripe-caution'); ?></h3>
+                    <p style="font-size:14px; color:#6b7280;"><?php _e('Performs an off-session authorization request.', 'pc-stripe-caution'); ?></p>
+                    <?php if ($status === 'setup_ok'): ?><div class="pc-alert pc-alert-success" style="margin-bottom:10px; font-size:13px;"><?php _e('Card saved! Ready to take deposit.', 'pc-stripe-caution'); ?></div><?php endif; ?>
                     <?php if (in_array($status, ['setup_ok', 'setup_link_created', 'released'])): ?>
                         <form method="post">
                             <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                             <input type="hidden" name="pcsc_action" value="take_hold">
                             <input type="hidden" name="case_id" value="<?php echo $id; ?>">
-                            <button type="submit" class="pc-btn pc-btn-primary" style="width:100%;">Prendre la caution</button>
+                            <button type="submit" class="pc-btn pc-btn-primary" style="width:100%;"><?php _e('Take Deposit', 'pc-stripe-caution'); ?></button>
                         </form>
-                    <?php elseif ($status === 'draft'): ?><p style="color:#b45309;">Attente lien généré ou carte enregistrée.</p><?php else: ?><p style="color:#059669;">Caution déjà active.</p><?php endif; ?>
+                    <?php elseif ($status === 'draft'): ?><p style="color:#b45309;"><?php _e('Waiting for generated link or saved card.', 'pc-stripe-caution'); ?></p><?php else: ?><p style="color:#059669;"><?php _e('Deposit already active.', 'pc-stripe-caution'); ?></p><?php endif; ?>
                 </div>
 
                 <?php if (in_array($status, ['authorized', 'rotated', 'rotation_failed'])): ?>
                     <div class="pc-card">
-                        <h3 style="margin-top:0;">Rotation (Renouvellement)</h3>
+                        <h3 style="margin-top:0;"><?php _e('Rotation (Renewal)', 'pc-stripe-caution'); ?></h3>
                         <form method="post">
                             <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                             <input type="hidden" name="pcsc_action" value="rotate">
                             <input type="hidden" name="case_id" value="<?php echo $id; ?>">
-                            <button type="submit" class="pc-btn pc-btn-outline" style="width:100%;">Forcer une rotation</button>
+                            <button type="submit" class="pc-btn pc-btn-outline" style="width:100%;"><?php _e('Force Rotation', 'pc-stripe-caution'); ?></button>
                         </form>
                     </div>
                 <?php endif; ?>
 
                 <?php if (in_array($status, ['authorized', 'rotated', 'capture_partial'])): ?>
                     <div class="pc-card" style="border-left: 4px solid #dc2626;">
-                        <h3 style="margin-top:0; color:#991b1b;">2. Encaisser (Capture)</h3>
+                        <h3 style="margin-top:0; color:#991b1b;"><?php _e('2. Charge (Capture)', 'pc-stripe-caution'); ?></h3>
                         <form method="post">
                             <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                             <input type="hidden" name="pcsc_action" value="capture">
                             <input type="hidden" name="case_id" value="<?php echo $id; ?>">
-                            <label class="pc-label">Montant à encaisser (€)</label>
+                            <label class="pc-label"><?php _e('Amount to charge (€)', 'pc-stripe-caution'); ?></label>
                             <input type="text" inputmode="decimal" name="capture_amount_eur" class="pc-input" placeholder="ex: 250,00" required>
-                            <label class="pc-label">Motif (Note)</label>
-                            <input type="text" name="capture_note" class="pc-input" placeholder="ex: Nettoyage sup.">
-                            <button type="submit" class="pc-btn pc-btn-danger" style="width:100%; margin-top:10px;" onclick="return confirm('Êtes-vous sûr de vouloir DEBITER la carte ?');">CONFIRMER LE DEBIT</button>
+                            <label class="pc-label"><?php _e('Reason (Note)', 'pc-stripe-caution'); ?></label>
+                            <input type="text" name="capture_note" class="pc-input" placeholder="<?php _e('ex: Extra cleaning', 'pc-stripe-caution'); ?>">
+                            <button type="submit" class="pc-btn pc-btn-danger" style="width:100%; margin-top:10px;" onclick="return confirm('<?php _e('Are you sure you want to CHARGE the card?', 'pc-stripe-caution'); ?>');"><?php _e('CONFIRM CHARGE', 'pc-stripe-caution'); ?></button>
                         </form>
                     </div>
                 <?php endif; ?>
 
                 <?php if (in_array($status, ['authorized', 'rotated', 'capture_partial'])): ?>
                     <div class="pc-card" style="border-left: 4px solid #059669;">
-                        <h3 style="margin-top:0; color:#065f46;">3. Libérer la caution</h3>
+                        <h3 style="margin-top:0; color:#065f46;"><?php _e('3. Release Deposit', 'pc-stripe-caution'); ?></h3>
                         <form method="post">
                             <?php wp_nonce_field('pcsc_admin_action', 'pcsc_nonce'); ?>
                             <input type="hidden" name="pcsc_action" value="release">
                             <input type="hidden" name="case_id" value="<?php echo $id; ?>">
-                            <button type="submit" class="pc-btn pc-btn-success" style="width:100%;">Libérer maintenant</button>
+                            <button type="submit" class="pc-btn pc-btn-success" style="width:100%;"><?php _e('Release Now', 'pc-stripe-caution'); ?></button>
                         </form>
                     </div>
                 <?php endif; ?>
@@ -764,17 +757,16 @@ class PCSC_Shortcodes
         <div id="pc-thx-root">
             <div class="pc-thx-wrap">
                 <div class="pc-thx-icon">✅</div>
-                <h1 class="pc-thx-title">Carte enregistrée avec succès</h1>
+                <h1 class="pc-thx-title"><?php _e('Card saved successfully', 'pc-stripe-caution'); ?></h1>
                 <p class="pc-thx-text">
-                    Merci ! Vos coordonnées bancaires ont bien été sécurisées pour la caution.<br>
-                    Vous recevrez un <strong>email de confirmation</strong> dès que la somme sera officiellement bloquée (Hold) avant votre arrivée.
+                    <?php _e('Thank you! Your banking details have been securely saved for the deposit.', 'pc-stripe-caution'); ?><br>
+                    <?php _e('You will receive a <strong>confirmation email</strong> as soon as the amount is officially blocked (Hold) before your arrival.', 'pc-stripe-caution'); ?>
                 </p>
                 <div class="pc-thx-note">
-                    🔒 <strong>Sécurité & Confidentialité</strong><br>
-                    Vos informations sont chiffrées par Stripe. Aucune somme n'est débitée immédiatement.
-                    L'empreinte bancaire sera supprimée automatiquement après la libération de la caution.
+                    🔒 <strong><?php _e('Security & Privacy', 'pc-stripe-caution'); ?></strong><br>
+                    <?php _e('Your information is encrypted by Stripe. No amount is debited immediately. The bank imprint will be automatically deleted after the deposit is released.', 'pc-stripe-caution'); ?>
                 </div>
-                <a href="/recherche-dexperiences/" class="pc-thx-btn">✨ Découvrir nos expériences</a>
+                <a href="<?php echo home_url('/'); ?>" class="pc-thx-btn"><?php _e('✨ Return to Home', 'pc-stripe-caution'); ?></a>
             </div>
         </div>
 <?php
@@ -783,7 +775,15 @@ class PCSC_Shortcodes
 
     public static function register_menu(): void
     {
-        add_menu_page('Gestion Cautions', 'Cautions Stripe', 'manage_options', 'pc-stripe-caution', [__CLASS__, 'render_menu_page'], 'dashicons-shield', 56);
+        add_menu_page(
+            __('Deposit Management', 'pc-stripe-caution'),
+            __('Stripe Deposits', 'pc-stripe-caution'),
+            'manage_options',
+            'pc-stripe-caution',
+            [__CLASS__, 'render_menu_page'],
+            'dashicons-shield',
+            56
+        );
     }
 
     public static function render_menu_page(): void
