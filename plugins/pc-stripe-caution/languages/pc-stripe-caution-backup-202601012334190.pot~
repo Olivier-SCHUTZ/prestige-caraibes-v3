@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PC Stripe Caution\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-01 23:34+0000\n"
+"POT-Creation-Date: 2026-01-01 22:28+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -89,10 +89,6 @@ msgstr ""
 
 #: admin/class-pcsc-admin.php:522
 msgid "Booking Ref"
-msgstr ""
-
-#: admin/class-pcsc-admin.php:225
-msgid "Captured:"
 msgstr ""
 
 #: admin/class-pcsc-admin.php:71
@@ -283,10 +279,6 @@ msgstr ""
 msgid "Hold Active"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:206
-msgid "Hold active."
-msgstr ""
-
 #: includes/class-pcsc-mailer.php:61
 msgid "If the button does not work, you can copy this link into your browser:"
 msgstr ""
@@ -303,16 +295,8 @@ msgstr ""
 msgid "Limit Reached"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:188
-msgid "Link generated."
-msgstr ""
-
 #: admin/class-pcsc-admin.php:70
 msgid "Link Sent"
-msgstr ""
-
-#: admin/class-pcsc-admin.php:140
-msgid "Link sent to customer."
 msgstr ""
 
 #: admin/class-pcsc-admin.php:495

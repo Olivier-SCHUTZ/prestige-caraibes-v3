@@ -93,7 +93,6 @@ class PCSC_DB
         $wpdb->update($table, $data, ['id' => $id]);
     }
 
-    // --- AJOUT : Suppression ---
     public static function delete_case(int $id): void
     {
         global $wpdb;
@@ -128,84 +127,11 @@ class PCSC_DB
         wp_schedule_single_event($release_ts, $hook, $args);
     }
 
-    public static function cron_release_single(int $id): void
-    {
-        $case = self::get_case($id);
-        if (!$case) return;
-
-        // Si déjà encaissée, on ne libère pas
-        if (in_array($case['status'], ['captured', 'capture_partial'], true)) return;
-        if (empty($case['stripe_payment_intent_id'])) return;
-
-        $pi = $case['stripe_payment_intent_id'];
-        $res = PCSC_Stripe::cancel_payment_intent($pi);
-
-        if ($res['ok']) {
-            self::update_case($id, ['status' => 'released', 'last_error' => null]);
-
-            // --- AJOUT EMAIL CLIENT ---
-            if (class_exists('PCSC_Mailer')) {
-                PCSC_Mailer::send_release_confirmation($case['customer_email'], $case['booking_ref']);
-            }
-        } else {
-            self::update_case($id, ['last_error' => $res['error']]);
-            // TRADUCTION ICI
-            self::append_note($id, sprintf(__('Auto-release failed: %s', 'pc-stripe-caution'), $res['error']));
-        }
-    }
-
-    public static function cron_daily(): void
-    {
-        // Rotation silencieuse : si séjour long et PI trop ancien, on tente une rotation.
-        global $wpdb;
-        $table = self::table();
-
-        $rows = $wpdb->get_results(
-            "SELECT * FROM {$table}
-       WHERE status IN ('authorized','rotated','rotation_failed','rotation_requires_action')
-       AND stripe_customer_id IS NOT NULL
-       AND stripe_payment_method_id IS NOT NULL
-       AND stripe_payment_intent_id IS NOT NULL",
-            ARRAY_A
-        );
-
-        foreach ($rows as $case) {
-            $id = (int)$case['id'];
-
-            // Si pas de date_depart, on ne fait rien en auto
-            if (empty($case['date_depart'])) continue;
-
-            $depart_ts = strtotime($case['date_depart'] . ' 12:00:00');
-            $now = time();
-            if (class_exists('PCSC_Mailer')) {
-                $days_since_depart = ($now - $depart_ts) / DAY_IN_SECONDS;
-                // Entre 5.5 et 6.5 jours après le départ = le 6ème jour (la veille du 7ème)
-                if ($days_since_depart >= 5.5 && $days_since_depart < 6.5) {
-                    // Note: on vérifie une chaine partielle, donc on cherche "D-1 reminder" ou l'ancienne version française pour compatibilité
-                    if (strpos($case['internal_notes'], 'Mail rappel J-1') === false && strpos($case['internal_notes'], 'D-1 reminder') === false) {
-                        PCSC_Mailer::send_admin_reminder_release($case['booking_ref'], $case['date_depart']);
-                        // TRADUCTION ICI
-                        self::append_note($id, __('D-1 reminder email sent to admin.', 'pc-stripe-caution'));
-                    }
-                }
-            }
-
-            // Si déjà après départ+7 => la libération sera gérée par cron_release_single si planifié
-            if ($now > ($depart_ts + 7 * DAY_IN_SECONDS)) continue;
-
-            // Règle simple provisoire : rotation toutes les 6 jours (à partir de la dernière "validation")
-            $updated_ts = strtotime($case['updated_at'] ?: $case['created_at']);
-            if ($now < $updated_ts + 6 * DAY_IN_SECONDS) continue;
-
-            // TRADUCTION ICI
-            self::rotate_silent($id, __('Automatic daily rotation.', 'pc-stripe-caution'));
-        }
-    }
+    // --- NOTE : Les fonctions CRON ont été déplacées dans /pro/class-pcsc-pro-cron.php ---
 
     public static function rotate_silent(int $id, string $reason = ''): array
     {
         $case = self::get_case($id);
-        // TRADUCTION ICI
         if (!$case) return ['ok' => false, 'error' => __('Case not found', 'pc-stripe-caution')];
 
         if (empty($case['stripe_customer_id']) || empty($case['stripe_payment_method_id'])) {
@@ -224,7 +150,6 @@ class PCSC_DB
         $cancel = PCSC_Stripe::cancel_payment_intent($old_pi);
         if (!$cancel['ok']) {
             self::update_case($id, ['status' => 'rotation_failed', 'last_error' => $cancel['error']]);
-            // TRADUCTION ICI
             self::append_note($id, sprintf(__('Rotation: Previous PI cancellation failed: %s', 'pc-stripe-caution'), $cancel['error']));
             return ['ok' => false, 'error' => $cancel['error']];
         }
@@ -244,9 +169,8 @@ class PCSC_DB
 
         if (!$create['ok']) {
             $err = $create['error'];
-            // Plan B : si nécessite action, on marquera requires_action et on générera un lien assisté ensuite (si tu veux)
+            // Plan B : si nécessite action, on marquera requires_action
             self::update_case($id, ['status' => 'rotation_requires_action', 'last_error' => $err]);
-            // TRADUCTION ICI
             self::append_note($id, sprintf(__('Rotation: Requires action or off-session PI failed: %s', 'pc-stripe-caution'), $err));
             return ['ok' => false, 'error' => $err];
         }
@@ -260,8 +184,24 @@ class PCSC_DB
             'last_error' => null,
         ]);
 
-        // TRADUCTION ICI
         self::append_note($id, trim(__('Silent rotation OK.', 'pc-stripe-caution') . ' ' . $reason));
         return ['ok' => true, 'payment_intent_id' => $new_pi];
+    }
+
+    /**
+     * Compte le nombre de cautions créées le mois courant.
+     * Utile pour limiter la version LITE.
+     */
+    public static function count_this_month(): int
+    {
+        global $wpdb;
+        $table = self::table();
+
+        // On regarde le mois et l'année courants
+        $sql = "SELECT COUNT(*) FROM {$table} 
+                WHERE MONTH(created_at) = MONTH(CURRENT_DATE()) 
+                AND YEAR(created_at) = YEAR(CURRENT_DATE())";
+
+        return (int) $wpdb->get_var($sql);
     }
 }

@@ -78,7 +78,8 @@ class PCSC_Webhooks
 
                     if (class_exists('PCSC_Mailer')) {
                         $case = PCSC_DB::get_case($case_id);
-                        if ($case) {
+                        // [PRO] Email Admin : Notification de nouvelle carte
+                        if ($case && defined('PCSC_IS_PRO') && PCSC_IS_PRO) {
                             PCSC_Mailer::send_admin_card_saved($case['booking_ref'], $case['customer_email']);
                             PCSC_DB::append_note($case_id, "Mail alerte Admin envoyé.");
                         }

@@ -68,6 +68,31 @@ class PCSC_Settings
             'pcsc_section_general',
             ['label_for' => 'stripe_currency', 'default' => 'EUR', 'desc' => 'Ex: EUR, USD, CAD']
         );
+
+        // Ajout : Sélecteur de page de succès (PRO)
+        if (defined('PCSC_IS_PRO') && PCSC_IS_PRO) {
+            add_settings_field(
+                'success_page_id',
+                __('Success Page (Redirection)', 'pc-stripe-caution'),
+                [__CLASS__, 'render_field_page_selector'],
+                'pc-stripe-settings',
+                'pcsc_section_general',
+                ['label_for' => 'success_page_id']
+            );
+        }
+
+        // Section Diagnostic (PRO uniquement)
+        if (defined('PCSC_IS_PRO') && PCSC_IS_PRO) {
+            add_settings_section('pcsc_section_diag', __('Diagnostic & Tools (PRO)', 'pc-stripe-caution'), null, 'pc-stripe-settings');
+
+            add_settings_field(
+                'diag_status',
+                __('System Status', 'pc-stripe-caution'),
+                [__CLASS__, 'render_diag_status'],
+                'pc-stripe-settings',
+                'pcsc_section_diag'
+            );
+        }
     }
 
     public static function render_field_text(array $args): void
@@ -116,5 +141,43 @@ class PCSC_Settings
     {
         $opts = get_option('pcsc_settings');
         return $opts[$key] ?? $default;
+    }
+
+    public static function render_field_page_selector(array $args): void
+    {
+        $options = get_option('pcsc_settings') ?: [];
+        $val = isset($options[$args['label_for']]) ? $options[$args['label_for']] : 0;
+
+        wp_dropdown_pages([
+            'name' => 'pcsc_settings[' . esc_attr($args['label_for']) . ']',
+            'selected' => $val,
+            'show_option_none' => __('Default (Plugin Page)', 'pc-stripe-caution'),
+            'option_none_value' => 0
+        ]);
+        echo '<p class="description">' . __('Select the page where the customer is redirected after a successful deposit.', 'pc-stripe-caution') . '</p>';
+    }
+
+    public static function render_diag_status(): void
+    {
+        $sk = self::get_option('stripe_secret_key');
+        $wh = self::get_option('stripe_webhook_secret');
+        $mail = get_option('admin_email');
+
+        // Check API
+        $api_ok = !empty($sk) && strpos($sk, 'sk_') === 0;
+        $icon_api = $api_ok ? '✅' : '❌';
+
+        // Check Webhook
+        $wh_ok = !empty($wh) && strpos($wh, 'whsec_') === 0;
+        $icon_wh = $wh_ok ? '✅' : '❌';
+
+        echo '<div style="background:#fff; padding:15px; border:1px solid #ccc; max-width:600px;">';
+        echo '<p><strong>API Stripe :</strong> ' . $icon_api . ' ' . ($api_ok ? 'Key detected' : 'Missing/Invalid SK Key') . '</p>';
+        echo '<p><strong>Webhook Secret :</strong> ' . $icon_wh . ' ' . ($wh_ok ? 'Secret detected' : 'Missing Secret') . '</p>';
+        echo '<p><strong>Admin Email :</strong> ' . esc_html($mail) . '</p>';
+
+        // Bouton de test simple (ne fait rien pour l'instant, prévu pour future update)
+        echo '<hr><button type="button" class="button" onclick="alert(\'Diagnostic tool ready.\')">Run Full Diagnostic</button>';
+        echo '</div>';
     }
 }
