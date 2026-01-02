@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PC Stripe Caution\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-02 22:41+0000\n"
+"POT-Creation-Date: 2026-01-02 23:12+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -72,7 +72,11 @@ msgstr ""
 msgid "Add the confirmation message shortcode:"
 msgstr ""
 
-#: admin/class-pcsc-settings.php:300
+#: admin/class-pcsc-settings.php:277
+msgid "Admin Email :"
+msgstr ""
+
+#: admin/class-pcsc-settings.php:311
 msgid "Advanced Features (PRO)"
 msgstr ""
 
@@ -125,7 +129,7 @@ msgstr ""
 msgid "Automatic rotation (for stays > 7 days)"
 msgstr ""
 
-#: admin/class-pcsc-settings.php:293
+#: admin/class-pcsc-settings.php:304
 msgid "Automatically release the hold X days after departure date."
 msgstr ""
 
@@ -225,7 +229,7 @@ msgstr ""
 msgid "Confirm Charge?"
 msgstr ""
 
-#: admin/class-pcsc-settings.php:324
+#: admin/class-pcsc-settings.php:335
 msgid "Content"
 msgstr ""
 
@@ -285,7 +289,7 @@ msgstr ""
 msgid "Customizable emails"
 msgstr ""
 
-#: admin/class-pcsc-settings.php:288
+#: admin/class-pcsc-settings.php:299
 msgid "D+%d after departure"
 msgstr ""
 
@@ -387,6 +391,10 @@ msgstr ""
 
 #: admin/class-pcsc-settings.php:116
 msgid "Diagnostic & Tools (PRO)"
+msgstr ""
+
+#: admin/class-pcsc-settings.php:280
+msgid "Diagnostic tool ready."
 msgstr ""
 
 #: admin/class-pcsc-settings.php:104
@@ -529,6 +537,10 @@ msgstr ""
 msgid "Item"
 msgstr ""
 
+#: admin/class-pcsc-settings.php:269
+msgid "Key detected"
+msgstr ""
+
 #: admin/class-pcsc-admin.php:609
 msgid "Limit Reached"
 msgstr ""
@@ -555,6 +567,14 @@ msgstr ""
 
 #: admin/class-pcsc-admin.php:126
 msgid "Missing fields."
+msgstr ""
+
+#: admin/class-pcsc-settings.php:273
+msgid "Missing Secret"
+msgstr ""
+
+#: admin/class-pcsc-settings.php:269
+msgid "Missing/Invalid SK Key"
 msgstr ""
 
 #: pro/class-pcsc-pro-dashboard.php:259 admin/class-pcsc-help.php:163
@@ -711,8 +731,16 @@ msgstr ""
 msgid "Rotation: Requires action or off-session PI failed: %s"
 msgstr ""
 
+#: admin/class-pcsc-settings.php:281
+msgid "Run Full Diagnostic"
+msgstr ""
+
 #: admin/class-pcsc-settings.php:217
 msgid "Save Changes"
+msgstr ""
+
+#: admin/class-pcsc-settings.php:273
+msgid "Secret detected"
 msgstr ""
 
 #: admin/class-pcsc-help.php:46
@@ -815,7 +843,7 @@ msgstr ""
 msgid "Stripe Secret Key"
 msgstr ""
 
-#: admin/class-pcsc-settings.php:315
+#: admin/class-pcsc-settings.php:326
 msgid "Subject"
 msgstr ""
 
@@ -903,7 +931,7 @@ msgstr ""
 msgid "Unlimited deposits (vs 3/month)"
 msgstr ""
 
-#: admin/class-pcsc-settings.php:302
+#: admin/class-pcsc-settings.php:313
 msgid "Unlock automatic management and advanced customization."
 msgstr ""
 
@@ -923,7 +951,7 @@ msgstr ""
 msgid "Usage Limit:"
 msgstr ""
 
-#: admin/class-pcsc-settings.php:308
+#: admin/class-pcsc-settings.php:319
 msgid ""
 "Use the following placeholders in your emails: <code>{ref}</code>, <code>"
 "{amount}</code>, <code>{customer_name}</code> (if set), <code>{link}</code> "

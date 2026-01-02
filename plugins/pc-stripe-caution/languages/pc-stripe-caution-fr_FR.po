@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: PC Stripe Caution\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-01-01 16:51+0000\n"
-"PO-Revision-Date: 2026-01-02 22:47+0000\n"
+"PO-Revision-Date: 2026-01-02 23:15+0000\n"
 "Last-Translator: Olivier SCHUTZ\n"
 "Language-Team: Français\n"
 "Language: fr_FR\n"
@@ -73,7 +73,11 @@ msgstr "Actif."
 msgid "Add the confirmation message shortcode:"
 msgstr "Ajoutez le shortcode du message de confirmation :"
 
-#: admin/class-pcsc-settings.php:300
+#: admin/class-pcsc-settings.php:277
+msgid "Admin Email :"
+msgstr "Email Admin :"
+
+#: admin/class-pcsc-settings.php:311
 msgid "Advanced Features (PRO)"
 msgstr "Fonctionnalités avancées (PRO)"
 
@@ -126,7 +130,7 @@ msgstr "Rotation journalière automatique."
 msgid "Automatic rotation (for stays > 7 days)"
 msgstr "Rotation automatique (séjours > 7 jours)"
 
-#: admin/class-pcsc-settings.php:293
+#: admin/class-pcsc-settings.php:304
 msgid "Automatically release the hold X days after departure date."
 msgstr "Libérer automatiquement l'empreinte X jours après la date de départ."
 
@@ -237,7 +241,7 @@ msgstr "Confirmer le prélèvement"
 msgid "Confirm Charge?"
 msgstr "Confirmer le prélèvement ?"
 
-#: admin/class-pcsc-settings.php:324
+#: admin/class-pcsc-settings.php:335
 msgid "Content"
 msgstr "Contenu"
 
@@ -301,7 +305,7 @@ msgstr "Email client"
 msgid "Customizable emails"
 msgstr "Emails personnalisables"
 
-#: admin/class-pcsc-settings.php:288
+#: admin/class-pcsc-settings.php:299
 msgid "D+%d after departure"
 msgstr "J+%d après départ"
 
@@ -404,6 +408,10 @@ msgstr "Détails"
 #: admin/class-pcsc-settings.php:116
 msgid "Diagnostic & Tools (PRO)"
 msgstr "Diagnostic & Outils (PRO)"
+
+#: admin/class-pcsc-settings.php:280
+msgid "Diagnostic tool ready."
+msgstr "Outil de diagnostic prêt."
 
 #: admin/class-pcsc-settings.php:104
 msgid "Email Customization"
@@ -558,6 +566,10 @@ msgstr "L'argent est-il débité du compte du client ?"
 msgid "Item"
 msgstr "Élément"
 
+#: admin/class-pcsc-settings.php:269
+msgid "Key detected"
+msgstr "Clé détectée"
+
 #: admin/class-pcsc-admin.php:609
 msgid "Limit Reached"
 msgstr "Limite atteinte"
@@ -585,6 +597,14 @@ msgstr "VERSION LITE"
 #: admin/class-pcsc-admin.php:126
 msgid "Missing fields."
 msgstr "Champs manquants."
+
+#: admin/class-pcsc-settings.php:273
+msgid "Missing Secret"
+msgstr "Secret manquant"
+
+#: admin/class-pcsc-settings.php:269
+msgid "Missing/Invalid SK Key"
+msgstr "Clé SK manquante ou invalide"
 
 #: pro/class-pcsc-pro-dashboard.php:259 admin/class-pcsc-help.php:163
 msgid "Mobile Dashboard"
@@ -750,9 +770,17 @@ msgstr "Rotation : L'annulation du PI précédent a échoué : %s"
 msgid "Rotation: Requires action or off-session PI failed: %s"
 msgstr "Rotation : Action requise ou échec du PI off-session : %s"
 
+#: admin/class-pcsc-settings.php:281
+msgid "Run Full Diagnostic"
+msgstr "Lancer le diagnostic complet"
+
 #: admin/class-pcsc-settings.php:217
 msgid "Save Changes"
 msgstr "Enregistrer les modifications"
+
+#: admin/class-pcsc-settings.php:273
+msgid "Secret detected"
+msgstr "Secret détecté"
 
 #: admin/class-pcsc-help.php:46
 msgid "Secret Key"
@@ -857,7 +885,7 @@ msgstr "Stripe limite une empreinte (autorisation) à <strong>7 jours</strong>."
 msgid "Stripe Secret Key"
 msgstr "Clé Secrète Stripe"
 
-#: admin/class-pcsc-settings.php:315
+#: admin/class-pcsc-settings.php:326
 msgid "Subject"
 msgstr "Sujet"
 
@@ -962,7 +990,7 @@ msgstr ""
 msgid "Unlimited deposits (vs 3/month)"
 msgstr "Dépôts illimités (vs 3/mois)"
 
-#: admin/class-pcsc-settings.php:302
+#: admin/class-pcsc-settings.php:313
 msgid "Unlock automatic management and advanced customization."
 msgstr "Débloquez la gestion automatique et la personnalisation avancée."
 
@@ -982,7 +1010,7 @@ msgstr "Passez en PRO pour des dépôts illimités & la rotation auto."
 msgid "Usage Limit:"
 msgstr "Limite d'utilisation :"
 
-#: admin/class-pcsc-settings.php:308
+#: admin/class-pcsc-settings.php:319
 msgid ""
 "Use the following placeholders in your emails: <code>{ref}</code>, <code>"
 "{amount}</code>, <code>{customer_name}</code> (if set), <code>{link}</code> "

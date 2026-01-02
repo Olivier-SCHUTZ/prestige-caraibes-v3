@@ -264,12 +264,23 @@ class PCSC_Settings
         $icon_wh = $wh_ok ? '✅' : '❌';
 
         echo '<div style="background:#fff; padding:15px; border:1px solid #ccc; max-width:600px;">';
-        echo '<p><strong>API Stripe :</strong> ' . $icon_api . ' ' . ($api_ok ? 'Key detected' : 'Missing/Invalid SK Key') . '</p>';
-        echo '<p><strong>Webhook Secret :</strong> ' . $icon_wh . ' ' . ($wh_ok ? 'Secret detected' : 'Missing Secret') . '</p>';
-        echo '<p><strong>Admin Email :</strong> ' . esc_html($mail) . '</p>';
 
-        // Bouton de test simple (ne fait rien pour l'instant, prévu pour future update)
-        echo '<hr><button type="button" class="button" onclick="alert(\'Diagnostic tool ready.\')">Run Full Diagnostic</button>';
+        // Traduction des statuts API
+        $status_api = $api_ok ? __('Key detected', 'pc-stripe-caution') : __('Missing/Invalid SK Key', 'pc-stripe-caution');
+        echo '<p><strong>API Stripe :</strong> ' . $icon_api . ' ' . $status_api . '</p>';
+
+        // Traduction des statuts Webhook
+        $status_wh = $wh_ok ? __('Secret detected', 'pc-stripe-caution') : __('Missing Secret', 'pc-stripe-caution');
+        echo '<p><strong>Webhook Secret :</strong> ' . $icon_wh . ' ' . $status_wh . '</p>';
+
+        // Traduction du label Email
+        echo '<p><strong>' . __('Admin Email :', 'pc-stripe-caution') . '</strong> ' . esc_html($mail) . '</p>';
+
+        // Bouton et alerte JS traduits
+        $alert_msg = esc_js(__('Diagnostic tool ready.', 'pc-stripe-caution'));
+        $btn_text = __('Run Full Diagnostic', 'pc-stripe-caution');
+
+        echo '<hr><button type="button" class="button" onclick="alert(\'' . $alert_msg . '\')">' . $btn_text . '</button>';
         echo '</div>';
     }
 
