@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: PC Stripe Caution\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-01-01 16:51+0000\n"
-"PO-Revision-Date: 2026-01-01 23:38+0000\n"
+"PO-Revision-Date: 2026-01-02 14:08+0000\n"
 "Last-Translator: Olivier SCHUTZ\n"
 "Language-Team: Français\n"
 "Language: fr_FR\n"
@@ -15,63 +15,95 @@ msgstr ""
 "X-Loco-Version: 2.8.0; wp-6.9; php-8.2.27\n"
 "X-Domain: pc-stripe-caution"
 
-#: admin/class-pcsc-admin.php:626
+#: admin/class-pcsc-admin.php:631
 msgid "1. Block Funds (Hold)"
 msgstr "1. Bloquer les fonds (Empreinte)"
 
-#: admin/class-pcsc-admin.php:651
+#: admin/class-pcsc-admin.php:656
 msgid "2. Charge"
 msgstr "2. Prélever"
 
-#: admin/class-pcsc-admin.php:663
+#: admin/class-pcsc-admin.php:668
 msgid "3. Release"
 msgstr "3. Libérer"
 
-#: includes/class-pcsc-mailer.php:172
+#: includes/class-pcsc-mailer.php:243
 #, php-format
 msgid "[Admin] Card saved - %s"
 msgstr "[Admin] Carte enregistrée - %s"
 
-#: includes/class-pcsc-mailer.php:190
+#: includes/class-pcsc-mailer.php:261
 #, php-format
 msgid "[Admin] Release Reminder - %s"
 msgstr "[Admin] Rappel de libération - %s"
 
-#: includes/class-pcsc-mailer.php:140
+#: includes/class-pcsc-mailer.php:210
 msgid "A charge has been applied."
 msgstr "Un prélèvement a été appliqué."
 
-#: admin/class-pcsc-admin.php:33
+#: admin/class-pcsc-help.php:79
+msgid ""
+"A few days before arrival (or on D-Day), go to the case and click <strong>"
+"\"Take Deposit\"</strong>."
+msgstr ""
+"Quelques jours avant l'arrivée (ou le Jour J), allez dans le dossier et "
+"cliquez sur <strong>\"Prendre la caution\"</strong>."
+
+#: admin/class-pcsc-admin.php:38
 msgid "Access denied."
 msgstr "Accès refusé."
 
-#: includes/class-pcsc-mailer.php:173
+#: pro/class-pcsc-pro-dashboard.php:51
+msgid "Access Denied. Admins only."
+msgstr "Accès refusé. Réservé aux administrateurs."
+
+#: includes/class-pcsc-mailer.php:244
 msgid "Action required: Card saved"
 msgstr "Action requise : Carte enregistrée"
 
-#: admin/class-pcsc-admin.php:254
+#: admin/class-pcsc-admin.php:259
 msgid "Action successful."
 msgstr "Action effectuée avec succès."
 
-#: admin/class-pcsc-admin.php:634
+#: admin/class-pcsc-admin.php:639
 msgid "Active."
 msgstr "Actif."
 
-#: admin/class-pcsc-admin.php:542
+#: admin/class-pcsc-help.php:122
+msgid "Add the confirmation message shortcode:"
+msgstr "Ajoutez le shortcode du message de confirmation :"
+
+#: admin/class-pcsc-settings.php:300
+msgid "Advanced Features (PRO)"
+msgstr "Fonctionnalités avancées (PRO)"
+
+#: admin/class-pcsc-help.php:86
+msgid "All good:"
+msgstr "Tout est bon :"
+
+#: admin/class-pcsc-admin.php:547
 msgid "Amount"
 msgstr "Montant"
 
-#: admin/class-pcsc-admin.php:656
+#: admin/class-pcsc-admin.php:661
 msgid "Amount €"
 msgstr "Montant €"
 
-#: admin/class-pcsc-admin.php:594
+#: admin/class-pcsc-admin.php:599
 msgid "Amount:"
 msgstr "Montant :"
 
-#: admin/class-pcsc-admin.php:527
+#: admin/class-pcsc-admin.php:532
 msgid "Arrival"
 msgstr "Arrivée"
+
+#: admin/class-pcsc-settings.php:85
+msgid "Auto Release Delay"
+msgstr "Délai de libération auto"
+
+#: admin/class-pcsc-help.php:162
+msgid "Auto-release after departure"
+msgstr "Libération auto après départ"
 
 #: pro/class-pcsc-pro-cron.php:31
 #, php-format
@@ -82,19 +114,42 @@ msgstr "Échec de la libération auto : %s"
 msgid "Automatic daily rotation."
 msgstr "Rotation journalière automatique."
 
-#: includes/class-pcsc-mailer.php:92
+#: admin/class-pcsc-help.php:160
+msgid "Automatic rotation (for stays > 7 days)"
+msgstr "Rotation automatique (séjours > 7 jours)"
+
+#: admin/class-pcsc-settings.php:293
+msgid "Automatically release the hold X days after departure date."
+msgstr "Libérer automatiquement l'empreinte X jours après la date de départ."
+
+#: admin/class-pcsc-help.php:111
+msgid "Avoid Login screens:"
+msgstr "Éviter les écrans de connexion :"
+
+#: includes/class-pcsc-mailer.php:142
 msgid "Blocked amount:"
 msgstr "Montant bloqué (empreinte) :"
 
-#: admin/class-pcsc-admin.php:522
+#: admin/class-pcsc-admin.php:527
 msgid "Booking Ref"
 msgstr "Réf. Réservation"
 
-#: admin/class-pcsc-admin.php:225
+#: admin/class-pcsc-help.php:119
+msgid ""
+"By default, the plugin uses a basic success page. To use your own design:"
+msgstr ""
+"Par défaut, le plugin utilise une page de succès basique. Pour utiliser "
+"votre propre design :"
+
+#: pro/class-pcsc-pro-dashboard.php:246
+msgid "Cancel"
+msgstr "Annuler"
+
+#: admin/class-pcsc-admin.php:230
 msgid "Captured:"
 msgstr "Encaissé :"
 
-#: admin/class-pcsc-admin.php:71
+#: admin/class-pcsc-admin.php:76
 msgid "Card Saved"
 msgstr "Carte enregistrée"
 
@@ -102,110 +157,214 @@ msgstr "Carte enregistrée"
 msgid "Card saved successfully"
 msgstr "Carte enregistrée avec succès"
 
-#: includes/class-pcsc-db.php:135
+#: admin/class-pcsc-help.php:68
+msgid "Case Creation:"
+msgstr "Création de dossier :"
+
+#: includes/class-pcsc-db.php:147
 msgid "Case not found"
 msgstr "Dossier introuvable"
 
-#: admin/class-pcsc-admin.php:577
+#: admin/class-pcsc-admin.php:582
 msgid "Case not found."
 msgstr "Dossier introuvable."
 
-#: admin/class-pcsc-admin.php:73
+#: admin/class-pcsc-settings.php:112
+msgid "Charge Notification"
+msgstr "Notification de prélèvement"
+
+#: admin/class-pcsc-admin.php:78
 msgid "Charged"
 msgstr "Encaissée"
 
-#: admin/class-pcsc-settings.php:38
+#: admin/class-pcsc-help.php:151
+msgid ""
+"Check that you have copied the Webhook Secret (<code>whsec_...</code>) and "
+"not the Public Key in the settings. Also verify that the Webhook URL in "
+"Stripe matches exactly the one provided above."
+msgstr ""
+"Vérifiez que vous avez copié le Secret Webhook (<code>whsec_...</code>) et "
+"non la Clé Publique dans les réglages. Vérifiez aussi que l'URL de Webhook "
+"dans Stripe correspond exactement à celle fournie ci-dessus."
+
+#: admin/class-pcsc-help.php:54
+msgid "Click \"Add endpoint\"."
+msgstr "Cliquez sur \"Ajouter un endpoint\"."
+
+#: admin/class-pcsc-help.php:87
+msgid ""
+"Click \"Charge\", enter the amount to capture. The rest is released "
+"automatically."
+msgstr ""
+"Cliquez sur \"Prélever\", entrez le montant à encaisser. Le reste est libéré "
+"automatiquement."
+
+#: admin/class-pcsc-help.php:74
+msgid ""
+"Click \"Generate Link\" then \"Send Email\". The customer receives a secure "
+"link to save their card."
+msgstr ""
+"Cliquez sur \"Générer le lien\" puis \"Envoyer l'email\". Le client reçoit "
+"un lien sécurisé pour enregistrer sa carte."
+
+#: admin/class-pcsc-help.php:86
+msgid "Click \"Release\" after departure (or let the PRO auto-release do it)."
+msgstr ""
+"Cliquez sur \"Libérer\" après le départ (ou laissez la libération auto PRO "
+"le faire)."
+
+#: admin/class-pcsc-settings.php:39
 msgid "Company Name"
 msgstr "Nom de l'entreprise"
 
-#: admin/class-pcsc-admin.php:658
+#: admin/class-pcsc-admin.php:663
 msgid "Confirm Charge"
 msgstr "Confirmer le prélèvement"
 
-#: admin/class-pcsc-admin.php:658
+#: admin/class-pcsc-admin.php:663
 msgid "Confirm Charge?"
 msgstr "Confirmer le prélèvement ?"
 
-#: admin/class-pcsc-admin.php:531
+#: admin/class-pcsc-settings.php:324
+msgid "Content"
+msgstr "Contenu"
+
+#: admin/class-pcsc-help.php:57
+msgid ""
+"Copy the Signing Secret (starts with <code>whsec_...</code>) and paste it "
+"into the plugin settings."
+msgstr ""
+"Copiez le Secret de Signature (commence par <code>whsec_...</code>) et "
+"collez-le dans les réglages du plugin."
+
+#: pro/class-pcsc-pro-dashboard.php:245
+msgid "Create"
+msgstr "Créer"
+
+#: admin/class-pcsc-help.php:69
+msgid ""
+"Create a new deposit case by entering the Reference (e.g., Booking-123), "
+"Customer Email, and Amount."
+msgstr ""
+"Créez un nouveau dossier de caution en entrant la Référence (ex: Réservation-"
+"123), l'Email client et le Montant."
+
+#: admin/class-pcsc-help.php:121
+msgid "Create a new Page (e.g., \"Deposit Success\")."
+msgstr "Créez une nouvelle Page (ex : \"Succès Caution\")."
+
+#: admin/class-pcsc-help.php:102
+msgid "Create a private WordPress Page and add this shortcode:"
+msgstr "Créez une Page WordPress privée et ajoutez ce shortcode :"
+
+#: admin/class-pcsc-admin.php:536
 msgid "Create Case"
 msgstr "Créer un dossier"
 
-#: admin/class-pcsc-settings.php:65
+#: admin/class-pcsc-help.php:106
+msgid "Create the App Shortcut:"
+msgstr "Créer le raccourci App :"
+
+#: admin/class-pcsc-help.php:52
+msgid "Crucial for security and updates."
+msgstr "Crucial pour la sécurité et les mises à jour."
+
+#: admin/class-pcsc-settings.php:66
 msgid "Currency"
 msgstr "Devise"
 
-#: admin/class-pcsc-admin.php:541
+#: admin/class-pcsc-help.php:118
+msgid "Custom Thank You Page"
+msgstr "Page de remerciement personnalisée"
+
+#: admin/class-pcsc-admin.php:546
 msgid "Customer"
 msgstr "Client"
 
-#: admin/class-pcsc-admin.php:523
+#: admin/class-pcsc-admin.php:528
 msgid "Customer Email"
 msgstr "Email client"
+
+#: admin/class-pcsc-help.php:161
+msgid "Customizable emails"
+msgstr "Emails personnalisables"
+
+#: admin/class-pcsc-settings.php:288
+msgid "D+%d after departure"
+msgstr "J+%d après départ"
 
 #: pro/class-pcsc-pro-cron.php:62
 msgid "D-1 reminder email sent to admin."
 msgstr "Email de rappel J-1 envoyé à l'admin."
 
-#: includes/class-pcsc-mailer.php:134
+#: includes/class-pcsc-mailer.php:196
 msgid "Damage fees / Reported issues"
 msgstr "Frais de dégradations / Problèmes signalés"
 
-#: includes/class-pcsc-mailer.php:141
+#: admin/class-pcsc-help.php:87
+msgid "Damages:"
+msgstr "Dégâts :"
+
+#: includes/class-pcsc-mailer.php:211
 msgid "Debited amount:"
 msgstr "Montant prélevé :"
 
-#: admin/class-pcsc-settings.php:154
+#: admin/class-pcsc-settings.php:243
 msgid "Default (Plugin Page)"
 msgstr "Par défaut (Page du plugin)"
 
-#: admin/class-pcsc-settings.php:114
+#: admin/class-pcsc-settings.php:144
 msgid "Defined in wp-config.php (PC_STRIPE_SECRET_KEY)"
 msgstr "Défini dans wp-config.php (PC_STRIPE_SECRET_KEY)"
 
-#: admin/class-pcsc-settings.php:116
+#: admin/class-pcsc-settings.php:146
 msgid "Defined in wp-config.php (PC_STRIPE_WEBHOOK_SECRET)"
 msgstr "Défini dans wp-config.php (PC_STRIPE_WEBHOOK_SECRET)"
 
-#: admin/class-pcsc-admin.php:562
+#: admin/class-pcsc-admin.php:567
 msgid "Delete"
 msgstr "Supprimer"
 
-#: admin/class-pcsc-admin.php:558
+#: admin/class-pcsc-admin.php:563
 msgid "Delete?"
 msgstr "Supprimer ?"
 
-#: admin/class-pcsc-admin.php:528 admin/class-pcsc-admin.php:544
+#: admin/class-pcsc-admin.php:533 admin/class-pcsc-admin.php:549
 msgid "Departure"
 msgstr "Départ"
 
-#: admin/class-pcsc-admin.php:524
+#: admin/class-pcsc-admin.php:529
 msgid "Deposit Amount (€)"
 msgstr "Montant de la caution (€)"
 
-#: includes/class-pcsc-mailer.php:136
+#: includes/class-pcsc-mailer.php:206
 #, php-format
 msgid "Deposit Closed (Charge Applied) - Ref %s"
 msgstr "Caution clôturée (Prélèvement effectué) - Réf %s"
 
-#: includes/class-pcsc-mailer.php:88
+#: includes/class-pcsc-mailer.php:138
 #, php-format
 msgid "Deposit Confirmation - Ref %s"
 msgstr "Confirmation de caution - Réf %s"
 
-#: admin/class-pcsc-admin.php:14 admin/class-pcsc-admin.php:488
+#: admin/class-pcsc-help.php:65
+msgid "Deposit Lifecycle"
+msgstr "Cycle de vie de la caution"
+
+#: admin/class-pcsc-admin.php:19 admin/class-pcsc-admin.php:493
 msgid "Deposit Management"
 msgstr "Gestion des cautions"
 
-#: includes/class-pcsc-mailer.php:60
+#: includes/class-pcsc-mailer.php:85
 msgid "Deposit my caution online"
 msgstr "Déposer ma caution en ligne"
 
-#: admin/class-pcsc-admin.php:158
+#: admin/class-pcsc-admin.php:163
 #, php-format
 msgid "Deposit ref. %s (%s €). Releasable after %s."
 msgstr "Caution réf. %s (%s €). Libérable après le %s."
 
-#: includes/class-pcsc-mailer.php:111
+#: includes/class-pcsc-mailer.php:170
 #, php-format
 msgid "Deposit Released - Ref %s"
 msgstr "Caution libérée - Réf %s"
@@ -214,57 +373,106 @@ msgstr "Caution libérée - Réf %s"
 msgid "Deposit Settings"
 msgstr "Réglages Cautions"
 
-#: includes/class-pcsc-mailer.php:116
+#: includes/class-pcsc-mailer.php:175
 msgid "Deposit successfully released."
 msgstr "Caution libérée avec succès."
 
-#: admin/class-pcsc-admin.php:592
+#: admin/class-pcsc-admin.php:597
 msgid "Details"
 msgstr "Détails"
 
-#: admin/class-pcsc-settings.php:86
+#: admin/class-pcsc-settings.php:116
 msgid "Diagnostic & Tools (PRO)"
 msgstr "Diagnostic & Outils (PRO)"
 
-#: admin/class-pcsc-admin.php:255
+#: admin/class-pcsc-settings.php:104
+msgid "Email Customization"
+msgstr "Personnalisation des emails"
+
+#: admin/class-pcsc-admin.php:260
 msgid "Email sent."
 msgstr "Email envoyé."
 
-#: admin/class-pcsc-admin.php:593
+#: admin/class-pcsc-admin.php:598
 msgid "Email:"
 msgstr "Email :"
 
-#: includes/class-pcsc-mailer.php:93
+#: admin/class-pcsc-help.php:55
+msgid "Endpoint URL:"
+msgstr "URL du endpoint :"
+
+#: admin/class-pcsc-help.php:149
+msgid "Error \"Invalid Signature\"?"
+msgstr "Erreur \"Signature Invalide\" ?"
+
+#: admin/class-pcsc-help.php:56
+msgid "Events to listen for: select <code>checkout.session.completed</code>."
+msgstr ""
+"Événements à écouter : sélectionnez <code>checkout.session.completed</code>."
+
+#: includes/class-pcsc-mailer.php:143
 msgid "Expected release date:"
 msgstr "Date de libération prévue :"
 
-#: includes/class-pcsc-mailer.php:144
+#: admin/class-pcsc-help.php:31
+msgid "FAQ"
+msgstr "FAQ"
+
+#: admin/class-pcsc-help.php:131
+msgid "FAQ & Limitations"
+msgstr "FAQ & Limitations"
+
+#: admin/class-pcsc-help.php:47
+msgid ""
+"Find it in your Stripe Dashboard under <em>Developers > API Keys</em>. It "
+"starts with <code>sk_live_...</code> (or <code>sk_test_...</code>)."
+msgstr ""
+"Trouvez-la dans votre Dashboard Stripe sous <em>Développeurs > Clés API</em>."
+" Elle commence par <code>sk_live_...</code> (ou <code>sk_test_...</code>)."
+
+#: includes/class-pcsc-mailer.php:214
 msgid "For any questions regarding this operation, please contact us."
 msgstr ""
 "Pour toute question concernant cette opération, merci de nous contacter."
 
-#: admin/class-pcsc-admin.php:644
+#: admin/class-pcsc-help.php:171
+msgid "For any specific questions or support, please contact us at:"
+msgstr "Pour toute question spécifique ou support, merci de nous contacter à :"
+
+#: admin/class-pcsc-admin.php:649
 msgid "Force Rotation"
 msgstr "Forcer la rotation"
 
-#: admin/class-pcsc-admin.php:106
+#: admin/class-pcsc-admin.php:111
 msgid "Free limit reached (3/month). Upgrade to PRO for unlimited deposits."
 msgstr ""
 "Limite gratuite atteinte (3/mois). Passez en PRO pour des dépôts illimités."
 
-#: admin/class-pcsc-settings.php:31
+#: admin/class-pcsc-settings.php:32
 msgid "General & Stripe Configuration"
 msgstr "Configuration Générale & Stripe"
 
-#: admin/class-pcsc-admin.php:613
+#: admin/class-pcsc-admin.php:618
 msgid "Generate Link"
 msgstr "Générer le lien"
 
-#: includes/class-pcsc-mailer.php:176
+#: admin/class-pcsc-help.php:124
+msgid ""
+"Go to <em>Settings > Deposit Settings</em> and select this page in the "
+"<strong>\"Success Page\"</strong> option (PRO)."
+msgstr ""
+"Allez dans <em>Réglages > Réglages Cautions</em> et sélectionnez cette page "
+"dans l'option <strong>\"Page de Succès\"</strong> (PRO)."
+
+#: includes/class-pcsc-mailer.php:247
 msgid "Go to Admin"
 msgstr "Aller à l'administration"
 
-#: includes/class-pcsc-mailer.php:115
+#: admin/class-pcsc-help.php:53
+msgid "Go to Stripe > <em>Developers > Webhooks</em>."
+msgstr "Allez dans Stripe > <em>Développeurs > Webhooks</em>."
+
+#: includes/class-pcsc-mailer.php:174
 #, php-format
 msgid ""
 "Good news! Your deposit for booking <strong>%s</strong> has been released."
@@ -272,69 +480,113 @@ msgstr ""
 "Bonne nouvelle ! Votre caution pour la réservation <strong>%s</strong> a été "
 "libérée."
 
+#: admin/class-pcsc-help.php:10 admin/class-pcsc-help.php:11
+msgid "Guide & Help"
+msgstr "Guide & Aide"
+
 #. Description of the plugin
 msgid ""
 "Génération de lien Stripe (setup), caution off-session et gestion modulaire."
 msgstr ""
 "Génération de lien Stripe (setup), caution off-session et gestion modulaire."
 
-#: includes/class-pcsc-mailer.php:53 includes/class-pcsc-mailer.php:90
-#: includes/class-pcsc-mailer.php:114 includes/class-pcsc-mailer.php:138
+#: includes/class-pcsc-mailer.php:87 includes/class-pcsc-mailer.php:140
+#: includes/class-pcsc-mailer.php:173 includes/class-pcsc-mailer.php:208
 msgid "Hello,"
 msgstr "Bonjour,"
 
-#: admin/class-pcsc-admin.php:72
+#: admin/class-pcsc-admin.php:77
 msgid "Hold Active"
 msgstr "Empreinte active"
 
-#: admin/class-pcsc-admin.php:206
+#: admin/class-pcsc-admin.php:211
 msgid "Hold active."
 msgstr "Caution active."
 
-#: includes/class-pcsc-mailer.php:61
+#: admin/class-pcsc-settings.php:110
+msgid "Hold Confirmation"
+msgstr "Confirmation d'empreinte"
+
+#: admin/class-pcsc-help.php:134
+msgid "How long does the hold last? (7-day limit)"
+msgstr "Combien de temps dure l'empreinte ? (Limite 7 jours)"
+
+#: includes/class-pcsc-mailer.php:94
 msgid "If the button does not work, you can copy this link into your browser:"
 msgstr ""
 "Si le bouton ne fonctionne pas, vous pouvez copier ce lien dans votre "
 "navigateur :"
 
-#: includes/class-pcsc-mailer.php:193
+#: includes/class-pcsc-mailer.php:264
 msgid "If you do nothing, the system will attempt to release it automatically."
 msgstr ""
 "Sans action de votre part, le système tentera de la libérer automatiquement."
 
-#: includes/class-pcsc-mailer.php:194
+#: includes/class-pcsc-mailer.php:265
 msgid "If you need to make a charge, now is the time!"
 msgstr "Si vous devez effectuer un prélèvement, c'est le moment !"
 
-#: admin/class-pcsc-admin.php:515
+#: admin/class-pcsc-help.php:41
+msgid "Instructions"
+msgstr "Instructions"
+
+#: admin/class-pcsc-help.php:142
+msgid "Is the money debited from the customer's account?"
+msgstr "L'argent est-il débité du compte du client ?"
+
+#: admin/class-pcsc-help.php:40
+msgid "Item"
+msgstr "Élément"
+
+#: admin/class-pcsc-admin.php:520
 msgid "Limit Reached"
 msgstr "Limite atteinte"
 
-#: admin/class-pcsc-admin.php:188
+#: admin/class-pcsc-admin.php:193
 msgid "Link generated."
 msgstr "Lien généré."
 
-#: admin/class-pcsc-admin.php:70
+#: admin/class-pcsc-admin.php:75
 msgid "Link Sent"
 msgstr "Lien envoyé"
 
-#: admin/class-pcsc-admin.php:140
+#: admin/class-pcsc-settings.php:109
+msgid "Link Sent to Customer"
+msgstr "Lien envoyé au client"
+
+#: admin/class-pcsc-admin.php:145
 msgid "Link sent to customer."
 msgstr "Lien envoyé au client."
 
-#: admin/class-pcsc-admin.php:495
+#: admin/class-pcsc-admin.php:500
 msgid "LITE VERSION"
 msgstr "VERSION LITE"
 
-#: admin/class-pcsc-admin.php:117
+#: admin/class-pcsc-admin.php:122
 msgid "Missing fields."
 msgstr "Champs manquants."
 
-#: admin/class-pcsc-admin.php:511
+#: pro/class-pcsc-pro-dashboard.php:229 admin/class-pcsc-help.php:163
+msgid "Mobile Dashboard"
+msgstr "Tableau de bord mobile"
+
+#: admin/class-pcsc-help.php:98
+msgid "Mobile Dashboard (PRO)"
+msgstr "Tableau de bord mobile (PRO)"
+
+#: pro/class-pcsc-pro-dashboard.php:230
+msgid "New"
+msgstr "Nouveau"
+
+#: admin/class-pcsc-admin.php:516
 msgid "New Case"
 msgstr "Nouveau Dossier"
 
-#: includes/class-pcsc-mailer.php:94
+#: pro/class-pcsc-pro-dashboard.php:237
+msgid "New Deposit Request"
+msgstr "Nouvelle demande de caution"
+
+#: includes/class-pcsc-mailer.php:144
 msgid ""
 "No amount has been debited. This sum is simply temporarily blocked on your "
 "account."
@@ -342,19 +594,53 @@ msgstr ""
 "Aucun montant n'a été débité. Cette somme est simplement bloquée "
 "temporairement sur votre compte (empreinte bancaire)."
 
-#: admin/class-pcsc-admin.php:619
+#: pro/class-pcsc-pro-dashboard.php:251
+msgid "No deposits found."
+msgstr "Aucune caution trouvée."
+
+#: admin/class-pcsc-help.php:144
+msgid ""
+"No. When taking the imprint (Hold), the money is only \"blocked\" (impacts "
+"the bank ceiling). It is only debited if you click \"Charge\"."
+msgstr ""
+"Non. Lors de la prise d'empreinte (Hold), l'argent est seulement \"bloqué\" "
+"(impacte le plafond bancaire). Il n'est débité que si vous cliquez sur "
+"\"Prélever\"."
+
+#: admin/class-pcsc-admin.php:624
 msgid "Notes"
 msgstr "Notes"
 
-#: admin/class-pcsc-admin.php:557
+#: admin/class-pcsc-admin.php:562
 msgid "Open"
 msgstr "Ouvrir"
 
-#: admin/class-pcsc-admin.php:74
+#: admin/class-pcsc-help.php:107
+msgid ""
+"Open the page, tap the \"Share\" button (square with arrow) > \"Add to Home "
+"Screen\"."
+msgstr ""
+"Ouvrez la page, touchez le bouton \"Partager\" (carré avec flèche) > \"Sur "
+"l'écran d'accueil\"."
+
+#: admin/class-pcsc-help.php:108
+msgid "Open the page, tap the menu (3 dots) > \"Add to Home Screen\"."
+msgstr ""
+"Ouvrez la page, touchez le menu (3 points) > \"Ajouter à l'écran d'accueil\"."
+
+#: admin/class-pcsc-help.php:30
+msgid "Pages & Mobile"
+msgstr "Pages & Mobile"
+
+#: admin/class-pcsc-help.php:94
+msgid "Pages & Mobile Dashboard"
+msgstr "Pages & Tableau de bord Mobile"
+
+#: admin/class-pcsc-admin.php:79
 msgid "Partially Charged"
 msgstr "Partiellement encaissée"
 
-#: includes/class-pcsc-db.php:138
+#: includes/class-pcsc-db.php:150
 msgid "PaymentMethod not available (setup incomplete)."
 msgstr "Moyen de paiement indisponible (configuration incomplète)."
 
@@ -362,7 +648,7 @@ msgstr "Moyen de paiement indisponible (configuration incomplète)."
 msgid "PC Stripe Caution"
 msgstr "PC Stripe Caution"
 
-#: includes/class-pcsc-mailer.php:59
+#: includes/class-pcsc-mailer.php:93
 msgid ""
 "Please click the button below to secure the bank imprint via our partner "
 "Stripe (no immediate debit is made):"
@@ -370,65 +656,89 @@ msgstr ""
 "Merci de cliquer sur le bouton ci-dessous pour sécuriser l'empreinte "
 "bancaire via notre partenaire Stripe (aucun débit immédiat n'est effectué) :"
 
+#: admin/class-pcsc-help.php:170
+msgid "Plugin designed by"
+msgstr "Plugin conçu par"
+
+#: admin/class-pcsc-help.php:137
+msgid "Plugin Solution:"
+msgstr "Solution du plugin :"
+
 #. Author of the plugin
 msgid "Prestige Caraïbes"
 msgstr "Prestige Caraïbes"
 
-#: admin/class-pcsc-admin.php:491
+#: admin/class-pcsc-admin.php:496
 msgid "PRO ACTIVATED"
 msgstr "VERSION PRO ACTIVÉE"
 
-#: admin/class-pcsc-admin.php:657
+#: admin/class-pcsc-admin.php:662
 msgid "Reason"
 msgstr "Motif"
 
-#: includes/class-pcsc-mailer.php:142
+#: includes/class-pcsc-mailer.php:212
 msgid "Reason:"
 msgstr "Motif :"
 
-#: admin/class-pcsc-admin.php:540
+#: admin/class-pcsc-admin.php:545
 msgid "Ref"
 msgstr "Réf"
 
-#: admin/class-pcsc-admin.php:668
+#: admin/class-pcsc-settings.php:111
+msgid "Release Confirmation"
+msgstr "Confirmation de libération"
+
+#: admin/class-pcsc-admin.php:673
 msgid "Release Now"
 msgstr "Libérer maintenant"
 
-#: admin/class-pcsc-admin.php:75
+#: admin/class-pcsc-help.php:84
+msgid "Release or Charge:"
+msgstr "Libérer ou Prélever :"
+
+#: admin/class-pcsc-admin.php:80
 msgid "Released"
 msgstr "Libérée"
 
-#: includes/class-pcsc-mailer.php:191
+#: includes/class-pcsc-mailer.php:262
 msgid "Reminder: Release Tomorrow"
 msgstr "Rappel : Libération Demain"
 
-#: admin/class-pcsc-admin.php:76
+#: admin/class-pcsc-admin.php:81
 msgid "Rotated (Extended)"
 msgstr "Renouvelée"
 
-#: admin/class-pcsc-admin.php:639
+#: admin/class-pcsc-admin.php:644
 msgid "Rotation"
 msgstr "Rotation"
 
-#: admin/class-pcsc-admin.php:77
+#: admin/class-pcsc-admin.php:82
 msgid "Rotation Failed"
 msgstr "Échec rotation"
 
-#: includes/class-pcsc-db.php:153
+#: includes/class-pcsc-db.php:165
 #, php-format
 msgid "Rotation: Previous PI cancellation failed: %s"
 msgstr "Rotation : L'annulation du PI précédent a échoué : %s"
 
-#: includes/class-pcsc-db.php:174
+#: includes/class-pcsc-db.php:186
 #, php-format
 msgid "Rotation: Requires action or off-session PI failed: %s"
 msgstr "Rotation : Action requise ou échec du PI off-session : %s"
 
-#: admin/class-pcsc-settings.php:133
+#: admin/class-pcsc-settings.php:217
 msgid "Save Changes"
 msgstr "Enregistrer les modifications"
 
-#: includes/class-pcsc-mailer.php:51
+#: admin/class-pcsc-help.php:46
+msgid "Secret Key"
+msgstr "Clé Secrète"
+
+#: includes/class-pcsc-mailer.php:119
+msgid "Secure Deposit"
+msgstr "Sécuriser la caution"
+
+#: includes/class-pcsc-mailer.php:82
 #, php-format
 msgid "Secure Deposit Link - Ref %s"
 msgstr "Lien de sécurisation de caution - Réf %s"
@@ -437,74 +747,115 @@ msgstr "Lien de sécurisation de caution - Réf %s"
 msgid "Security & Privacy"
 msgstr "Sécurité & Confidentialité"
 
-#: admin/class-pcsc-admin.php:95
+#: admin/class-pcsc-admin.php:100
 msgid "Security expired."
 msgstr "Sécurité expirée."
 
-#: includes/class-pcsc-mailer.php:118
+#: includes/class-pcsc-mailer.php:177
 #, php-format
 msgid "See you soon at %s!"
 msgstr "À bientôt chez %s !"
 
-#: admin/class-pcsc-settings.php:157
+#: admin/class-pcsc-settings.php:249
 msgid ""
 "Select the page where the customer is redirected after a successful deposit."
 msgstr ""
 "Sélectionnez la page vers laquelle le client est redirigé après un dépôt "
 "réussi."
 
-#: admin/class-pcsc-admin.php:606
+#: admin/class-pcsc-admin.php:611
 msgid "Send Email"
 msgstr "Envoyer l'email"
+
+#: admin/class-pcsc-help.php:73
+msgid "Send Link:"
+msgstr "Envoyer le lien :"
 
 #: admin/class-pcsc-settings.php:18
 msgid "Settings"
 msgstr "Réglages"
 
-#: admin/class-pcsc-admin.php:599
+#: admin/class-pcsc-admin.php:604
 msgid "Setup Link"
 msgstr "Lien de configuration"
 
-#: includes/class-pcsc-db.php:187
+#: includes/class-pcsc-db.php:199
 msgid "Silent rotation OK."
 msgstr "Rotation silencieuse OK."
 
-#: includes/class-pcsc-mailer.php:63 includes/class-pcsc-mailer.php:145
+#: includes/class-pcsc-mailer.php:96 includes/class-pcsc-mailer.php:215
 #, php-format
 msgid "Sincerely,<br>The %s Team"
 msgstr "Cordialement,<br>L'équipe %s"
 
-#: admin/class-pcsc-settings.php:60
+#: admin/class-pcsc-settings.php:61
 msgid "Starts with whsec_... (See Stripe > Developers > Webhooks)"
 msgstr "Commence par whsec_... (Voir Stripe > Développeurs > Webhooks)"
 
-#: admin/class-pcsc-admin.php:543
+#: admin/class-pcsc-admin.php:548
 msgid "Status"
 msgstr "Statut"
 
-#: admin/class-pcsc-settings.php:128
+#: admin/class-pcsc-help.php:70
+msgid "Status: Draft."
+msgstr "Statut : Brouillon."
+
+#: admin/class-pcsc-help.php:81
+msgid "Status: Hold Active."
+msgstr "Statut : Caution active."
+
+#: admin/class-pcsc-help.php:75
+msgid "Status: Link Sent > Card Saved (once done by customer)."
+msgstr ""
+"Statut : Lien envoyé > Carte enregistrée (une fois fait par le client)."
+
+#: admin/class-pcsc-help.php:28
+msgid "Stripe Configuration"
+msgstr "Configuration Stripe"
+
+#: admin/class-pcsc-help.php:34
+msgid "Stripe Configuration (Required)"
+msgstr "Configuration Stripe (Requis)"
+
+#: admin/class-pcsc-settings.php:212
 msgid "Stripe Deposit Settings"
 msgstr "Réglages Dépôt Stripe"
 
-#: admin/class-pcsc-admin.php:15
+#: admin/class-pcsc-admin.php:20
 msgid "Stripe Deposits"
 msgstr "Cautions Stripe"
 
-#: admin/class-pcsc-settings.php:47
+#: admin/class-pcsc-help.php:136
+msgid "Stripe limits a hold (authorization) to <strong>7 days</strong>."
+msgstr "Stripe limite une empreinte (autorisation) à <strong>7 jours</strong>."
+
+#: admin/class-pcsc-settings.php:48
 msgid "Stripe Secret Key"
 msgstr "Clé Secrète Stripe"
 
-#: admin/class-pcsc-settings.php:76
+#: admin/class-pcsc-settings.php:315
+msgid "Subject"
+msgstr "Sujet"
+
+#: admin/class-pcsc-settings.php:94
 msgid "Success Page (Redirection)"
 msgstr "Page de Succès (Redirection)"
 
-#: admin/class-pcsc-settings.php:90
+#: admin/class-pcsc-settings.php:117
 msgid "System Status"
 msgstr "État du Système"
 
-#: admin/class-pcsc-admin.php:632
+#: admin/class-pcsc-admin.php:637
 msgid "Take Deposit"
 msgstr "Prendre la caution"
+
+#: admin/class-pcsc-help.php:78
+msgid "Take Deposit (Hold):"
+msgstr "Prendre la caution (Empreinte) :"
+
+#: pro/class-pcsc-pro-dashboard.php:276
+msgid "Tap a card to manage details in Admin."
+msgstr "Touchez une carte pour gérer les détails dans l'Admin."
 
 #: public/class-pcsc-public.php:97
 msgid ""
@@ -513,7 +864,15 @@ msgstr ""
 "Merci ! Vos coordonnées bancaires ont été enregistrées en toute sécurité "
 "pour la caution."
 
-#: includes/class-pcsc-mailer.php:117
+#: admin/class-pcsc-help.php:137
+msgid ""
+"The \"Rotation\" system (PRO) automatically renews the hold every 6 days for "
+"long stays, ensuring you remain secured."
+msgstr ""
+"Le système de \"Rotation\" (PRO) renouvelle automatiquement l'empreinte tous "
+"les 6 jours pour les longs séjours, assurant votre sécurité."
+
+#: includes/class-pcsc-mailer.php:176
 msgid ""
 "The bank imprint has been cancelled. Depending on your bank, it may take a "
 "few days to completely disappear from your statements."
@@ -521,13 +880,13 @@ msgstr ""
 "L'empreinte bancaire a été annulée. Selon votre banque, cela peut prendre "
 "quelques jours pour disparaître complètement de vos relevés."
 
-#: includes/class-pcsc-mailer.php:174
+#: includes/class-pcsc-mailer.php:245
 #, php-format
 msgid "The customer (%s) has saved their card for booking <strong>%s</strong>."
 msgstr ""
 "Le client (%s) a enregistré sa carte pour la réservation <strong>%s</strong>."
 
-#: includes/class-pcsc-mailer.php:192
+#: includes/class-pcsc-mailer.php:263
 #, php-format
 msgid ""
 "The deposit for booking <strong>%s</strong> (Departure: %s) must be released "
@@ -536,7 +895,7 @@ msgstr ""
 "La caution pour la réservation <strong>%s</strong> (Départ : %s) doit être "
 "libérée demain (J+7)."
 
-#: includes/class-pcsc-mailer.php:143
+#: includes/class-pcsc-mailer.php:213
 msgid ""
 "The rest of your bank imprint (if applicable) has been automatically "
 "released."
@@ -544,11 +903,15 @@ msgstr ""
 "Le reste de votre empreinte bancaire (le cas échéant) a été libéré "
 "automatiquement."
 
+#: admin/class-pcsc-help.php:80
+msgid "This blocks the funds on the customer card (without debiting)."
+msgstr "Cela bloque les fonds sur la carte du client (sans débit)."
+
 #: includes/class-pcsc-mailer.php:29
 msgid "This is an automated message regarding your rental deposit."
 msgstr "Ceci est un message automatique concernant votre caution de location."
 
-#: includes/class-pcsc-mailer.php:55
+#: includes/class-pcsc-mailer.php:89
 #, php-format
 msgid ""
 "To finalize your booking (Ref: <strong>%s</strong>), please proceed to "
@@ -557,27 +920,71 @@ msgstr ""
 "Pour finaliser votre réservation (Réf : <strong>%s</strong>), merci de "
 "procéder à la sécurisation de votre caution de <strong>%s €</strong>."
 
-#: admin/class-pcsc-admin.php:506
+#: admin/class-pcsc-help.php:35
+msgid ""
+"To make the plugin work, you must connect your Stripe account. Go to <em>"
+"Settings > Deposit Settings</em>."
+msgstr ""
+"Pour faire fonctionner le plugin, vous devez connecter votre compte Stripe. "
+"Allez dans <em>Réglages > Réglages Cautions</em>."
+
+#: admin/class-pcsc-help.php:99
+msgid "Turn your website into a mobile app to manage deposits on the go."
+msgstr ""
+"Transformez votre site en application mobile pour gérer les cautions en "
+"déplacement."
+
+#: admin/class-pcsc-help.php:159
+msgid "Unlimited deposits (vs 3/month)"
+msgstr "Dépôts illimités (vs 3/mois)"
+
+#: admin/class-pcsc-settings.php:302
+msgid "Unlock automatic management and advanced customization."
+msgstr "Débloquez la gestion automatique et la personnalisation avancée."
+
+#: admin/class-pcsc-admin.php:511
 msgid "UPGRADE NOW"
 msgstr "PASSER PRO MAINTENANT"
 
-#: admin/class-pcsc-admin.php:504
+#: admin/class-pcsc-help.php:157
+msgid "Upgrade to PRO"
+msgstr "Passer en PRO"
+
+#: admin/class-pcsc-admin.php:509
 msgid "Upgrade to PRO for unlimited deposits & auto-rotation."
 msgstr "Passez en PRO pour des dépôts illimités & la rotation auto."
 
-#: admin/class-pcsc-admin.php:503
+#: admin/class-pcsc-admin.php:508
 msgid "Usage Limit:"
 msgstr "Limite d'utilisation :"
 
-#: admin/class-pcsc-admin.php:634
+#: admin/class-pcsc-settings.php:308
+msgid ""
+"Use the following placeholders in your emails: <code>{ref}</code>, <code>"
+"{amount}</code>, <code>{customer_name}</code> (if set), <code>{link}</code> "
+"(for setup), <code>{date}</code>, <code>{company}</code>."
+msgstr ""
+"Utilisez les variables suivantes dans vos emails : <code>{ref}</code>, <code>"
+"{amount}</code>, <code>{customer_name}</code> (si défini), <code>{link}"
+"</code> (pour le lien), <code>{date}</code>, <code>{company}</code>."
+
+#: admin/class-pcsc-help.php:95
+msgid "Use these shortcodes to set up your specific pages."
+msgstr "Utilisez ces shortcodes pour configurer vos pages spécifiques."
+
+#: admin/class-pcsc-help.php:23
+msgid "User Guide - PC Stripe Caution"
+msgstr "Guide utilisateur - PC Stripe Caution"
+
+#: admin/class-pcsc-admin.php:639
 msgid "Waiting for card..."
 msgstr "En attente de carte..."
 
-#: admin/class-pcsc-admin.php:69
+#: admin/class-pcsc-admin.php:74
 msgid "Waiting for Input"
 msgstr "En attente"
 
-#: includes/class-pcsc-mailer.php:139
+#: includes/class-pcsc-mailer.php:209
 #, php-format
 msgid ""
 "We are informing you of the closure of your deposit for booking <strong>"
@@ -586,7 +993,7 @@ msgstr ""
 "Nous vous informons de la clôture de votre caution pour la réservation "
 "<strong>%s</strong>."
 
-#: includes/class-pcsc-mailer.php:91
+#: includes/class-pcsc-mailer.php:141
 #, php-format
 msgid ""
 "We confirm that the bank imprint for your deposit (Ref: <strong>%s</strong>) "
@@ -595,19 +1002,37 @@ msgstr ""
 "Nous confirmons que l'empreinte bancaire pour votre caution (Réf : <strong>"
 "%s</strong>) a été sécurisée avec succès."
 
-#: includes/class-pcsc-mailer.php:62
+#: includes/class-pcsc-mailer.php:95
 msgid "We remain at your disposal for any questions."
 msgstr "Nous restons à votre disposition pour toute question."
 
-#: includes/class-pcsc-mailer.php:95
+#: includes/class-pcsc-mailer.php:145
 msgid "We wish you an excellent stay!"
 msgstr "Nous vous souhaitons un excellent séjour !"
 
-#: admin/class-pcsc-settings.php:56
+#: admin/class-pcsc-help.php:50
+msgid "Webhook Secret"
+msgstr "Secret Webhook"
+
+#: admin/class-pcsc-settings.php:57
 msgid "Webhook Secret (Signature)"
 msgstr "Secret Webhook (Signature)"
 
-#: includes/class-pcsc-mailer.php:175
+#: admin/class-pcsc-help.php:112
+msgid ""
+"When logging in, check the <strong>\"Remember Me\"</strong> box. Let your "
+"browser save your password so you can access the dashboard instantly next "
+"time."
+msgstr ""
+"Lors de la connexion, cochez la case <strong>\"Se souvenir de moi\"</strong>."
+" Laissez votre navigateur enregistrer le mot de passe pour accéder "
+"instantanément au tableau de bord la prochaine fois."
+
+#: admin/class-pcsc-help.php:29
+msgid "Workflow"
+msgstr "Fonctionnement"
+
+#: includes/class-pcsc-mailer.php:246
 msgid ""
 "You can now go to the administration to <strong>Take the Deposit</strong> "
 "(Hold)."
@@ -615,7 +1040,7 @@ msgstr ""
 "Vous pouvez maintenant aller dans l'administration pour <strong>Prendre la "
 "Caution</strong> (Empreinte)."
 
-#: admin/class-pcsc-admin.php:516
+#: admin/class-pcsc-admin.php:521
 msgid ""
 "You have reached your monthly limit of 3 deposits. Please upgrade to create "
 "more."
@@ -640,7 +1065,7 @@ msgstr ""
 "immédiatement. L'empreinte bancaire sera supprimée automatiquement après la "
 "libération de la caution."
 
-#: admin/class-pcsc-admin.php:583
+#: admin/class-pcsc-admin.php:588
 msgid "← Back"
 msgstr "← Retour"
 

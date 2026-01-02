@@ -5,7 +5,12 @@ class PCSC_Admin
 {
     public static function init(): void
     {
+        // 1. Charger la classe d'aide
+        require_once PCSC_PLUGIN_DIR . 'admin/class-pcsc-help.php';
+
+        // 2. Enregistrer les menus
         add_action('admin_menu', [__CLASS__, 'register_menu']);
+        add_action('admin_menu', ['PCSC_Help', 'init']); // <-- Ajoute le sous-menu Aide
     }
 
     public static function register_menu(): void

@@ -11,6 +11,8 @@
 
 if (!defined('ABSPATH')) exit;
 
+// define('PCSC_FORCE_LITE', true);
+
 // 1. CONSTANTES
 define('PCSC_VERSION', '0.1.0');
 define('PCSC_PLUGIN_DIR', plugin_dir_path(__FILE__));

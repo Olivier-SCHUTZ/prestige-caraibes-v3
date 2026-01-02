@@ -115,7 +115,19 @@ class PCSC_DB
         if (!$case) return;
         if (empty($case['date_depart'])) return;
 
-        $release_ts = strtotime($case['date_depart'] . ' 12:00:00') + (7 * DAY_IN_SECONDS);
+        // Par défaut 7 jours
+        $days = 7;
+
+        // Si PRO, on regarde le réglage
+        if (defined('PCSC_IS_PRO') && PCSC_IS_PRO && class_exists('PCSC_Settings')) {
+            $setting_days = (int) PCSC_Settings::get_option('release_delay_days');
+            if ($setting_days > 0) {
+                $days = $setting_days;
+            }
+        }
+
+        // Calcul : Date départ à midi + X jours
+        $release_ts = strtotime($case['date_depart'] . ' 12:00:00') + ($days * DAY_IN_SECONDS);
 
         $hook = 'pcsc_cron_release';
         $args = [$id];
