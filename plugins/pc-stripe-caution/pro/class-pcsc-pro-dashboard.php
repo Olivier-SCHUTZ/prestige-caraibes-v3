@@ -23,12 +23,18 @@ class PCSC_Pro_Dashboard
         $ref = sanitize_text_field($_POST['m_ref']);
         $email = sanitize_email($_POST['m_email']);
         $amount = (int)($_POST['m_amount'] * 100);
+        // Ajout de la récupération des dates
+        $arr = sanitize_text_field($_POST['m_arrivee']);
+        $dep = sanitize_text_field($_POST['m_depart']);
 
         if ($ref && $email && $amount > 0) {
             PCSC_DB::insert_case([
                 'booking_ref' => $ref,
                 'customer_email' => $email,
-                'amount' => $amount
+                'amount' => $amount,
+                // Insertion en base (null si vide)
+                'date_arrivee' => $arr ?: null,
+                'date_depart' => $dep ?: null
             ]);
             wp_redirect(remove_query_arg(['pc_msg'], add_query_arg('pc_msg', 'created')));
             exit;
@@ -271,6 +277,12 @@ class PCSC_Pro_Dashboard
                     <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;"><?php _e('Amount (€)', 'pc-stripe-caution'); ?></label>
                     <input type="number" name="m_amount" class="pc-m-input" placeholder="500" required>
 
+                    <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;"><?php _e('Arrival Date', 'pc-stripe-caution'); ?></label>
+                    <input type="date" name="m_arrivee" class="pc-m-input">
+
+                    <label style="display:block; margin-bottom:5px; font-weight:600; font-size:13px;"><?php _e('Departure Date', 'pc-stripe-caution'); ?></label>
+                    <input type="date" name="m_depart" class="pc-m-input">
+
                     <div style="margin-top:20px;">
                         <button type="submit" class="pc-m-btn pc-btn-primary"><?php _e('Create', 'pc-stripe-caution'); ?></button>
                         <button type="button" class="pc-m-btn pc-btn-cancel" onclick="document.getElementById('pcForm').classList.remove('open')"><?php _e('Cancel', 'pc-stripe-caution'); ?></button>
@@ -294,7 +306,7 @@ class PCSC_Pro_Dashboard
                     if ($st == 'released') $st_label = 'Released';
                     if ($st == 'captured') $st_label = 'Charged';
                 ?>
-                    <a href="<?php echo admin_url('admin.php?page=pc-stripe-caution&case_id=' . $row['id']); ?>" class="pc-m-card">
+                    <a href="<?php echo admin_url('admin.php?page=pc-stripe-caution&case_id=' . $row['id'] . '&source=mobile'); ?>" class="pc-m-card">
                         <div class="pc-m-info">
                             <h4><?php echo esc_html($row['booking_ref']); ?></h4>
                             <p><?php echo esc_html($row['customer_email']); ?> • <strong><?php echo $amt; ?></strong></p>

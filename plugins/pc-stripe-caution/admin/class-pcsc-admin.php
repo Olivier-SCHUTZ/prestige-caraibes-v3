@@ -48,6 +48,12 @@ class PCSC_Admin
     private static function get_url(array $params = []): string
     {
         $base = admin_url('admin.php?page=pc-stripe-caution');
+
+        // Si on vient du mobile, on le garde en mémoire dans l'URL
+        if (isset($_GET['source']) && $_GET['source'] === 'mobile') {
+            $params['source'] = 'mobile';
+        }
+
         return add_query_arg($params, $base);
     }
 
@@ -262,24 +268,34 @@ class PCSC_Admin
 
             #pc-admin-root {
                 font-family: -apple-system, sans-serif;
-                /* Background léger */
                 background: #f0f2f5;
-                /* Padding ajusté : plus petit sur mobile pour éviter le "tassement" */
-                padding: 10px;
-                width: 100%;
+                padding: 20px;
+                /* IMPORTANT : width auto permet de s'adapter au menu WP sans déborder */
+                width: auto;
+                box-sizing: border-box;
             }
 
             /* Conteneur Blanc Centré */
             #pc-admin-root .pc-wrap {
                 background: #fff;
-                /* Max-width Desktop */
                 max-width: 1100px;
-                /* CENTRAGE PARFAIT : margin auto + width 100% */
-                width: 100%;
+                /* Centrage horizontal propre */
                 margin: 0 auto;
                 padding: 20px;
                 border-radius: 8px;
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Ajustement Mobile spécifique pour le centrage */
+            @media screen and (max-width: 900px) {
+                #pc-admin-root {
+                    padding: 10px;
+                }
+
+                #pc-admin-root .pc-wrap {
+                    width: 100%;
+                    padding: 15px;
+                }
             }
 
             /* --- HEADER --- */
@@ -656,9 +672,18 @@ class PCSC_Admin
             return;
         }
         $status = $case['status'];
+
+        // Logique bouton retour intelligent
+        $is_mobile = (isset($_GET['source']) && $_GET['source'] === 'mobile');
+        $back_link = $is_mobile ? '#' : esc_url(self::get_url());
+        $back_attr = $is_mobile ? 'onclick="history.back(); return false;"' : '';
+        $back_text = $is_mobile ? __('← Back to App', 'pc-stripe-caution') : __('← Back', 'pc-stripe-caution');
     ?>
         <div class="pc-header">
-            <div><a href="<?php echo esc_url(self::get_url()); ?>" style="text-decoration:none; color:#6b7280;"><?php _e('← Back', 'pc-stripe-caution'); ?></a>
+            <div>
+                <a href="<?php echo $back_link; ?>" <?php echo $back_attr; ?> style="text-decoration:none; color:#6b7280; display:inline-block; margin-bottom:5px;">
+                    <?php echo $back_text; ?>
+                </a>
                 <h2 style="margin:5px 0 0;"><?php echo esc_html($case['booking_ref']); ?></h2>
             </div>
             <div><span class="pc-badge status-<?php echo $status; ?>"><?php echo esc_html(self::get_status_label($status)); ?></span></div>
