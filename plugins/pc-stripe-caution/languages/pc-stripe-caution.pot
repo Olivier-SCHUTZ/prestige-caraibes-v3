@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PC Stripe Caution\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-02 14:02+0000\n"
+"POT-Creation-Date: 2026-01-02 22:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -16,15 +16,15 @@ msgstr ""
 "X-Loco-Version: 2.8.0; wp-6.9; php-8.2.27\n"
 "X-Domain: pc-stripe-caution"
 
-#: admin/class-pcsc-admin.php:631
+#: admin/class-pcsc-admin.php:729
 msgid "1. Block Funds (Hold)"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:656
+#: admin/class-pcsc-admin.php:754
 msgid "2. Charge"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:668
+#: admin/class-pcsc-admin.php:766
 msgid "3. Release"
 msgstr ""
 
@@ -52,7 +52,7 @@ msgstr ""
 msgid "Access denied."
 msgstr ""
 
-#: pro/class-pcsc-pro-dashboard.php:51
+#: pro/class-pcsc-pro-dashboard.php:47
 msgid "Access Denied. Admins only."
 msgstr ""
 
@@ -60,11 +60,11 @@ msgstr ""
 msgid "Action required: Card saved"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:259
+#: admin/class-pcsc-admin.php:256
 msgid "Action successful."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:639
+#: admin/class-pcsc-admin.php:737
 msgid "Active."
 msgstr ""
 
@@ -80,20 +80,28 @@ msgstr ""
 msgid "All good:"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:547
+#: admin/class-pcsc-admin.php:636
 msgid "Amount"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:661
+#: pro/class-pcsc-pro-dashboard.php:277
+msgid "Amount (€)"
+msgstr ""
+
+#: admin/class-pcsc-admin.php:759
 msgid "Amount €"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:599
+#: admin/class-pcsc-admin.php:697
 msgid "Amount:"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:532
+#: admin/class-pcsc-admin.php:621
 msgid "Arrival"
+msgstr ""
+
+#: pro/class-pcsc-pro-dashboard.php:280
+msgid "Arrival Date"
 msgstr ""
 
 #: admin/class-pcsc-settings.php:85
@@ -129,7 +137,7 @@ msgstr ""
 msgid "Blocked amount:"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:527
+#: admin/class-pcsc-admin.php:616
 msgid "Booking Ref"
 msgstr ""
 
@@ -138,15 +146,15 @@ msgid ""
 "By default, the plugin uses a basic success page. To use your own design:"
 msgstr ""
 
-#: pro/class-pcsc-pro-dashboard.php:246
+#: pro/class-pcsc-pro-dashboard.php:288
 msgid "Cancel"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:230
+#: admin/class-pcsc-admin.php:227
 msgid "Captured:"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:76
+#: admin/class-pcsc-admin.php:82
 msgid "Card Saved"
 msgstr ""
 
@@ -162,7 +170,7 @@ msgstr ""
 msgid "Case not found"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:582
+#: admin/class-pcsc-admin.php:671
 msgid "Case not found."
 msgstr ""
 
@@ -170,7 +178,7 @@ msgstr ""
 msgid "Charge Notification"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:78
+#: admin/class-pcsc-admin.php:84
 msgid "Charged"
 msgstr ""
 
@@ -201,15 +209,19 @@ msgstr ""
 msgid "Click \"Release\" after departure (or let the PRO auto-release do it)."
 msgstr ""
 
+#: pro/class-pcsc-pro-dashboard.php:274
+msgid "Client Email"
+msgstr ""
+
 #: admin/class-pcsc-settings.php:39
 msgid "Company Name"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:663
+#: admin/class-pcsc-admin.php:761
 msgid "Confirm Charge"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:663
+#: admin/class-pcsc-admin.php:761
 msgid "Confirm Charge?"
 msgstr ""
 
@@ -223,7 +235,7 @@ msgid ""
 "into the plugin settings."
 msgstr ""
 
-#: pro/class-pcsc-pro-dashboard.php:245
+#: pro/class-pcsc-pro-dashboard.php:287
 msgid "Create"
 msgstr ""
 
@@ -241,7 +253,7 @@ msgstr ""
 msgid "Create a private WordPress Page and add this shortcode:"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:536
+#: admin/class-pcsc-admin.php:625
 msgid "Create Case"
 msgstr ""
 
@@ -261,11 +273,11 @@ msgstr ""
 msgid "Custom Thank You Page"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:546
+#: admin/class-pcsc-admin.php:635
 msgid "Customer"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:528
+#: admin/class-pcsc-admin.php:617
 msgid "Customer Email"
 msgstr ""
 
@@ -305,19 +317,23 @@ msgstr ""
 msgid "Defined in wp-config.php (PC_STRIPE_WEBHOOK_SECRET)"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:567
+#: admin/class-pcsc-admin.php:656
 msgid "Delete"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:563
+#: admin/class-pcsc-admin.php:652
 msgid "Delete?"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:533 admin/class-pcsc-admin.php:549
+#: admin/class-pcsc-admin.php:622 admin/class-pcsc-admin.php:638
 msgid "Departure"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:529
+#: pro/class-pcsc-pro-dashboard.php:283
+msgid "Departure Date"
+msgstr ""
+
+#: admin/class-pcsc-admin.php:618
 msgid "Deposit Amount (€)"
 msgstr ""
 
@@ -331,11 +347,15 @@ msgstr ""
 msgid "Deposit Confirmation - Ref %s"
 msgstr ""
 
+#: pro/class-pcsc-pro-dashboard.php:56
+msgid "Deposit created successfully!"
+msgstr ""
+
 #: admin/class-pcsc-help.php:65
 msgid "Deposit Lifecycle"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:19 admin/class-pcsc-admin.php:493
+#: admin/class-pcsc-admin.php:19 admin/class-pcsc-admin.php:582
 msgid "Deposit Management"
 msgstr ""
 
@@ -343,7 +363,7 @@ msgstr ""
 msgid "Deposit my caution online"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:163
+#: admin/class-pcsc-admin.php:164
 #, php-format
 msgid "Deposit ref. %s (%s €). Releasable after %s."
 msgstr ""
@@ -361,7 +381,7 @@ msgstr ""
 msgid "Deposit successfully released."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:597
+#: admin/class-pcsc-admin.php:695
 msgid "Details"
 msgstr ""
 
@@ -373,11 +393,11 @@ msgstr ""
 msgid "Email Customization"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:260
+#: admin/class-pcsc-admin.php:257
 msgid "Email sent."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:598
+#: admin/class-pcsc-admin.php:696
 msgid "Email:"
 msgstr ""
 
@@ -419,11 +439,11 @@ msgstr ""
 msgid "For any specific questions or support, please contact us at:"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:649
+#: admin/class-pcsc-admin.php:747
 msgid "Force Rotation"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:111
+#: admin/class-pcsc-admin.php:116
 msgid "Free limit reached (3/month). Upgrade to PRO for unlimited deposits."
 msgstr ""
 
@@ -431,7 +451,7 @@ msgstr ""
 msgid "General & Stripe Configuration"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:618
+#: admin/class-pcsc-admin.php:716
 msgid "Generate Link"
 msgstr ""
 
@@ -469,11 +489,11 @@ msgstr ""
 msgid "Hello,"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:77
+#: admin/class-pcsc-admin.php:83
 msgid "Hold Active"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:211
+#: admin/class-pcsc-admin.php:209
 msgid "Hold active."
 msgstr ""
 
@@ -509,15 +529,15 @@ msgstr ""
 msgid "Item"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:520
+#: admin/class-pcsc-admin.php:609
 msgid "Limit Reached"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:193
+#: admin/class-pcsc-admin.php:191
 msgid "Link generated."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:75
+#: admin/class-pcsc-admin.php:81
 msgid "Link Sent"
 msgstr ""
 
@@ -525,19 +545,19 @@ msgstr ""
 msgid "Link Sent to Customer"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:145
+#: admin/class-pcsc-admin.php:148
 msgid "Link sent to customer."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:500
+#: admin/class-pcsc-admin.php:589
 msgid "LITE VERSION"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:122
+#: admin/class-pcsc-admin.php:126
 msgid "Missing fields."
 msgstr ""
 
-#: pro/class-pcsc-pro-dashboard.php:229 admin/class-pcsc-help.php:163
+#: pro/class-pcsc-pro-dashboard.php:259 admin/class-pcsc-help.php:163
 msgid "Mobile Dashboard"
 msgstr ""
 
@@ -545,15 +565,15 @@ msgstr ""
 msgid "Mobile Dashboard (PRO)"
 msgstr ""
 
-#: pro/class-pcsc-pro-dashboard.php:230
+#: pro/class-pcsc-pro-dashboard.php:260
 msgid "New"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:516
+#: admin/class-pcsc-admin.php:605
 msgid "New Case"
 msgstr ""
 
-#: pro/class-pcsc-pro-dashboard.php:237
+#: pro/class-pcsc-pro-dashboard.php:267
 msgid "New Deposit Request"
 msgstr ""
 
@@ -563,7 +583,7 @@ msgid ""
 "account."
 msgstr ""
 
-#: pro/class-pcsc-pro-dashboard.php:251
+#: pro/class-pcsc-pro-dashboard.php:294
 msgid "No deposits found."
 msgstr ""
 
@@ -573,11 +593,11 @@ msgid ""
 "the bank ceiling). It is only debited if you click \"Charge\"."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:624
+#: admin/class-pcsc-admin.php:722
 msgid "Notes"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:562
+#: admin/class-pcsc-admin.php:651
 msgid "Open"
 msgstr ""
 
@@ -599,7 +619,7 @@ msgstr ""
 msgid "Pages & Mobile Dashboard"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:79
+#: admin/class-pcsc-admin.php:85
 msgid "Partially Charged"
 msgstr ""
 
@@ -629,11 +649,11 @@ msgstr ""
 msgid "Prestige Caraïbes"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:496
+#: admin/class-pcsc-admin.php:585
 msgid "PRO ACTIVATED"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:662
+#: admin/class-pcsc-admin.php:760
 msgid "Reason"
 msgstr ""
 
@@ -641,15 +661,19 @@ msgstr ""
 msgid "Reason:"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:545
+#: admin/class-pcsc-admin.php:634
 msgid "Ref"
+msgstr ""
+
+#: pro/class-pcsc-pro-dashboard.php:271
+msgid "Reference"
 msgstr ""
 
 #: admin/class-pcsc-settings.php:111
 msgid "Release Confirmation"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:673
+#: admin/class-pcsc-admin.php:771
 msgid "Release Now"
 msgstr ""
 
@@ -657,7 +681,7 @@ msgstr ""
 msgid "Release or Charge:"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:80
+#: admin/class-pcsc-admin.php:86
 msgid "Released"
 msgstr ""
 
@@ -665,15 +689,15 @@ msgstr ""
 msgid "Reminder: Release Tomorrow"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:81
+#: admin/class-pcsc-admin.php:87
 msgid "Rotated (Extended)"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:644
+#: admin/class-pcsc-admin.php:742
 msgid "Rotation"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:82
+#: admin/class-pcsc-admin.php:88
 msgid "Rotation Failed"
 msgstr ""
 
@@ -708,7 +732,7 @@ msgstr ""
 msgid "Security & Privacy"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:100
+#: admin/class-pcsc-admin.php:106
 msgid "Security expired."
 msgstr ""
 
@@ -722,7 +746,7 @@ msgid ""
 "Select the page where the customer is redirected after a successful deposit."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:611
+#: admin/class-pcsc-admin.php:709
 msgid "Send Email"
 msgstr ""
 
@@ -734,7 +758,7 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:604
+#: admin/class-pcsc-admin.php:702
 msgid "Setup Link"
 msgstr ""
 
@@ -751,7 +775,7 @@ msgstr ""
 msgid "Starts with whsec_... (See Stripe > Developers > Webhooks)"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:548
+#: admin/class-pcsc-admin.php:637
 msgid "Status"
 msgstr ""
 
@@ -803,7 +827,7 @@ msgstr ""
 msgid "System Status"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:637
+#: admin/class-pcsc-admin.php:735
 msgid "Take Deposit"
 msgstr ""
 
@@ -811,8 +835,8 @@ msgstr ""
 msgid "Take Deposit (Hold):"
 msgstr ""
 
-#: pro/class-pcsc-pro-dashboard.php:276
-msgid "Tap a card to manage details in Admin."
+#: pro/class-pcsc-pro-dashboard.php:320
+msgid "Tap a card to manage details."
 msgstr ""
 
 #: public/class-pcsc-public.php:97
@@ -883,7 +907,7 @@ msgstr ""
 msgid "Unlock automatic management and advanced customization."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:511
+#: admin/class-pcsc-admin.php:600
 msgid "UPGRADE NOW"
 msgstr ""
 
@@ -891,11 +915,11 @@ msgstr ""
 msgid "Upgrade to PRO"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:509
+#: admin/class-pcsc-admin.php:598
 msgid "Upgrade to PRO for unlimited deposits & auto-rotation."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:508
+#: admin/class-pcsc-admin.php:597
 msgid "Usage Limit:"
 msgstr ""
 
@@ -914,11 +938,11 @@ msgstr ""
 msgid "User Guide - PC Stripe Caution"
 msgstr ""
 
-#: admin/class-pcsc-admin.php:639
+#: admin/class-pcsc-admin.php:737
 msgid "Waiting for card..."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:74
+#: admin/class-pcsc-admin.php:80
 msgid "Waiting for Input"
 msgstr ""
 
@@ -969,7 +993,7 @@ msgid ""
 "(Hold)."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:521
+#: admin/class-pcsc-admin.php:610
 msgid ""
 "You have reached your monthly limit of 3 deposits. Please upgrade to create "
 "more."
@@ -987,8 +1011,12 @@ msgid ""
 "The bank imprint will be automatically deleted after the deposit is released."
 msgstr ""
 
-#: admin/class-pcsc-admin.php:588
+#: admin/class-pcsc-admin.php:680
 msgid "← Back"
+msgstr ""
+
+#: admin/class-pcsc-admin.php:680
+msgid "← Back to App"
 msgstr ""
 
 #: public/class-pcsc-public.php:104
