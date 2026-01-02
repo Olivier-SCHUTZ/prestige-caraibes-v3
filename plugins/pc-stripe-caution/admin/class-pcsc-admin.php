@@ -94,7 +94,7 @@ class PCSC_Admin
         $message = '';
         $error = '';
 
-        // --- TRAITEMENT FORMULAIRES ---
+        // --- TRAITEMENT FORMULAIRES (Code inchangé) ---
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['pcsc_action'])) {
             if (!check_admin_referer('pcsc_admin_action', 'pcsc_nonce')) {
                 $error = __('Security expired.', 'pc-stripe-caution');
@@ -104,14 +104,12 @@ class PCSC_Admin
                     $case_id = isset($_POST['case_id']) ? (int)$_POST['case_id'] : 0;
 
                     if ($action === 'create_case') {
-                        // >> VERIFICATION LIMITES (LITE VS PRO) <<
-                        if (!PCSC_IS_PRO) {
+                        if (!defined('PCSC_IS_PRO') || !PCSC_IS_PRO) {
                             $count = PCSC_DB::count_this_month();
                             if ($count >= 3) {
                                 throw new Exception(__('Free limit reached (3/month). Upgrade to PRO for unlimited deposits.', 'pc-stripe-caution'));
                             }
                         }
-                        // ----------------------------------------
 
                         $ref = sanitize_text_field($_POST['booking_ref']);
                         $email = sanitize_email($_POST['customer_email']);
@@ -131,7 +129,6 @@ class PCSC_Admin
                         self::safe_redirect(self::get_url(['case_id' => $new_id]));
                     }
 
-                    // Actions sur dossier existant
                     if ($action === 'delete_case') {
                         PCSC_DB::delete_case($case_id);
                         self::safe_redirect(self::get_url(['msg' => 'done']));
@@ -148,7 +145,6 @@ class PCSC_Admin
                         }
 
                         if ($action === 'create_setup_link') {
-                            // Création Stripe Customer si besoin
                             $stripe_cust_id = $case['stripe_customer_id'];
                             if (empty($stripe_cust_id)) {
                                 $c_res = PCSC_Stripe::create_customer($case['customer_email'], $case['booking_ref']);
@@ -157,18 +153,14 @@ class PCSC_Admin
                                 PCSC_DB::update_case($case_id, ['stripe_customer_id' => $stripe_cust_id]);
                             }
 
-                            // Création Session Setup
                             $fmt_amount = number_format($case['amount'] / 100, 2, ',', ' ');
                             $fmt_date = $case['date_depart'] ? date_i18n(get_option('date_format'), strtotime($case['date_depart'])) : '-';
                             $msg_client = sprintf(__('Deposit ref. %s (%s €). Releasable after %s.', 'pc-stripe-caution'), $case['booking_ref'], $fmt_amount, $fmt_date);
 
-                            // Logique redirection PRO
                             $success_url = home_url('/caution-merci/?case_id=' . $case_id);
-
                             if (defined('PCSC_IS_PRO') && PCSC_IS_PRO) {
                                 $page_id = (int) PCSC_Settings::get_option('success_page_id');
                                 if ($page_id > 0) {
-                                    // On ajoute le param case_id même sur la page custom
                                     $success_url = add_query_arg('case_id', $case_id, get_permalink($page_id));
                                 }
                             }
@@ -209,7 +201,7 @@ class PCSC_Admin
                                 'last_error' => null
                             ]);
                             PCSC_DB::append_note($case_id, __('Hold active.', 'pc-stripe-caution'));
-                            PCSC_DB::schedule_release($case_id); // Fallback planif
+                            PCSC_DB::schedule_release($case_id);
 
                             if (class_exists('PCSC_Mailer')) {
                                 $d_txt = $case['date_depart'] ? date_i18n(get_option('date_format'), strtotime($case['date_depart']) + (7 * DAY_IN_SECONDS)) : 'D+7';
@@ -226,7 +218,6 @@ class PCSC_Admin
 
                             $st = ($amt === (int)$case['amount']) ? 'captured' : 'capture_partial';
                             PCSC_DB::update_case($case_id, ['status' => $st]);
-                            // Note interne : on traduit juste le préfixe, le reste est dynamique
                             PCSC_DB::append_note($case_id, __('Captured:', 'pc-stripe-caution') . ' ' . ($amt / 100) . "€ ($note)");
 
                             if (class_exists('PCSC_Mailer')) {
@@ -264,80 +255,107 @@ class PCSC_Admin
         $case_id_view = isset($_GET['case_id']) ? (int)$_GET['case_id'] : 0;
 ?>
         <style>
+            /* Reset Scope : Tout élément dans #pc-admin-root utilise border-box */
+            #pc-admin-root,
+            #pc-admin-root * {
+                box-sizing: border-box;
+            }
+
             #pc-admin-root {
                 font-family: -apple-system, sans-serif;
                 background: #f0f2f5;
-                padding: 10px;
+                padding: 15px;
+                /* Espacement externe */
+                max-width: 100%;
             }
 
             #pc-admin-root .pc-wrap {
-                max-width: 900px;
+                max-width: 1100px;
                 margin: 0 auto;
                 background: #fff;
                 padding: 20px;
                 border-radius: 8px;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             }
 
+            /* --- HEADER --- */
             #pc-admin-root .pc-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 20px;
+                margin-bottom: 25px;
                 border-bottom: 2px solid #f3f4f6;
                 padding-bottom: 15px;
                 flex-wrap: wrap;
-                /* Permet le retour à la ligne sur mobile */
-                gap: 10px;
+                gap: 15px;
             }
 
             #pc-admin-root .pc-header h2 {
-                font-size: 1.2rem;
-                /* Titre un peu plus petit sur mobile */
+                margin: 0;
+                font-size: 1.4rem;
+                color: #1f2937;
             }
 
-            /* --- GRILLE RESPONSIVE (Le cœur de ta demande) --- */
+            /* --- GRILLE PRINCIPALE (Responsive) --- */
             #pc-admin-root .pc-grid {
                 display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                /* Par défaut : 2 colonnes */
-                gap: 20px;
+                /* Configuration Desktop par défaut : 2 colonnes égales */
+                grid-template-columns: 1fr 1fr;
+                gap: 25px;
                 align-items: start;
             }
 
-            /* Si l'écran fait moins de 768px (Tablettes & Mobiles) */
-            @media (max-width: 768px) {
+            /* Point de rupture à 900px pour tablettes et mobiles */
+            @media screen and (max-width: 900px) {
                 #pc-admin-root .pc-grid {
-                    grid-template-columns: 1fr !important;
-                    /* FORCE 1 SEULE COLONNE */
+                    /* Passage strict à 1 colonne */
+                    grid-template-columns: 100%;
                 }
 
                 #pc-admin-root .pc-header {
                     flex-direction: column;
-                    /* Header vertical sur mobile */
                     align-items: flex-start;
                 }
 
-                #pc-admin-root .pc-btn {
+                #pc-admin-root .pc-header>div {
                     width: 100%;
-                    /* Boutons pleine largeur sur mobile */
-                    margin-bottom: 5px;
-                    text-align: center;
-                }
-
-                /* Ajustement tableau */
-                #pc-admin-root table.pc-table th,
-                #pc-admin-root table.pc-table td {
-                    padding: 8px 5px;
-                    font-size: 13px;
                 }
             }
 
-            /* ------------------------------------------------ */
+            /* --- COMPOSANTS UI --- */
+            #pc-admin-root .pc-card {
+                background: #f9fafb;
+                padding: 20px;
+                border-radius: 8px;
+                border: 1px solid #e5e7eb;
+                margin-bottom: 20px;
+            }
 
+            /* Inputs & Forms : Largeur fluide mais contrainte */
+            #pc-admin-root .pc-input,
+            #pc-admin-root select,
+            #pc-admin-root textarea {
+                width: 100%;
+                max-width: 100%;
+                padding: 10px 12px;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                font-size: 15px;
+                margin-bottom: 12px;
+                height: auto;
+            }
+
+            #pc-admin-root .pc-label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 6px;
+                color: #374151;
+            }
+
+            /* Boutons */
             #pc-admin-root .pc-btn {
                 display: inline-block;
-                padding: 10px 16px;
+                padding: 10px 18px;
                 border-radius: 6px;
                 font-weight: 600;
                 text-decoration: none;
@@ -345,6 +363,18 @@ class PCSC_Admin
                 cursor: pointer;
                 font-size: 14px;
                 text-align: center;
+                transition: background 0.2s;
+                /* Assure que le texte ne déborde pas */
+                white-space: nowrap;
+                max-width: 100%;
+            }
+
+            /* Sur mobile, les boutons peuvent prendre toute la largeur si besoin */
+            @media screen and (max-width: 600px) {
+                #pc-admin-root .pc-btn {
+                    width: 100%;
+                    margin-bottom: 5px;
+                }
             }
 
             #pc-admin-root .pc-btn-primary {
@@ -352,14 +382,26 @@ class PCSC_Admin
                 color: white;
             }
 
+            #pc-admin-root .pc-btn-primary:hover {
+                background: #1d4ed8;
+            }
+
             #pc-admin-root .pc-btn-success {
                 background: #059669;
                 color: white;
             }
 
+            #pc-admin-root .pc-btn-success:hover {
+                background: #047857;
+            }
+
             #pc-admin-root .pc-btn-danger {
                 background: #dc2626;
                 color: white;
+            }
+
+            #pc-admin-root .pc-btn-danger:hover {
+                background: #b91c1c;
             }
 
             #pc-admin-root .pc-btn-outline {
@@ -368,8 +410,13 @@ class PCSC_Admin
                 color: #374151;
             }
 
+            #pc-admin-root .pc-btn-outline:hover {
+                background: #f3f4f6;
+            }
+
+            /* Alertes */
             #pc-admin-root .pc-alert {
-                padding: 12px;
+                padding: 12px 16px;
                 border-radius: 6px;
                 margin-bottom: 20px;
                 font-weight: 500;
@@ -387,35 +434,19 @@ class PCSC_Admin
                 border: 1px solid #fecaca;
             }
 
-            #pc-admin-root .pc-input {
+            /* Tableaux Responsive */
+            #pc-admin-root .table-responsive {
                 width: 100%;
-                padding: 12px;
-                border: 1px solid #d1d5db;
-                border-radius: 6px;
-                font-size: 16px;
-                box-sizing: border-box;
-                margin-bottom: 10px;
-            }
-
-            #pc-admin-root .pc-label {
-                display: block;
-                font-weight: 600;
-                margin-bottom: 5px;
-                color: #374151;
-            }
-
-            #pc-admin-root .pc-card {
-                background: #f9fafb;
-                padding: 15px;
-                border-radius: 6px;
-                border: 1px solid #e5e7eb;
-                margin-bottom: 15px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-bottom: 20px;
             }
 
             #pc-admin-root table.pc-table {
                 width: 100%;
                 border-collapse: collapse;
-                margin: 0;
+                min-width: 600px;
+                /* Force le scroll horizontal sur petit écran */
             }
 
             #pc-admin-root table.pc-table th {
@@ -430,15 +461,18 @@ class PCSC_Admin
             #pc-admin-root table.pc-table td {
                 padding: 12px 10px;
                 border-bottom: 1px solid #f3f4f6;
+                vertical-align: middle;
             }
 
+            /* Badges */
             #pc-admin-root .pc-badge {
-                padding: 4px 8px;
-                border-radius: 12px;
+                padding: 4px 10px;
+                border-radius: 20px;
                 font-size: 11px;
-                font-weight: 600;
+                font-weight: 700;
                 text-transform: uppercase;
                 display: inline-block;
+                white-space: nowrap;
             }
 
             .status-draft {
@@ -474,7 +508,7 @@ class PCSC_Admin
                 color: #9a3412;
             }
 
-            /* BANNIERE UPSELL */
+            /* Upsell Banner */
             .pc-upsell {
                 background: linear-gradient(90deg, #4f46e5, #9333ea);
                 color: white;
@@ -484,6 +518,8 @@ class PCSC_Admin
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                flex-wrap: wrap;
+                gap: 10px;
             }
 
             .pc-upsell-btn {
@@ -494,10 +530,11 @@ class PCSC_Admin
                 text-decoration: none;
                 font-weight: bold;
                 font-size: 12px;
+                white-space: nowrap;
             }
 
             .pc-upsell-btn:hover {
-                background: #f3f4f6;
+                background: #f9fafb;
             }
         </style>
 
