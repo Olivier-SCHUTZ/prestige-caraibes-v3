@@ -286,7 +286,54 @@ class PCSC_Admin
                 margin-bottom: 20px;
                 border-bottom: 2px solid #f3f4f6;
                 padding-bottom: 15px;
+                flex-wrap: wrap;
+                /* Permet le retour à la ligne sur mobile */
+                gap: 10px;
             }
+
+            #pc-admin-root .pc-header h2 {
+                font-size: 1.2rem;
+                /* Titre un peu plus petit sur mobile */
+            }
+
+            /* --- GRILLE RESPONSIVE (Le cœur de ta demande) --- */
+            #pc-admin-root .pc-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                /* Par défaut : 2 colonnes */
+                gap: 20px;
+                align-items: start;
+            }
+
+            /* Si l'écran fait moins de 768px (Tablettes & Mobiles) */
+            @media (max-width: 768px) {
+                #pc-admin-root .pc-grid {
+                    grid-template-columns: 1fr !important;
+                    /* FORCE 1 SEULE COLONNE */
+                }
+
+                #pc-admin-root .pc-header {
+                    flex-direction: column;
+                    /* Header vertical sur mobile */
+                    align-items: flex-start;
+                }
+
+                #pc-admin-root .pc-btn {
+                    width: 100%;
+                    /* Boutons pleine largeur sur mobile */
+                    margin-bottom: 5px;
+                    text-align: center;
+                }
+
+                /* Ajustement tableau */
+                #pc-admin-root table.pc-table th,
+                #pc-admin-root table.pc-table td {
+                    padding: 8px 5px;
+                    font-size: 13px;
+                }
+            }
+
+            /* ------------------------------------------------ */
 
             #pc-admin-root .pc-btn {
                 display: inline-block;
@@ -365,13 +412,6 @@ class PCSC_Admin
                 margin-bottom: 15px;
             }
 
-            #pc-admin-root .pc-grid {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 20px;
-                align-items: start;
-            }
-
             #pc-admin-root table.pc-table {
                 width: 100%;
                 border-collapse: collapse;
@@ -384,7 +424,7 @@ class PCSC_Admin
                 border-bottom: 2px solid #e5e7eb;
                 color: #6b7280;
                 font-size: 12px;
-                uppercase;
+                text-transform: uppercase;
             }
 
             #pc-admin-root table.pc-table td {
@@ -397,7 +437,7 @@ class PCSC_Admin
                 border-radius: 12px;
                 font-size: 11px;
                 font-weight: 600;
-                uppercase;
+                text-transform: uppercase;
                 display: inline-block;
             }
 

@@ -64,70 +64,99 @@ class PCSC_Pro_Dashboard
         ob_start();
 ?>
         <style>
-            /* CSS Mobile First (Scoped) */
+            /* CSS Mobile Dashboard */
             .pc-m-dash {
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 max-width: 600px;
                 margin: 0 auto;
                 background: #f3f4f6;
+                /* Fond gris clair app */
                 padding: 15px;
                 border-radius: 8px;
-            }
-
-            .pc-m-alert {
-                background: #dcfce7;
-                color: #166534;
-                padding: 10px;
-                border-radius: 6px;
-                margin-bottom: 15px;
-                text-align: center;
-                font-weight: bold;
             }
 
             .pc-m-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 15px;
+                margin-bottom: 20px;
             }
 
             .pc-m-title {
                 margin: 0;
-                font-size: 18px;
+                font-size: 20px;
                 color: #111827;
+                font-weight: 700;
             }
 
-            /* Formulaire Toggle */
+            /* Bouton Flottant (Nouveau) */
+            .pc-fab {
+                background: #2563eb;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 30px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+            }
+
+            /* Formulaire "Tiroir" */
             .pc-m-form-box {
                 background: white;
-                padding: 15px;
-                border-radius: 8px;
+                padding: 20px;
+                border-radius: 12px;
                 margin-bottom: 20px;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
                 display: none;
-                /* Caché par défaut */
             }
 
             .pc-m-form-box.open {
                 display: block;
+                animation: slideDown 0.3s ease-out;
             }
 
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Inputs bien larges (1 colonne) */
             .pc-m-input {
-                width: 100%;
-                padding: 10px;
-                margin-bottom: 10px;
-                border: 1px solid #d1d5db;
-                border-radius: 6px;
-                box-sizing: border-box;
+                display: block;
+                width: 100% !important;
+                /* Force la largeur */
+                padding: 14px;
+                margin-bottom: 15px;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
                 font-size: 16px;
+                /* Empêche le zoom sur iPhone */
+                box-sizing: border-box;
+                background: #f9fafb;
             }
 
+            .pc-m-input:focus {
+                border-color: #2563eb;
+                background: #fff;
+                outline: none;
+            }
+
+            /* Boutons d'action */
             .pc-m-btn {
                 display: block;
                 width: 100%;
-                padding: 12px;
+                padding: 14px;
                 border: none;
-                border-radius: 6px;
+                border-radius: 8px;
                 font-weight: bold;
                 cursor: pointer;
                 text-align: center;
@@ -137,50 +166,58 @@ class PCSC_Pro_Dashboard
             .pc-btn-primary {
                 background: #2563eb;
                 color: white;
+                margin-bottom: 10px;
             }
 
             .pc-btn-cancel {
-                background: #e5e7eb;
-                color: #374151;
-                margin-top: 10px;
+                background: transparent;
+                color: #6b7280;
             }
 
-            /* Liste / Cartes */
+            /* Cartes */
             .pc-m-card {
                 background: white;
-                padding: 15px;
-                border-radius: 8px;
-                margin-bottom: 10px;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+                padding: 16px;
+                border-radius: 12px;
+                margin-bottom: 12px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+                border: 1px solid #f3f4f6;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                transition: transform 0.1s;
+            }
+
+            .pc-m-card:active {
+                transform: scale(0.98);
+                background: #f9fafb;
             }
 
             .pc-m-info h4 {
-                margin: 0 0 4px 0;
-                font-size: 15px;
+                margin: 0 0 6px 0;
+                font-size: 16px;
                 color: #1f2937;
             }
 
             .pc-m-info p {
                 margin: 0;
-                font-size: 13px;
+                font-size: 14px;
                 color: #6b7280;
             }
 
+            /* Statuts */
             .pc-m-status {
                 font-size: 11px;
-                font-weight: bold;
-                padding: 4px 8px;
-                border-radius: 12px;
+                font-weight: 700;
+                padding: 6px 10px;
+                border-radius: 20px;
                 text-transform: uppercase;
-                white-space: nowrap;
+                letter-spacing: 0.5px;
             }
 
             .st-draft {
                 background: #f3f4f6;
-                color: #4b5563;
+                color: #6b7280;
             }
 
             .st-setup_link_created {
@@ -188,39 +225,37 @@ class PCSC_Pro_Dashboard
                 color: #c2410c;
             }
 
-            /* Lien envoyé */
             .st-setup_ok {
                 background: #fef3c7;
                 color: #b45309;
             }
 
-            /* Carte OK */
             .st-authorized {
-                background: #dbeafe;
-                color: #1e40af;
-                border: 1px solid #93c5fd;
+                background: #eff6ff;
+                color: #1d4ed8;
+                border: 1px solid #bfdbfe;
             }
 
-            /* Caution Prise */
             .st-released {
                 background: #f0fdf4;
                 color: #15803d;
                 text-decoration: line-through;
+                opacity: 0.7;
             }
 
             .st-captured {
-                background: #fee2e2;
-                color: #991b1b;
+                background: #fef2f2;
+                color: #b91c1c;
             }
 
-            .pc-fab {
-                background: #2563eb;
-                color: white;
-                border: none;
-                padding: 8px 15px;
-                border-radius: 20px;
-                font-size: 14px;
-                cursor: pointer;
+            .pc-m-alert {
+                background: #dcfce7;
+                color: #166534;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                text-align: center;
+                font-weight: bold;
             }
         </style>
 
