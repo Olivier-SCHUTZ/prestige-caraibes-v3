@@ -250,12 +250,11 @@ class PCSC_Admin
         if (isset($_GET['msg']) && $_GET['msg'] === 'done') $message = __('Action successful.', 'pc-stripe-caution');
         if (isset($_GET['msg']) && $_GET['msg'] === 'email_sent') $message = __('Email sent.', 'pc-stripe-caution');
 
-        // --- VUE ---
         ob_start();
         $case_id_view = isset($_GET['case_id']) ? (int)$_GET['case_id'] : 0;
 ?>
         <style>
-            /* Reset Scope : Tout élément dans #pc-admin-root utilise border-box */
+            /* --- LAYOUT GLOBAL & RESET --- */
             #pc-admin-root,
             #pc-admin-root * {
                 box-sizing: border-box;
@@ -263,16 +262,21 @@ class PCSC_Admin
 
             #pc-admin-root {
                 font-family: -apple-system, sans-serif;
+                /* Background léger */
                 background: #f0f2f5;
-                padding: 15px;
-                /* Espacement externe */
-                max-width: 100%;
+                /* Padding ajusté : plus petit sur mobile pour éviter le "tassement" */
+                padding: 10px;
+                width: 100%;
             }
 
+            /* Conteneur Blanc Centré */
             #pc-admin-root .pc-wrap {
-                max-width: 1100px;
-                margin: 0 auto;
                 background: #fff;
+                /* Max-width Desktop */
+                max-width: 1100px;
+                /* CENTRAGE PARFAIT : margin auto + width 100% */
+                width: 100%;
+                margin: 0 auto;
                 padding: 20px;
                 border-radius: 8px;
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -296,33 +300,53 @@ class PCSC_Admin
                 color: #1f2937;
             }
 
-            /* --- GRILLE PRINCIPALE (Responsive) --- */
+            /* --- GRILLE & RESPONSIVE --- */
             #pc-admin-root .pc-grid {
                 display: grid;
-                /* Configuration Desktop par défaut : 2 colonnes égales */
+                /* Desktop : 2 colonnes */
                 grid-template-columns: 1fr 1fr;
                 gap: 25px;
                 align-items: start;
             }
 
-            /* Point de rupture à 900px pour tablettes et mobiles */
+            /* --- MOBILE (< 900px) --- */
             @media screen and (max-width: 900px) {
+
+                /* 1. Force 1 seule colonne */
                 #pc-admin-root .pc-grid {
-                    /* Passage strict à 1 colonne */
                     grid-template-columns: 100%;
                 }
 
+                /* 2. Ajustements Header */
                 #pc-admin-root .pc-header {
                     flex-direction: column;
                     align-items: flex-start;
                 }
 
-                #pc-admin-root .pc-header>div {
-                    width: 100%;
+                /* 3. Ajustement Conteneur pour gagner de la place */
+                #pc-admin-root .pc-wrap {
+                    padding: 15px;
+                    /* Réduction padding interne */
+                }
+
+                /* 4. SIMPLIFICATION DU TABLEAU (Masquer colonnes secondaires) */
+                /* Masque Colonne 2 (Client Email) et 5 (Départ) */
+                .pc-table th:nth-child(2),
+                .pc-table td:nth-child(2),
+                .pc-table th:nth-child(5),
+                .pc-table td:nth-child(5) {
+                    display: none;
+                }
+
+                /* Ajuste la taille de police du tableau pour mobile */
+                .pc-table th,
+                .pc-table td {
+                    font-size: 13px !important;
+                    padding: 10px 5px !important;
                 }
             }
 
-            /* --- COMPOSANTS UI --- */
+            /* --- UI COMPONENTS --- */
             #pc-admin-root .pc-card {
                 background: #f9fafb;
                 padding: 20px;
@@ -331,7 +355,6 @@ class PCSC_Admin
                 margin-bottom: 20px;
             }
 
-            /* Inputs & Forms : Largeur fluide mais contrainte */
             #pc-admin-root .pc-input,
             #pc-admin-root select,
             #pc-admin-root textarea {
@@ -363,18 +386,8 @@ class PCSC_Admin
                 cursor: pointer;
                 font-size: 14px;
                 text-align: center;
-                transition: background 0.2s;
-                /* Assure que le texte ne déborde pas */
                 white-space: nowrap;
                 max-width: 100%;
-            }
-
-            /* Sur mobile, les boutons peuvent prendre toute la largeur si besoin */
-            @media screen and (max-width: 600px) {
-                #pc-admin-root .pc-btn {
-                    width: 100%;
-                    margin-bottom: 5px;
-                }
             }
 
             #pc-admin-root .pc-btn-primary {
@@ -382,26 +395,14 @@ class PCSC_Admin
                 color: white;
             }
 
-            #pc-admin-root .pc-btn-primary:hover {
-                background: #1d4ed8;
-            }
-
             #pc-admin-root .pc-btn-success {
                 background: #059669;
                 color: white;
             }
 
-            #pc-admin-root .pc-btn-success:hover {
-                background: #047857;
-            }
-
             #pc-admin-root .pc-btn-danger {
                 background: #dc2626;
                 color: white;
-            }
-
-            #pc-admin-root .pc-btn-danger:hover {
-                background: #b91c1c;
             }
 
             #pc-admin-root .pc-btn-outline {
@@ -410,8 +411,12 @@ class PCSC_Admin
                 color: #374151;
             }
 
-            #pc-admin-root .pc-btn-outline:hover {
-                background: #f3f4f6;
+            /* Boutons pleine largeur sur tout petit écran */
+            @media screen and (max-width: 600px) {
+                #pc-admin-root .pc-btn {
+                    width: 100%;
+                    margin-bottom: 5px;
+                }
             }
 
             /* Alertes */
@@ -434,19 +439,14 @@ class PCSC_Admin
                 border: 1px solid #fecaca;
             }
 
-            /* Tableaux Responsive */
+            /* Table Styles */
             #pc-admin-root .table-responsive {
-                width: 100%;
                 overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                margin-bottom: 20px;
             }
 
             #pc-admin-root table.pc-table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 600px;
-                /* Force le scroll horizontal sur petit écran */
             }
 
             #pc-admin-root table.pc-table th {
@@ -508,7 +508,7 @@ class PCSC_Admin
                 color: #9a3412;
             }
 
-            /* Upsell Banner */
+            /* Upsell */
             .pc-upsell {
                 background: linear-gradient(90deg, #4f46e5, #9333ea);
                 color: white;
@@ -518,8 +518,8 @@ class PCSC_Admin
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                flex-wrap: wrap;
                 gap: 10px;
+                flex-wrap: wrap;
             }
 
             .pc-upsell-btn {
@@ -531,10 +531,6 @@ class PCSC_Admin
                 font-weight: bold;
                 font-size: 12px;
                 white-space: nowrap;
-            }
-
-            .pc-upsell-btn:hover {
-                background: #f9fafb;
             }
         </style>
 
