@@ -467,12 +467,38 @@ function pc_resa_dashboard_shortcode($atts)
         );
     }
 
-    $dashboard_css = $plugin_path . 'assets/css/dashboard-style.css';
+    // Charger les 3 modules CSS séparément pour éviter les conflits @import avec Elementor/OceanWP
+    $dashboard_base_css = $plugin_path . 'assets/css/dashboard-base.css';
+    $dashboard_forms_css = $plugin_path . 'assets/css/dashboard-forms.css';
+    $dashboard_modals_css = $plugin_path . 'assets/css/dashboard-modals.css';
+    $dashboard_style_css = $plugin_path . 'assets/css/dashboard-style.css';
+
     wp_enqueue_style(
-        'pc-resa-dashboard',
-        $plugin_url . 'assets/css/dashboard-style.css',
+        'pc-resa-dashboard-base',
+        $plugin_url . 'assets/css/dashboard-base.css',
         [],
-        file_exists($dashboard_css) ? filemtime($dashboard_css) : null
+        file_exists($dashboard_base_css) ? filemtime($dashboard_base_css) : null
+    );
+
+    wp_enqueue_style(
+        'pc-resa-dashboard-forms',
+        $plugin_url . 'assets/css/dashboard-forms.css',
+        ['pc-resa-dashboard-base'],
+        file_exists($dashboard_forms_css) ? filemtime($dashboard_forms_css) : null
+    );
+
+    wp_enqueue_style(
+        'pc-resa-dashboard-modals',
+        $plugin_url . 'assets/css/dashboard-modals.css',
+        ['pc-resa-dashboard-base'],
+        file_exists($dashboard_modals_css) ? filemtime($dashboard_modals_css) : null
+    );
+
+    wp_enqueue_style(
+        'pc-resa-dashboard-style',
+        $plugin_url . 'assets/css/dashboard-style.css',
+        ['pc-resa-dashboard-base', 'pc-resa-dashboard-forms', 'pc-resa-dashboard-modals'],
+        file_exists($dashboard_style_css) ? filemtime($dashboard_style_css) : null
     );
 
     $dashboard_js = $plugin_path . 'assets/js/dashboard-core.js';

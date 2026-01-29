@@ -1,0 +1,468 @@
+/* ============================================
+   PC RESERVATION CORE - DASHBOARD MODALS
+   Modales et popups du système
+   ============================================ */
+
+/* === MODALE PRINCIPALE (MODERNISÉE STYLE DASHBOARD) === */
+.pc-resa-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: pc-modal-fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pc-modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pc-resa-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.3) 0%,
+    rgba(118, 75, 162, 0.4) 100%
+  );
+  backdrop-filter: blur(12px);
+  animation: pc-backdrop-fade-in 0.3s ease-out;
+}
+
+@keyframes pc-backdrop-fade-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(12px);
+  }
+}
+
+.pc-resa-modal-dialog {
+  position: relative;
+  max-width: 950px;
+  width: 100%;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  padding: 3rem;
+  border-radius: 24px;
+  border: 2px solid rgba(99, 102, 241, 0.1);
+  box-shadow:
+    0 25px 50px -12px rgba(99, 102, 241, 0.25),
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: pc-modal-slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.pc-resa-modal-dialog::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  border-radius: 24px;
+  z-index: -1;
+}
+
+@keyframes pc-modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pc-resa-modal-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  border: none;
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.1) 0%,
+    rgba(220, 38, 38, 0.15) 100%
+  );
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #dc2626;
+  border: 2px solid rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+}
+
+.pc-resa-modal-close:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+}
+
+/* === POPUPS SYSTÈME (MODERNISÉS STYLE DASHBOARD) === */
+.pc-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.4) 0%,
+    rgba(118, 75, 162, 0.5) 100%
+  );
+  backdrop-filter: blur(12px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: pc-modal-fade-in 0.3s ease-out;
+}
+
+.pc-popup-overlay[hidden] {
+  display: none !important;
+}
+
+.pc-popup-box {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border-radius: 20px;
+  max-width: 480px;
+  width: 95%;
+  padding: 2rem 2.5rem;
+  border: 2px solid rgba(99, 102, 241, 0.15);
+  box-shadow:
+    0 20px 40px -12px rgba(99, 102, 241, 0.25),
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  text-align: center;
+  animation: pc-modal-slide-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.pc-popup-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  border-radius: 20px;
+  z-index: -1;
+}
+
+.pc-popup-title {
+  font-family: var(--pc-font-title);
+  color: #1f2937;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pc-popup-text {
+  color: #6b7280;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  font-weight: 500;
+}
+
+.pc-popup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+/* === BOUTONS DANS LES POPUPS === */
+.pc-popup-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: none;
+  letter-spacing: 0.025em;
+  min-width: 120px;
+}
+
+.pc-popup-btn--primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.pc-popup-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+}
+
+.pc-popup-btn--secondary {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.pc-popup-btn--secondary:hover {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.pc-popup-btn--danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.pc-popup-btn--danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+}
+
+/* === CHAMPS FORCÉS DANS POPUPS (MODERNISÉS) === */
+.pc-input-force {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0.9rem 1.2rem !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  margin-bottom: 1.5rem !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  color: #1f2937 !important;
+  height: auto !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.pc-input-force:focus {
+  outline: none !important;
+  border-color: #6366f1 !important;
+  box-shadow:
+    0 0 0 3px rgba(99, 102, 241, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.1) !important;
+  background: #ffffff !important;
+}
+
+.pc-label-force {
+  display: block !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 0.5rem !important;
+  color: #1f2937 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* === POPUP BLOCAGE FACTURATION === */
+.pc-popup-blocked-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+.pc-popup-blocked-title {
+  color: #dc2626; /* Rouge */
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.pc-popup-blocked-msg {
+  color: #334155;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* === POPUP CHEVAUCHEMENT AVEC ANIMATION === */
+#pc-overlap-popup .pc-popup-box {
+  animation: pc-shake 0.3s ease-in-out;
+}
+
+@keyframes pc-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* === CONTENU DES MODALES (COHÉRENCE AVEC FORMULAIRES) === */
+
+/* Titres dans les modales */
+.pc-resa-modal-dialog h2,
+.pc-resa-modal-dialog h3,
+.pc-resa-modal-dialog h4 {
+  font-family: var(--pc-font-title);
+  color: #1f2937;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+/* Sections dans les modales */
+.pc-resa-modal-dialog .pc-resa-card__section,
+.pc-resa-modal-dialog .pc-resa-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+/* Champs dans les modales (héritage du style formulaires) */
+.pc-resa-modal-dialog input:not(.pc-input-force),
+.pc-resa-modal-dialog select:not(.pc-input-force),
+.pc-resa-modal-dialog textarea:not(.pc-input-force) {
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  padding: 0.9rem 1.2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pc-resa-modal-dialog input:focus:not(.pc-input-force),
+.pc-resa-modal-dialog select:focus:not(.pc-input-force),
+.pc-resa-modal-dialog textarea:focus:not(.pc-input-force) {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow:
+    0 0 0 3px rgba(99, 102, 241, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+}
+
+/* Labels dans les modales */
+.pc-resa-modal-dialog label {
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* Boutons dans les modales (héritage du style dashboard) */
+.pc-resa-modal-dialog .pc-resa-btn,
+.pc-resa-modal-dialog button:not(.pc-popup-btn):not(.pc-resa-modal-close) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: none;
+  letter-spacing: 0.025em;
+}
+
+.pc-resa-modal-dialog .pc-resa-btn--primary,
+.pc-resa-modal-dialog button[type="submit"]:not(.pc-popup-btn) {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.pc-resa-modal-dialog .pc-resa-btn--primary:hover,
+.pc-resa-modal-dialog button[type="submit"]:hover:not(.pc-popup-btn) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+}
+
+/* Tableaux dans les modales */
+.pc-resa-modal-dialog table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+}
+
+.pc-resa-modal-dialog table th {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+}
+
+.pc-resa-modal-dialog table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+/* === CLASSES CRITIQUES POUR JS (NE PAS MODIFIER) === */
+
+/* Actions critiques modales */
+.pc-resa-modal,
+.pc-resa-modal-close,
+.pc-popup-overlay,
+.pc-popup-box,
+.pc-popup-actions {
+  /* Classes utilisées par le JavaScript pour les interactions */
+}
+
+/* Boutons d'actions dans les popups */
+.pc-popup-btn,
+.pc-popup-btn--primary,
+.pc-popup-btn--secondary,
+.pc-popup-btn--danger {
+  /* Styles des boutons dans les popups (hérités ou spécifiques) */
+}
+
+/* IDs spécifiques utilisés par JS */
+#pc-resa-modal,
+#pc-resa-modal-close,
+#pc-resa-modal-close-btn,
+#pc-resa-modal-content,
+#pc-overlap-popup {
+  /* IDs critiques pour le fonctionnement des modales */
+}

@@ -244,17 +244,17 @@ if (! defined('ABSPATH')) {
                         <td><?php echo esc_html(number_format($total_amount, 2, ',', ' ')); ?> €</td>
                         <td>
                             <?php if ($statut_resa && $statut_resa === $statut_paiement) : ?>
-                                <span class="pc-resa-badge pc-resa-badge--resa">
+                                <span class="pc-resa-badge pc-resa-badge--resa pc-resa-status--<?php echo esc_attr($statut_resa); ?>">
                                     <?php echo esc_html($statut_resa_label); ?>
                                 </span>
                             <?php else : ?>
                                 <?php if ($statut_resa) : ?>
-                                    <span class="pc-resa-badge pc-resa-badge--resa">
+                                    <span class="pc-resa-badge pc-resa-badge--resa pc-resa-status--<?php echo esc_attr($statut_resa); ?>">
                                         <?php echo esc_html($statut_resa_label); ?>
                                     </span><br>
                                 <?php endif; ?>
                                 <?php if ($statut_paiement) : ?>
-                                    <span class="pc-resa-badge pc-resa-badge--pay">
+                                    <span class="pc-resa-badge pc-resa-badge--pay pc-resa-status--<?php echo esc_attr($statut_paiement); ?>">
                                         <?php echo esc_html($statut_paiement_label); ?>
                                     </span>
                                 <?php endif; ?>

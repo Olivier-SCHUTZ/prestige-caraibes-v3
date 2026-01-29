@@ -1,0 +1,359 @@
+/* ============================================
+   PC RESERVATION CORE - DASHBOARD FORMS
+   Formulaires de création et édition des réservations
+   ============================================ */
+
+/* === FORMULAIRE CRÉATION === */
+.pc-resa-create-title {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+  font-family: var(--pc-font-title);
+  font-size: var(--pc-h3-size);
+  font-weight: var(--pc-h3-weight);
+  line-height: var(--pc-h3-lh);
+}
+
+.pc-resa-create-intro {
+  margin: 0 0 1.25rem;
+  font-size: var(--pc-text-small-size);
+  color: var(--pc-color-text-light);
+}
+
+.pc-resa-create-form {
+  margin-top: 0.5rem;
+}
+
+.pc-resa-create-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.pc-resa-create-grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pc-resa-create-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pc-resa-create-grid--3-static {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pc-resa-create-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pc-resa-create-section h4 {
+  margin: 0 0 1rem;
+  font-family: var(--pc-font-title);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1f2937;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pc-resa-create-subsection {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f3f4f6;
+}
+
+/* === CHAMPS DE FORMULAIRE (MODERNISÉS) === */
+.pc-resa-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: var(--pc-text-small-size);
+}
+
+.pc-resa-field-label {
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pc-resa-field input,
+.pc-resa-field select,
+.pc-resa-field textarea {
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  padding: 0.9rem 1.2rem;
+  font-family: var(--pc-font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  width: 100%;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: #1f2937;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pc-resa-field input:focus,
+.pc-resa-field select:focus,
+.pc-resa-field textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow:
+    0 0 0 3px rgba(99, 102, 241, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+}
+
+.pc-resa-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.pc-resa-field--inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pc-resa-field--inline input[type="number"] {
+  max-width: 120px;
+}
+
+.pc-resa-create-hint,
+.pc-resa-field-hint {
+  font-size: 0.8rem;
+  color: var(--pc-color-text-light);
+  margin: 0.2rem 0 0;
+}
+
+/* === LISTES D'OPTIONS === */
+.pc-resa-customqty-list,
+.pc-resa-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.pc-resa-options-list .pc-resa-option-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pc-resa-options-list .pc-resa-option-item:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+  transform: translateY(-1px);
+}
+
+.pc-resa-option-item__meta {
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.25rem;
+}
+
+.pc-resa-option-item__price {
+  font-weight: 700;
+  color: #6366f1;
+  font-size: 1.1rem;
+}
+
+.pc-resa-option-qty {
+  margin-left: 2.2rem;
+}
+
+.pc-resa-option-qty input[type="number"] {
+  width: 90px;
+}
+
+/* === RÉSUMÉ DEVIS (MODERNISÉ) === */
+.pc-resa-create-summary {
+  margin-top: 2rem;
+  padding: 2rem;
+  border: 2px solid rgba(99, 102, 241, 0.1);
+  border-radius: 20px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.25);
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+.pc-resa-create-summary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  z-index: 1;
+}
+
+.pc-resa-create-summary > * {
+  position: relative;
+  z-index: 2;
+}
+
+.pc-resa-create-summary h4 {
+  margin: 0 0 1.5rem;
+  font-family: var(--pc-font-title);
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.pc-resa-create-summary-body {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 1.5rem;
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  color: #1f2937;
+}
+
+.pc-resa-create-summary-body ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.pc-resa-create-summary_body li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.pc-resa-create-summary_body li:hover {
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 8px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  margin: 0 -0.5rem;
+}
+
+.pc-resa-create-summary_body li.pc-resa-summary-sep {
+  border-bottom: none;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid #6366f1;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6366f1;
+}
+
+.pc-resa-create-summary_body li:last-child {
+  border-bottom: none;
+}
+
+.pc-resa-create-summary_body li.note {
+  font-style: italic;
+  color: #6b7280;
+  justify-content: flex-start;
+  font-size: 0.9rem;
+}
+
+.pc-resa-create-summary-total {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 3px solid #6366f1;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #6366f1;
+  text-shadow: 0 1px 2px rgba(99, 102, 241, 0.2);
+}
+
+/* === ACTIONS REMISE/PLUS-VALUE === */
+.pc-resa-remise-actions,
+.pc-resa-plus-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+/* === ACTIONS FORMULAIRE === */
+.pc-resa-create-actions {
+  margin-top: 1.75rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.pc-resa-create-actions__right {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* === RESPONSIVE FORMULAIRES === */
+@media (max-width: 768px) {
+  .pc-resa-create-grid--2,
+  .pc-resa-create-grid--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === CHAMPS SPÉCIFIQUES JS (CRITIQUES - NE PAS MODIFIER) === */
+
+/* Champs liés aux calculs automatiques */
+[data-quote-counter],
+[data-tarif-select],
+[data-logement-range],
+[data-item-select],
+[data-item-field],
+[data-type-toggle],
+[data-logement-date-field],
+[data-participants-section],
+[data-quote-counters],
+[data-quote-custom-section],
+[data-quote-customqty],
+[data-quote-options-section],
+[data-quote-options],
+[data-quote-summary],
+[data-quote-total] {
+  /* Styles préservés pour les fonctionnalités JS */
+}
+
+/* Labels dynamiques */
+[data-item-label],
+[data-type-hint],
+[data-logement-availability],
+[data-capacity-warning] {
+  /* Éléments mis à jour dynamiquement par JS */
+}
+
+/* Classes d'actions critiques */
+.pc-resa-create-submit,
+.pc-resa-create-cancel,
+.pc-resa-create-send,
+.pc-resa-remise-clear,
+.pc-resa-plus-clear {
+  /* Actions critiques liées au JS */
+}

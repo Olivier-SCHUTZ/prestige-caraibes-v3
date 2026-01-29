@@ -1,0 +1,1033 @@
+/* ============================================
+   PC RESERVATION CORE - DASHBOARD BASE
+   Layout principal + Composants réutilisables
+   ============================================ */
+
+/* === WRAPPER PRINCIPAL === */
+.pc-resa-dashboard-wrapper {
+  margin: 3rem 0;
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-text-size);
+  line-height: var(--pc-text-lh);
+  color: var(--pc-color-text);
+}
+
+/* === HEADER DASHBOARD === */
+.pc-resa-dashboard-wrapper .pc-resa-dashboard-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  align-items: start;
+  margin-bottom: 3rem;
+  padding: 2rem 0;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.pc-resa-dashboard-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pc-resa-dashboard-title {
+  margin: 0;
+  font-family: var(--pc-font-title);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #1f2937;
+}
+
+.pc-resa-dashboard-subtitle {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.pc-resa-dashboard-header__right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* === BOUTONS SYSTÈME (MODERNISÉS) === */
+.pc-resa-create-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 1.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: var(--pc-font-body);
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow:
+    0 4px 14px rgba(99, 102, 241, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  transition:
+    all 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s ease;
+  text-transform: none;
+  letter-spacing: 0.025em;
+  position: relative;
+  overflow: hidden;
+}
+
+.pc-resa-create-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.pc-resa-create-btn span {
+  color: #ffffff !important;
+}
+
+.pc-resa-create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 25px rgba(99, 102, 241, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pc-resa-create-btn:hover::before {
+  opacity: 1;
+}
+
+.pc-resa-create-btn:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+}
+
+.pc-resa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    all 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.pc-resa-btn--primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.25);
+}
+
+.pc-resa-btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.35);
+}
+
+.pc-resa-btn--secondary {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pc-resa-btn--secondary:hover {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pc-resa-btn--ghost {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  box-shadow: none;
+}
+
+.pc-resa-btn--ghost:hover {
+  background: rgba(99, 102, 241, 0.05);
+  border-color: #6366f1;
+  color: #6366f1;
+  transform: translateY(-1px);
+}
+
+.pc-resa-view-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    all 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s ease;
+  box-shadow: 0 3px 8px rgba(99, 102, 241, 0.3);
+}
+
+.pc-resa-view-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+}
+
+.pc-resa-view-link:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+}
+
+.pc-resa-view-link .pc-resa-view-icon {
+  margin-right: 6px;
+  display: inline-block;
+  transform: translateY(1px);
+}
+
+/* === BADGES (MODERNISÉS) === */
+.pc-resa-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #475569;
+  border: none;
+  white-space: nowrap;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.pc-resa-badge--resa {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1d4ed8;
+  box-shadow: 0 2px 4px rgba(29, 78, 216, 0.15);
+}
+
+.pc-resa-badge--pay {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #16a34a;
+  box-shadow: 0 2px 4px rgba(22, 163, 74, 0.15);
+}
+
+.pc-resa-badge--typeflux {
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(15, 118, 110, 0.3);
+}
+
+.pc-resa-badge--origine {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(30, 41, 59, 0.1);
+}
+
+/* === STATUTS SPÉCIFIQUES (COULEURS DISTINCTES) === */
+
+/* Statuts de réservation */
+.pc-resa-badge--resa.pc-resa-status--confirme,
+.pc-resa-badge--resa.pc-resa-status--confirmee {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(22, 163, 74, 0.3);
+}
+
+.pc-resa-badge--resa.pc-resa-status--en_attente {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
+}
+
+.pc-resa-badge--resa.pc-resa-status--annule,
+.pc-resa-badge--resa.pc-resa-status--annulee {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(239, 68, 68, 0.3);
+}
+
+.pc-resa-badge--resa.pc-resa-status--brouillon {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(107, 114, 128, 0.3);
+}
+
+/* Statuts de paiement */
+.pc-resa-badge--pay.pc-resa-status--paye {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(5, 150, 105, 0.3);
+}
+
+.pc-resa-badge--pay.pc-resa-status--partiel {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.3);
+}
+
+.pc-resa-badge--pay.pc-resa-status--en_attente {
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(234, 88, 12, 0.3);
+}
+
+.pc-resa-badge--pay.pc-resa-status--sur_devis {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(124, 58, 237, 0.3);
+}
+
+.pc-resa-badge--pay.pc-resa-status--rembourse {
+  background: linear-gradient(135deg, #be185d 0%, #9d174d 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(190, 24, 93, 0.3);
+}
+
+.pc-resa-badge--pay.pc-resa-status--expire {
+  background: linear-gradient(135deg, #78716c 0%, #57534e 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(120, 113, 108, 0.3);
+}
+
+/* Statuts de caution */
+.pc-resa-badge--caution.pc-resa-status--empreinte_validee {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.3);
+}
+
+.pc-resa-badge--caution.pc-resa-status--liberee {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3);
+}
+
+.pc-resa-badge--caution.pc-resa-status--encaissee {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(220, 38, 38, 0.3);
+}
+
+/* Source/Origine avec couleurs distinctes */
+.pc-resa-badge--source-airbnb {
+  background: linear-gradient(135deg, #ff5a5f 0%, #e04856 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(255, 90, 95, 0.3);
+}
+
+.pc-resa-badge--source-booking {
+  background: linear-gradient(135deg, #003b95 0%, #002654 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 59, 149, 0.3);
+}
+
+.pc-resa-badge--source-abritel {
+  background: linear-gradient(135deg, #006ce4 0%, #0056b3 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 108, 228, 0.3);
+}
+
+.pc-resa-badge--source-direct {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(22, 163, 74, 0.3);
+}
+
+/* Effet hover sur tous les badges de statut */
+.pc-resa-badge[class*="pc-resa-status--"]:hover,
+.pc-resa-badge[class*="pc-resa-source--"]:hover {
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+/* === FILTRES (COLORÉS ET AVEC RELIEF) === */
+.pc-resa-filters {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin: 0 auto 2.5rem auto;
+  max-width: 1200px;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  border: none;
+  box-shadow:
+    0 10px 25px rgba(102, 126, 234, 0.25),
+    0 4px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.pc-resa-filters::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  z-index: 1;
+}
+
+.pc-resa-filters > * {
+  position: relative;
+  z-index: 2;
+}
+
+.pc-resa-filters__label {
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.pc-resa-filter-btn {
+  display: inline-block;
+  padding: 0.8rem 1.5rem;
+  border-radius: 25px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: #ffffff;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 4px 15px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.pc-resa-filter-btn.is-active {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  border-color: #ff6b6b;
+  color: #ffffff;
+  box-shadow:
+    0 8px 20px rgba(255, 107, 107, 0.4),
+    0 4px 10px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.pc-resa-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.pc-resa-filter-btn.is-active:hover {
+  background: linear-gradient(135deg, #ff5252 0%, #d63031 100%);
+  box-shadow:
+    0 10px 25px rgba(255, 82, 82, 0.5),
+    0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.pc-resa-filters__group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pc-resa-filters__group-label {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.pc-resa-filters select {
+  padding: 0.7rem 1.2rem;
+  border-radius: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 4px 15px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 160px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.pc-resa-filters select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.2),
+    0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.pc-resa-filters select option {
+  background: #667eea;
+  color: #ffffff;
+}
+
+.pc-resa-filter-reset {
+  margin-left: auto;
+  padding: 0.8rem 1.5rem;
+  border-radius: 25px;
+  border: 2px solid #10ac84;
+  background: linear-gradient(135deg, #10ac84 0%, #00d2d3 100%);
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(16, 172, 132, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.pc-resa-filter-reset:hover {
+  background: linear-gradient(135deg, #00d2d3 0%, #0abde3 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 172, 132, 0.4);
+}
+
+/* === TABLE DASHBOARD (MODERNISÉE) === */
+.pc-resa-dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+.pc-resa-dashboard-table thead th {
+  text-align: left;
+  padding: 1.5rem 1.2rem;
+  border-bottom: 3px solid #6366f1;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 4px 6px rgba(99, 102, 241, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.pc-resa-dashboard-table thead th::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #ff6b6b 0%, #ffa726 50%, #66bb6a 100%);
+}
+
+.pc-resa-dashboard-table tbody td {
+  padding: 1.2rem 1.4rem;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: top;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1f2937;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+}
+
+.pc-resa-dashboard-table tbody td:first-child {
+  font-weight: 700;
+  color: #6366f1;
+  font-size: 1.1rem;
+}
+
+.pc-resa-dashboard-table tbody td a {
+  color: #6366f1;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.pc-resa-dashboard-table tbody td a:hover {
+  color: #4f46e5;
+  text-decoration: underline;
+}
+
+.pc-resa-dashboard-table tbody td small {
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+/* === ESPACEMENT DANS LA COLONNE STATUTS === */
+.pc-resa-dashboard-table tbody td .pc-resa-badge {
+  margin-bottom: 0.5rem;
+}
+
+.pc-resa-dashboard-table tbody td .pc-resa-badge:last-child {
+  margin-bottom: 0;
+}
+
+.pc-resa-dashboard-table tbody td br {
+  display: block;
+  margin: 0.25rem 0;
+  content: "";
+}
+
+.pc-resa-dashboard-row-detail td {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-top: 2px solid #e5e7eb;
+}
+
+.pc-resa-dashboard-row-toggle {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pc-resa-dashboard-row-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.pc-resa-dashboard-row-toggle:hover td {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+/* === PAGINATION === */
+.pc-resa-pagination {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.pc-resa-page-btn {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #fff;
+  font-size: 0.85rem;
+  text-decoration: none;
+  color: #333;
+}
+
+.pc-resa-page-btn:hover {
+  background: #f0f0ff;
+}
+
+.pc-resa-page-btn.is-active {
+  background: #4338ca;
+  border-color: #3730a3;
+  color: white;
+}
+
+/* === CARDS DÉTAILS (MODERNISÉES) === */
+.pc-resa-card {
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pc-resa-card:hover {
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.pc-resa-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.pc-resa-card__header h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.pc-resa-card__header p {
+  margin: 0.25rem 0;
+  color: #6b7280;
+}
+
+.pc-resa-card__body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.pc-resa-card__col {
+  min-width: 250px;
+  flex: 1;
+}
+
+.pc-resa-card__col h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.pc-resa-card__section {
+  flex: 1 1 280px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.pc-resa-card__section:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+}
+
+.pc-resa-card__section h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-family: var(--pc-font-title);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.pc-resa-card__section--full {
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
+.pc-resa-card__footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f3f4f6;
+}
+
+/* === HEADER ACTIONS === */
+.pc-resa-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.pc-resa-header-actions .pc-btn {
+  white-space: nowrap;
+}
+
+.pc-resa-actions-more {
+  position: relative;
+}
+
+.pc-resa-actions-menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 220px;
+  padding: 0.25rem 0;
+  margin: 0;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15);
+  display: none;
+  z-index: 9;
+}
+
+.pc-resa-actions-more.is-open .pc-resa-actions-menu {
+  display: block;
+}
+
+.pc-resa-actions-menu li {
+  margin: 0;
+}
+
+.pc-resa-actions-menu__link {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  color: #0f172a;
+}
+
+.pc-resa-actions-menu__link:hover,
+.pc-resa-actions-menu__link:focus-visible {
+  background: #f8fafc;
+  outline: none;
+}
+
+.pc-resa-actions-menu__link[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* === HEADER GRID === */
+.pc-resa-header-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
+  gap: 1.5rem;
+  flex: 1 1 auto;
+}
+
+.pc-resa-header-client-name {
+  font-weight: 600;
+}
+
+.pc-resa-header-col--client h3 {
+  margin-bottom: 0.25rem;
+}
+
+/* === FICHE HEADER === */
+.pc-resa-fiche-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.pc-resa-fiche-header-left,
+.pc-resa-fiche-header-right {
+  font-size: 0.9rem;
+}
+
+.pc-resa-fiche-client {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.pc-resa-fiche-contact {
+  margin: 0;
+  line-height: 1.4;
+  color: #475569;
+}
+
+.pc-resa-fiche-meta {
+  margin: 0;
+  text-align: right;
+  line-height: 1.4;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.pc-resa-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+/* === PAIEMENTS TABLE === */
+.pc-resa-payments-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--pc-text-size);
+}
+
+.pc-resa-payments-table th,
+.pc-resa-payments-table td {
+  padding: 0.4rem 0.4rem;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.pc-resa-payment-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.pc-resa-payment-action {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--pc-color-primary, #0f172a);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.pc-resa-payment-action[disabled] {
+  color: #94a3b8;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.pc-resa-payment-action-placeholder {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+/* === DEVIS === */
+.pc-resa-devis-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pc-resa-devis-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.pc-resa-devis-line-label {
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.pc-resa-devis-line-price {
+  color: #0f172a;
+}
+
+.pc-resa-devis-separator {
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 0.35rem;
+  margin-top: 0.35rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.pc-resa-devis-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #cbd5e1;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* === EXTRA INFOS === */
+.pc-resa-extra {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.pc-resa-extra-col h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.pc-resa-extra-col p {
+  margin: 0.1rem 0;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.pc-resa-section-caution {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #cbd5e1;
+  font-size: 0.85rem;
+}
+
+/* === RESPONSIVE MOBILE === */
+@media (max-width: 768px) {
+  .pc-resa-dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pc-resa-dashboard-header__right {
+    width: 100%;
+  }
+
+  .pc-resa-create-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pc-resa-card__body {
+    flex-direction: column;
+  }
+
+  .pc-resa-dashboard-table thead {
+    display: table-header-group;
+  }
+
+  .pc-resa-extra {
+    grid-template-columns: 1fr;
+  }
+
+  .pc-resa-fiche-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pc-resa-fiche-meta {
+    text-align: left;
+  }
+
+  .pc-resa-header-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pc-resa-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
