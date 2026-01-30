@@ -85,8 +85,8 @@ function pc_dashboard_calendar_shortcode($atts = [])
                 <div class="pc-cal-legend">
                     <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--paye"></span><?php echo esc_html__('Réservé (Soldé)', 'pc-reservation-core'); ?></span>
                     <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--pending"></span><?php echo esc_html__('Réservé (En attente / Acompte)', 'pc-reservation-core'); ?></span>
-                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--manual"></span><?php echo esc_html__('Blocage manuel', 'pc-reservation-core'); ?></span>
-                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--ical"></span><?php echo esc_html__('iCal / import', 'pc-reservation-core'); ?></span>
+                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--manual"></span><?php echo esc_html__('Blocage Manuel', 'pc-reservation-core'); ?></span>
+                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--ical"></span><?php echo esc_html__('iCal / Import', 'pc-reservation-core'); ?></span>
                 </div>
             </div>
             <div class="pc-cal-actions">

@@ -35,16 +35,16 @@
 
       // AJOUT : barre de sélection dans la modale
       this.modalSelectionBarEl = root.querySelector(
-        "[data-pc-cal-modal-selection]"
+        "[data-pc-cal-modal-selection]",
       );
       this.modalSelectionLabelEl = root.querySelector(
-        "[data-pc-cal-modal-selection-label]"
+        "[data-pc-cal-modal-selection-label]",
       );
       this.modalSelectionCreateReservationBtn = root.querySelector(
-        "[data-pc-cal-modal-create-reservation]"
+        "[data-pc-cal-modal-create-reservation]",
       );
       this.modalSelectionCreateBlockBtn = root.querySelector(
-        "[data-pc-cal-modal-create-block]"
+        "[data-pc-cal-modal-create-block]",
       );
 
       this.currentModalLogementId = null;
@@ -62,12 +62,12 @@
 
       this.labelWidth = this.readCssNumber(
         "--pc-cal-label-width",
-        CONFIG.labelWidth
+        CONFIG.labelWidth,
       );
       this.dayWidth = this.readCssNumber("--pc-cal-day-width", CONFIG.dayWidth);
       this.cellHeight = this.readCssNumber(
         "--pc-cal-cell-height",
-        CONFIG.cellHeight
+        CONFIG.cellHeight,
       );
       this.currentRange = null;
       this.logements = [];
@@ -290,7 +290,7 @@
             try {
               window.sessionStorage.setItem(
                 "pc_resa_from_calendar",
-                JSON.stringify(payload)
+                JSON.stringify(payload),
               );
             } catch (e) {
               // eslint-disable-next-line no-console
@@ -304,10 +304,10 @@
               // eslint-disable-next-line no-console
               console.log(
                 "[pc-calendar] missing reservationUrl, payload =",
-                payload
+                payload,
               );
             }
-          }
+          },
         );
       }
 
@@ -338,7 +338,7 @@
       if (!ajaxUrl || !nonce) {
         // eslint-disable-next-line no-console
         console.error(
-          "[pc-calendar] Config AJAX manquante pour la création de blocage manuel"
+          "[pc-calendar] Config AJAX manquante pour la création de blocage manuel",
         );
         return;
       }
@@ -388,7 +388,7 @@
         // eslint-disable-next-line no-console
         console.error(
           "[pc-calendar] Erreur lors de la création du blocage manuel",
-          err
+          err,
         );
         // eslint-disable-next-line no-alert
         alert(err.message || texts.error || "Erreur AJAX.");
@@ -414,7 +414,7 @@
       if (!ajaxUrl || !nonce) {
         // eslint-disable-next-line no-console
         console.error(
-          "[pc-calendar] Config AJAX manquante pour suppression blocage"
+          "[pc-calendar] Config AJAX manquante pour suppression blocage",
         );
         return;
       }
@@ -485,7 +485,7 @@
         ) {
           const logement = this.logements.find(
             (lg) =>
-              parseInt(lg.id, 10) === parseInt(this.currentModalLogementId, 10)
+              parseInt(lg.id, 10) === parseInt(this.currentModalLogementId, 10),
           );
           if (logement) {
             this.buildModalCalendar(logement);
@@ -546,7 +546,7 @@
 
       const dates = this.buildDateArray(
         this.currentRange.start,
-        this.currentRange.extendedEnd
+        this.currentRange.extendedEnd,
       );
       this.dates = dates;
       this.dateIndex = new Map(dates.map((d, idx) => [d, idx]));
@@ -589,10 +589,10 @@
         }
         cell.innerHTML = `
     <span class="pc-cal-header-cell__month">${this.formatMonthShort(
-      dateObj
+      dateObj,
     )}</span>
     <span class="pc-cal-header-cell__dow">${this.formatDayOfWeek(
-      dateObj
+      dateObj,
     )}</span>
     <span class="pc-cal-header-cell__day">${this.formatDay(dateObj)}</span>
 `;
@@ -662,7 +662,7 @@
         return;
       }
       const events = this.events.filter(
-        (evt) => parseInt(evt.logement_id, 10) === parseInt(logementId, 10)
+        (evt) => parseInt(evt.logement_id, 10) === parseInt(logementId, 10),
       );
       events.forEach((evt) => {
         const startIdx = this.computeIndexForDate(evt.start_date, true);
@@ -686,12 +686,18 @@
         const source = evt.source || "reservation";
         let sourceClass = source;
 
-        // Logique couleur réservation : Vert si payé, Orange sinon
+        // Logique couleur réservation : tous les statuts paiement reconnus
         if (source === "reservation") {
-          if (evt.payment_status === "paye") {
-            sourceClass = "paye";
+          const paymentStatus = evt.payment_status || "";
+
+          if (paymentStatus === "paye") {
+            sourceClass = "paye"; // Vert foncé - Soldé complet
+          } else if (paymentStatus === "partiel") {
+            sourceClass = "partiel"; // Bleu - Paiement partiel/acompte
+          } else if (paymentStatus === "en_attente_paiement") {
+            sourceClass = "pending"; // Orange-rouge - En attente
           } else {
-            sourceClass = "pending"; // Englobe 'en_attente_paiement', 'acompte_paye', 'non_paye'
+            sourceClass = "pending"; // Orange par défaut pour autres cas
           }
         }
 
@@ -736,7 +742,7 @@
 
     openModal(logementId) {
       const logement = this.logements.find(
-        (lg) => parseInt(lg.id, 10) === parseInt(logementId, 10)
+        (lg) => parseInt(lg.id, 10) === parseInt(logementId, 10),
       );
       if (!logement || !this.modalEl) {
         return;
@@ -810,7 +816,7 @@
       const busyDates = this.collectBusyDates(
         logement.id,
         this.currentRange.start,
-        this.currentRange.extendedEnd
+        this.currentRange.extendedEnd,
       );
 
       // 🔹 Timeline linéaire : 1 colonne = 1 jour sur toute la période
@@ -859,7 +865,7 @@
     collectBusyDates(logementId, start, end) {
       const busy = new Set();
       const events = this.events.filter(
-        (evt) => parseInt(evt.logement_id, 10) === parseInt(logementId, 10)
+        (evt) => parseInt(evt.logement_id, 10) === parseInt(logementId, 10),
       );
       const monthStart = this.parseDate(start);
       const monthEnd = this.parseDate(end);
@@ -896,7 +902,7 @@
 
       // Filtrer les événements du logement
       const events = (this.events || []).filter(
-        (evt) => parseInt(evt.logement_id, 10) === parseInt(logementId, 10)
+        (evt) => parseInt(evt.logement_id, 10) === parseInt(logementId, 10),
       );
       if (!events.length) {
         return;
@@ -923,10 +929,10 @@
         const endIso = this.toISO(clampedEnd);
 
         const startCell = this.modalGridEl.querySelector(
-          `.pc-cal-modal__cell[data-date="${startIso}"]`
+          `.pc-cal-modal__cell[data-date="${startIso}"]`,
         );
         const endCell = this.modalGridEl.querySelector(
-          `.pc-cal-modal__cell[data-date="${endIso}"]`
+          `.pc-cal-modal__cell[data-date="${endIso}"]`,
         );
 
         if (!startCell || !endCell) {
@@ -953,11 +959,18 @@
         const source = evt.source || "reservation";
         let sourceClass = source;
 
+        // Logique couleur réservation : tous les statuts paiement reconnus (même que grille principale)
         if (source === "reservation") {
-          if (evt.payment_status === "paye") {
-            sourceClass = "paye";
+          const paymentStatus = evt.payment_status || "";
+
+          if (paymentStatus === "paye") {
+            sourceClass = "paye"; // Vert foncé - Soldé complet
+          } else if (paymentStatus === "partiel") {
+            sourceClass = "partiel"; // Bleu - Paiement partiel/acompte
+          } else if (paymentStatus === "en_attente_paiement") {
+            sourceClass = "pending"; // Orange-rouge - En attente
           } else {
-            sourceClass = "pending";
+            sourceClass = "pending"; // Orange par défaut pour autres cas
           }
         }
 
@@ -1158,7 +1171,7 @@
         start === end
           ? `Jour sélectionné : ${formatter.format(startDate)}`
           : `Période sélectionnée : ${formatter.format(
-              startDate
+              startDate,
             )} → ${formatter.format(endDate)}`;
 
       this.modalSelectionLabelEl.textContent = labelText;
@@ -1176,7 +1189,7 @@
       const startDate = this.parseDate(this.currentRange.start);
       const endDate = this.parseDate(this.currentRange.extendedEnd);
       this.periodEl.textContent = `${formatter.format(
-        startDate
+        startDate,
       )} → ${formatter.format(endDate)}`;
     }
 
@@ -1230,8 +1243,8 @@
         Date.UTC(
           parseInt(parts[0], 10),
           parseInt(parts[1], 10) - 1,
-          parseInt(parts[2], 10)
-        )
+          parseInt(parts[2], 10),
+        ),
       );
     }
 
@@ -1267,7 +1280,7 @@
 
     readCssNumber(varName, fallback) {
       const value = getComputedStyle(document.documentElement).getPropertyValue(
-        varName
+        varName,
       );
       const parsed = parseFloat(value);
       if (Number.isNaN(parsed)) {
