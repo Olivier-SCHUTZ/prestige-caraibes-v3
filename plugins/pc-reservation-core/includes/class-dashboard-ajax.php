@@ -27,6 +27,9 @@ class PCR_Dashboard_Ajax
         // AJOUT : Nouvelle action pour confirmer une réservation
         add_action('wp_ajax_pc_confirm_reservation', [__CLASS__, 'ajax_confirm_reservation']);
         add_action('wp_ajax_pc_send_message', [__CLASS__, 'ajax_send_message']);
+
+        // NOUVELLE API : Liste des documents hybride
+        add_action('wp_ajax_pc_get_documents_templates', [__CLASS__, 'ajax_get_documents_templates']);
     }
 
     public static function handle_manual_reservation()
@@ -1025,5 +1028,175 @@ class PCR_Dashboard_Ajax
         }
 
         wp_send_json_success(['message' => 'Message envoyé avec succès.']);
+    }
+
+    /**
+     * ✨ **NOUVELLE API HYBRIDE** : Récupère la liste des documents disponibles
+     * selon votre cahier des charges - Documents Natifs + Documents Personnalisés
+     */
+    public static function ajax_get_documents_templates()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Récupération données réservation
+        $reservation_id = isset($_POST['reservation_id']) ? (int) $_POST['reservation_id'] : 0;
+        if ($reservation_id <= 0) {
+            wp_send_json_error(['message' => 'ID Réservation manquant.']);
+        }
+
+        // Récupérer la réservation pour connaître le type
+        if (!class_exists('PCR_Reservation')) {
+            wp_send_json_error(['message' => 'Core Réservation manquant.']);
+        }
+
+        $resa = PCR_Reservation::get_by_id($reservation_id);
+        if (!$resa) {
+            wp_send_json_error(['message' => 'Réservation introuvable.']);
+        }
+
+        $reservation_type = $resa->type ?? 'location'; // 'location' ou 'experience'
+
+        // 3. **GROUPE A : Documents Natifs (Hardcodés)**
+        $documents_natifs = [];
+
+        // Toujours visibles
+        $documents_natifs[] = [
+            'id' => 'native_devis',
+            'type' => 'devis',
+            'label' => '📄 Devis commercial',
+            'description' => 'Document natif - Devis pour la réservation',
+            'group' => 'native'
+        ];
+
+        $documents_natifs[] = [
+            'id' => 'native_facture',
+            'type' => 'facture',
+            'label' => '🧾 Facture (Solde/Totale)',
+            'description' => 'Document natif - Facture principale',
+            'group' => 'native'
+        ];
+
+        $documents_natifs[] = [
+            'id' => 'native_facture_acompte',
+            'type' => 'facture_acompte',
+            'label' => '💰 Facture d\'Acompte',
+            'description' => 'Document natif - Facture d\'acompte',
+            'group' => 'native'
+        ];
+
+        // Conditionnels selon le type
+        if (in_array($reservation_type, ['location', 'mixte'])) {
+            $documents_natifs[] = [
+                'id' => 'native_contrat',
+                'type' => 'contrat',
+                'label' => '📋 Contrat de Location',
+                'description' => 'Document natif - Contrat pour logements',
+                'group' => 'native'
+            ];
+        }
+
+        if (in_array($reservation_type, ['experience', 'mixte'])) {
+            $documents_natifs[] = [
+                'id' => 'native_voucher',
+                'type' => 'voucher',
+                'label' => '🎫 Voucher / Bon d\'échange',
+                'description' => 'Document natif - Voucher pour expériences',
+                'group' => 'native'
+            ];
+        }
+
+        // Note: L'avoir est géré automatiquement et caché de la création manuelle
+
+        // 4. **GROUPE B : Documents Personnalisés (BDD)**
+        $documents_personnalises = [];
+
+        $templates_args = [
+            'post_type' => 'pc_pdf_template',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'orderby' => 'menu_order',
+            'order' => 'ASC',
+        ];
+
+        $templates = get_posts($templates_args);
+
+        foreach ($templates as $template) {
+            $model_context = get_field('pc_model_context', $template->ID) ?: 'global';
+
+            // Filtrage selon le contexte
+            $show_template = false;
+            if ($model_context === 'global') {
+                $show_template = true; // Toujours visible
+            } elseif ($model_context === 'location' && $reservation_type === 'location') {
+                $show_template = true;
+            } elseif ($model_context === 'experience' && $reservation_type === 'experience') {
+                $show_template = true;
+            }
+
+            if ($show_template) {
+                $doc_type = get_field('pc_doc_type', $template->ID) ?: 'document';
+
+                // Icône selon le type
+                $icon = '📄';
+                switch ($doc_type) {
+                    case 'devis':
+                        $icon = '📄';
+                        break;
+                    case 'facture':
+                        $icon = '🧾';
+                        break;
+                    case 'facture_acompte':
+                        $icon = '💰';
+                        break;
+                    case 'avoir':
+                        $icon = '↩️';
+                        break;
+                    case 'contrat':
+                        $icon = '📋';
+                        break;
+                    case 'voucher':
+                        $icon = '🎫';
+                        break;
+                    default:
+                        $icon = '📄';
+                        break;
+                }
+
+                $documents_personnalises[] = [
+                    'id' => 'template_' . $template->ID,
+                    'template_id' => $template->ID,
+                    'type' => $doc_type,
+                    'label' => $icon . ' ' . $template->post_title,
+                    'description' => 'Modèle personnalisé - ' . ($template->post_excerpt ?: 'Document personnalisé'),
+                    'group' => 'custom',
+                    'context' => $model_context
+                ];
+            }
+        }
+
+        // 5. Construction de la réponse finale
+        $response = [
+            'reservation_id' => $reservation_id,
+            'reservation_type' => $reservation_type,
+            'documents' => [
+                'native' => [
+                    'label' => '🏠 Documents Natifs',
+                    'description' => 'Documents intégrés au système, toujours disponibles',
+                    'items' => $documents_natifs
+                ],
+                'custom' => [
+                    'label' => '🎨 Modèles Personnalisés',
+                    'description' => 'Documents créés dans PC Réservation > Modèles PDF',
+                    'items' => $documents_personnalises
+                ]
+            ],
+            'total_count' => count($documents_natifs) + count($documents_personnalises)
+        ];
+
+        wp_send_json_success($response);
     }
 }

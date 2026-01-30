@@ -28,7 +28,13 @@ class PCR_Documents
     public static function register_cpt()
     {
         register_post_type('pc_pdf_template', [
-            'labels' => ['name' => 'Modèles PDF', 'singular_name' => 'Modèle PDF'],
+            'labels' => [
+                'name' => 'Modèles PDF',
+                'singular_name' => 'Modèle PDF',
+                'menu_name' => 'Modèles PDF',
+                'add_new_item' => 'Nouveau Modèle PDF',
+                'edit_item' => 'Modifier le Modèle PDF',
+            ],
             'public' => false,
             'show_ui' => true,
             'show_in_menu' => 'pc-reservation-settings',
@@ -68,32 +74,43 @@ class PCR_Documents
 
         acf_add_local_field_group([
             'key' => 'group_pc_pdf_config',
-            'title' => 'Paramètres du Document',
+            'title' => 'Paramètres du Modèle',
             'fields' => [
+                // SUPPRESSION DU CHAMP "TYPE DE DOCUMENT" (Inutile car géré en natif)
+
                 [
-                    'key' => 'field_pc_doc_type',
-                    'label' => 'Type de document',
-                    'name' => 'pc_doc_type',
+                    'key' => 'field_pc_model_context',
+                    'label' => 'Contexte d\'affichage',
+                    'name' => 'pc_model_context',
                     'type' => 'select',
+                    'instructions' => 'Définit pour quel type de réservation ce modèle sera proposé.',
                     'choices' => [
-                        'devis'   => 'Devis',
-                        'facture' => 'Facture (Solde / Totale)',
-                        'facture_acompte' => 'Facture d\'Acompte',
-                        'avoir'   => 'Avoir (Note de crédit)',
-                        'contrat' => 'Contrat de Location',
-                        'voucher' => 'Voucher / Bon d\'échange'
+                        'global' => 'Afficher pour tout (Défaut)',
+                        'location' => 'Réservations de type \'logement\' uniquement',
+                        'experience' => 'Réservations de type \'experience\' uniquement',
                     ],
+                    'default_value' => 'global',
+                    'ui' => 1,
                 ],
                 [
                     'key' => 'field_pc_linked_cgv',
-                    'label' => 'Joindre les CGV ?',
+                    'label' => 'Joindre les CGV ? (OPTIONNEL)',
                     'name' => 'pc_linked_cgv',
+                    // On passe en WYSIWYG pour permettre une édition directe si besoin, 
+                    // ou on garde Select si tu veux lier aux CGV globales. 
+                    // Vu ta demande précédente, restons simple :
+                    'type' => 'message',
+                    'message' => 'Ce document est un modèle libre. Les CGV automatiques (Location/Expérience) ne seront pas ajoutées automatiquement, sauf si vous les copiez-collez dans l\'éditeur principal ci-dessus.',
+                    // Si tu préfères garder la possibilité de forcer une CGV spécifique :
+                    /*
                     'type' => 'select',
-                    'instructions' => 'Sélectionnez une version définie dans PC Réservation > Documents & Légal.',
-                    'choices' => [],
+                    'choices' => [
+                        'cgv_location' => 'CGV Location/Logement',
+                        'cgv_experience' => 'CGV Expériences/Activités',
+                        'cgv_sejour' => 'CGV Organisation Séjour',
+                    ],
                     'allow_null' => 1,
-                    'ui' => 1,
-                    'ajax' => 0,
+                    */
                 ],
             ],
             'location' => [[['param' => 'post_type', 'operator' => '==', 'value' => 'pc_pdf_template']]]
@@ -117,28 +134,53 @@ class PCR_Documents
 
     // --- MOTEUR DE GÉNÉRATION ---
 
-    public static function generate($template_id, $reservation_id, $force_regenerate = false)
+    /**
+     * ✨ **NOUVEAU MOTEUR HYBRIDE** : Génère un document (Natif ou Personnalisé)
+     * 
+     * @param int|string $template_id - ID du template personnalisé OU type natif (ex: 'native_devis')
+     * @param int $reservation_id - ID de la réservation
+     * @param bool $force_regenerate - Forcer la régénération
+     */
+    /**
+     * ✨ MOTEUR HYBRIDE CORRIGÉ : Gère native_xxx, template_xxx et les IDs simples.
+     */
+    public static function generate($template_id_input, $reservation_id, $force_regenerate = false)
     {
         if (!class_exists('\Dompdf\Dompdf')) return ['success' => false, 'message' => 'Moteur Dompdf manquant.'];
 
         $resa = PCR_Reservation::get_by_id($reservation_id);
         if (!$resa) return ['success' => false, 'message' => 'Réservation introuvable.'];
 
-        $type_doc = get_field('pc_doc_type', $template_id) ?: 'document';
+        // --- 1. DÉTECTION & NETTOYAGE INTELLIGENT ---
+        $template_id = 0;       // L'ID numérique (pour get_post)
+        $type_doc = 'document'; // Le type (pour le routing)
+
+        if (is_string($template_id_input) && strpos($template_id_input, 'native_') === 0) {
+            // CAS 1 : Document NATIF (ex: "native_devis")
+            $type_doc = str_replace('native_', '', $template_id_input);
+            $template_id = 0;
+        } elseif (is_string($template_id_input) && strpos($template_id_input, 'template_') === 0) {
+            // CAS 2 : Document CUSTOM (ex: "template_7170")
+            // C'est ici que ça bloquait : on nettoie le préfixe pour récupérer l'ID entier.
+            $template_id = (int) str_replace('template_', '', $template_id_input);
+            $type_doc = 'document'; // Par défaut pour les customs
+        } else {
+            // CAS 3 : ID Direct (Legacy)
+            $template_id = (int) $template_id_input;
+            if ($template_id > 0) {
+                // On garde l'ancien comportement si un type était défini via ACF
+                $type_doc = get_field('pc_doc_type', $template_id) ?: 'document';
+            }
+        }
 
         // =================================================================
-        // RÈGLE 1 : BLOCAGE FACTURE FINALE SI ACOMPTE PRÉVU MAIS PAS FACTURÉ
+        // RÈGLE : BLOCAGE FACTURE FINALE SI ACOMPTE NON GÉNÉRÉ
         // =================================================================
         if ($type_doc === 'facture') {
-            // On vérifie la donnée RÉELLE stockée dans la réservation
-            // Si montant_acompte > 0, cela signifie qu'un acompte était exigé.
             $acompte_prevu = (float) ($resa->montant_acompte ?? 0);
-
             if ($acompte_prevu > 0) {
                 global $wpdb;
                 $table_doc = $wpdb->prefix . 'pc_documents';
-
-                // On vérifie si la facture d'acompte a été générée
                 $has_acompte = $wpdb->get_var($wpdb->prepare(
                     "SELECT id FROM {$table_doc} WHERE reservation_id = %d AND type_doc = 'facture_acompte'",
                     $reservation_id
@@ -147,24 +189,27 @@ class PCR_Documents
                 if (!$has_acompte) {
                     return [
                         'success' => false,
-                        'error_code' => 'missing_deposit', // Déclenche la Popup rouge
-                        'message' => 'BLOQUÉ : Cette réservation prévoit un acompte de ' . number_format($acompte_prevu, 2, ',', ' ') . '€. Vous devez générer la "Facture d\'Acompte" avant de faire le solde.'
+                        'error_code' => 'missing_deposit',
+                        'message' => 'BLOQUÉ : Vous devez générer la "Facture d\'Acompte" avant le Solde.'
                     ];
                 }
             }
-            // SINON (si acompte = 0), c'est un paiement total direct, on laisse passer pour faire la facture totale.
         }
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'pc_documents';
 
-        $existing = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$table_name} WHERE reservation_id = %d AND type_doc = %s LIMIT 1",
-            $reservation_id,
-            $type_doc
-        ));
+        // Vérification existence (sauf pour les docs customs qui peuvent être multiples)
+        $existing = null;
+        if ($type_doc !== 'document') {
+            $existing = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$table_name} WHERE reservation_id = %d AND type_doc = %s LIMIT 1",
+                $reservation_id,
+                $type_doc
+            ));
+        }
 
-        // RÈGLE 2 : SMART REGEN (ARCHIVAGE + AVOIR AUTO)
+        // SMART REGEN (Archivage)
         if ($existing && $force_regenerate && in_array($type_doc, ['facture', 'facture_acompte'])) {
             self::generate_auto_credit_note($existing, $resa);
             $archived_type = $type_doc . '_archived_' . time();
@@ -172,39 +217,30 @@ class PCR_Documents
             $existing = null;
         }
 
-        // RÈGLE 3 : EMPÊCHER LA GÉNÉRATION SI EXISTE DÉJÀ (SANS FORCE)
+        // Check doublon
         if ($existing && !$force_regenerate && in_array($type_doc, ['facture', 'facture_acompte', 'avoir'])) {
             return [
                 'success' => false,
                 'error_code' => 'document_exists',
-                'message' => 'Un document comptable existe déjà. Vous devez cocher "Forcer régénération" pour l\'annuler (Avoir) et en créer un nouveau.'
+                'message' => 'Ce document existe déjà.'
             ];
         }
 
-        // --- 1. GESTION DU NUMÉRO (FORCE POUR CONTRAT) ---
-        // On force une référence fixe pour Contrat/Voucher pour éviter de "manger" un numéro de facture
+        // --- GESTION DES NUMÉROS ---
         if ($type_doc === 'contrat') {
             $doc_number = 'CONTRAT-RESA-' . $reservation_id;
         } elseif ($type_doc === 'voucher') {
             $doc_number = 'VOUCHER-RESA-' . $reservation_id;
         } elseif ($existing) {
             $doc_number = $existing->numero_doc;
+        } elseif ($type_doc === 'document') {
+            // Numérotation pour les docs libres : DOC-202X-ID
+            $doc_number = 'DOC-' . date('Y') . '-' . $reservation_id . '-' . ($template_id > 0 ? $template_id : time());
         } else {
             $doc_number = self::generate_next_number($type_doc);
         }
 
-        // --- 2. NOM DU FICHIER (FORCE POUR CONTRAT) ---
-        // On définit le nom ici pour qu'il soit personnalisé
-        if ($type_doc === 'contrat') {
-            $nom_client = sanitize_file_name($resa->nom . ' ' . $resa->prenom);
-            $item_title = get_the_title($resa->item_id);
-            $nom_logement = sanitize_file_name($item_title);
-            $filename = "Contrat de location {$nom_client}, {$nom_logement}.pdf";
-        } else {
-            $filename = sanitize_file_name($doc_number) . '.pdf';
-        }
-
-        // --- 3. AIGUILLAGE DU RENDU (Routing) ---
+        // --- ROUTING (Aiguillage) ---
         $html_content = '';
 
         if (in_array($type_doc, ['facture', 'devis', 'avoir'])) {
@@ -216,10 +252,12 @@ class PCR_Documents
         } elseif ($type_doc === 'contrat') {
             $html_content = self::render_contract($resa, $doc_number, $template_id);
         } else {
-            $html_content = "Type de document non supporté : " . $type_doc;
+            // DOC PERSONNALISÉ (Le cas qui plantait avant)
+            // Maintenant $template_id est bien un entier (ex: 7170)
+            $html_content = self::render_custom_document($resa, $doc_number, $template_id);
         }
 
-        // --- 3. GÉNÉRATION PDF ---
+        // --- GÉNÉRATION PDF ---
         $options = new Options();
         $options->set('isRemoteEnabled', true);
         $options->set('defaultFont', 'Helvetica');
@@ -230,7 +268,7 @@ class PCR_Documents
         $dompdf->render();
         $output = $dompdf->output();
 
-        // --- 4. SAUVEGARDE & NOMMAGE ---
+        // --- SAUVEGARDE ---
         $upload_dir = wp_upload_dir();
         $rel_path   = '/pc-reservation/documents/' . $reservation_id;
         $abs_path   = $upload_dir['basedir'] . $rel_path;
@@ -238,15 +276,18 @@ class PCR_Documents
 
         if (!file_exists($abs_path)) mkdir($abs_path, 0755, true);
 
-        // Nommage spécifique pour le Contrat
         if ($type_doc === 'contrat') {
             $nom_client = sanitize_file_name($resa->nom . ' ' . $resa->prenom);
             $nom_logement = sanitize_file_name(get_the_title($resa->item_id));
             $filename = "Contrat de location {$nom_client}, {$nom_logement}.pdf";
+        } elseif ($type_doc === 'document') {
+            // Nommage propre pour les modèles perso
+            $template_title = ($template_id > 0) ? get_the_title($template_id) : 'Document';
+            $filename = sanitize_file_name($template_title . '-' . $resa->id) . '.pdf';
         } else {
-            // Nommage standard pour les factures (Basé sur le numéro)
             $filename = sanitize_file_name($doc_number) . '.pdf';
         }
+
         $file_full_path = $abs_path . '/' . $filename;
         $file_url       = $url_path . '/' . $filename;
 
@@ -482,6 +523,145 @@ class PCR_Documents
         ";
     }
 
+    // --- RENDU : DOCUMENT PERSONNALISÉ (Contenu libre + Variables Simples) ---
+    private static function render_custom_document($resa, $doc_number, $template_id)
+    {
+        // 1. Récupération du contenu
+        $post = get_post($template_id);
+        if (!$post) return "Erreur : Modèle introuvable (ID $template_id)";
+
+        // 2. Calculs Financiers & Durée
+        $fin = self::get_financial_data($resa);
+
+        $ts_arr = strtotime($resa->date_arrivee);
+        $ts_dep = strtotime($resa->date_depart);
+        $duree  = ceil(($ts_dep - $ts_arr) / 86400);
+
+        // Construction adresse
+        $adresse_client = trim(($resa->adresse ?? '') . ' ' . ($resa->code_postal ?? '') . ' ' . ($resa->ville ?? ''));
+        if (empty($adresse_client)) $adresse_client = "Adresse non renseignée";
+
+        // 3. Définition des Variables
+        $variables = [
+            // Client
+            '{prenom_client}' => $resa->prenom,
+            '{nom_client}'    => strtoupper($resa->nom),
+            '{email_client}'  => $resa->email,
+            '{telephone}'     => $resa->telephone,
+            '{adresse_client}' => $adresse_client,
+
+            // Séjour
+            '{date_arrivee}'  => date_i18n('d/m/Y', $ts_arr),
+            '{date_depart}'   => date_i18n('d/m/Y', $ts_dep),
+            '{duree_sejour}'  => $duree . ' nuit(s)',
+            '{logement}'      => get_the_title($resa->item_id),
+            '{numero_resa}'   => $resa->id,
+
+            // Finances (Montants seuls)
+            '{montant_total}' => number_format($fin['total_ttc'], 2, ',', ' ') . ' €',
+            '{acompte_paye}'  => number_format($fin['deja_paye'], 2, ',', ' ') . ' €',
+            '{solde_restant}' => number_format($fin['reste_a_payer'], 2, ',', ' ') . ' €',
+        ];
+
+        // 4. Remplacement
+        $content = wpautop($post->post_content);
+        $content = str_replace(array_keys($variables), array_values($variables), $content);
+
+        // 5. Branding
+        $logo_url = get_field('pc_pdf_logo', 'option');
+        $logo = self::get_image_base64($logo_url);
+        $color = get_field('pc_pdf_primary_color', 'option') ?: '#000000';
+        $company = [
+            'name'    => get_field('pc_legal_name', 'option'),
+            'siret'   => get_field('pc_legal_siret', 'option'),
+            'address' => get_field('pc_legal_address', 'option'),
+            'email'   => get_field('pc_legal_email', 'option'),
+        ];
+
+        ob_start();
+?>
+        <!DOCTYPE html>
+        <html>
+
+        <head>
+            <meta charset="UTF-8">
+            <?php echo self::get_common_css($color); ?>
+            <style>
+                .custom-content {
+                    font-size: 12px;
+                    line-height: 1.6;
+                    color: #333;
+                    margin-top: 20px;
+                }
+
+                .custom-content h1,
+                .custom-content h2 {
+                    color: <?php echo $color; ?>;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 5px;
+                    margin-top: 20px;
+                }
+            </style>
+        </head>
+
+        <body>
+            <div class="header">
+                <div class="left">
+                    <?php if ($logo): ?><img src="<?php echo $logo; ?>" class="logo"><?php else: ?><h2><?php echo $company['name']; ?></h2><?php endif; ?>
+                </div>
+                <div class="right doc-info">
+                    <div class="doc-type"><?php echo strtoupper($post->post_title); ?></div>
+                    <div class="doc-meta">
+                        <strong>N° :</strong> <?php echo $doc_number; ?><br>
+                        <strong>Date :</strong> <?php echo date_i18n('d/m/Y'); ?><br>
+                        <strong>Réf :</strong> #<?php echo $resa->id; ?>
+                    </div>
+                </div>
+                <div class="clear"></div>
+            </div>
+
+            <div class="addresses">
+                <div class="addr-box">
+                    <strong><?php echo $company['name']; ?></strong><br>
+                    <?php echo nl2br($company['address']); ?>
+                </div>
+                <div class="addr-box client">
+                    <strong>À l'attention de :</strong><br>
+                    <?php echo $resa->prenom . ' ' . strtoupper($resa->nom); ?><br>
+                    <?php if (!empty($adresse_client) && $adresse_client !== "Adresse non renseignée") echo $adresse_client . '<br>'; ?>
+                    <?php echo $resa->email; ?><br>
+                    <?php echo $resa->telephone; ?>
+                </div>
+                <div class="clear"></div>
+            </div>
+
+            <div class="custom-content">
+                <?php echo $content; ?>
+            </div>
+
+            <div class="footer">
+                <?php echo $company['name']; ?> - SIRET : <?php echo $company['siret']; ?> - <?php echo $company['email']; ?>
+            </div>
+
+            <?php
+            // INJECTION CGV (SI LIÉES DANS L'ADMIN)
+            $custom_cgv_content = '';
+            if (!empty($template_id) && is_numeric($template_id)) {
+                $custom_cgv_content = get_field('pc_linked_cgv', $template_id);
+            }
+            if (!empty($custom_cgv_content)) {
+                echo '<div style="page-break-before: always;"></div>';
+                echo '<h3 class="uppercase" style="border-bottom:1px solid #ccc; padding-bottom:5px; margin-bottom:15px;">Conditions Générales</h3>';
+                echo '<div style="font-size:10px; text-align:justify; color:#444;">' . wpautop($custom_cgv_content) . '</div>';
+            }
+            ?>
+        </body>
+
+        </html>
+    <?php
+        return ob_get_clean();
+    }
+
     // --- RENDUS ---
 
     private static function render_financial_document($resa, $doc_number, $type_doc, $template_id)
@@ -509,7 +689,7 @@ class PCR_Documents
         $date_label = ($type_doc === 'devis') ? "Date d'émission" : "Date de facture";
 
         ob_start();
-?>
+    ?>
         <!DOCTYPE html>
         <html>
 
@@ -647,31 +827,37 @@ class PCR_Documents
             </div>
 
             <?php
-            $cgv_selected_title = '';
-            if (in_array($type_doc, ['facture', 'devis', 'avoir'])) {
-                if ($resa->type === 'location') {
-                    $cgv_selected_title = get_field('pc_cgv_default_location', 'option');
-                } elseif ($resa->type === 'experience') {
-                    $cgv_selected_title = get_field('pc_cgv_default_experience', 'option');
+            $cgv_content = '';
+
+            // 1. Détection automatique selon le type de réservation
+            // On cible les documents financiers (Devis, Factures, Avoirs)
+            if (in_array($type_doc, ['facture', 'devis', 'avoir', 'facture_acompte'])) {
+                if (isset($resa->type) && $resa->type === 'location') {
+                    $cgv_content = get_field('cgv_location', 'option');
+                } elseif (isset($resa->type) && $resa->type === 'experience') {
+                    $cgv_content = get_field('cgv_experience', 'option');
+                } else {
+                    // Cas "Mixte" ou "Organisation de séjour"
+                    $cgv_content = get_field('cgv_sejour', 'option');
                 }
-            }
-            if (empty($cgv_selected_title)) {
-                $cgv_selected_title = get_field('pc_linked_cgv', $template_id);
             }
 
-            if ($cgv_selected_title && have_rows('pc_pdf_cgv_library', 'option')) {
-                while (have_rows('pc_pdf_cgv_library', 'option')) {
-                    the_row();
-                    if (get_sub_field('cgv_title') === $cgv_selected_title) {
-                        $cgv_content = get_sub_field('cgv_content');
-                        echo '<div style="page-break-before: always;"></div>';
-                        echo '<div style="position: relative; padding-top: 0px; padding-bottom: 50px;">';
-                        echo '<h3 class="uppercase" style="border-bottom:1px solid #ccc; padding-bottom:5px; margin-bottom:15px;">Conditions Générales (' . $cgv_selected_title . ')</h3>';
-                        echo '<div style="font-size:10px; text-align:justify; color:#444;">' . wpautop($cgv_content) . '</div>';
-                        echo '</div>';
-                        break;
-                    }
+            // 2. Fallback : Si c'est un modèle personnalisé (ID numérique) qui force une CGV spécifique
+            // On vérifie que ce n'est pas un template natif (ex: 'native_devis')
+            if (!empty($template_id) && is_numeric($template_id) && $template_id > 0) {
+                $custom_cgv = get_field('pc_linked_cgv', $template_id);
+                if (!empty($custom_cgv)) {
+                    $cgv_content = $custom_cgv;
                 }
+            }
+
+            // 3. Affichage du bloc CGV
+            if (!empty($cgv_content)) {
+                echo '<div style="page-break-before: always;"></div>';
+                echo '<div style="position: relative; padding-top: 0px; padding-bottom: 50px;">';
+                echo '<h3 class="uppercase" style="border-bottom:1px solid #ccc; padding-bottom:5px; margin-bottom:15px;">Conditions Générales de Vente</h3>';
+                echo '<div style="font-size:10px; text-align:justify; color:#444;">' . wpautop($cgv_content) . '</div>';
+                echo '</div>';
             }
             ?>
         </body>
@@ -852,38 +1038,33 @@ class PCR_Documents
             </div>
 
             <?php
-            $cgv_selected_title = '';
+            $cgv_content = '';
 
-            // 1. Logique Automatique
-            if ($resa->type === 'location') {
-                $cgv_selected_title = get_field('pc_cgv_default_location', 'option');
-            } elseif ($resa->type === 'experience') {
-                $cgv_selected_title = get_field('pc_cgv_default_experience', 'option');
+            // 1. Détection automatique selon le type de réservation
+            if (isset($resa->type) && $resa->type === 'location') {
+                $cgv_content = get_field('cgv_location', 'option');
+            } elseif (isset($resa->type) && $resa->type === 'experience') {
+                $cgv_content = get_field('cgv_experience', 'option');
+            } else {
+                // Cas "Mixte" ou "Organisation de séjour"
+                $cgv_content = get_field('cgv_sejour', 'option');
             }
 
-            // 2. Fallback manuel
-            if (empty($cgv_selected_title)) {
-                $cgv_selected_title = get_field('pc_linked_cgv', $template_id);
-            }
-
-            if ($cgv_selected_title && have_rows('pc_pdf_cgv_library', 'option')) {
-                while (have_rows('pc_pdf_cgv_library', 'option')) {
-                    the_row();
-                    if (get_sub_field('cgv_title') === $cgv_selected_title) {
-                        $cgv_content = get_sub_field('cgv_content');
-
-                        // Saut de page
-                        echo '<div style="page-break-before: always;"></div>';
-
-                        // Affichage propre (Padding 0px)
-                        echo '<div style="position: relative; padding-top: 0px; padding-bottom: 50px;">';
-                        echo '<h3 class="uppercase" style="border-bottom:1px solid #ccc; padding-bottom:5px; margin-bottom:15px;">Conditions Générales (' . $cgv_selected_title . ')</h3>';
-                        echo '<div style="font-size:10px; text-align:justify; color:#444;">' . wpautop($cgv_content) . '</div>';
-                        echo '</div>';
-
-                        break;
-                    }
+            // 2. Fallback : Si c'est un modèle personnalisé (ID numérique) qui force une CGV spécifique
+            if (!empty($template_id) && is_numeric($template_id) && $template_id > 0) {
+                $custom_cgv = get_field('pc_linked_cgv', $template_id);
+                if (!empty($custom_cgv)) {
+                    $cgv_content = $custom_cgv;
                 }
+            }
+
+            // 3. Affichage du bloc CGV
+            if (!empty($cgv_content)) {
+                echo '<div style="page-break-before: always;"></div>';
+                echo '<div style="position: relative; padding-top: 0px; padding-bottom: 50px;">';
+                echo '<h3 class="uppercase" style="border-bottom:1px solid #ccc; padding-bottom:5px; margin-bottom:15px;">Conditions Générales de Vente</h3>';
+                echo '<div style="font-size:10px; text-align:justify; color:#444;">' . wpautop($cgv_content) . '</div>';
+                echo '</div>';
             }
             ?>
         </body>
@@ -1614,40 +1795,62 @@ class PCR_Documents
 
     public static function preview($template_id)
     {
+        // 1. Création d'une "Fausse Réservation" complète pour tester toutes les variables
         $resa = new stdClass();
         $resa->id = 12345;
-        $resa->type = 'location';
-        $resa->item_id = 0;
+        $resa->type = 'location'; // ou 'experience'
+        $resa->item_id = 0; // ID factice
         $resa->prenom = 'Jean';
         $resa->nom = 'PREVIEW';
         $resa->email = 'jean.preview@example.com';
         $resa->telephone = '06 90 00 00 00';
+        $resa->adresse = '12 Rue des Cocotiers';
+        $resa->code_postal = '97100';
+        $resa->ville = 'Pointe-à-Pitre';
+
+        // Dates (J+10 à J+17)
         $resa->date_arrivee = date('Y-m-d', strtotime('+10 days'));
         $resa->date_depart = date('Y-m-d', strtotime('+17 days'));
+        $resa->date_creation = date('Y-m-d H:i:s');
+
         $resa->adultes = 2;
         $resa->enfants = 1;
         $resa->montant_total = 1650.00;
+        $resa->montant_acompte = 495.00; // 30%
+
+        // JSON Tarifaire factice pour tester les tableaux
         $resa->detail_tarif = json_encode([
-            ['label' => 'Hébergement (7 nuits)', 'amount' => 1400],
-            ['label' => 'Frais de ménage', 'amount' => 150],
-            ['label' => 'Taxe de séjour', 'amount' => 100],
+            ['label' => 'Hébergement (7 nuits)', 'amount' => 1400, 'price' => 1400],
+            ['label' => 'Frais de ménage', 'amount' => 150, 'price' => 150],
+            ['label' => 'Taxe de séjour', 'amount' => 100, 'price' => 100],
         ]);
 
-        $type_doc = get_field('pc_doc_type', $template_id) ?: 'facture';
+        // 2. Détermination du Type de Document
+        // Si le champ ACF 'pc_doc_type' est vide (ce qui est le cas pour les nouveaux modèles libres), on met 'document'
+        $type_doc = get_field('pc_doc_type', $template_id) ?: 'document';
+
         $doc_number = 'PREVIEW-' . date('Ymd');
         $html_content = '';
 
+        // 3. Aiguillage (Exactement comme la génération réelle)
         if (in_array($type_doc, ['facture', 'devis', 'avoir'])) {
             $html_content = self::render_financial_document($resa, $doc_number, $type_doc, $template_id);
+        } elseif ($type_doc === 'facture_acompte') {
+            $html_content = self::render_deposit_invoice($resa, $doc_number, $template_id);
         } elseif ($type_doc === 'voucher') {
+            // Mock pour le titre du logement dans le voucher
             add_filter('the_title', function ($title, $id) use ($resa) {
                 return ($id === $resa->item_id) ? 'Villa de Test (Vue Mer)' : $title;
             }, 10, 2);
             $html_content = self::render_voucher($resa, $doc_number);
         } elseif ($type_doc === 'contrat') {
             $html_content = self::render_contract($resa, $doc_number, $template_id);
+        } else {
+            // ✨ C'EST ICI : Appel du rendu personnalisé pour les modèles libres
+            $html_content = self::render_custom_document($resa, $doc_number, $template_id);
         }
 
+        // 4. Génération
         $options = new Options();
         $options->set('isRemoteEnabled', true);
         $options->set('defaultFont', 'Helvetica');
@@ -1655,7 +1858,7 @@ class PCR_Documents
         $dompdf->loadHtml($html_content);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
-        $dompdf->stream("apercu-document.pdf", ["Attachment" => 0]);
+        $dompdf->stream("apercu-document.pdf", ["Attachment" => 0]); // Affichage dans le navigateur
         exit;
     }
 
@@ -1674,8 +1877,12 @@ class PCR_Documents
     public static function ajax_generate_document()
     {
         while (ob_get_level()) ob_end_clean();
+
+        // CORRECTION ICI : On utilise sanitize_text_field au lieu de (int)
+        // pour ne pas casser les IDs "native_devis" (string)
+        $template_id = isset($_POST['template_id']) ? sanitize_text_field($_POST['template_id']) : '';
+
         $resa_id = (int) ($_POST['reservation_id'] ?? 0);
-        $template_id = (int) ($_POST['template_id'] ?? 0);
         $force_regen = isset($_POST['force']) && $_POST['force'] === 'true';
 
         if (!current_user_can('edit_posts')) wp_send_json_error(['message' => 'Non autorisé']);

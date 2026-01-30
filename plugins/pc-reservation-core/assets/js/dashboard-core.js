@@ -73,7 +73,7 @@
       },
       {
         capture: false,
-      }
+      },
     );
 
     const formatPrice = (amount) => currencyFormatter.format(amount || 0);
@@ -153,12 +153,12 @@
           }
           console.log(
             "[pc-devis] Configuration reçue par le calendrier :",
-            payload.data.config || {}
+            payload.data.config || {},
           );
           if (payload.data && payload.data.config) {
             console.log(
               "[pc-devis] Dates à désactiver :",
-              payload.data.config.icsDisable || []
+              payload.data.config.icsDisable || [],
             );
           }
           logementConfigCache[cacheKey] = payload.data.config;
@@ -198,7 +198,7 @@
       lines,
       summaryBody,
       summaryTotal,
-      totalValue
+      totalValue,
     ) => {
       if (!summaryBody || !Array.isArray(lines) || lines.length === 0) {
         return;
@@ -210,7 +210,7 @@
 
         let formattedPrice = rawPrice;
         const numericPrice = parseFloat(
-          rawPrice.replace(/[^\d,\.-]/g, "").replace(",", ".")
+          rawPrice.replace(/[^\d,\.-]/g, "").replace(",", "."),
         );
         if (!Number.isNaN(numericPrice) && rawPrice !== "") {
           formattedPrice = formatPrice(numericPrice);
@@ -423,7 +423,7 @@
       const linesJson = [...result.lines];
       const remiseValue =
         parseFloat(
-          remiseAmount && remiseAmount.value ? remiseAmount.value : 0
+          remiseAmount && remiseAmount.value ? remiseAmount.value : 0,
         ) || 0;
 
       if (remiseValue > 0) {
@@ -437,7 +437,7 @@
           : formatPrice(signed);
         summaryHtml = summaryHtml.replace(
           "</ul>",
-          `<li><span>${label}</span><span>${display}</span></li></ul>`
+          `<li><span>${label}</span><span>${display}</span></li></ul>`,
         );
         if (!result.isSurDevis) {
           result.total += signed;
@@ -454,7 +454,7 @@
           : formatPrice(Math.abs(plusValue));
         summaryHtml = summaryHtml.replace(
           "</ul>",
-          `<li><span>${label}</span><span>${display}</span></li></ul>`
+          `<li><span>${label}</span><span>${display}</span></li></ul>`,
         );
         if (!result.isSurDevis) {
           result.total += Math.abs(plusValue);
@@ -485,18 +485,18 @@
       const formData = new FormData(form);
       formData.set(
         "action",
-        formData.get("action") || "pc_manual_reservation_create"
+        formData.get("action") || "pc_manual_reservation_create",
       );
       formData.set("nonce", pcResaManualNonce);
 
       const participantsAdults = form.querySelector(
-        'input[name="participants_adultes"]'
+        'input[name="participants_adultes"]',
       );
       const participantsEnfants = form.querySelector(
-        'input[name="participants_enfants"]'
+        'input[name="participants_enfants"]',
       );
       const participantsBebes = form.querySelector(
-        'input[name="participants_bebes"]'
+        'input[name="participants_bebes"]',
       );
       const participantsEnabled =
         form.getAttribute("data-participants-enabled") === "1";
@@ -504,19 +504,19 @@
         if (participantsAdults && participantsAdults.value !== "") {
           formData.set(
             "adultes",
-            parseInt(participantsAdults.value || "0", 10) || 0
+            parseInt(participantsAdults.value || "0", 10) || 0,
           );
         }
         if (participantsEnfants && participantsEnfants.value !== "") {
           formData.set(
             "enfants",
-            parseInt(participantsEnfants.value || "0", 10) || 0
+            parseInt(participantsEnfants.value || "0", 10) || 0,
           );
         }
         if (participantsBebes && participantsBebes.value !== "") {
           formData.set(
             "bebes",
-            parseInt(participantsBebes.value || "0", 10) || 0
+            parseInt(participantsBebes.value || "0", 10) || 0,
           );
         }
       }
@@ -566,7 +566,7 @@
           console.error(
             "Manual creation HTTP error",
             response.status,
-            responseText
+            responseText,
           );
           alert("Erreur serveur (" + response.status + ").");
           submitBtn.textContent = originalText;
@@ -630,7 +630,7 @@
       const modeSelect = form.querySelector('select[name="mode_reservation"]');
       const itemSelect = form.querySelector('select[name="item_id"]');
       const tarifSelect = form.querySelector(
-        'select[name="experience_tarif_type"]'
+        'select[name="experience_tarif_type"]',
       );
       const linesTextarea = form.querySelector('textarea[name="lines_json"]');
       const totalInput = form.querySelector('input[name="montant_total"]');
@@ -640,16 +640,16 @@
       const remiseAmount = form.querySelector('input[name="remise_montant"]');
       const remiseClearBtn = form.querySelector(".pc-resa-remise-clear");
       const participantsAdultsField = form.querySelector(
-        'input[name="participants_adultes"]'
+        'input[name="participants_adultes"]',
       );
       const participantsEnfantsField = form.querySelector(
-        'input[name="participants_enfants"]'
+        'input[name="participants_enfants"]',
       );
       const participantsBebesField = form.querySelector(
-        'input[name="participants_bebes"]'
+        'input[name="participants_bebes"]',
       );
       const participantsSection = form.querySelector(
-        "[data-participants-section]"
+        "[data-participants-section]",
       );
       const plusLabel = form.querySelector('input[name="plus_label"]');
       const plusAmount = form.querySelector('input[name="plus_montant"]');
@@ -662,14 +662,14 @@
       const optionsSection = form.querySelector("[data-quote-options-section]");
       const optionsList = form.querySelector("[data-quote-options]");
       const dateExperienceInput = form.querySelector(
-        'input[name="date_experience"]'
+        'input[name="date_experience"]',
       );
       const prenomInput = form.querySelector('input[name="prenom"]');
       const nomInput = form.querySelector('input[name="nom"]');
       const emailInput = form.querySelector('input[name="email"]');
       const telephoneInput = form.querySelector('input[name="telephone"]');
       const commentaireField = form.querySelector(
-        'textarea[name="commentaire_client"]'
+        'textarea[name="commentaire_client"]',
       );
       const notesField = form.querySelector('textarea[name="notes_internes"]');
       const numeroDevisInput = form.querySelector('input[name="numero_devis"]');
@@ -683,7 +683,7 @@
       const arrivalInput = form.querySelector('input[name="date_arrivee"]');
       const departInput = form.querySelector('input[name="date_depart"]');
       const logementAvailability = form.querySelector(
-        "[data-logement-availability]"
+        "[data-logement-availability]",
       );
       if (form) {
         form.setAttribute("data-participants-enabled", "0");
@@ -804,7 +804,7 @@
       const initLogementCalendar = (
         config,
         rangeToApply = null,
-        clearExisting = true
+        clearExisting = true,
       ) => {
         if (!logementRangeInput) {
           return;
@@ -1005,7 +1005,7 @@
         initLogementCalendar(null, null, !options.range);
         if (!logementId) {
           setLogementAvailabilityMessage(
-            "Sélectionnez un logement pour afficher les disponibilités."
+            "Sélectionnez un logement pour afficher les disponibilités.",
           );
           updateCapacityLimits(null);
           updateQuote();
@@ -1016,7 +1016,7 @@
           .then((config) => {
             currentLogementConfig = config;
             setLogementAvailabilityMessage(
-              "Les périodes grisées sont indisponibles."
+              "Les périodes grisées sont indisponibles.",
             );
             initLogementCalendar(config, options.range || null);
             pendingLogementRange = null;
@@ -1073,7 +1073,7 @@
           const qty = parseQtyFromLabel(rawLabel);
           if (qty > 0) {
             const normalized = normalizeLabelKey(
-              rawLabel.replace(/^(\d+)\s*[x×]?\s*/, "")
+              rawLabel.replace(/^(\d+)\s*[x×]?\s*/, ""),
             );
             if (normalized) {
               out[normalized] = qty;
@@ -1096,7 +1096,7 @@
         return out;
       };
       let prefillQtyMap = normalizePrefillQtyMap(
-        prefill && prefill.lines_qty_map
+        prefill && prefill.lines_qty_map,
       );
       const applyPrefillSelections = () => {
         if (!prefillQtyMap || Object.keys(prefillQtyMap).length === 0) {
@@ -1142,7 +1142,7 @@
               const optId = checkbox.getAttribute("data-option-id");
               if (optId) {
                 const qtyInput = optionsList.querySelector(
-                  `[data-option-qty-for="${optId}"]`
+                  `[data-option-qty-for="${optId}"]`,
                 );
                 if (qtyInput) {
                   qtyInput.disabled = false;
@@ -1199,7 +1199,7 @@
             let qty = 1;
             if (checkbox.dataset.enableQty === "1") {
               const qtyInput = optionsList.querySelector(
-                `[data-option-qty-for="${optionId}"]`
+                `[data-option-qty-for="${optionId}"]`,
               );
               qty = parseInt(qtyInput && qtyInput.value, 10) || 1;
             }
@@ -1291,7 +1291,7 @@
           html += `
                             <label class="pc-resa-field pc-resa-field--inline">
                                 <span class="pc-resa-field-label">${escapeHtml(
-                                  line.label || "Service"
+                                  line.label || "Service",
                                 )}</span>
                                 <input type="number" min="0" value="${defaultValue}" data-custom-line="${inputKey}">
                             </label>
@@ -1371,7 +1371,7 @@
             checkbox.addEventListener("change", function () {
               const optId = this.getAttribute("data-option-id");
               const qtyInput = optionsList.querySelector(
-                `[data-option-qty-for="${optId}"]`
+                `[data-option-qty-for="${optId}"]`,
               );
               if (qtyInput) {
                 qtyInput.disabled = !this.checked;
@@ -1607,7 +1607,7 @@
           storedLines,
           summaryBody,
           summaryTotal,
-          prefill ? prefill.montant_total : 0
+          prefill ? prefill.montant_total : 0,
         );
       }
 
@@ -1687,7 +1687,7 @@
           });
           if (!result.success) {
             summaryBody.innerHTML = `<p class="pc-resa-field-hint">${escapeHtml(
-              result.message || "Sélection invalide."
+              result.message || "Sélection invalide.",
             )}</p>`;
             summaryTotal.textContent = "—";
             if (totalInput) totalInput.value = "";
@@ -1793,7 +1793,7 @@
           }
           console.log(
             "[pc-devis] Sélection logement changée :",
-            this.value || "(vide)"
+            this.value || "(vide)",
           );
           if (current === "experience") {
             lastExperienceId = this.value || "";
@@ -1982,7 +1982,7 @@
 
       // 1. Récupération du HTML caché
       const detailRow = document.querySelector(
-        '.pc-resa-dashboard-row-detail[data-resa-id="' + id + '"]'
+        '.pc-resa-dashboard-row-detail[data-resa-id="' + id + '"]',
       );
       if (!detailRow) {
         console.error("❌ Ligne de détail introuvable pour #" + id);
@@ -2006,8 +2006,13 @@
         window.pc_reload_documents(id);
       } else {
         console.error(
-          "❌ Erreur : La fonction pc_reload_documents est absente"
+          "❌ Erreur : La fonction pc_reload_documents est absente",
         );
+      }
+
+      // 5. CHARGEMENT DES TEMPLATES DISPONIBLES (nouvelle API hybride)
+      if (typeof window.pc_load_templates === "function") {
+        window.pc_load_templates(id);
       }
     });
 
@@ -2037,7 +2042,7 @@
           // eslint-disable-next-line no-console
           console.error(
             "[pc-reservations] erreur prefill depuis calendrier",
-            error
+            error,
           );
           window.sessionStorage.removeItem(key);
         }
@@ -2109,7 +2114,7 @@
                 "Erreur : " +
                   (data.data && data.data.message
                     ? data.data.message
-                    : "Impossible de créer le lien.")
+                    : "Impossible de créer le lien."),
               );
               btn.textContent = originalText;
               btn.disabled = false;
@@ -2164,7 +2169,7 @@
                 "Erreur : " +
                   (data.data && data.data.message
                     ? data.data.message
-                    : "Impossible.")
+                    : "Impossible."),
               );
               btn.textContent = originalText;
               btn.disabled = false;
@@ -2198,7 +2203,7 @@
       if (action === "release") {
         if (
           !confirm(
-            "Voulez-vous libérer (annuler) cette caution maintenant ?\nAction irréversible."
+            "Voulez-vous libérer (annuler) cette caution maintenant ?\nAction irréversible.",
           )
         )
           return;
@@ -2252,11 +2257,11 @@
         const id = document.getElementById("pc-capture-resa-id").value;
         const ref = document.getElementById("pc-capture-ref").value;
         const amount = parseFloat(
-          document.getElementById("pc-capture-amount").value
+          document.getElementById("pc-capture-amount").value,
         );
         const note = document.getElementById("pc-capture-note").value;
         const max = parseFloat(
-          document.getElementById("pc-capture-amount").max
+          document.getElementById("pc-capture-amount").max,
         );
 
         if (isNaN(amount) || amount <= 0 || amount > max) {
@@ -2407,7 +2412,7 @@
             console.error(
               json && json.data && json.data.message
                 ? json.data.message
-                : "Erreur."
+                : "Erreur.",
             );
             return;
           }
@@ -2426,7 +2431,7 @@
       const id = confirmBtn.dataset.reservationId;
       if (
         !confirm(
-          "Confirmer cette réservation ? Elle apparaîtra dans le calendrier."
+          "Confirmer cette réservation ? Elle apparaîtra dans le calendrier.",
         )
       )
         return;
@@ -2454,7 +2459,7 @@
             window.location.reload();
           } else {
             alert(
-              json.data && json.data.message ? json.data.message : "Erreur."
+              json.data && json.data.message ? json.data.message : "Erreur.",
             );
             confirmBtn.textContent = originalText;
             confirmBtn.disabled = false;
@@ -2501,7 +2506,7 @@
 
       // --- B. OUVERTURE POPUP "VOIR PLUS" (Lecture) ---
       const seeMoreBtn = event.target.closest(
-        '[data-action="view-full-message"]'
+        '[data-action="view-full-message"]',
       );
       if (seeMoreBtn) {
         event.preventDefault();
@@ -2549,7 +2554,7 @@
         const id = document.getElementById("pc-msg-resa-id").value;
         const templateId = document.getElementById("pc-msg-template").value;
         const customSubject = document.getElementById(
-          "pc-msg-custom-subject"
+          "pc-msg-custom-subject",
         ).value;
         const customBody = document.getElementById("pc-msg-custom-body").value;
 
@@ -2557,7 +2562,7 @@
         if (!templateId) {
           showFeedback(
             "⚠️ Veuillez choisir un modèle ou 'Nouveau message'.",
-            false
+            false,
           );
           return;
         }
@@ -2671,7 +2676,7 @@
               <td style="padding:8px; text-align:right;"><a href="${
                 doc.url_fichier
               }" target="_blank" rel="noopener">👁️ Voir</a></td>
-            </tr>`
+            </tr>`,
         )
         .join("");
       tbody.innerHTML = rows;
@@ -2683,7 +2688,7 @@
         return;
       }
       tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">${escapeHtml(
-        message || "Erreur serveur"
+        message || "Erreur serveur",
       )}</td></tr>`;
     };
 
@@ -2698,7 +2703,7 @@
       }
 
       const container = modalContent.querySelector(
-        '.pc-documents-list-container[data-resa-id="' + reservationId + '"]'
+        '.pc-documents-list-container[data-resa-id="' + reservationId + '"]',
       );
       if (!container) {
         return Promise.resolve(null);
@@ -2735,8 +2740,141 @@
           console.error("[pc-documents] Erreur de chargement", error);
           showDocumentsError(
             container,
-            "Erreur technique pendant le chargement des documents."
+            "Erreur technique pendant le chargement des documents.",
           );
+          return null;
+        });
+    };
+
+    // ✨ **NOUVELLE FONCTION AUTONOME & SÉCURISÉE**
+    window.pc_load_templates = function (reservationId) {
+      // 1. Définition locale des outils (pour éviter les erreurs ReferenceError)
+      const escapeHtml = (value) =>
+        String(value == null ? "" : value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+
+      const parseJsonSafe = (rawText) => {
+        if (!rawText) return null;
+        try {
+          // Nettoyage basique si le serveur renvoie du HTML avant le JSON
+          const jsonStart = rawText.indexOf("{");
+          const cleanText = jsonStart >= 0 ? rawText.slice(jsonStart) : rawText;
+          return JSON.parse(cleanText);
+        } catch (e) {
+          console.error("JSON invalide", e);
+          return null;
+        }
+      };
+
+      if (!reservationId) {
+        return Promise.resolve(null);
+      }
+
+      const modalContent = document.getElementById("pc-resa-modal-content");
+      if (!modalContent) {
+        return Promise.resolve(null);
+      }
+
+      const templateSelect = modalContent.querySelector(
+        ".pc-doc-template-select",
+      );
+      if (!templateSelect) {
+        return Promise.resolve(null);
+      }
+
+      // 2. État de chargement
+      templateSelect.innerHTML =
+        '<option value="">Chargement des modèles...</option>';
+      templateSelect.disabled = true;
+
+      // 3. Appel AJAX
+      const formData = new URLSearchParams();
+      formData.append("action", "pc_get_documents_templates");
+      formData.append("reservation_id", reservationId);
+      // On utilise le nonce global s'il est dispo, sinon une chaine vide (à ajuster selon votre setup)
+      const nonce =
+        typeof pcResaManualNonce !== "undefined" ? pcResaManualNonce : "";
+      formData.append("nonce", nonce);
+
+      return fetch(pcResaAjaxUrl, {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => response.text())
+        .then((rawText) => {
+          const payload = parseJsonSafe(rawText);
+
+          // Vérification que la réponse est valide
+          if (!payload || !payload.success || !payload.data) {
+            const message =
+              (payload && payload.data && payload.data.message) ||
+              "Erreur lors du chargement.";
+            templateSelect.innerHTML = `<option value="">❌ ${escapeHtml(message)}</option>`;
+            templateSelect.disabled = false;
+            return null;
+          }
+
+          const response = payload.data;
+          let html = '<option value="">-- Choisir un modèle --</option>';
+
+          // SÉCURITÉ : On vérifie que l'objet documents existe bien
+          const docs = response.documents || {};
+
+          // Groupe A : Documents Natifs
+          if (
+            docs.native &&
+            Array.isArray(docs.native.items) &&
+            docs.native.items.length > 0
+          ) {
+            html += `<optgroup label="${escapeHtml(docs.native.label || "Documents Natifs")}">`;
+            docs.native.items.forEach((item) => {
+              html += `<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`;
+            });
+            html += "</optgroup>";
+          }
+
+          // Groupe B : Modèles Personnalisés
+          if (
+            docs.custom &&
+            Array.isArray(docs.custom.items) &&
+            docs.custom.items.length > 0
+          ) {
+            html += `<optgroup label="${escapeHtml(docs.custom.label || "Personnalisés")}">`;
+            docs.custom.items.forEach((item) => {
+              html += `<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`;
+            });
+            html += "</optgroup>";
+          }
+
+          // 4. Cas où aucun document n'est disponible
+          if ((response.total_count || 0) === 0) {
+            html = '<option value="">Aucun modèle disponible</option>';
+          }
+
+          // 5. Injection du HTML
+          templateSelect.innerHTML = html;
+          templateSelect.disabled = false;
+
+          // 6. Sélection automatique (Smart Select)
+          const firstValidOption = templateSelect.querySelector(
+            'option[value]:not([value=""])',
+          );
+          // Si on a un seul choix, on le sélectionne direct
+          if (firstValidOption && (response.total_count || 0) === 1) {
+            templateSelect.value = firstValidOption.value;
+          }
+
+          return response;
+        })
+        .catch((error) => {
+          console.error("[pc-templates] Erreur critique :", error);
+          templateSelect.innerHTML =
+            '<option value="">❌ Erreur technique</option>';
+          templateSelect.disabled = false;
           return null;
         });
     };
@@ -2808,7 +2946,7 @@
       formData.append("template_id", templateSelect.value);
       formData.append(
         "force",
-        forceCheckbox && forceCheckbox.checked ? "true" : "false"
+        forceCheckbox && forceCheckbox.checked ? "true" : "false",
       );
       formData.append("nonce", pcResaManualNonce);
 

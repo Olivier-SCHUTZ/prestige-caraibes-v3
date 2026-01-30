@@ -33,14 +33,14 @@ class PCR_Messaging
      */
     public static function register_content_types()
     {
-        // A. Modèles de Messages (Emails)
-        register_post_type('pc_template', [
+        // A. Modèles de Messages (Emails) - RENOMMÉ selon cahier des charges
+        register_post_type('pc_message', [
             'labels' => [
-                'name' => 'Scénarios Emails',
-                'singular_name' => 'Scénario',
+                'name' => 'Messagerie personnalisée',
+                'singular_name' => 'Message',
                 'menu_name' => 'Messagerie personnalisée',
-                'add_new_item' => 'Nouveau Scénario',
-                'edit_item' => 'Modifier le Scénario',
+                'add_new_item' => 'Nouveau Message',
+                'edit_item' => 'Modifier le Message',
             ],
             'public' => false,
             'show_ui' => true,
@@ -194,7 +194,9 @@ class PCR_Messaging
     public static function add_variable_help_box()
     {
         // 1. Metabox Variables
-        $screens = ['pc_template', 'pc_pdf_template'];
+        // CORRECTION ICI : 'pc_message' au lieu de 'pc_template'
+        $screens = ['pc_message', 'pc_pdf_template'];
+
         foreach ($screens as $screen) {
             add_meta_box(
                 'pc_variables_help',
@@ -234,32 +236,33 @@ class PCR_Messaging
     public static function render_variable_help_box()
     {
 ?>
-        <div style="font-size:0.9em; color:#555;">
-            <p><strong>Données Client & Résa :</strong></p>
-            <ul style="list-style:square; padding-left:20px; margin:0 0 10px;">
+        <div style="font-size: 12px; color: #444;">
+            <p style="margin-bottom:10px;">Utilisez ces codes pour personnaliser vos messages :</p>
+
+            <strong style="display:block; border-bottom:1px solid #ddd; padding-bottom:3px; margin-bottom:5px;">👤 Données Client</strong>
+            <ul style="margin: 0 0 15px 15px; list-style:square;">
                 <li><code>{prenom_client}</code></li>
                 <li><code>{nom_client}</code></li>
+                <li><code>{email_client}</code></li>
+                <li><code>{telephone}</code></li>
                 <li><code>{adresse_client}</code></li>
-                <li><code>{date_arrivee}</code> / <code>{date_depart}</code></li>
+            </ul>
+
+            <strong style="display:block; border-bottom:1px solid #ddd; padding-bottom:3px; margin-bottom:5px;">📅 Données Séjour</strong>
+            <ul style="margin: 0 0 15px 15px; list-style:square;">
+                <li><code>{date_arrivee}</code></li>
+                <li><code>{date_depart}</code></li>
                 <li><code>{duree_sejour}</code></li>
+                <li><code>{logement}</code></li>
+                <li><code>{numero_resa}</code></li>
             </ul>
 
-            <p><strong>Données Financières :</strong></p>
-            <ul style="list-style:square; padding-left:20px; margin:0 0 10px;">
-                <li><code>[tableau_financier]</code> (Le tableau complet HT/TTC)</li>
-                <li><code>{montant_total}</code></li>
-                <li><code>{acompte_paye}</code></li>
-                <li><code>{solde_restant}</code></li>
-            </ul>
-
-            <p><strong>Mentions Légales (Auto) :</strong></p>
-            <ul style="list-style:square; padding-left:20px; margin:0;">
-                <li><code>{mon_entreprise}</code> (Nom)</li>
-                <li><code>{mon_adresse}</code></li>
-                <li><code>{mon_siret}</code></li>
-                <li><code>{mon_rcs}</code></li>
-                <li><code>{ma_tva}</code></li>
-                <li><code>{num_facture}</code> (Généré si type = Facture)</li>
+            <strong style="display:block; border-bottom:1px solid #ddd; padding-bottom:3px; margin-bottom:5px;">💶 Données Financières</strong>
+            <ul style="margin: 0 0 15px 15px; list-style:square;">
+                <li><code>{montant_total}</code> (TTC)</li>
+                <li><code>{acompte_paye}</code> (Déjà réglé)</li>
+                <li><code>{solde_restant}</code> (Reste à payer)</li>
+                <li><code>{lien_paiement}</code> (Lien direct)</li>
             </ul>
         </div>
 <?php
@@ -303,25 +306,23 @@ class PCR_Messaging
         $attachment_pdf_id = 0;
 
         // 1. DÉTERMINER LE CONTENU
-
-        // CAS A : Message Libre (Personnalisé)
+        // CAS A : Message Libre
         if ($template_identifier === 'custom' || $template_identifier === 0) {
             if (empty($custom_args['sujet']) || empty($custom_args['corps'])) {
                 return ['success' => false, 'message' => 'Sujet ou message manquant pour l\'envoi manuel.'];
             }
             $subject = sanitize_text_field($custom_args['sujet']);
-            $body    = wp_kses_post($custom_args['corps']); // On garde le HTML basique
+            $body    = wp_kses_post($custom_args['corps']);
             $template_code = 'manuel_custom';
         }
-        // CAS B : Utilisation d'un Modèle (Post ID)
+        // CAS B : Utilisation d'un Modèle
         else {
             $template_post = null;
             if (is_numeric($template_identifier)) {
                 $template_post = get_post($template_identifier);
             } else {
-                // Recherche par ancien trigger si besoin
                 $posts = get_posts([
-                    'post_type' => 'pc_template',
+                    'post_type' => 'pc_message', // CORRIGÉ ICI AUSSI (anciennement pc_template)
                     'meta_key' => 'pc_msg_trigger',
                     'meta_value' => $template_identifier,
                     'numberposts' => 1
@@ -333,12 +334,9 @@ class PCR_Messaging
                 return ['success' => false, 'message' => "Modèle introuvable ($template_identifier)."];
             }
 
-            // Récupération des champs ACF ou valeurs par défaut
             $subject_raw = get_field('pc_msg_subject', $template_post->ID) ?: $template_post->post_title;
             $body_raw    = $template_post->post_content;
             $template_code = $template_post->post_name;
-
-            // Récupération de l'ID du PDF joint (s'il y en a un)
             $attachment_pdf_id = (int) get_field('pc_msg_attachment', $template_post->ID);
 
             $subject = $subject_raw;
@@ -350,47 +348,64 @@ class PCR_Messaging
         $resa = PCR_Reservation::get_by_id($reservation_id);
         if (!$resa) return ['success' => false, 'message' => 'Réservation introuvable.'];
 
-        // 3. PRÉPARATION DES VARIABLES
+        // 3. PRÉPARATION DES VARIABLES (Mise à jour complète)
         $item_title = get_the_title($resa->item_id);
         $paid_amount = self::get_paid_amount($reservation_id);
         $solde = (float)($resa->montant_total ?? 0) - $paid_amount;
+
+        // Calculs Durée & Adresse
+        $ts_arr = strtotime($resa->date_arrivee);
+        $ts_dep = strtotime($resa->date_depart);
+        $duree  = ($ts_arr && $ts_dep) ? ceil(($ts_dep - $ts_arr) / 86400) : 0;
+
+        $adresse_client = trim(($resa->adresse ?? '') . ' ' . ($resa->code_postal ?? '') . ' ' . ($resa->ville ?? ''));
+        if (empty($adresse_client)) $adresse_client = "Adresse non renseignée";
 
         $vars = [
             '{id}'              => $resa->id,
             '{prenom_client}'   => ucfirst($resa->prenom),
             '{nom_client}'      => strtoupper($resa->nom),
             '{email_client}'    => $resa->email,
+            '{telephone}'       => $resa->telephone,
             '{telephone_client}' => $resa->telephone,
+            '{adresse_client}'  => $adresse_client,
+
             '{logement}'        => $item_title,
-            '{date_arrivee}'    => date_i18n('d/m/Y', strtotime($resa->date_arrivee)),
-            '{date_depart}'     => date_i18n('d/m/Y', strtotime($resa->date_depart)),
-            '{heure_arrivee}'   => '16:00', // À dynamiser plus tard
-            '{heure_depart}'    => '10:00',
+            '{date_arrivee}'    => date_i18n('d/m/Y', $ts_arr),
+            '{date_depart}'     => date_i18n('d/m/Y', $ts_dep),
+            '{duree_sejour}'    => $duree . ' nuit(s)',
+            '{numero_resa}'     => $resa->id,
+            '{numero_devis}'    => $resa->numero_devis,
+
             '{montant_total}'   => number_format((float)$resa->montant_total, 2, ',', ' ') . ' €',
             '{acompte_paye}'    => number_format($paid_amount, 2, ',', ' ') . ' €',
             '{solde_restant}'   => number_format($solde, 2, ',', ' ') . ' €',
-            '{numero_devis}'    => $resa->numero_devis,
             '{lien_paiement}'   => home_url('/paiement/?resa=' . $resa->id),
         ];
 
-        // 4. REMPLACEMENT DES VARIABLES
+        // 4. REMPLACEMENT
         $subject = strtr($subject, $vars);
         $body    = strtr(wpautop($body), $vars);
 
-        // 5. GESTION DES PIÈCES JOINTES (PDF)
+        // 5. PDF JOINT (Si module PDF actif)
         $attachments = [];
-        if ($attachment_pdf_id > 0) {
-            // ICI : Appeler le générateur de PDF (sera codé à l'étape suivante)
-            // $pdf_path = PCR_PDF_Generator::generate($attachment_pdf_id, $resa);
-            // if ($pdf_path) $attachments[] = $pdf_path;
+        if ($attachment_pdf_id > 0 && class_exists('PCR_Documents')) {
+            $gen = PCR_Documents::generate($attachment_pdf_id, $resa->id, true);
+            if ($gen['success'] && !empty($gen['url'])) {
+                // Convertir URL en chemin local pour wp_mail
+                $upload_dir = wp_upload_dir();
+                $local_path = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $gen['url']);
+                if (file_exists($local_path)) {
+                    $attachments[] = $local_path;
+                }
+            }
         }
 
-        // 6. ENVOI DE L'EMAIL
+        // 6. ENVOI
         $to = $resa->email;
         if (!is_email($to)) return ['success' => false, 'message' => 'Email client invalide.'];
 
         $headers = ['Content-Type: text/html; charset=UTF-8'];
-
         $sent = wp_mail($to, $subject, $body, $headers, $attachments);
 
         if (!$sent) {
@@ -398,7 +413,7 @@ class PCR_Messaging
             return ['success' => false, 'message' => "Erreur technique d'envoi (wp_mail)."];
         }
 
-        // 7. ENREGISTREMENT BDD
+        // 7. BDD
         global $wpdb;
         $wpdb->insert(
             $wpdb->prefix . 'pc_messages',

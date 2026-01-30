@@ -273,57 +273,48 @@ class PCR_Settings
                     'default_value' => 1,
                 ],
 
-                // Onglet Bibliothèque CGV
-                // [NOUVEAU] Onglet Affectation Automatique
-                [
-                    'key' => 'field_tab_pdf_assignment',
-                    'label' => 'Affectation Auto CGV',
-                    'type' => 'tab',
-                ],
-                [
-                    'key' => 'field_pc_cgv_default_location',
-                    'label' => 'CGV par défaut : Logement',
-                    'name' => 'pc_cgv_default_location',
-                    'type' => 'select',
-                    'ui' => 1,
-                    'instructions' => 'Ces CGV seront automatiquement ajoutées aux Factures et Devis de type LOCATION.',
-                    'choices' => [], // Sera rempli dynamiquement
-                ],
-                [
-                    'key' => 'field_pc_cgv_default_experience',
-                    'label' => 'CGV par défaut : Expérience',
-                    'name' => 'pc_cgv_default_experience',
-                    'type' => 'select',
-                    'ui' => 1,
-                    'instructions' => 'Ces CGV seront automatiquement ajoutées aux Factures et Devis de type EXPÉRIENCE.',
-                    'choices' => [], // Sera rempli dynamiquement
-                ],
+                // **NOUVEAU SYSTÈME CGV SIMPLIFIÉ**
+                // Onglet CGV
                 [
                     'key' => 'field_tab_pdf_cgv',
-                    'label' => 'Bibliothèque CGV',
+                    'label' => 'Conditions Générales',
                     'type' => 'tab',
                 ],
                 [
-                    'key' => 'field_pc_pdf_cgv_library',
-                    'label' => 'Vos Conditions Générales',
-                    'name' => 'pc_pdf_cgv_library',
-                    'type' => 'repeater',
-                    'button_label' => 'Ajouter une version CGV',
-                    'layout' => 'row',
-                    'sub_fields' => [
-                        [
-                            'key' => 'field_cgv_title',
-                            'label' => 'Nom interne',
-                            'name' => 'cgv_title',
-                            'type' => 'text',
-                        ],
-                        [
-                            'key' => 'field_cgv_content',
-                            'label' => 'Contenu',
-                            'name' => 'cgv_content',
-                            'type' => 'wysiwyg',
-                        ],
-                    ],
+                    'key' => 'field_cgv_location',
+                    'label' => 'CGV - Location/Logement',
+                    'name' => 'cgv_location',
+                    'type' => 'wysiwyg',
+                    'instructions' => 'Ces CGV seront automatiquement ajoutées aux documents de type Location/Logement.',
+                    'media_upload' => 0,
+                    'delay' => 1,
+                ],
+                [
+                    'key' => 'field_cgv_experience',
+                    'label' => 'CGV - Expériences/Activités',
+                    'name' => 'cgv_experience',
+                    'type' => 'wysiwyg',
+                    'instructions' => 'Ces CGV seront automatiquement ajoutées aux documents de type Expérience/Activité.',
+                    'media_upload' => 0,
+                    'delay' => 1,
+                ],
+                [
+                    'key' => 'field_cgv_sejour',
+                    'label' => 'CGV - Organisation Séjour',
+                    'name' => 'cgv_sejour',
+                    'type' => 'wysiwyg',
+                    'instructions' => 'CGV pour les types mixtes ou services d\'organisation de séjour.',
+                    'media_upload' => 0,
+                    'delay' => 1,
+                ],
+                [
+                    'key' => 'field_cgv_custom',
+                    'label' => 'CGV - Personnalisé',
+                    'name' => 'cgv_custom',
+                    'type' => 'wysiwyg',
+                    'instructions' => 'CGV personnalisées pour les cas spéciaux.',
+                    'media_upload' => 0,
+                    'delay' => 1,
                 ],
             ],
             'location' => [
