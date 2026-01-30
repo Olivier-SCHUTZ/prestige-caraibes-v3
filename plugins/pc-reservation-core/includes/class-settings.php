@@ -11,19 +11,29 @@ class PCR_Settings
 {
     public static function init()
     {
-        // 1. Page Principale : "PC Réservation" (Sera utilisée pour Stripe/Général)
+        // 1. Page Principale : "PC Réservation" (Page vide mais accessible pour les CPT)
         if (function_exists('acf_add_options_page')) {
             acf_add_options_page([
-                'page_title'  => 'Configuration PC Réservation',
+                'page_title'  => 'PC Réservation - Tableau de bord',
                 'menu_title'  => 'PC Réservation',
                 'menu_slug'   => 'pc-reservation-settings',
                 'capability'  => 'manage_options',
                 'icon_url'    => 'dashicons-calendar-alt',
-                'redirect'    => false, // On affiche des champs directement sur cette page (Stripe)
+                'redirect'    => false, // Garde la page accessible pour les CPT
             ]);
         }
 
-        // 2. Sous-Page : "Documents & Légal" (Pour PDF, Identité, Banque)
+        // 2. Sous-Page : "Configuration Stripe"
+        if (function_exists('acf_add_options_sub_page')) {
+            acf_add_options_sub_page([
+                'page_title'  => 'Configuration Stripe & Paiements',
+                'menu_title'  => 'Configuration Stripe',
+                'parent_slug' => 'pc-reservation-settings',
+                'menu_slug'   => 'pc-reservation-stripe',
+            ]);
+        }
+
+        // 3. Sous-Page : "Documents & Légal" (Pour PDF, Identité, Banque)
         if (function_exists('acf_add_options_sub_page')) {
             acf_add_options_sub_page([
                 'page_title'  => 'Configuration Documents & Légal',
@@ -101,7 +111,7 @@ class PCR_Settings
                 ],
             ],
             'location' => [
-                [['param' => 'options_page', 'operator' => '==', 'value' => 'pc-reservation-settings']],
+                [['param' => 'options_page', 'operator' => '==', 'value' => 'pc-reservation-stripe']],
             ],
         ]);
 

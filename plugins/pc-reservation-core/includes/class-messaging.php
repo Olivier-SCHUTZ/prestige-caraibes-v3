@@ -38,14 +38,13 @@ class PCR_Messaging
             'labels' => [
                 'name' => 'Scénarios Emails',
                 'singular_name' => 'Scénario',
-                'menu_name' => 'PC Messages',
+                'menu_name' => 'Messagerie personnalisée',
                 'add_new_item' => 'Nouveau Scénario',
                 'edit_item' => 'Modifier le Scénario',
             ],
             'public' => false,
             'show_ui' => true,
-            'show_in_menu' => true,
-            'menu_position' => 52,
+            'show_in_menu' => 'pc-reservation-settings',
             'menu_icon' => 'dashicons-email-alt',
             'supports' => ['title', 'editor'],
         ]);
@@ -63,7 +62,8 @@ class PCR_Messaging
         ]);
 
         // C. Modèles de PDF (Contenu Spécifique)
-        register_post_type('pc_pdf_template', [
+        // SUPPRIMÉ : Enregistrement déplacé dans class-documents.php pour être sous PC Réservation
+        /* register_post_type('pc_pdf_template', [
             'labels' => [
                 'name' => 'Modèles PDF',
                 'singular_name' => 'Modèle PDF',
@@ -75,7 +75,7 @@ class PCR_Messaging
             'show_ui' => true,
             'show_in_menu' => 'edit.php?post_type=pc_template', // Sous-menu de PC Messages
             'supports' => ['title', 'editor'], // Editor = Corps du PDF
-        ]);
+        ]); */
     }
 
     /**
