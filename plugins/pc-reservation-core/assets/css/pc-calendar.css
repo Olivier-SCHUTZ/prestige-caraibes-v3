@@ -639,7 +639,16 @@
   .pc-cal-row
   .pc-cal-row-events
   .pc-cal-event.pc-cal-event--paye {
-  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+}
+
+.pc-cal-shell
+  .pc-cal-scroll
+  .pc-cal-grid
+  .pc-cal-row
+  .pc-cal-row-events
+  .pc-cal-event.pc-cal-event--partiel {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
 }
 
 .pc-cal-shell
@@ -648,7 +657,7 @@
   .pc-cal-row
   .pc-cal-row-events
   .pc-cal-event.pc-cal-event--pending {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%) !important;
 }
 
 .pc-cal-shell
