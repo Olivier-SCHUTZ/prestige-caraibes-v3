@@ -126,6 +126,114 @@
   max-width: 120px;
 }
 
+/* === CORRECTION SPÉCIFIQUE CHAMPS NUMÉRIQUES === */
+/* Styles globaux pour tous les champs number */
+input[type="number"] {
+  min-width: 60px !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+  text-align: center !important;
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+}
+
+/* Champs compteurs (adultes, enfants, bébés) */
+input[name="adultes"],
+input[name="enfants"],
+input[name="bebes"],
+input[name="participants_adultes"],
+input[name="participants_enfants"],
+input[name="participants_bebes"],
+input[data-quote-counter],
+input[data-custom-line] {
+  min-width: 80px !important;
+  max-width: 120px !important;
+  text-align: center !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%) !important;
+  border: 2px solid #bfdbfe !important;
+}
+
+input[name="adultes"]:focus,
+input[name="enfants"]:focus,
+input[name="bebes"]:focus,
+input[name="participants_adultes"]:focus,
+input[name="participants_enfants"]:focus,
+input[name="participants_bebes"]:focus,
+input[data-quote-counter]:focus,
+input[data-custom-line]:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Champs montants (remise, plus-value, total) */
+input[name="montant_total"],
+input[name="remise_montant"],
+input[name="plus_montant"],
+input[data-option-qty-for] {
+  min-width: 120px !important;
+  text-align: right !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%) !important;
+  border: 2px solid #bbf7d0 !important;
+  padding-right: 2.5rem !important;
+  position: relative !important;
+}
+
+input[name="montant_total"]:focus,
+input[name="remise_montant"]:focus,
+input[name="plus_montant"]:focus,
+input[data-option-qty-for]:focus {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1) !important;
+}
+
+/* Pseudo-élément pour ajouter le symbole € */
+input[name="montant_total"]:after,
+input[name="remise_montant"]:after,
+input[name="plus_montant"]:after {
+  content: "€";
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #16a34a;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+/* Style pour les spin-buttons (flèches) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+/* Réactivation des spin-buttons uniquement pour les compteurs */
+input[data-quote-counter]::-webkit-outer-spin-button,
+input[data-quote-counter]::-webkit-inner-spin-button,
+input[data-custom-line]::-webkit-outer-spin-button,
+input[data-custom-line]::-webkit-inner-spin-button,
+input[data-option-qty-for]::-webkit-outer-spin-button,
+input[data-option-qty-for]::-webkit-inner-spin-button {
+  -webkit-appearance: auto;
+  margin: 0;
+}
+
+input[data-quote-counter],
+input[data-custom-line],
+input[data-option-qty-for] {
+  -moz-appearance: auto;
+}
+
 .pc-resa-create-hint,
 .pc-resa-field-hint {
   font-size: 0.8rem;

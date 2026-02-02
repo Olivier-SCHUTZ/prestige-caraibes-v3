@@ -1864,22 +1864,38 @@ class PCR_Documents
 
     public static function ajax_get_documents_list()
     {
-        while (ob_get_level()) ob_end_clean();
         check_ajax_referer('pc_resa_manual_create', 'nonce');
-        $resa_id = (int) ($_POST['reservation_id'] ?? 0);
+
+        $resa_id = isset($_POST['reservation_id']) ? (int)$_POST['reservation_id'] : 0;
+        if (!$resa_id) wp_send_json_error(['message' => 'ID manquant']);
+
         global $wpdb;
-        $table = $wpdb->prefix . 'pc_documents';
-        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") != $table) wp_send_json_success([]);
-        $docs = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$table} WHERE reservation_id = %d ORDER BY date_creation DESC", $resa_id));
-        wp_send_json_success($docs ?: []);
+        $table_name = $wpdb->prefix . 'pc_documents';
+
+        // La requête est CORRECTE par rapport à votre schéma CREATE TABLE ligne 47
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT type_doc, nom_fichier, url_fichier, date_creation FROM $table_name WHERE reservation_id = %d ORDER BY date_creation DESC",
+            $resa_id
+        ));
+
+        $documents = [];
+        foreach ($results as $row) {
+            $documents[] = [
+                'type_doc'      => ucfirst(str_replace('_', ' ', $row->type_doc)), // ex: facture_acompte -> Facture acompte
+                'nom_fichier'   => $row->nom_fichier,
+                'date_creation' => date('d/m/Y H:i', strtotime($row->date_creation)),
+                'url_fichier'   => $row->url_fichier
+            ];
+        }
+
+        wp_send_json_success($documents);
     }
 
     public static function ajax_generate_document()
     {
         while (ob_get_level()) ob_end_clean();
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
 
-        // CORRECTION ICI : On utilise sanitize_text_field au lieu de (int)
-        // pour ne pas casser les IDs "native_devis" (string)
         $template_id = isset($_POST['template_id']) ? sanitize_text_field($_POST['template_id']) : '';
 
         $resa_id = (int) ($_POST['reservation_id'] ?? 0);

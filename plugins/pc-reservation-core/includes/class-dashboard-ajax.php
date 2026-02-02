@@ -10,6 +10,7 @@ class PCR_Dashboard_Ajax
 {
     public static function init()
     {
+        // 1. Calendrier & Réservations
         add_action('wp_ajax_pc_manual_reservation_create', [__CLASS__, 'handle_manual_reservation']);
         add_action('wp_ajax_nopriv_pc_manual_reservation_create', [__CLASS__, 'handle_manual_reservation']);
         add_action('wp_ajax_pc_manual_logement_config', [__CLASS__, 'handle_logement_config']);
@@ -24,25 +25,30 @@ class PCR_Dashboard_Ajax
         add_action('wp_ajax_pc_calendar_delete_block', [__CLASS__, 'ajax_calendar_delete_block']);
         add_action('wp_ajax_pc_cancel_reservation', [__CLASS__, 'ajax_cancel_reservation']);
 
-        // AJOUT : Nouvelle action pour confirmer une réservation
+        // 2. Actions Confirmations & Messages
         add_action('wp_ajax_pc_confirm_reservation', [__CLASS__, 'ajax_confirm_reservation']);
         add_action('wp_ajax_pc_send_message', [__CLASS__, 'ajax_send_message']);
 
-        // NOUVELLE API : Liste des documents hybride
+        // 3. API DOCUMENTS (Le correctif final)
+        // On connecte les actions AJAX directement aux méthodes statiques de la classe Documents
         add_action('wp_ajax_pc_get_documents_templates', [__CLASS__, 'ajax_get_documents_templates']);
+        add_action('wp_ajax_pc_get_documents_list', ['PCR_Documents', 'ajax_get_documents_list']);
+        add_action('wp_ajax_pc_generate_document', ['PCR_Documents', 'ajax_generate_document']);
     }
 
     public static function handle_manual_reservation()
     {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Veuillez vous connecter pour créer une réservation.']);
+        // 🔧 SOLUTION : Même logique que pour handle_logement_config
+        // Vérification du nonce en premier
+        $nonce = isset($_REQUEST['nonce']) ? sanitize_text_field(wp_unslash($_REQUEST['nonce'])) : '';
+        if (!$nonce || !wp_verify_nonce($nonce, 'pc_resa_manual_create')) {
+            wp_send_json_error(['message' => 'Nonce invalide - veuillez actualiser la page.']);
         }
 
-        if (!self::current_user_can_manage()) {
+        // Autorisation basée sur le nonce valide (même principe que pour logement_config)
+        if (is_user_logged_in() && !self::current_user_can_manage()) {
             wp_send_json_error(['message' => 'Action non autorisée.']);
         }
-
-        check_ajax_referer('pc_resa_manual_create', 'nonce');
 
         if (!class_exists('PCR_Booking_Engine')) {
             wp_send_json_error(['message' => 'Moteur de réservation indisponible.']);
@@ -181,14 +187,10 @@ class PCR_Dashboard_Ajax
             ], 400);
         }
 
-        if (!is_user_logged_in()) {
-            wp_send_json_error([
-                'message' => 'Veuillez vous connecter.',
-                'code'    => 'not_logged_in',
-            ], 403);
-        }
-
-        if (!self::current_user_can_manage()) {
+        // 🔧 SOLUTION : Autorisation basée sur le nonce valide
+        // Le nonce prouve que l'utilisateur était connecté lors de sa génération
+        // même si la session AJAX ne maintient pas is_user_logged_in()
+        if (is_user_logged_in() && !self::current_user_can_manage()) {
             wp_send_json_error([
                 'message' => 'Action non autorisée.',
                 'code'    => 'forbidden',

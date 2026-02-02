@@ -501,11 +501,70 @@ function pc_resa_dashboard_shortcode($atts)
         file_exists($dashboard_style_css) ? filemtime($dashboard_style_css) : null
     );
 
+    // Charger d'abord les utilitaires
+    $utils_js = $plugin_path . 'assets/js/modules/utils.js';
+    wp_enqueue_script(
+        'pc-resa-utils',
+        $plugin_url . 'assets/js/modules/utils.js',
+        ['pc-flatpickr-fr'],
+        file_exists($utils_js) ? filemtime($utils_js) : null,
+        true
+    );
+
+    // Ensuite les modules Pricing et Documents
+    $pricing_js = $plugin_path . 'assets/js/modules/pricing-engine.js';
+    wp_enqueue_script(
+        'pc-resa-pricing',
+        $plugin_url . 'assets/js/modules/pricing-engine.js',
+        ['pc-resa-utils'], // Dépendance sur utils
+        file_exists($pricing_js) ? filemtime($pricing_js) : null,
+        true
+    );
+
+    // Module BookingForm - DOIT être chargé AVANT dashboard-core.js
+    $booking_form_js = $plugin_path . 'assets/js/modules/booking-form.js';
+    wp_enqueue_script(
+        'pc-resa-booking-form',
+        $plugin_url . 'assets/js/modules/booking-form.js',
+        ['pc-resa-utils', 'pc-resa-pricing'], // Dépendances sur utils et pricing
+        file_exists($booking_form_js) ? filemtime($booking_form_js) : null,
+        true
+    );
+
+    $documents_js = $plugin_path . 'assets/js/modules/documents.js';
+    wp_enqueue_script(
+        'pc-resa-documents',
+        $plugin_url . 'assets/js/modules/documents.js',
+        ['pc-resa-utils'], // Dépendance sur utils
+        file_exists($documents_js) ? filemtime($documents_js) : null,
+        true
+    );
+
+    // Modules Paiements et Messagerie
+    $payments_js = $plugin_path . 'assets/js/modules/payments.js';
+    wp_enqueue_script(
+        'pc-resa-payments',
+        $plugin_url . 'assets/js/modules/payments.js',
+        ['pc-resa-utils'], // Dépendance sur utils
+        file_exists($payments_js) ? filemtime($payments_js) : null,
+        true
+    );
+
+    $messaging_js = $plugin_path . 'assets/js/modules/messaging.js';
+    wp_enqueue_script(
+        'pc-resa-messaging',
+        $plugin_url . 'assets/js/modules/messaging.js',
+        ['pc-resa-utils'], // Dépendance sur utils
+        file_exists($messaging_js) ? filemtime($messaging_js) : null,
+        true
+    );
+
+    // Enfin le dashboard core qui dépend de tous les modules
     $dashboard_js = $plugin_path . 'assets/js/dashboard-core.js';
     wp_enqueue_script(
         'pc-resa-dashboard',
         $plugin_url . 'assets/js/dashboard-core.js',
-        ['pc-flatpickr-fr'],
+        ['pc-resa-utils', 'pc-resa-pricing', 'pc-resa-booking-form', 'pc-resa-documents', 'pc-resa-payments', 'pc-resa-messaging'], // booking-form ajouté aux dépendances
         file_exists($dashboard_js) ? filemtime($dashboard_js) : null,
         true
     );
@@ -801,22 +860,21 @@ function pc_resa_dashboard_shortcode($atts)
         asort($manual_logement_options);
     }
 
-    wp_localize_script(
-        'pc-resa-dashboard',
-        'pcResaParams',
-        [
-            'ajaxUrl'           => admin_url('admin-ajax.php'),
-            'manualNonce'       => $manual_nonce,
-            'experienceTarifs'  => $manual_experience_tarifs,
-            'experienceOptions' => $manual_experience_options,
-            'logementOptions'   => $manual_logement_options,
-            'logementQuote'     => null,
-            'translations'      => [
-                'genericError' => __('Erreur technique', 'pc'),
-                'loading'      => __('Chargement...', 'pc'),
-            ],
-        ]
-    );
+    // ✅ SOLUTION OPTIMALE : Localiser sur le premier script chargé (utils)
+    // L'objet window.pcResaParams sera ainsi disponible dès le début pour tous les autres modules
+    wp_localize_script('pc-resa-utils', 'pcResaParams', [
+        'ajaxUrl'           => admin_url('admin-ajax.php'),
+        'manualNonce'       => $manual_nonce,
+        'calendarNonce'     => wp_create_nonce('pc_dashboard_calendar'),
+        'experienceTarifs'  => $manual_experience_tarifs,
+        'experienceOptions' => $manual_experience_options,
+        'logementOptions'   => $manual_logement_options,
+        'logementQuote'     => null,
+        'translations'      => [
+            'genericError' => __('Erreur technique', 'pc'),
+            'loading'      => __('Chargement...', 'pc'),
+        ],
+    ]);
 
     ob_start();
 
