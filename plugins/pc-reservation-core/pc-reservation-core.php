@@ -30,6 +30,7 @@ require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-manager.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-ajax.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-webhook.php';
 require_once PC_RES_CORE_PATH . 'includes/class-documents.php';
+require_once PC_RES_CORE_PATH . 'includes/api/class-rest-webhook.php';
 // controller-forms sera branché plus tard quand tu seras prêt
 if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
     require_once PC_RES_CORE_PATH . 'includes/controller-forms.php';
@@ -43,7 +44,20 @@ register_activation_hook(__FILE__, function () {
     }
 });
 
-// Initialisation du plugin
+// TEMP: Hook pour forcer la mise à jour du schéma BDD (à supprimer une fois terminé)
+add_action('init', function () {
+    if (is_admin() && current_user_can('manage_options')) {
+        $schema_version = get_option('pc_schema_version', '0.0.0');
+        if (version_compare($schema_version, '0.1.1', '<')) {
+            if (class_exists('PCR_Reservation_Schema')) {
+                PCR_Reservation_Schema::install();
+                update_option('pc_schema_version', '0.1.1');
+                error_log('[PC RESERVATION] Schéma BDD mis à jour vers 0.1.1');
+            }
+        }
+    }
+});
+
 // Initialisation du plugin
 add_action('plugins_loaded', function () {
 
@@ -92,6 +106,11 @@ add_action('plugins_loaded', function () {
     }
     if (class_exists('PCR_Messaging')) {
         PCR_Messaging::init();
+    }
+
+    // ✨ NOUVEAU : Initialisation des Webhooks REST API
+    if (class_exists('PCR_Rest_Webhook')) {
+        PCR_Rest_Webhook::init();
     }
 
     // --- AUTOMATISATION : CRON JOB (Vérification quotidienne des cautions) ---

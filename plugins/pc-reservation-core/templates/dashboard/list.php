@@ -857,44 +857,11 @@ if (! defined('ABSPATH')) {
                                     <div class="pc-resa-card__section pc-resa-card__section--full" style="flex: 1 1 100%; max-width: 100%;">
                                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                                             <h4 style="margin:0;">💬 Messagerie &amp; Historique</h4>
-                                            <button type="button" class="pc-btn pc-btn--primary pc-resa-open-msg-modal"
-                                                style="font-size:0.8rem; padding:4px 10px;"
+                                            <button type="button" class="pc-btn pc-btn-icon-text" id="pc-open-messaging"
                                                 data-resa-id="<?php echo $resa->id; ?>"
                                                 data-client="<?php echo esc_attr($client_name); ?>">
-                                                ✉️ Envoyer un message
+                                                💬 Ouvrir la messagerie
                                             </button>
-                                        </div>
-
-                                        <div class="pc-resa-messages-list">
-                                            <?php
-                                            $msgs = isset($messages_map[$resa->id]) ? $messages_map[$resa->id] : [];
-                                            if (!empty($msgs)) :
-                                                foreach ($msgs as $msg) :
-                                                    $is_out = ($msg->direction === 'sortant');
-                                                    $bg = $is_out ? '#f1f5f9' : '#dbeafe'; // Gris = Nous, Bleu = Client (Futur)
-                                                    $align = $is_out ? 'margin-left:auto; margin-right:0;' : 'margin-right:auto; margin-left:0;';
-                                                    $icon = ($msg->canal === 'whatsapp') ? '📱' : '📧';
-                                                    $status_icon = ($msg->statut_envoi === 'envoye') ? '✅' : '⏳';
-                                            ?>
-                                                    <div style="background:<?php echo $bg; ?>; padding:8px 12px; border-radius:8px; max-width:85%; margin-bottom:8px; <?php echo $align; ?> font-size:0.9rem;">
-                                                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748b; margin-bottom:4px;">
-                                                            <span><?php echo $icon; ?> <strong><?php echo esc_html($msg->sujet); ?></strong></span>
-                                                            <span><?php echo date_i18n('d/m H:i', strtotime($msg->date_creation)); ?> <?php echo $status_icon; ?></span>
-                                                        </div>
-                                                        <div style="white-space: pre-wrap; line-height:1.4;"><?php echo wp_trim_words($msg->corps, 20, '...'); ?></div>
-                                                        <?php if (strlen(strip_tags($msg->corps)) > 100): ?>
-                                                            <button type="button" class="pc-msg-see-more"
-                                                                style="border:none; background:none; color:#3b82f6; font-size:0.75rem; padding:0; cursor:pointer;"
-                                                                data-action="view-full-message"
-                                                                data-content="<?php echo esc_attr($msg->corps); ?>">
-                                                                [Voir plus]
-                                                            </button>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                <?php endforeach;
-                                            else : ?>
-                                                <p style="font-style:italic; color:#94a3b8; text-align:center; padding:10px;">Aucun message échangé.</p>
-                                            <?php endif; ?>
                                         </div>
                                     </div>
 

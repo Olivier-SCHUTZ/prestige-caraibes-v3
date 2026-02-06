@@ -132,6 +132,75 @@ class PCR_Documents
         return $field;
     }
 
+    /**
+     * ✨ MÉTHODE INTELLIGENTE : Récupère le PDF existant ou le génère
+     * Gère la logique "Si existe déjà, prendre le plus récent, sinon créer"
+     * * @param string $doc_type Type de document (devis, facture, facture_acompte...)
+     * @param int $reservation_id ID de la réservation
+     * @return array ['success' => bool, 'path' => string, 'url' => string]
+     */
+    public static function generate_native($doc_type, $reservation_id)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'pc_documents';
+
+        // 1. RECHERCHE INTELLIGENTE : Trouver le document le plus récent de ce type
+        // On trie par date_creation DESC pour prendre la dernière version modifiée manuellement
+        $existing = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table_name} 
+             WHERE reservation_id = %d 
+             AND type_doc = %s 
+             ORDER BY date_creation DESC 
+             LIMIT 1",
+            $reservation_id,
+            $doc_type
+        ));
+
+        // 2. Si trouvé en BDD, on vérifie que le fichier physique existe toujours
+        if ($existing) {
+            $file_path = $existing->chemin_fichier;
+
+            // Parfois le chemin en BDD est absolu, parfois non, on sécurise :
+            if (!file_exists($file_path)) {
+                // Tentative de reconstruction du chemin si le fichier a bougé
+                $upload_dir = wp_upload_dir();
+                $rel_path = '/pc-reservation/documents/' . $reservation_id . '/' . $existing->nom_fichier;
+                $file_path = $upload_dir['basedir'] . $rel_path;
+            }
+
+            if (file_exists($file_path)) {
+                return [
+                    'success' => true,
+                    'path' => $file_path,
+                    'url' => $existing->url_fichier,
+                    'source' => 'existing' // Pour info debug
+                ];
+            }
+        }
+
+        // 3. SINON (Pas trouvé ou fichier supprimé) -> ON GÉNÈRE À LA VOLÉE
+        // On utilise ta méthode 'generate' existante.
+        // On préfixe par 'native_' car ta méthode 'generate' attend ce format pour les docs systèmes.
+        $template_code = 'native_' . $doc_type;
+
+        $result = self::generate($template_code, $reservation_id, true); // true = force regen
+
+        if ($result['success']) {
+            // La méthode generate retourne l'URL, nous avons besoin du PATH pour wp_mail
+            $upload_dir = wp_upload_dir();
+            $generated_path = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $result['url']);
+
+            return [
+                'success' => true,
+                'path' => $generated_path,
+                'url' => $result['url'],
+                'source' => 'generated'
+            ];
+        }
+
+        return $result;
+    }
+
     // --- MOTEUR DE GÉNÉRATION ---
 
     /**

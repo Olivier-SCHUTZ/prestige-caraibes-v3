@@ -467,10 +467,11 @@ function pc_resa_dashboard_shortcode($atts)
         );
     }
 
-    // Charger les 3 modules CSS séparément pour éviter les conflits @import avec Elementor/OceanWP
+    // Charger les modules CSS séparément pour éviter les conflits @import avec Elementor/OceanWP
     $dashboard_base_css = $plugin_path . 'assets/css/dashboard-base.css';
     $dashboard_forms_css = $plugin_path . 'assets/css/dashboard-forms.css';
     $dashboard_modals_css = $plugin_path . 'assets/css/dashboard-modals.css';
+    $dashboard_messaging_css = $plugin_path . 'assets/css/dashboard-messaging.css';
     $dashboard_style_css = $plugin_path . 'assets/css/dashboard-style.css';
 
     wp_enqueue_style(
@@ -495,9 +496,16 @@ function pc_resa_dashboard_shortcode($atts)
     );
 
     wp_enqueue_style(
+        'pc-resa-dashboard-messaging',
+        $plugin_url . 'assets/css/dashboard-messaging.css',
+        ['pc-resa-dashboard-base'],
+        file_exists($dashboard_messaging_css) ? filemtime($dashboard_messaging_css) : null
+    );
+
+    wp_enqueue_style(
         'pc-resa-dashboard-style',
         $plugin_url . 'assets/css/dashboard-style.css',
-        ['pc-resa-dashboard-base', 'pc-resa-dashboard-forms', 'pc-resa-dashboard-modals'],
+        ['pc-resa-dashboard-base', 'pc-resa-dashboard-forms', 'pc-resa-dashboard-modals', 'pc-resa-dashboard-messaging'],
         file_exists($dashboard_style_css) ? filemtime($dashboard_style_css) : null
     );
 
@@ -882,6 +890,7 @@ function pc_resa_dashboard_shortcode($atts)
 
     include $template_base . 'list.php';
     include $template_base . 'modal-detail.php';
+    include $template_base . 'modal-messaging.php';
     include $template_base . 'popups.php';
 
     return ob_get_clean();

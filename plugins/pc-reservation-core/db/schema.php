@@ -111,34 +111,64 @@ class PCR_Reservation_Schema
           KEY idx_statut_date (statut, date_creation)
         ) {$charset_collate};";
 
-    // TABLE MESSAGES
+    // TABLE MESSAGES - ✨ REFONTE CHANNEL MANAGER
     $sql_msg = "CREATE TABLE {$table_msg} (
           id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
           reservation_id BIGINT(20) UNSIGNED NOT NULL,
+          conversation_id BIGINT(20) UNSIGNED NOT NULL,
+          
+          /* === CANAUX & SOURCES === */
           canal VARCHAR(20) DEFAULT 'email',
+          channel_source VARCHAR(50) DEFAULT 'email',
+          external_id VARCHAR(191) DEFAULT NULL,
+          
+          /* === ACTEURS & DIRECTION === */
           direction VARCHAR(20) DEFAULT 'sortant',
-          type VARCHAR(50) DEFAULT 'automatique',  /* <--- C'EST LA COLONNE MANQUANTE */
+          sender_type ENUM('host', 'guest', 'system') DEFAULT 'host',
+          
+          /* === CONTENU === */
+          type VARCHAR(50) DEFAULT 'automatique',
           sujet VARCHAR(255) DEFAULT NULL,
           corps LONGTEXT DEFAULT NULL,
           template_code VARCHAR(100) DEFAULT NULL,
+          
+          /* === DESTINATAIRES (Compatibilité) === */
           dest_nom VARCHAR(191) DEFAULT NULL,
           dest_email VARCHAR(191) DEFAULT NULL,
           dest_tel VARCHAR(50) DEFAULT NULL,
           exp_nom VARCHAR(191) DEFAULT NULL,
           exp_email VARCHAR(191) DEFAULT NULL,
           exp_tel VARCHAR(50) DEFAULT NULL,
+          
+          /* === STATUTS & SUIVI === */
           statut_envoi VARCHAR(20) DEFAULT 'brouillon',
+          read_at DATETIME DEFAULT NULL,
+          delivered_at DATETIME DEFAULT NULL,
+          
+          /* === DATES === */
           date_creation DATETIME NOT NULL,
           date_envoi DATETIME DEFAULT NULL,
+          date_maj DATETIME NOT NULL,
+          
+          /* === INTÉGRATIONS EXTERNES === */
           provider_message_id VARCHAR(191) DEFAULT NULL,
           metadata LONGTEXT DEFAULT NULL,
-          est_automatique TINYINT(1) DEFAULT 0, /* On le garde pour compatibilité ou on pourra le supprimer plus tard */
+          
+          /* === COMPATIBILITÉ ASCENDANTE === */
+          est_automatique TINYINT(1) DEFAULT 0,
+          
+          /* === TRAÇABILITÉ === */
           user_id BIGINT(20) UNSIGNED DEFAULT NULL,
           note_interne TEXT DEFAULT NULL,
-          date_maj DATETIME NOT NULL,
+          
           PRIMARY KEY  (id),
           KEY idx_reservation (reservation_id),
-          KEY idx_canal_date (canal, date_creation)
+          KEY idx_conversation (conversation_id),
+          KEY idx_canal_date (canal, date_creation),
+          KEY idx_channel_source (channel_source),
+          KEY idx_read_status (read_at),
+          KEY idx_sender_type (sender_type),
+          KEY idx_external_id (external_id)
         ) {$charset_collate};";
 
     // TABLE INDISPONIBILITES MANUELLES
@@ -161,5 +191,47 @@ class PCR_Reservation_Schema
     dbDelta($sql_pay);
     dbDelta($sql_msg);
     dbDelta($sql_unv);
+
+    // ✨ MIGRATION CHANNEL MANAGER : Mise à jour des messages existants
+    self::migrate_existing_messages();
+  }
+
+  /**
+   * ✨ MIGRATION DESIGN-AWARE : Met à jour les messages existants avec les nouvelles colonnes
+   * Garantit la compatibilité ascendante parfaite
+   */
+  private static function migrate_existing_messages()
+  {
+    global $wpdb;
+    $table = $wpdb->prefix . 'pc_messages';
+
+    // 1. Vérifier si la migration a déjà été effectuée
+    $migration_key = 'pc_messages_channel_manager_migration_v1';
+    if (get_option($migration_key)) {
+      return; // Déjà migrée
+    }
+
+    // 2. Mise à jour des messages existants avec valeurs par défaut Design-Aware
+    $updated = $wpdb->query("
+      UPDATE {$table} 
+      SET 
+        conversation_id = COALESCE(conversation_id, reservation_id),
+        channel_source = COALESCE(channel_source, 'email'),
+        sender_type = CASE 
+          WHEN sender_type IS NULL THEN 'host' 
+          ELSE sender_type 
+        END
+      WHERE conversation_id IS NULL 
+         OR channel_source IS NULL 
+         OR sender_type IS NULL
+    ");
+
+    // 3. Marquer la migration comme terminée
+    add_option($migration_key, current_time('mysql'));
+
+    // 4. Log pour debug si nécessaire
+    if ($updated > 0) {
+      error_log("[PC CHANNEL MANAGER] Migration réussie : {$updated} messages mis à jour.");
+    }
   }
 }

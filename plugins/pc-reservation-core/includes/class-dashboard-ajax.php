@@ -29,6 +29,14 @@ class PCR_Dashboard_Ajax
         add_action('wp_ajax_pc_confirm_reservation', [__CLASS__, 'ajax_confirm_reservation']);
         add_action('wp_ajax_pc_send_message', [__CLASS__, 'ajax_send_message']);
 
+        // ✨ 2.1 NOUVEAUX ENDPOINTS CHANNEL MANAGER
+        add_action('wp_ajax_pc_get_conversation_history', [__CLASS__, 'ajax_get_conversation_history']);
+        add_action('wp_ajax_pc_mark_messages_read', [__CLASS__, 'ajax_mark_messages_read']);
+        add_action('wp_ajax_pc_get_quick_replies', [__CLASS__, 'ajax_get_quick_replies']);
+
+        // ✨ 2.2 NOUVEAU ENDPOINT PHASE 4 - PIÈCES JOINTES
+        add_action('wp_ajax_pc_get_reservation_files', [__CLASS__, 'ajax_get_reservation_files']);
+
         // 3. API DOCUMENTS (Le correctif final)
         // On connecte les actions AJAX directement aux méthodes statiques de la classe Documents
         add_action('wp_ajax_pc_get_documents_templates', [__CLASS__, 'ajax_get_documents_templates']);
@@ -1000,6 +1008,9 @@ class PCR_Dashboard_Ajax
         $custom_subject = isset($_POST['custom_subject']) ? sanitize_text_field($_POST['custom_subject']) : '';
         $custom_body    = isset($_POST['custom_body']) ? wp_kses_post($_POST['custom_body']) : '';
 
+        // ✨ NOUVEAU PHASE 4 : Support des pièces jointes
+        $attachment_path = isset($_POST['attachment_path']) ? sanitize_text_field($_POST['attachment_path']) : '';
+
         if ($reservation_id <= 0) {
             wp_send_json_error(['message' => 'ID Réservation manquant.']);
         }
@@ -1016,20 +1027,271 @@ class PCR_Dashboard_Ajax
             }
             $custom_args = [
                 'sujet' => $custom_subject,
-                'corps' => $custom_body
+                'corps' => $custom_body,
+                'attachment_path' => $attachment_path
             ];
         } elseif (empty($template_id)) {
             wp_send_json_error(['message' => 'Veuillez choisir un modèle ou écrire un message.']);
         }
 
+        // ✨ NOUVEAU PHASE 4 : Gestion des pièces jointes
+        $attachments = [];
+        $temp_files = []; // Pour nettoyer les fichiers temporaires après envoi
+
+        // 1. Pièce jointe système (Fichier existant OU Code natif)
+        if (!empty($attachment_path)) {
+            // Si c'est un fichier réel sur le disque
+            if (file_exists($attachment_path)) {
+                $attachments[] = $attachment_path;
+            }
+            // OU SI c'est un code spécial (commence par native_ ou template_)
+            elseif (strpos($attachment_path, 'native_') === 0 || strpos($attachment_path, 'template_') === 0) {
+                $attachments[] = $attachment_path;
+            }
+        }
+
+        // 2. Pièce jointe uploadée par l'utilisateur
+        if (!empty($_FILES['file_upload']) && $_FILES['file_upload']['error'] === UPLOAD_ERR_OK) {
+            $uploaded_file = $_FILES['file_upload'];
+
+            // Validation du fichier
+            $allowed_types = [
+                'application/pdf',
+                'image/jpeg',
+                'image/jpg',
+                'image/png',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ];
+
+            $max_size = 10 * 1024 * 1024; // 10MB
+
+            if ($uploaded_file['size'] > $max_size) {
+                wp_send_json_error(['message' => 'Le fichier est trop volumineux. Taille maximum : 10MB']);
+            }
+
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            $detected_type = $finfo->file($uploaded_file['tmp_name']);
+
+            if (!in_array($detected_type, $allowed_types)) {
+                wp_send_json_error(['message' => 'Type de fichier non supporté.']);
+            }
+
+            // Déplacer le fichier vers un répertoire temporaire sécurisé
+            $upload_dir = wp_upload_dir();
+            $temp_dir = $upload_dir['basedir'] . '/pc-temp-attachments';
+
+            if (!file_exists($temp_dir)) {
+                wp_mkdir_p($temp_dir);
+            }
+
+            // Nom de fichier sécurisé
+            $file_extension = pathinfo($uploaded_file['name'], PATHINFO_EXTENSION);
+            $temp_filename = 'temp_' . uniqid() . '.' . $file_extension;
+            $temp_path = $temp_dir . '/' . $temp_filename;
+
+            if (move_uploaded_file($uploaded_file['tmp_name'], $temp_path)) {
+                $attachments[] = $temp_path;
+                $temp_files[] = $temp_path; // Pour suppression ultérieure
+            } else {
+                wp_send_json_error(['message' => 'Erreur lors du traitement du fichier.']);
+            }
+        }
+
+        // Ajouter les pièces jointes aux arguments
+        if (!empty($attachments)) {
+            $custom_args['attachments'] = $attachments;
+        }
+
         // Appel
         $result = PCR_Messaging::send_message($template_id, $reservation_id, false, 'manuel', $custom_args);
+
+        // Nettoyer les fichiers temporaires après l'envoi
+        foreach ($temp_files as $temp_file) {
+            if (file_exists($temp_file)) {
+                unlink($temp_file);
+            }
+        }
 
         if (!$result['success']) {
             wp_send_json_error(['message' => $result['message']]);
         }
 
-        wp_send_json_success(['message' => 'Message envoyé avec succès.']);
+        // ✨ NOUVEAU : Récupérer le message créé pour l'affichage instantané
+        $message_data = null;
+        if (class_exists('PCR_Messaging')) {
+            $conversation = PCR_Messaging::get_conversation($reservation_id);
+            if ($conversation['success'] && !empty($conversation['messages'])) {
+                // Prendre le dernier message (le plus récent)
+                $messages = $conversation['messages'];
+                $message_data = end($messages);
+            }
+        }
+
+        wp_send_json_success([
+            'message' => 'Message envoyé avec succès.',
+            'new_message' => $message_data
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT CHANNEL MANAGER : Récupère l'historique d'une conversation
+     */
+    public static function ajax_get_conversation_history()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Paramètres
+        $reservation_id = isset($_REQUEST['reservation_id']) ? (int) $_REQUEST['reservation_id'] : 0;
+        if ($reservation_id <= 0) {
+            wp_send_json_error(['message' => 'ID réservation manquant.']);
+        }
+
+        // 3. Vérifier que le module est disponible
+        if (!class_exists('PCR_Messaging')) {
+            wp_send_json_error(['message' => 'Module Messagerie indisponible.']);
+        }
+
+        // 4. Récupérer la conversation
+        $conversation = PCR_Messaging::get_conversation($reservation_id);
+
+        if (!$conversation['success']) {
+            wp_send_json_error(['message' => 'Impossible de charger la conversation.']);
+        }
+
+        // 5. Enrichir avec les données de la réservation pour le contexte
+        $resa_data = null;
+        if (class_exists('PCR_Reservation')) {
+            $resa = PCR_Reservation::get_by_id($reservation_id);
+            if ($resa) {
+                $resa_data = [
+                    'id' => $resa->id,
+                    'prenom' => $resa->prenom,
+                    'nom' => $resa->nom,
+                    'email' => $resa->email,
+                    'statut_reservation' => $resa->statut_reservation,
+                    'statut_paiement' => $resa->statut_paiement,
+                ];
+            }
+        }
+
+        wp_send_json_success([
+            'conversation_id' => $conversation['conversation_id'],
+            'total_messages' => $conversation['total_messages'],
+            'unread_count' => $conversation['unread_count'],
+            'messages' => $conversation['messages'],
+            'reservation' => $resa_data,
+
+            // ✨ DESIGN-AWARE : Métadonnées pour le frontend glassmorphisme
+            'design_info' => [
+                'supports_channels' => true,
+                'available_channels' => ['email', 'airbnb', 'booking', 'sms', 'whatsapp'],
+                'css_classes' => [
+                    'container' => 'pc-resa-messages-list',
+                    'bubble_base' => 'pc-msg-bubble',
+                    'host_class' => 'pc-msg--host pc-msg--outgoing',
+                    'guest_class' => 'pc-msg--guest pc-msg--incoming',
+                    'see_more_class' => 'pc-msg-see-more',
+                ],
+                'glassmorphism_enabled' => true,
+            ]
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT CHANNEL MANAGER : Marque des messages comme lus
+     */
+    public static function ajax_mark_messages_read()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Paramètres
+        $message_ids = isset($_REQUEST['message_ids']) ? $_REQUEST['message_ids'] : [];
+
+        // Support pour un seul ID ou un tableau d'IDs
+        if (!is_array($message_ids)) {
+            $message_ids = [$message_ids];
+        }
+
+        $message_ids = array_filter(array_map('intval', $message_ids));
+        if (empty($message_ids)) {
+            wp_send_json_error(['message' => 'Aucun message à marquer.']);
+        }
+
+        // 3. Vérifier que le module est disponible
+        if (!class_exists('PCR_Messaging')) {
+            wp_send_json_error(['message' => 'Module Messagerie indisponible.']);
+        }
+
+        // 4. Marquer comme lu
+        $result = PCR_Messaging::mark_as_read($message_ids);
+
+        if (!$result['success']) {
+            wp_send_json_error(['message' => $result['message']]);
+        }
+
+        wp_send_json_success([
+            'message' => $result['message'],
+            'updated_count' => $result['updated_count']
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT CHANNEL MANAGER : Récupère les réponses rapides (templates)
+     */
+    public static function ajax_get_quick_replies()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Paramètres (optionnel)
+        $reservation_id = isset($_REQUEST['reservation_id']) ? (int) $_REQUEST['reservation_id'] : 0;
+
+        // 3. Vérifier que le module est disponible
+        if (!class_exists('PCR_Messaging')) {
+            wp_send_json_error(['message' => 'Module Messagerie indisponible.']);
+        }
+
+        // 4. Récupérer les réponses rapides
+        $result = PCR_Messaging::get_quick_replies();
+
+        if (!$result['success']) {
+            wp_send_json_error(['message' => $result['message']]);
+        }
+
+        // 5. Si reservation_id fourni, on peut enrichir les templates avec les variables
+        $templates = $result['templates'];
+        if ($reservation_id > 0 && !empty($templates)) {
+            foreach ($templates as &$template) {
+                $enriched = PCR_Messaging::get_quick_reply_with_vars($template['id'], $reservation_id);
+                if ($enriched['success']) {
+                    $template['content_with_vars'] = $enriched['template']['content'];
+                    $template['has_variables_replaced'] = true;
+                } else {
+                    $template['content_with_vars'] = $template['content'];
+                    $template['has_variables_replaced'] = false;
+                }
+            }
+        }
+
+        wp_send_json_success([
+            'templates' => $templates,
+            'total' => $result['total'],
+            'message' => $result['message'],
+            'reservation_id' => $reservation_id,
+            'variables_replaced' => $reservation_id > 0
+        ]);
     }
 
     /**
@@ -1200,5 +1462,174 @@ class PCR_Dashboard_Ajax
         ];
 
         wp_send_json_success($response);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT PHASE 4 : Récupère les documents PDF générés pour une réservation
+     * Utilise PCR_Documents pour lister les fichiers existants qui peuvent être joints aux emails
+     */
+    public static function ajax_get_reservation_files()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Paramètres
+        $reservation_id = isset($_REQUEST['reservation_id']) ? (int) $_REQUEST['reservation_id'] : 0;
+        if ($reservation_id <= 0) {
+            wp_send_json_error(['message' => 'ID réservation manquant.']);
+        }
+
+        // 3. Vérifier que les modules sont disponibles
+        if (!class_exists('PCR_Documents')) {
+            wp_send_json_error(['message' => 'Module Documents indisponible.']);
+        }
+
+        if (!class_exists('PCR_Reservation')) {
+            wp_send_json_error(['message' => 'Module Réservation indisponible.']);
+        }
+
+        // 4. Vérifier que la réservation existe
+        $resa = PCR_Reservation::get_by_id($reservation_id);
+        if (!$resa) {
+            wp_send_json_error(['message' => 'Réservation introuvable.']);
+        }
+
+        // 5. Récupérer les documents générés via PCR_Documents
+        // Utiliser la méthode qui liste les fichiers existants pour cette réservation
+        $upload_dir = wp_upload_dir();
+        $resa_folder = $upload_dir['basedir'] . '/pc-reservation/documents/' . $reservation_id;
+
+        $files = [];
+
+        // Vérifier si le dossier existe
+        if (is_dir($resa_folder)) {
+            $file_list = scandir($resa_folder);
+
+            foreach ($file_list as $filename) {
+                if ($filename === '.' || $filename === '..') {
+                    continue;
+                }
+
+                $file_path = $resa_folder . '/' . $filename;
+                if (!is_file($file_path)) {
+                    continue;
+                }
+
+                // Filtrer seulement les PDF
+                if (pathinfo($filename, PATHINFO_EXTENSION) !== 'pdf') {
+                    continue;
+                }
+
+                // Déterminer le type de document selon le nom de fichier
+                $doc_type = 'document';
+                $display_name = $filename;
+
+                if (strpos($filename, 'devis') !== false) {
+                    $doc_type = 'devis';
+                    $display_name = 'Devis commercial';
+                } elseif (strpos($filename, 'facture') !== false) {
+                    if (strpos($filename, 'acompte') !== false) {
+                        $doc_type = 'facture_acompte';
+                        $display_name = 'Facture d\'acompte';
+                    } else {
+                        $doc_type = 'facture';
+                        $display_name = 'Facture';
+                    }
+                } elseif (strpos($filename, 'contrat') !== false) {
+                    $doc_type = 'contrat';
+                    $display_name = 'Contrat de location';
+                } elseif (strpos($filename, 'voucher') !== false) {
+                    $doc_type = 'voucher';
+                    $display_name = 'Voucher / Bon d\'échange';
+                } elseif (strpos($filename, 'avoir') !== false) {
+                    $doc_type = 'avoir';
+                    $display_name = 'Avoir';
+                }
+
+                // Icône selon le type
+                $icon = '📄';
+                switch ($doc_type) {
+                    case 'devis':
+                        $icon = '📄';
+                        break;
+                    case 'facture':
+                        $icon = '🧾';
+                        break;
+                    case 'facture_acompte':
+                        $icon = '💰';
+                        break;
+                    case 'avoir':
+                        $icon = '↩️';
+                        break;
+                    case 'contrat':
+                        $icon = '📋';
+                        break;
+                    case 'voucher':
+                        $icon = '🎫';
+                        break;
+                    default:
+                        $icon = '📄';
+                        break;
+                }
+
+                $file_size = filesize($file_path);
+                $file_size_formatted = '';
+                if ($file_size < 1024) {
+                    $file_size_formatted = $file_size . ' B';
+                } elseif ($file_size < 1024 * 1024) {
+                    $file_size_formatted = round($file_size / 1024, 1) . ' KB';
+                } else {
+                    $file_size_formatted = round($file_size / (1024 * 1024), 1) . ' MB';
+                }
+
+                $files[] = [
+                    'name' => $display_name,
+                    'filename' => $filename,
+                    'path' => $file_path,
+                    'url' => $upload_dir['baseurl'] . '/pc-reservation/documents/' . $reservation_id . '/' . $filename,
+                    'type' => $doc_type,
+                    'icon' => $icon,
+                    'size' => $file_size,
+                    'size_formatted' => $file_size_formatted,
+                    'created' => date('Y-m-d H:i:s', filemtime($file_path))
+                ];
+            }
+        }
+
+        // 6. Tri par type puis par nom
+        usort($files, function ($a, $b) {
+            // Priorité des types
+            $priority = [
+                'devis' => 1,
+                'facture_acompte' => 2,
+                'facture' => 3,
+                'contrat' => 4,
+                'voucher' => 5,
+                'avoir' => 6,
+                'document' => 7
+            ];
+
+            $a_priority = $priority[$a['type']] ?? 99;
+            $b_priority = $priority[$b['type']] ?? 99;
+
+            if ($a_priority === $b_priority) {
+                return strcmp($a['name'], $b['name']);
+            }
+
+            return $a_priority <=> $b_priority;
+        });
+
+        wp_send_json_success([
+            'reservation_id' => $reservation_id,
+            'files' => $files,
+            'total_count' => count($files),
+            'folder_path' => $resa_folder,
+            'message' => count($files) > 0
+                ? sprintf('%d document(s) disponible(s) pour cette réservation.', count($files))
+                : 'Aucun document généré pour cette réservation.'
+        ]);
     }
 }
