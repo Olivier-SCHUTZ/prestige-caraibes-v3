@@ -36,7 +36,6 @@ if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
     require_once PC_RES_CORE_PATH . 'includes/controller-forms.php';
 }
 
-
 // Activation : création / mise à jour des tables
 register_activation_hook(__FILE__, function () {
     if (class_exists('PCR_Reservation_Schema')) {
@@ -133,3 +132,105 @@ add_action('plugins_loaded', function () {
 add_action('wp_head', function () {
     echo '<script>window.pcResaCoreActive = true;</script>';
 });
+
+// ============================================================
+// 🚦 ROUTEUR WEB APP (Mode DEBUG & FORCE 99)
+// ============================================================
+
+/**
+ * 1. Création de la règle de réécriture
+ */
+add_action('init', function () {
+    $slug = function_exists('get_field') ? get_field('pc_dashboard_slug', 'option') : 'espace-proprietaire';
+    if (empty($slug)) $slug = 'espace-proprietaire';
+
+    add_rewrite_rule(
+        '^' . preg_quote($slug, '/') . '/?$',
+        'index.php?pc_app_dashboard=1',
+        'top'
+    );
+});
+
+/**
+ * 2. Enregistrement de la variable
+ */
+add_filter('query_vars', function ($vars) {
+    $vars[] = 'pc_app_dashboard';
+    return $vars;
+});
+
+/**
+ * 3. DEBUG : Vérification immédiate au chargement
+ * Si tu vois ce message, c'est que la variable est bien détectée !
+ */
+add_action('wp', function () {
+    if (get_query_var('pc_app_dashboard')) {
+        // Décommenter la ligne ci-dessous SI tu veux vérifier que WP détecte bien l'URL
+        // wp_die("<h1>DEBUG 1 :</h1> <p>WordPress a bien détecté la variable 'pc_app_dashboard' !</p>");
+    }
+});
+
+/**
+ * 4. Interception du Template (PRIORITÉ 99)
+ */
+add_filter('template_include', function ($template) {
+
+    // On vérifie si on est sur le dashboard
+    if (get_query_var('pc_app_dashboard')) {
+
+        $new_template = PC_RES_CORE_PATH . 'templates/app-shell.php';
+
+        // --- TEST CRITIQUE : Est-ce que le fichier existe ? ---
+        if (!file_exists($new_template)) {
+            wp_die("<h1>ERREUR FICHIER</h1><p>Le routeur veut charger le dashboard, mais ne trouve pas le fichier !</p><p>Chemin cherché : <code>" . $new_template . "</code></p><p>Vérifie que le fichier <strong>app-shell.php</strong> est bien dans le dossier <strong>templates</strong> de ton plugin.</p>");
+        }
+
+        return $new_template;
+    }
+
+    return $template;
+}, 99); // <--- LE 99 EST CRUCIAL POUR PASSER APRÈS LE THÈME
+
+/**
+ * 5. Injection des Scripts
+ */
+add_action('wp_enqueue_scripts', function () {
+    // On ne fait rien si ce n'est pas notre page Dashboard
+    if (!get_query_var('pc_app_dashboard')) {
+        return;
+    }
+
+    // 🛡️ NETTOYAGE : On retire Elementor et autres scripts parasites qui causent des erreurs
+    wp_dequeue_script('elementor-frontend');
+    wp_dequeue_script('elementor-pro-frontend');
+    wp_dequeue_style('elementor-frontend');
+    wp_dequeue_style('elementor-pro-frontend');
+    // Si tu as d'autres plugins qui injectent du JS (ex: Pixel, Chatbot...), retire-les ici aussi
+
+    // A. Chargement des assets CALENDRIER
+    if (function_exists('pc_dashboard_calendar_enqueue_assets')) {
+        pc_dashboard_calendar_enqueue_assets();
+    }
+
+    // B. Chargement des assets DASHBOARD
+    if (function_exists('pc_resa_dashboard_shortcode')) {
+        ob_start();
+        pc_resa_dashboard_shortcode([]);
+        ob_end_clean();
+    }
+}, 100);
+
+/**
+ * 6. Ajout au menu
+ */
+add_filter('wp_nav_menu_items', function ($items, $args) {
+    if (!function_exists('get_field')) return $items;
+
+    if (get_field('pc_dashboard_menu_item', 'option') && isset($args->theme_location) && $args->theme_location == 'primary') {
+        $slug = get_field('pc_dashboard_slug', 'option') ?: 'espace-proprietaire';
+        $url = home_url('/' . $slug);
+        $label = is_user_logged_in() ? 'Mon Espace' : 'Espace Propriétaire';
+        $items .= '<li class="menu-item pc-app-link"><a href="' . esc_url($url) . '">' . esc_html($label) . '</a></li>';
+    }
+    return $items;
+}, 10, 2);

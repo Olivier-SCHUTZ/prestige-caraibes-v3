@@ -300,6 +300,15 @@ class PCR_Settings
                     'ui' => 1,
                     'instructions' => 'Ajoute automatiquement un lien "Espace Propriétaire" dans le menu principal.',
                 ],
+                [
+                    'key' => 'field_pc_dashboard_logo',
+                    'label' => 'Logo du Dashboard (Fond Blanc)',
+                    'name' => 'pc_dashboard_logo',
+                    'type' => 'image',
+                    'return_format' => 'url',
+                    'preview_size' => 'medium', // Une vignette suffit
+                    'instructions' => 'Choisissez un logo adapté à un fond blanc (ex: version couleur ou sombre). Si vide, le logo principal sera utilisé.',
+                ],
             ],
             'location' => [
                 [['param' => 'options_page', 'operator' => '==', 'value' => 'pc-reservation-config']],
