@@ -96,8 +96,8 @@ do_action('pc_resa_app_enqueue_assets');
             margin-top: 0 !important;
         }
 
-        header,
-        footer,
+        body>header,
+        body>footer,
         .site-header,
         .site-footer {
             display: none !important;
@@ -452,33 +452,6 @@ do_action('pc_resa_app_enqueue_assets');
             .pc-view-section {
                 padding: 1rem;
             }
-        }
-
-        /* === CORRECTIF Z-INDEX MODALES (IMPÉRATIF) === */
-
-        /* 1. Modale Détail Réservation (Niveau 1) */
-        /* On la force à 10 000 pour être au-dessus du dashboard */
-        .pc-resa-modal-overlay,
-        .pc-resa-modal,
-        #pc-resa-modal-detail {
-            z-index: 10000 !important;
-        }
-
-        /* 2. Modale Messagerie (Niveau 2 - SUPERIOR) */
-        /* On la force à 9 millions pour être SÛR qu'elle passe au-dessus de tout */
-        #pc-messaging-modal {
-            z-index: 9999999 !important;
-            position: fixed !important;
-            /* Sécurité pour le positionnement */
-        }
-
-        /* On s'assure que le fond gris de la messagerie couvre bien tout */
-        #pc-messaging-modal .pc-messaging-modal-backdrop {
-            z-index: 1 !important;
-        }
-
-        #pc-messaging-modal .pc-messaging-modal-dialog {
-            z-index: 10 !important;
         }
     </style>
 </head>
