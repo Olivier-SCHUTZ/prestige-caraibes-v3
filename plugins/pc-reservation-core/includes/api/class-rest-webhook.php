@@ -196,17 +196,47 @@ class PCR_Rest_Webhook
             ], 400);
         }
 
-        // Extraction de l'ID de réservation depuis le sujet : pattern #123
-        if (!preg_match('/#(\d+)/', $subject, $matches)) {
+        $reservation_id = 0;
+
+        // --- STRATÉGIE DE DÉTECTION "TRIDENT" ---
+
+        // 1. Recherche dans le SUJET (Priorité 1)
+        // Accepte: [#123], [Resa #123], #123
+        if (preg_match('/(?:\[#|Resa #|#)(\d+)/i', $subject, $matches)) {
+            $reservation_id = (int) $matches[1];
+        }
+
+        // 2. Recherche dans le CORPS (Priorité 2 - Si sujet échoue)
+        // Cherche le watermark "Ref: #123" dans l'historique cité
+        if (!$reservation_id && !empty($message_content)) {
+            if (preg_match('/Ref:\s*#(\d+)/i', $message_content, $matches)) {
+                $reservation_id = (int) $matches[1];
+                error_log("[PCR_Webhook] ID trouvé dans le corps du message : #$reservation_id");
+            }
+        }
+
+        // 3. Recherche par EMAIL EXPÉDITEUR (Priorité 3 - Mode "Intelligent")
+        // Si le client écrit un tout nouveau mail sans référence
+        if (!$reservation_id && !empty($from_email)) {
+            // On utilise la méthode utilitaire existante pour trouver une résa active
+            $found_id = self::find_active_reservation_by_email($from_email);
+            if ($found_id) {
+                $reservation_id = $found_id;
+                error_log("[PCR_Webhook] ID déduit via l'email expéditeur ($from_email) : #$reservation_id");
+            }
+        }
+
+        // ----------------------------------------
+
+        // Si après tout ça on a toujours rien :
+        if (!$reservation_id) {
             return new WP_REST_Response([
                 'success' => false,
                 'error' => 'no_reservation_id',
-                'message' => 'Aucun ID de réservation trouvé dans le sujet. Format attendu: #123',
+                'message' => 'Impossible de lier ce message : ID absent du sujet/corps et aucun séjour actif trouvé pour cet email.',
                 'subject' => $subject,
-            ], 200); // 200 pour éviter les retry
+            ], 200);
         }
-
-        $reservation_id = (int) $matches[1];
 
         // Vérification que la réservation existe
         if (!class_exists('PCR_Reservation')) {

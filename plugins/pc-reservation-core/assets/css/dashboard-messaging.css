@@ -183,8 +183,7 @@
   margin-left: 16px;
 }
 
-.pc-chat-action-btn,
-.pc-chat-close-btn {
+.pc-chat-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -198,6 +197,40 @@
   transition: all 0.2s ease;
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
+}
+
+/* Style dédié et propre pour le bouton Fermer */
+.pc-chat-close-btn {
+  position: absolute; /* Sort du flux flexbox */
+  top: 20px; /* Espace depuis le haut */
+  right: 20px; /* Espace depuis la droite */
+  z-index: 50; /* Au-dessus du header */
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; /* Taille légèrement réduite pour l'élégance */
+  height: 36px;
+
+  background: rgba(
+    255,
+    255,
+    255,
+    0.9
+  ); /* Fond plus opaque pour être visible sur le header */
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%; /* Rond parfait */
+  color: var(--pc-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.pc-chat-close-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  transform: rotate(90deg); /* Animation de rotation */
+  border-color: #fecaca;
 }
 
 .pc-chat-action-btn:hover,

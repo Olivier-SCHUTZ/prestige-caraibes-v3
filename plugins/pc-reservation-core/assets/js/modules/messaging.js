@@ -350,38 +350,54 @@
       const isHost = message.sender_type === "host";
       const bubbleClass = isHost ? "pc-msg--host" : "pc-msg--guest";
 
-      // Formatage de la date
+      // Formatage de la date (Jour/Mois Heure:Minute)
       const dateObj = new Date(message.date_creation);
-      const timeStr = dateObj.toLocaleTimeString("fr-FR", {
+      const timeStr = dateObj.toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
       });
 
-      // Status icon
+      // Statut
       let statusIcon = "";
       if (isHost) {
         if (message.statut_envoi === "envoye") {
-          statusIcon = message.is_read ? "✓✓" : "✓";
+          statusIcon = message.is_read
+            ? '<span title="Lu">👁️</span>'
+            : '<span title="Envoyé">✓</span>';
         } else {
           statusIcon = "⏳";
         }
       }
 
-      // Contenu avec gestion "voir plus"
+      // Gestion Contenu (Voir plus)
       let content = message.corps || "";
       let seeMoreBtn = "";
-
-      if (content.length > 200) {
-        const truncated = content.substring(0, 200) + "...";
-        seeMoreBtn = `
-          <button type="button" class="pc-msg-see-more" 
-                  data-action="view-full-message" 
-                  data-content="${this.escapeHtml(content)}">
-            Voir plus
-          </button>
-        `;
+      if (content.length > 300) {
+        // J'ai augmenté un peu la limite
+        const truncated = content.substring(0, 300) + "...";
+        seeMoreBtn = `<button type="button" class="pc-msg-see-more" data-action="view-full-message" data-content="${this.escapeHtml(content)}">Voir plus</button>`;
         content = truncated;
       }
+
+      // --- ✨ AJOUT : GESTION AFFICHAGE PIÈCES JOINTES ---
+      let attachmentsHtml = "";
+      if (
+        message.metadata &&
+        message.metadata.attachments &&
+        message.metadata.attachments.length > 0
+      ) {
+        message.metadata.attachments.forEach((file) => {
+          attachmentsHtml += `
+                <div class="pc-msg-attachment" style="margin-top:8px; padding:6px 10px; background:rgba(0,0,0,0.05); border-radius:6px; font-size:12px; display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:14px;">📎</span> 
+                    <span style="font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:150px;">${file.name}</span>
+                </div>
+              `;
+        });
+      }
+      // ---------------------------------------------------
 
       return `
         <div class="pc-msg-bubble ${bubbleClass}" data-message-id="${message.id}">
@@ -390,9 +406,12 @@
             ${message.canal === "whatsapp" ? "📱" : "📧"}
           </div>
           <div class="pc-msg-content">
-            ${this.escapeHtml(content).replace(/\n/g, "<br>")}
+            ${content} 
             ${seeMoreBtn}
           </div>
+          
+          ${attachmentsHtml}
+
           <div class="pc-msg-time">
             ${timeStr} ${statusIcon}
           </div>

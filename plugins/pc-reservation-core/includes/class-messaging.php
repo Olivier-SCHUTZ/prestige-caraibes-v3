@@ -492,6 +492,19 @@ class PCR_Messaging
         $subject = strtr($subject, $vars);
         $body    = strtr(wpautop($body), $vars);
 
+        // --- 🔒 SÉCURITÉ CHANNEL MANAGER ---
+        // 1. Force l'ID dans le sujet si absent (Format: [#123])
+        $prefix = "[#{$resa->id}]";
+        if (strpos($subject, $prefix) === false) {
+            $subject = $prefix . ' ' . $subject;
+        }
+
+        // 2. Ajoute le "Watermark" invisible en bas du corps pour le tracking en cas de changement de sujet
+        // On le met en couleur blanche ou très petit pour être discret mais lisible par le robot
+        $watermark = "<div style='color:#ffffff; font-size:1px; opacity:0;'>Ref: #{$resa->id}</div>";
+        $body .= $watermark;
+        // -----------------------------------
+
         // 5. PDF JOINT (Si module PDF actif) + ✨ NOUVEAU : Support pièces jointes custom
         $attachments = [];
 
@@ -546,41 +559,7 @@ class PCR_Messaging
             }
         }
 
-        // --- 🔧 FIX SÉCURISÉ : Gestion attachment_path avec protection anti-crash ---
-        if (!empty($custom_args['attachment_path'])) {
-            $path = $custom_args['attachment_path'];
-
-            // Cas 1 : C'est un code natif (ex: native_devis)
-            if (strpos($path, 'native_') === 0) {
-                // On vérifie tout avant d'appeler pour éviter l'Erreur 500
-                if (class_exists('PCR_Documents') && method_exists('PCR_Documents', 'generate_native')) {
-                    try {
-                        $doc_type = str_replace('native_', '', $path);
-                        // On tente la génération
-                        $gen = PCR_Documents::generate_native($doc_type, $resa->id);
-
-                        if (is_array($gen) && !empty($gen['success']) && !empty($gen['path'])) {
-                            $attachments[] = $gen['path'];
-                        } else {
-                            // Log discret en cas d'échec interne sans planter
-                            error_log("[PCR] Echec génération PDF natif ($doc_type) pour Résa #{$resa->id}");
-                        }
-                    } catch (Exception $e) {
-                        // On attrape l'erreur pour que l'email parte quand même (sans PJ)
-                        error_log("[PCR] CRITICAL ERROR génération PDF : " . $e->getMessage());
-                    }
-                } else {
-                    error_log("[PCR] Classe PCR_Documents ou méthode generate_native introuvable.");
-                }
-            }
-            // Cas 2 : C'est un fichier existant sur le disque
-            elseif (file_exists($path)) {
-                $attachments[] = $path;
-            }
-        }
-
-        // ✨ B. NOUVEAU : Pièces jointes additionnelles (Fichiers ou Natifs)
-        // --- Gestion des pièces jointes (Version Production) ---
+        // ✨ Gestion des pièces jointes (Fichiers ou Natifs)
         if (!empty($custom_args['attachment_path'])) {
             $path = $custom_args['attachment_path'];
 
@@ -597,7 +576,6 @@ class PCR_Messaging
                             $attachments[] = $gen['path'];
                         }
                     } catch (Exception $e) {
-                        // On log juste l'erreur critique dans le fichier error.log du serveur, pas à l'écran
                         error_log("[PCR Error] Echec PDF : " . $e->getMessage());
                     }
                 }
@@ -628,10 +606,27 @@ class PCR_Messaging
         global $wpdb;
         $conversation_id = self::get_or_create_conversation_id($reservation_id);
 
+        // --- A. PRÉPARATION DES MÉTADONNÉES (On prépare d'abord les PJ) ---
+        // On s'assure que $metadata est un tableau
+        $metadata = is_array($metadata) ? $metadata : [];
+
+        if (!empty($attachments)) {
+            $meta_attachments = [];
+            foreach ($attachments as $att_path) {
+                $meta_attachments[] = [
+                    'name' => basename($att_path), // Nom du fichier (ex: Devis-123.pdf)
+                    'type' => 'file'
+                ];
+            }
+            $metadata['attachments'] = $meta_attachments;
+        }
+        // ------------------------------------------------------------------
+
+        // --- B. CONSTRUCTION UNIQUE DU MESSAGE ---
         $message_data = [
             'reservation_id'  => $reservation_id,
             'conversation_id' => $conversation_id,
-            'canal'           => $channel_source, // Compatibilité
+            'canal'           => $channel_source,
             'channel_source'  => $channel_source,
             'direction'       => 'sortant',
             'sender_type'     => $sender_type,
@@ -650,6 +645,7 @@ class PCR_Messaging
             'metadata'        => !empty($metadata) ? json_encode($metadata) : null,
         ];
 
+        // --- C. INSERTION ---
         $wpdb->insert($wpdb->prefix . 'pc_messages', $message_data);
 
         if (!$delivery_success) {
