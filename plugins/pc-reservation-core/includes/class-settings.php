@@ -261,6 +261,45 @@ class PCR_Settings
                     </div>',
                     'new_lines' => '',
                 ],
+
+                // AJOUT : Onglet Divers / Identité
+                [
+                    'key' => 'field_tab_divers',
+                    'label' => 'Divers & Identité',
+                    'type' => 'tab',
+                ],
+                [
+                    'key' => 'field_pc_general_logo',
+                    'label' => 'Logo Principal du site',
+                    'name' => 'pc_general_logo',
+                    'type' => 'image',
+                    'return_format' => 'url',
+                    'preview_size' => 'medium',
+                    'library' => 'all',
+                    'instructions' => 'Ce logo sera utilisé dans les emails transactionnels et l\'interface.',
+                ],
+                [
+                    'key' => 'field_tab_webapp',
+                    'label' => 'Web App / Dashboard',
+                    'type' => 'tab',
+                ],
+                [
+                    'key' => 'field_pc_dashboard_slug',
+                    'label' => 'URL de l\'Espace Propriétaire',
+                    'name' => 'pc_dashboard_slug',
+                    'type' => 'text',
+                    'default_value' => 'espace-proprietaire',
+                    'instructions' => 'L\'adresse pour accéder au dashboard (ex: espace-proprietaire). Sauvegardez les permaliens WP après modification.',
+                    'prepend' => home_url('/'),
+                ],
+                [
+                    'key' => 'field_pc_dashboard_menu_item',
+                    'label' => 'Ajouter au menu',
+                    'name' => 'pc_dashboard_menu_item',
+                    'type' => 'true_false',
+                    'ui' => 1,
+                    'instructions' => 'Ajoute automatiquement un lien "Espace Propriétaire" dans le menu principal.',
+                ],
             ],
             'location' => [
                 [['param' => 'options_page', 'operator' => '==', 'value' => 'pc-reservation-config']],

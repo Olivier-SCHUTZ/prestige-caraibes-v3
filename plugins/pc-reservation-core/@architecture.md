@@ -575,7 +575,268 @@ pc-reservation-core/
 
 ---
 
-**Dernière mise à jour :** 30/01/2026 ✨ **MODERNISATION MAJEURE TERMINÉE**  
-**Analysé par :** IA Senior Developer & Architecte Logiciel WordPress  
-**Version du code :** 0.1.1 (Calendrier Modernisé)  
-**Statut :** Production Ready ✅ **INTERFACE MODERNE DÉPLOYÉE**
+---
+
+## 💬 **CHANNEL MANAGER - REFONTE MAJEURE** ✨
+
+**Date de refonte :** 07/02/2026  
+**Impact :** Système de messagerie unifié pour communications client omnicanal  
+**Status :** ✅ **PRODUCTION READY**
+
+### 📋 **1. Architecture du Channel Manager**
+
+#### **Base de Données Unifiée**
+
+La refonte s'appuie sur la table `pc_messages` avec une structure enrichie pour supporter le multicanal :
+
+```sql
+-- Table principale : pc_messages
+CREATE TABLE wp_pc_messages (
+  id BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
+  reservation_id BIGINT(20) NOT NULL,           -- Lien avec réservation
+  conversation_id BIGINT(20) NOT NULL,          -- Threading des messages
+
+  -- Canaux & Sources
+  canal VARCHAR(20) DEFAULT 'email',            -- Compatibilité (email, whatsapp, sms)
+  channel_source VARCHAR(50) DEFAULT 'email',   -- Source précise (brevo, airbnb, booking)
+  external_id VARCHAR(191),                     -- ID externe du message
+
+  -- Direction & Acteurs
+  direction VARCHAR(20) DEFAULT 'sortant',      -- sortant/entrant
+  sender_type ENUM('host', 'guest', 'system'),  -- Type d'expéditeur
+
+  -- Contenu
+  sujet VARCHAR(255),                           -- Sujet (emails uniquement)
+  corps LONGTEXT,                               -- Contenu principal
+  template_code VARCHAR(100),                   -- Code du template utilisé
+
+  -- Statuts & Suivi
+  statut_envoi VARCHAR(20) DEFAULT 'brouillon', -- brouillon, envoye, echec
+  read_at DATETIME,                             -- Date de lecture
+  delivered_at DATETIME,                        -- Date de livraison
+
+  -- Métadonnées
+  metadata LONGTEXT,                            -- JSON enrichi (attachments, etc.)
+
+  -- Indexes optimisés
+  KEY idx_conversation (conversation_id),
+  KEY idx_channel_source (channel_source),
+  KEY idx_external_id (external_id)
+);
+```
+
+#### **Concepts Clés**
+
+- **🔗 Unified Conversation :** Tous les messages d'une réservation sont regroupés par `conversation_id` (initialement = `reservation_id`)
+- **📎 Hybrid Attachments :** Support simultané de :
+  - Fichiers uploadés par l'utilisateur
+  - Documents "Natifs" générés à la volée (`native_devis`, `native_facture`, `native_contrat`, `native_voucher`)
+  - Templates PDF personnalisés (`template_123`)
+- **🌊 Omnicanal :** Email, WhatsApp, SMS, notes internes dans une interface unifiée
+- **🎭 Sender Types :** `host` (équipe), `guest` (client), `system` (automatique)
+
+### 📊 **2. Flux de Données (Data Flow)**
+
+#### **🚀 Envoi (Outbound)**
+
+```
+Frontend (messaging.js)
+    ↓ PCR.Messaging.handleSendMessage()
+    ↓ AJAX Request (pc_send_message)
+    ↓
+Dashboard AJAX (class-dashboard-ajax.php)
+    ↓ ajax_send_message()
+    ↓ Validation & FormData processing
+    ↓
+Core Messaging (class-messaging.php)
+    ↓ PCR_Messaging::send_message()
+    ↓ Template processing & Variable replacement
+    ↓ Hybrid Attachments handling (Native + Upload)
+    ↓ Email wrapping (HTML design)
+    ↓
+Delivery Layer
+    ├── wp_mail() → Email
+    └── [Futur: SMS/WhatsApp APIs]
+    ↓
+Database Insert (pc_messages)
+```
+
+**Variables supportées :**
+
+- `{prenom_client}`, `{nom_client}`, `{email_client}`
+- `{numero_resa}`, `{logement}`, `{date_arrivee}`, `{date_depart}`
+- `{montant_total}`, `{acompte_paye}`, `{solde_restant}`
+- `{lien_paiement_acompte}`, `{lien_paiement_solde}`, `{lien_paiement_caution}`
+
+#### **📨 Réception (Inbound)**
+
+```
+External Provider (Brevo/WhatsApp)
+    ↓ Webhook POST /wp-json/pc-resa/v1/incoming-message
+    ↓
+REST Webhook (class-rest-webhook.php)
+    ↓ handle_webhook() → Security check (secret)
+    ↓ Message type detection (email/whatsapp)
+    ↓ Reservation ID extraction (Trident Strategy)
+    ↓
+Core Messaging (class-messaging.php)
+    ↓ PCR_Messaging::receive_external_message()
+    ↓ Conversation threading
+    ↓ Metadata enrichment
+    ↓
+Database Insert (pc_messages)
+```
+
+**🔱 Trident Strategy** (Détection ID réservation) :
+
+1. **Priorité 1 :** Pattern dans le sujet `[#123]`, `[Resa #123]`, `#123`
+2. **Priorité 2 :** Watermark dans le corps `Ref: #123`
+3. **Priorité 3 :** Recherche par email expéditeur (réservation active)
+
+### 🎨 **3. Frontend & UX (messaging.js)**
+
+#### **Interface en Onglets**
+
+Le Channel Manager utilise une interface moderne avec 3 onglets contextuels :
+
+```javascript
+// Structure des onglets
+this.currentContext = "chat"; // 'chat', 'email', 'notes'
+
+// Onglets adaptatifs
+switch (tabName) {
+  case "chat": // 💬 WhatsApp/SMS - Messagerie instantanée
+  case "email": // 📧 Emails officiels avec PJ
+  case "notes": // 📝 Notes internes équipe
+}
+```
+
+**🔄 Logique de Bascule Intelligente :**
+
+- Les templates `email_system` (avec PDF) basculent automatiquement sur l'onglet "Email"
+- Les `quick_reply` restent sur l'onglet courant
+- L'interface s'adapte : placeholder, boutons, fonctionnalités disponibles
+
+#### **📋 Templates & Réponses Rapides**
+
+```javascript
+// Chargement dynamique via AJAX
+PCR.Messaging.loadAndToggleTemplates()
+  ↓ pc_get_quick_replies
+  ↓ PCR_Messaging::get_quick_replies()
+  ↓ Rendu avec remplacement variables
+
+// Support pièces jointes dans templates
+template_data = {
+  attachment_key: 'native_devis',     // Code système
+  attachment_name: 'Devis Commercial' // Nom affiché
+}
+```
+
+**✨ Features UX Avancées :**
+
+- **Auto-expansion** textarea avec limite 120px
+- **Envoi Ctrl+Enter**
+- **Aperçu instantané** nouveaux messages (sans rechargement)
+- **Chips pièces jointes** avec remove
+- **Popover intelligent** avec repositionnement anti-débordement
+- **Upload fichiers** avec validation (10MB, PDF/JPG/PNG/DOC)
+
+#### **📎 Gestion Pièces Jointes Hybride**
+
+```javascript
+// Structure d'attachment
+this.currentAttachment = {
+  name: "Devis Commercial",
+  filename: "devis-123.pdf",
+  path: "native_devis", // OU chemin fichier réel
+  type: "preset", // preset/upload
+};
+
+// 3 sources supportées :
+// 1. Documents natifs (native_*)
+// 2. Fichiers uploadés (FormData)
+// 3. Templates PDF existants (template_123)
+```
+
+### 🛠️ **4. Outils de Debug & Test**
+
+#### **Simulateur de Webhook Intégré**
+
+La classe `PCR_Settings` inclut un simulateur AJAX permettant de tester la réception sans configuration DNS :
+
+```php
+// Endpoint de simulation
+add_action('wp_ajax_pc_simulate_webhook', [PCR_Settings::class, 'ajax_handle_simulation']);
+
+// Support multi-format
+- Brevo Email Inbound Parse
+- WhatsApp Business API
+- Auto-détection du format via structure JSON
+```
+
+**🧪 Interface de Test :**
+
+- Champ JSON pré-rempli avec exemple Brevo
+- Bouton AJAX avec feedback temps réel
+- Validation JSON + trace complète
+- Test sans tunnel ngrok/LocalTunnel
+
+**📋 Payload Type Brevo :**
+
+```json
+{
+  "subject": "Re: Votre séjour [Resa #115]",
+  "items": [
+    {
+      "SenderAddress": "client@gmail.com",
+      "RawHtmlBody": "Bonjour, merci pour ces infos ! J'arrive à 14h."
+    }
+  ]
+}
+```
+
+**📱 Payload Type WhatsApp :**
+
+```json
+{
+  "type": "whatsapp",
+  "from": "+590123456789",
+  "text": "Salut ! Question sur ma résa",
+  "reservation_id": 115
+}
+```
+
+### 🔍 **Architecture Technique Détaillée**
+
+#### **Sécurité Renforcée**
+
+- **Nonces AJAX** sur tous les endpoints
+- **Webhook secrets** avec hash_equals()
+- **Capabilities** granulaires (`manage_options`)
+- **Sanitisation** systématique des entrées/sorties
+
+#### **Performance Optimisée**
+
+- **Indexes BDD** stratégiques (conversation_id, channel_source, external_id)
+- **Cache intelligent** templates & configurations
+- **Lazy loading** conditionnel des ressources JS
+- **Pagination** native des conversations longues
+
+#### **Monitoring & Observabilité**
+
+- **Error logging** structuré avec contexte
+- **Métriques** d'usage par canal (`get_external_messages_stats()`)
+- **Debugging** webhooks avec payload complet
+- **Traçabilité** complète des messages (metadata JSON)
+
+---
+
+**Dernière mise à jour :** 07/02/2026 ✨ **CHANNEL MANAGER REFONTE MAJEURE**  
+**Analysé par :** Lead Architect IA - Spécialiste Channel Manager & Messagerie Omnicanal  
+**Version du code :** 0.1.2 (Channel Manager Unifié)  
+**Statut :** Production Ready ✅ **MESSAGERIE OMNICANAL DÉPLOYÉE**
+**Dernière mise à jour :** 07/02/2026 ✨ **CHANNEL MANAGER REFONTE MAJEURE**  
+**Analysé par :** Lead Architect IA - Spécialiste Channel Manager & Messagerie Omnicanal  
+**Version du code :** 0.1.2 (Channel Manager Unifié)  
+**Statut :** Production Ready ✅ **MESSAGERIE OMNICANAL DÉPLOYÉE**

@@ -1168,13 +1168,45 @@ class PCR_Dashboard_Ajax
         if (class_exists('PCR_Reservation')) {
             $resa = PCR_Reservation::get_by_id($reservation_id);
             if ($resa) {
+                // Calculs financiers pour le JS
+                $paid = 0;
+                if (class_exists('PCR_Payment')) {
+                    global $wpdb;
+                    $table_pay = $wpdb->prefix . 'pc_payments';
+                    $paid = (float) $wpdb->get_var($wpdb->prepare("SELECT SUM(montant) FROM $table_pay WHERE reservation_id = %d AND statut = 'paye'", $resa->id));
+                }
+                $total = (float) $resa->montant_total;
+                $solde = max(0, $total - $paid);
+
+                // Distinction Lien Acompte vs Solde
+                $acompte_theorique = (float) ($resa->montant_acompte ?? 0);
+                $type_lien = ($paid < $acompte_theorique) ? 'acompte' : 'solde';
+
+                // Calcul Durée
+                $duree = 0;
+                if ($resa->date_arrivee && $resa->date_depart) {
+                    $duree = ceil((strtotime($resa->date_depart) - strtotime($resa->date_arrivee)) / 86400);
+                }
+
                 $resa_data = [
                     'id' => $resa->id,
                     'prenom' => $resa->prenom,
                     'nom' => $resa->nom,
+                    'full_name' => $resa->prenom . ' ' . strtoupper($resa->nom),
                     'email' => $resa->email,
+                    'telephone' => $resa->telephone,
                     'statut_reservation' => $resa->statut_reservation,
                     'statut_paiement' => $resa->statut_paiement,
+                    // Données enrichies pour variables
+                    'logement' => get_the_title($resa->item_id),
+                    'date_arrivee' => date_i18n('d/m/Y', strtotime($resa->date_arrivee)),
+                    'date_depart' => date_i18n('d/m/Y', strtotime($resa->date_depart)),
+                    'duree_sejour' => $duree . ' nuit(s)',
+                    'montant_total' => number_format($total, 2, ',', ' ') . ' €',
+                    'acompte_paye' => number_format($paid, 2, ',', ' ') . ' €',
+                    'solde_restant' => number_format($solde, 2, ',', ' ') . ' €',
+                    'lien_paiement' => home_url('/paiement/?resa=' . $resa->id), // Le système gère la distinction via le paramètre, mais on peut ajouter un contexte si besoin
+                    'type_lien_paiement' => $type_lien // Pour info JS si besoin
                 ];
             }
         }

@@ -297,6 +297,8 @@
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
+            // Sauvegarde des détails complets pour les variables
+            this.currentResaDetails = data.data.reservation || {};
             this.renderConversation(data.data);
           } else {
             this.showConversationError(
@@ -773,26 +775,46 @@
      * NOUVEAU : Remplace les variables dans un template
      */
     replaceTemplateVariables: function (content) {
-      if (!this.currentClientName || !this.currentReservationId) {
+      if (!this.currentResaDetails || !this.currentReservationId) {
         return content;
       }
 
-      // Variables de base qu'on peut remplacer côté client
-      const names = this.currentClientName.trim().split(" ");
-      const prenom = names[0] || "Client";
-      const nomComplet = this.currentClientName;
+      const d = this.currentResaDetails; // Raccourci
+
+      // Distinction lien (Texte)
+      const labelLien =
+        d.type_lien_paiement === "acompte"
+          ? "Payer l'acompte"
+          : "Payer le solde";
+      const htmlLien = `<a href="${d.lien_paiement}">${labelLien}</a>`; // Si HTML supporté, sinon juste l'URL
 
       const vars = {
-        "{prenom}": prenom,
-        "{prenom_client}": prenom,
-        "{nom_client}": nomComplet,
-        "{numero_resa}": this.currentReservationId,
+        // Client
+        "{prenom}": d.prenom,
+        "{prenom_client}": d.prenom,
+        "{nom_client}": d.full_name, // Prénom Nom
+        "{email_client}": d.email,
+        "{telephone}": d.telephone,
+
+        // Réservation
+        "{numero_resa}": "#" + d.id, // Ajout du #
+        "{logement}": d.logement,
+        "{date_arrivee}": d.date_arrivee,
+        "{date_depart}": d.date_depart,
+        "{duree_sejour}": d.duree_sejour,
+
+        // Finances
+        "{montant_total}": d.montant_total,
+        "{acompte_paye}": d.acompte_paye,
+        "{solde_restant}": d.solde_restant,
+        "{lien_paiement}": d.lien_paiement,
       };
 
       let replacedContent = content;
       Object.keys(vars).forEach((key) => {
         const regex = new RegExp(key.replace(/[{}]/g, "\\$&"), "g");
-        replacedContent = replacedContent.replace(regex, vars[key]);
+        // On remplace par vide si la donnée est manquante pour éviter "undefined"
+        replacedContent = replacedContent.replace(regex, vars[key] || "");
       });
 
       return replacedContent;

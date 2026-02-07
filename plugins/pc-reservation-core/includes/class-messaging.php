@@ -29,6 +29,9 @@ class PCR_Messaging
 
         // 6. Gestion de l'aperçu PDF
         add_action('init', [__CLASS__, 'handle_pdf_preview_request']);
+
+        // 7. Script d'insertion des variables (Admin)
+        add_action('admin_footer', [__CLASS__, 'print_variable_insertion_script']);
     }
 
     /**
@@ -333,37 +336,48 @@ class PCR_Messaging
 
     public static function render_variable_help_box()
     {
-?>
-        <div style="font-size: 12px; color: #444;">
-            <p style="margin-bottom:10px;">Utilisez ces codes pour personnaliser vos messages :</p>
+        // On reste en PHP pur pour ne pas casser la structure de la classe
+        echo '<div style="font-size: 12px; color: #444;">';
 
-            <strong style="display:block; border-bottom:1px solid #ddd; padding-bottom:3px; margin-bottom:5px;">👤 Données Client</strong>
-            <ul style="margin: 0 0 15px 15px; list-style:square;">
-                <li><code>{prenom_client}</code></li>
-                <li><code>{nom_client}</code></li>
-                <li><code>{email_client}</code></li>
-                <li><code>{telephone}</code></li>
-                <li><code>{adresse_client}</code></li>
-            </ul>
+        echo '<p style="margin-bottom:10px; font-style:italic;">💡 Cliquez sur une variable pour l\'insérer.</p>';
 
-            <strong style="display:block; border-bottom:1px solid #ddd; padding-bottom:3px; margin-bottom:5px;">📅 Données Séjour</strong>
-            <ul style="margin: 0 0 15px 15px; list-style:square;">
-                <li><code>{date_arrivee}</code></li>
-                <li><code>{date_depart}</code></li>
-                <li><code>{duree_sejour}</code></li>
-                <li><code>{logement}</code></li>
-                <li><code>{numero_resa}</code></li>
-            </ul>
+        echo '<style>
+            .pc-insert-var { cursor: pointer; color: #2271b1; border: 1px solid #dcdcde; background: #f6f7f7; padding: 2px 5px; border-radius: 3px; transition: all 0.2s; }
+            .pc-insert-var:hover { background: #2271b1; color: #fff; border-color: #2271b1; }
+        </style>';
 
-            <strong style="display:block; border-bottom:1px solid #ddd; padding-bottom:3px; margin-bottom:5px;">💶 Données Financières</strong>
-            <ul style="margin: 0 0 15px 15px; list-style:square;">
-                <li><code>{montant_total}</code> (TTC)</li>
-                <li><code>{acompte_paye}</code> (Déjà réglé)</li>
-                <li><code>{solde_restant}</code> (Reste à payer)</li>
-                <li><code>{lien_paiement}</code> (Lien direct)</li>
-            </ul>
-        </div>
-<?php
+        // Client
+        echo '<strong style="display:block; border-bottom:1px solid #ddd; padding-bottom:3px; margin-bottom:5px;">👤 Données Client</strong>';
+        echo '<ul style="margin: 0 0 15px 0; list-style:none;">';
+        echo '<li><code class="pc-insert-var" title="Insérer">{prenom_client}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Insérer">{nom_client}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Insérer">{email_client}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Insérer">{telephone}</code></li>';
+        echo '</ul>';
+
+        // Séjour
+        echo '<strong style="display:block; border-bottom:1px solid #ddd; padding-bottom:3px; margin-bottom:5px;">📅 Données Séjour</strong>';
+        echo '<ul style="margin: 0 0 15px 0; list-style:none;">';
+        echo '<li><code class="pc-insert-var" title="Insérer">{date_arrivee}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Insérer">{date_depart}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Insérer">{duree_sejour}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Insérer">{logement}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Insérer">{numero_resa}</code></li>';
+        echo '</ul>';
+
+        // Finances
+        echo '<strong style="display:block; border-bottom:1px solid #ddd; padding-bottom:3px; margin-bottom:5px;">💶 Données Financières</strong>';
+        echo '<ul style="margin: 0 0 15px 0; list-style:none;">';
+        echo '<li><code class="pc-insert-var" title="Insérer">{montant_total}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Insérer">{acompte_paye}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Insérer">{solde_restant}</code></li>';
+        echo '<li style="margin-top:8px; padding-top:5px; border-top:1px dashed #ccc;"><strong>Liens Stripe :</strong></li>';
+        echo '<li><code class="pc-insert-var" title="Bloc Acompte">{lien_paiement_acompte}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Bloc Solde">{lien_paiement_solde}</code></li>';
+        echo '<li><code class="pc-insert-var" title="Bloc Caution">{lien_paiement_caution}</code></li>';
+        echo '</ul>';
+
+        echo '</div>';
     }
 
     /**
@@ -469,28 +483,40 @@ class PCR_Messaging
         $vars = [
             '{id}'              => $resa->id,
             '{prenom_client}'   => ucfirst($resa->prenom),
-            '{nom_client}'      => strtoupper($resa->nom),
+            '{nom_client}'      => ucfirst($resa->prenom) . ' ' . strtoupper($resa->nom), // Prénom NOM
             '{email_client}'    => $resa->email,
             '{telephone}'       => $resa->telephone,
-            '{telephone_client}' => $resa->telephone,
-            '{adresse_client}'  => $adresse_client,
+            // '{adresse_client}' supprimé comme demandé
 
             '{logement}'        => $item_title,
             '{date_arrivee}'    => date_i18n('d/m/Y', $ts_arr),
             '{date_depart}'     => date_i18n('d/m/Y', $ts_dep),
             '{duree_sejour}'    => $duree . ' nuit(s)',
-            '{numero_resa}'     => $resa->id,
+            '{numero_resa}'     => '#' . $resa->id, // Ajout du #
             '{numero_devis}'    => $resa->numero_devis,
 
             '{montant_total}'   => number_format((float)$resa->montant_total, 2, ',', ' ') . ' €',
             '{acompte_paye}'    => number_format($paid_amount, 2, ',', ' ') . ' €',
             '{solde_restant}'   => number_format($solde, 2, ',', ' ') . ' €',
-            '{lien_paiement}'   => home_url('/paiement/?resa=' . $resa->id),
+            '{lien_paiement}'         => home_url('/paiement/?resa=' . $resa->id),
+            '{lien_paiement_acompte}' => self::get_smart_link($resa->id, 'acompte'),
+            '{lien_paiement_solde}'   => self::get_smart_link($resa->id, 'solde'),
+            '{lien_paiement_caution}' => self::get_smart_link($resa->id, 'caution'),
         ];
 
         // 4. REMPLACEMENT
         $subject = strtr($subject, $vars);
         $body    = strtr(wpautop($body), $vars);
+
+        // AJOUT : Injection de la signature globale (Uniquement pour les Emails)
+        if ($channel_source === 'email') {
+            // Récupération depuis les options globales avec le champ confirmé
+            $signature = get_field('pc_email_signature', 'option');
+            if (!empty($signature)) {
+                // On ajoute un saut de ligne et on encapsule dans une div pour le CSS éventuel
+                $body .= "<br><br><div class='pc-signature'>" . wpautop($signature) . "</div>";
+            }
+        }
 
         // --- 🔒 SÉCURITÉ CHANNEL MANAGER ---
         // 1. Force l'ID dans le sujet si absent (Format: [#123])
@@ -591,8 +617,17 @@ class PCR_Messaging
             $to = $resa->email;
             if (!is_email($to)) return ['success' => false, 'message' => 'Email client invalide.'];
 
+            // ✨ DESIGN : On habille l'email sans toucher au $body qui sera sauvegardé en BDD
+            // On retire le préfixe [#123] du sujet pour l'affichage visuel dans le mail (plus propre)
+            $clean_subject_display = trim(str_replace("[#{$resa->id}]", '', $subject));
+
+            // Génération du HTML complet
+            $html_email = self::wrap_email_html($clean_subject_display, $body);
+
             $headers = ['Content-Type: text/html; charset=UTF-8'];
-            $delivery_success = wp_mail($to, $subject, $body, $headers, $attachments);
+
+            // On envoie $html_email (le beau), mais on garde $body (le simple) pour l'historique chat
+            $delivery_success = wp_mail($to, $subject, $html_email, $headers, $attachments);
 
             if (!$delivery_success) {
                 error_log("❌ Echec envoi mail Résa #{$reservation_id} à {$to}");
@@ -1379,5 +1414,294 @@ class PCR_Messaging
         $stats['total_external'] = (int) $total_external;
 
         return $stats;
+    }
+
+    /**
+     * Script JS pour insérer les variables dans l'éditeur WP au clic
+     * (Version Pur PHP pour éviter les erreurs de balises)
+     */
+    public static function print_variable_insertion_script()
+    {
+        // On ne charge le script que sur l'édition des CPT pc_message ou pc_pdf_template
+        $screen = get_current_screen();
+        if (!$screen || !in_array($screen->post_type, ['pc_message', 'pc_pdf_template'])) {
+            return;
+        }
+
+        // On utilise echo pour ne pas fermer la balise PHP
+        echo '<script type="text/javascript">
+            jQuery(document).ready(function($) {
+                $(".pc-insert-var").on("click", function() {
+                    var variable = $(this).text();
+                    var editorId = "content"; // ID standard de l\'éditeur WP
+
+                    // 1. Essayer d\'insérer dans TinyMCE (Onglet Visuel)
+                    if (typeof tinymce !== "undefined" && tinymce.get(editorId) && !tinymce.get(editorId).isHidden()) {
+                        tinymce.get(editorId).execCommand("mceInsertContent", false, variable);
+                    } 
+                    // 2. Sinon insérer dans le Textarea (Onglet Texte)
+                    else {
+                        var textarea = document.getElementById(editorId);
+                        if (textarea) {
+                            var startPos = textarea.selectionStart;
+                            var endPos = textarea.selectionEnd;
+                            
+                            // Insertion
+                            textarea.value = textarea.value.substring(0, startPos) +
+                                variable +
+                                textarea.value.substring(endPos, textarea.value.length);
+                            
+                            // Replacer le curseur après la variable
+                            textarea.selectionStart = textarea.selectionEnd = startPos + variable.length;
+                            textarea.focus();
+                        }
+                    }
+                });
+            });
+        </script>';
+    }
+
+    /**
+     * ✨ SMART LINK GENERATION (Version HTML Riche - Pur PHP)
+     * Récupère un lien existant ou le génère à la volée.
+     */
+    private static function get_smart_link($reservation_id, $type)
+    {
+        global $wpdb;
+        $url = '';
+
+        // --- A. RÉCUPÉRATION / GÉNÉRATION (Logique Backend) ---
+
+        // 1. CAUTION
+        if ($type === 'caution') {
+            if (!class_exists('PCR_Stripe_Manager')) return '';
+            $result = PCR_Stripe_Manager::create_caution_link($reservation_id);
+            if ($result['success']) {
+                $wpdb->update(
+                    $wpdb->prefix . 'pc_reservations',
+                    ['caution_statut' => 'demande_envoyee', 'caution_date_demande' => current_time('mysql')],
+                    ['id' => $reservation_id]
+                );
+                $url = $result['url'];
+            }
+        }
+        // 2. ACOMPTE, SOLDE ou TOTAL
+        else {
+            $table_pay = $wpdb->prefix . 'pc_payments';
+
+            // Requete de base
+            $sql = "SELECT id, montant, statut, url_paiement FROM {$table_pay} WHERE reservation_id = %d AND type_paiement = %s LIMIT 1";
+            $row = $wpdb->get_row($wpdb->prepare($sql, $reservation_id, $type));
+
+            // CORRECTION : Si on cherche le solde mais qu'on ne trouve rien, on cherche le "total"
+            if (!$row && $type === 'solde') {
+                $row = $wpdb->get_row($wpdb->prepare(
+                    "SELECT id, montant, statut, url_paiement FROM {$table_pay} WHERE reservation_id = %d AND type_paiement = 'total' LIMIT 1",
+                    $reservation_id
+                ));
+            }
+
+            if ($row && $row->statut !== 'paye') {
+                if (!empty($row->url_paiement)) {
+                    $url = $row->url_paiement;
+                } elseif (class_exists('PCR_Stripe_Manager')) {
+                    $result = PCR_Stripe_Manager::create_payment_link($reservation_id, (float)$row->montant, $type);
+                    if ($result['success']) {
+                        $wpdb->update(
+                            $table_pay,
+                            ['url_paiement' => $result['url'], 'gateway_reference' => $result['id']],
+                            ['id' => $row->id]
+                        );
+                        $url = $result['url'];
+                    }
+                }
+            }
+        }
+
+        // --- B. FORMATAGE HTML (Construction chaîne) ---
+
+        if (empty($url)) return '';
+
+        $label = 'Payer';
+        $color = '#6366f1';
+
+        switch ($type) {
+            case 'acompte':
+                $label = "Régler l'acompte";
+                break;
+            case 'solde':
+                $label = "Régler le solde";
+                break;
+            case 'caution':
+                $label = "Déposer la caution";
+                $color = '#059669';
+                break;
+        }
+
+        $esc_url = esc_url($url);
+
+        // Construction HTML via concaténation (Sécurité maximale)
+        $html  = '<div style="margin: 20px 0; padding: 15px; border: 1px solid #eee; border-radius: 8px; background-color: #f9f9f9; text-align: center;">';
+        $html .=    '<a href="' . $esc_url . '" target="_blank" style="display: inline-block; background-color: ' . $color . '; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 6px; font-weight: bold; font-size: 16px; margin-bottom: 15px;">';
+        $html .=        $label;
+        $html .=    '</a>';
+        $html .=    '<div style="font-size: 12px; color: #666; line-height: 1.4; border-top: 1px solid #e5e7eb; padding-top: 10px;">';
+        $html .=        'Si le bouton ne fonctionne pas, copiez-collez le lien suivant dans votre navigateur :<br>';
+        $html .=        '<a href="' . $esc_url . '" style="color: ' . $color . '; word-break: break-all;">' . $esc_url . '</a>';
+        $html .=    '</div>';
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    /**
+     * ✨ DESIGN : Habillage HTML des emails (Wrapper)
+     */
+    private static function wrap_email_html($subject, $content)
+    {
+        // 1. Récupération du branding (Logique en cascade)
+        // A. Nouveau champ général
+        $logo_url = get_field('pc_general_logo', 'option');
+
+        // B. Fallback : Champ PDF
+        if (empty($logo_url)) {
+            $logo_url = get_field('pc_pdf_logo', 'option');
+        }
+
+        // C. Fallback : Fichier physique spécifique (Hardcodé)
+        if (empty($logo_url)) {
+            $upload_dir = wp_upload_dir();
+            // On vérifie si le fichier existe pour éviter une image brisée
+            $fallback_path = '/wp-content/uploads/2025/03/Logo-blanc.svg';
+            if (file_exists($upload_dir['basedir'] . $fallback_path)) {
+                $logo_url = $upload_dir['baseurl'] . $fallback_path;
+            }
+        }
+
+        $primary_color = get_field('pc_pdf_primary_color', 'option') ?: '#6366f1'; // Violet par défaut
+        $bg_color      = '#f3f4f6'; // Gris très clair
+        $legal_name    = get_field('pc_legal_name', 'option') ?: get_bloginfo('name');
+
+        // 2. Construction du Template Email
+        ob_start();
+?>
+        <!DOCTYPE html>
+        <html>
+
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    font-family: 'Helvetica', 'Arial', sans-serif;
+                    background-color: <?php echo $bg_color; ?>;
+                    color: #374151;
+                }
+
+                .wrapper {
+                    width: 100%;
+                    table-layout: fixed;
+                    background-color: <?php echo $bg_color; ?>;
+                    padding-bottom: 40px;
+                }
+
+                .main {
+                    background-color: #ffffff;
+                    margin: 0 auto;
+                    width: 100%;
+                    max-width: 600px;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                }
+
+                .header {
+                    background-color: <?php echo $primary_color; ?>;
+                    padding: 20px;
+                    text-align: center;
+                }
+
+                .header img {
+                    max-height: 50px;
+                    width: auto;
+                }
+
+                .header h1 {
+                    color: #ffffff;
+                    margin: 0;
+                    font-size: 20px;
+                    font-weight: normal;
+                }
+
+                .content {
+                    padding: 30px;
+                    line-height: 1.6;
+                    font-size: 15px;
+                }
+
+                .content h2 {
+                    color: <?php echo $primary_color; ?>;
+                    margin-top: 0;
+                    font-size: 20px;
+                }
+
+                .content a {
+                    color: <?php echo $primary_color; ?>;
+                    text-decoration: none;
+                    font-weight: bold;
+                }
+
+                .footer {
+                    text-align: center;
+                    padding: 20px;
+                    font-size: 12px;
+                    color: #9ca3af;
+                }
+
+                /* Boutons natifs dans le contenu */
+                .pc-btn {
+                    display: inline-block;
+                    background-color: <?php echo $primary_color; ?>;
+                    color: #ffffff !important;
+                    padding: 12px 24px;
+                    border-radius: 6px;
+                    text-decoration: none;
+                    margin: 10px 0;
+                    font-weight: bold;
+                }
+            </style>
+        </head>
+
+        <body>
+            <div class="wrapper">
+                <div style="height: 30px;"></div>
+                <div class="main">
+                    <div class="header">
+                        <?php if ($logo_url): ?>
+                            <img src="<?php echo esc_url($logo_url); ?>" alt="<?php echo esc_attr($legal_name); ?>">
+                        <?php else: ?>
+                            <h1><?php echo esc_html($legal_name); ?></h1>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="content">
+                        <h2><?php echo esc_html($subject); ?></h2>
+
+                        <?php echo $content; ?>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <p>&copy; <?php echo date('Y'); ?> <?php echo esc_html($legal_name); ?>. Tous droits réservés.</p>
+                    <p>Ceci est un message automatique lié à votre réservation.</p>
+                </div>
+            </div>
+        </body>
+
+        </html>
+<?php
+        return ob_get_clean();
     }
 }
