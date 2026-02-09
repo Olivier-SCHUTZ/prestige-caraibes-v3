@@ -22,8 +22,10 @@ require_once PC_RES_CORE_PATH . 'includes/class-reservation.php';
 require_once PC_RES_CORE_PATH . 'includes/class-payment.php';
 require_once PC_RES_CORE_PATH . 'includes/class-booking-engine.php';
 require_once PC_RES_CORE_PATH . 'includes/class-dashboard-ajax.php';
+require_once PC_RES_CORE_PATH . 'includes/class-housing-manager.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-calendar.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-dashboard.php';
+require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-housing.php';
 require_once PC_RES_CORE_PATH . 'includes/class-ical-export.php';
 require_once PC_RES_CORE_PATH . 'includes/class-settings.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-manager.php';
@@ -72,6 +74,11 @@ add_action('plugins_loaded', function () {
 
     if (class_exists('PCR_Dashboard_Ajax')) {
         PCR_Dashboard_Ajax::init();
+    }
+
+    // Initialisation du Housing Manager
+    if (class_exists('PCR_Housing_Manager')) {
+        PCR_Housing_Manager::init();
     }
 
     // Initialisation de l'export iCal

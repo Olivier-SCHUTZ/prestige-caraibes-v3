@@ -514,6 +514,10 @@ do_action('pc_resa_app_enqueue_assets');
                         <span class="pc-nav-icon">📅</span>
                         <span class="pc-nav-label">Calendrier</span>
                     </a>
+                    <a href="#housing" class="pc-nav-item" onclick="switchTab('housing')">
+                        <span class="pc-nav-icon">🏘️</span>
+                        <span class="pc-nav-label">Mes Logements</span>
+                    </a>
                 </nav>
 
                 <div class="pc-sidebar-footer">
@@ -535,6 +539,16 @@ do_action('pc_resa_app_enqueue_assets');
 
                 <div id="view-calendar" class="pc-view-section">
                     <?php echo do_shortcode('[pc_dashboard_calendar]'); ?>
+                </div>
+
+                <div id="view-housing" class="pc-view-section">
+                    <?php
+                    // Force le chargement des assets housing
+                    if (function_exists('pc_housing_enqueue_assets')) {
+                        pc_housing_enqueue_assets();
+                    }
+                    echo do_shortcode('[pc_housing_dashboard]');
+                    ?>
                 </div>
             </main>
         </div>

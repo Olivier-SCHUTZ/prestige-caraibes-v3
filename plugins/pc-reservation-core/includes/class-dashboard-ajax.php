@@ -37,6 +37,11 @@ class PCR_Dashboard_Ajax
         // ✨ 2.2 NOUVEAU ENDPOINT PHASE 4 - PIÈCES JOINTES
         add_action('wp_ajax_pc_get_reservation_files', [__CLASS__, 'ajax_get_reservation_files']);
 
+        // ✨ 2.3 NOUVEAUX ENDPOINTS HOUSING MANAGER
+        add_action('wp_ajax_pc_housing_get_list', [__CLASS__, 'ajax_housing_get_list']);
+        add_action('wp_ajax_pc_housing_get_details', [__CLASS__, 'ajax_housing_get_details']);
+        add_action('wp_ajax_pc_housing_save', [__CLASS__, 'ajax_housing_save']);
+
         // 3. API DOCUMENTS (Le correctif final)
         // On connecte les actions AJAX directement aux méthodes statiques de la classe Documents
         add_action('wp_ajax_pc_get_documents_templates', [__CLASS__, 'ajax_get_documents_templates']);
@@ -1662,6 +1667,201 @@ class PCR_Dashboard_Ajax
             'message' => count($files) > 0
                 ? sprintf('%d document(s) disponible(s) pour cette réservation.', count($files))
                 : 'Aucun document généré pour cette réservation.'
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT HOUSING MANAGER : Récupère la liste des logements
+     */
+    public static function ajax_housing_get_list()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Vérifier que la classe est disponible
+        if (!class_exists('PCR_Housing_Manager')) {
+            wp_send_json_error(['message' => 'Module Housing Manager indisponible.']);
+        }
+
+        // 3. Paramètres de pagination et filtres
+        $args = [
+            'posts_per_page' => isset($_REQUEST['per_page']) ? (int) $_REQUEST['per_page'] : 20,
+            'paged' => isset($_REQUEST['page']) ? (int) $_REQUEST['page'] : 1,
+            'orderby' => isset($_REQUEST['orderby']) ? sanitize_text_field($_REQUEST['orderby']) : 'title',
+            'order' => isset($_REQUEST['order']) ? sanitize_text_field($_REQUEST['order']) : 'ASC',
+            's' => isset($_REQUEST['search']) ? sanitize_text_field($_REQUEST['search']) : '',
+        ];
+
+        // Filtres supplémentaires
+        $meta_query = [];
+
+        // Filtre par statut
+        if (!empty($_REQUEST['status_filter'])) {
+            $status_filter = sanitize_text_field($_REQUEST['status_filter']);
+            if (in_array($status_filter, ['publish', 'pending', 'draft', 'private'])) {
+                $args['post_status'] = [$status_filter];
+            }
+        }
+
+        // Filtre par mode de réservation
+        if (!empty($_REQUEST['mode_filter'])) {
+            $mode_filter = sanitize_text_field($_REQUEST['mode_filter']);
+            if (in_array($mode_filter, ['log_demande', 'log_directe', 'log_channel'])) {
+                $meta_query[] = [
+                    'key' => 'mode_reservation',
+                    'value' => $mode_filter,
+                    'compare' => '='
+                ];
+            }
+        }
+
+        // Filtre par type de logement
+        if (!empty($_REQUEST['type_filter'])) {
+            $type_filter = sanitize_text_field($_REQUEST['type_filter']);
+            if (in_array($type_filter, ['villa', 'appartement', 'logement'])) {
+                $args['post_type'] = [$type_filter];
+            }
+        }
+
+        if (!empty($meta_query)) {
+            $args['meta_query'] = $meta_query;
+        }
+
+        // 4. Récupérer la liste
+        $result = PCR_Housing_Manager::get_housing_list($args);
+
+        if (!$result['success']) {
+            wp_send_json_error(['message' => 'Erreur lors du chargement des logements.']);
+        }
+
+        wp_send_json_success([
+            'items' => $result['items'],
+            'total' => $result['total'],
+            'pages' => $result['pages'],
+            'current_page' => $result['current_page'],
+            'per_page' => $args['posts_per_page'],
+            'filters_applied' => [
+                'search' => $args['s'],
+                'status' => isset($status_filter) ? $status_filter : '',
+                'mode' => isset($mode_filter) ? $mode_filter : '',
+                'type' => isset($type_filter) ? $type_filter : '',
+            ]
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT HOUSING MANAGER : Récupère les détails d'un logement
+     */
+    public static function ajax_housing_get_details()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Vérifier que la classe est disponible
+        if (!class_exists('PCR_Housing_Manager')) {
+            wp_send_json_error(['message' => 'Module Housing Manager indisponible.']);
+        }
+
+        // 3. Paramètres
+        $post_id = isset($_REQUEST['post_id']) ? (int) $_REQUEST['post_id'] : 0;
+        if ($post_id <= 0) {
+            wp_send_json_error(['message' => 'ID de logement manquant.']);
+        }
+
+        // 4. Récupérer les détails
+        $result = PCR_Housing_Manager::get_housing_details($post_id);
+
+        if (!$result || !$result['success']) {
+            wp_send_json_error(['message' => 'Logement introuvable ou erreur de chargement.']);
+        }
+
+        wp_send_json_success([
+            'housing' => $result['data'],
+            'post_id' => $post_id,
+            'edit_url' => admin_url('post.php?post=' . $post_id . '&action=edit'),
+            'view_url' => get_permalink($post_id)
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT HOUSING MANAGER : Sauvegarde les modifications d'un logement
+     */
+    public static function ajax_housing_save()
+    {
+        // 🕵️‍♂️ DEBUG: Log des données POST reçues
+        error_log('=== PC HOUSING SAVE DEBUG ===');
+        error_log('POST data received: ' . print_r($_POST, true));
+        error_log('=============================');
+
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Vérifier que la classe est disponible
+        if (!class_exists('PCR_Housing_Manager')) {
+            wp_send_json_error(['message' => 'Module Housing Manager indisponible.']);
+        }
+
+        // 3. Paramètres
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+        if ($post_id <= 0) {
+            wp_send_json_error(['message' => 'ID de logement manquant.']);
+        }
+
+        // 4. Récupérer les données à sauvegarder
+        $data = [];
+
+        // Données de base du post
+        if (isset($_POST['title'])) {
+            $data['title'] = sanitize_text_field($_POST['title']);
+        }
+        if (isset($_POST['slug'])) {
+            $data['slug'] = sanitize_title($_POST['slug']);
+        }
+        if (isset($_POST['status'])) {
+            $data['status'] = sanitize_text_field($_POST['status']);
+        }
+        if (isset($_POST['content'])) {
+            $data['content'] = wp_kses_post($_POST['content']);
+        }
+        if (isset($_POST['excerpt'])) {
+            $data['excerpt'] = wp_kses_post($_POST['excerpt']);
+        }
+
+        // Image à la une
+        if (isset($_POST['featured_image_id'])) {
+            $data['featured_image_id'] = (int) $_POST['featured_image_id'];
+        }
+
+        // Champs ACF : on récupère tous les champs postés avec le préfixe 'acf_'
+        foreach ($_POST as $key => $value) {
+            if (strpos($key, 'acf_') === 0) {
+                // Retirer le préfixe pour obtenir la clé normalisée
+                $field_key = substr($key, 4);
+                $data[$field_key] = $value; // La sanitisation sera faite par PCR_Housing_Manager::update_housing
+            }
+        }
+
+        // 5. Sauvegarder
+        $result = PCR_Housing_Manager::update_housing($post_id, $data);
+
+        if (!$result['success']) {
+            wp_send_json_error(['message' => $result['message']]);
+        }
+
+        wp_send_json_success([
+            'message' => $result['message'],
+            'post_id' => $post_id,
+            'updated_fields' => $result['data']['updated_fields'] ?? 0,
+            'edit_url' => admin_url('post.php?post=' . $post_id . '&action=edit'),
         ]);
     }
 }
