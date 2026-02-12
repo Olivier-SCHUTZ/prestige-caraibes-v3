@@ -53,6 +53,13 @@ function pc_shortcode_housing_dashboard($atts = [])
                 <input type="text" id="pc-housing-search" placeholder="🔍 Rechercher un logement..." class="pc-input pc-search-input">
             </div>
 
+            <div class="pc-action-wrapper">
+                <button type="button" class="pc-btn pc-btn-primary" id="pc-new-housing-btn">
+                    <span class="pc-btn-icon">➕</span>
+                    Nouveau Logement
+                </button>
+            </div>
+
             <div class="pc-filters-wrapper">
                 <select id="pc-housing-status-filter" class="pc-select pc-filter-select">
                     <option value="">Tous les statuts</option>
@@ -182,6 +189,20 @@ function pc_shortcode_housing_dashboard($atts = [])
                         <!-- Onglet Général -->
                         <div class="pc-tab-content" id="tab-general">
                             <div class="pc-form-grid">
+                                <!-- NOUVEAU : Sélecteur de type de logement -->
+                                <div class="pc-form-group">
+                                    <label for="housing-type-selector">Type de logement *</label>
+                                    <select id="housing-type-selector" class="pc-select" required>
+                                        <option value="">-- Choisir le type --</option>
+                                        <option value="villa">Villa</option>
+                                        <option value="appartement">Appartement</option>
+                                    </select>
+                                    <small class="pc-field-help">
+                                        <span id="housing-type-help-creation">⚠️ Ce choix est définitif et ne pourra pas être modifié après création.</span>
+                                        <span id="housing-type-help-edit" style="display: none;">ℹ️ Le type ne peut pas être modifié pour un logement existant.</span>
+                                    </small>
+                                </div>
+
                                 <div class="pc-form-group pc-form-group--full">
                                     <label for="housing-title">Nom du logement</label>
                                     <input type="text" id="housing-title" class="pc-input" placeholder="Nom du logement">
@@ -602,6 +623,86 @@ function pc_shortcode_housing_dashboard($atts = [])
                                         <label><input type="checkbox" name="eq_internet[]" value="Bureau dans le salon" class="pc-checkbox-field"> Bureau dans le salon</label>
                                     </div>
                                 </div>
+
+                                <!-- 🔧 NOUVELLES CATÉGORIES D'ÉQUIPEMENTS AJOUTÉES -->
+
+                                <div class="pc-form-group pc-form-group--full">
+                                    <label>Politiques</label>
+                                    <div class="pc-checkbox-group">
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Carte de crédit acceptée" class="pc-checkbox-field"> Carte de crédit acceptée</label>
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Enfants autorisés" class="pc-checkbox-field"> Enfants autorisés</label>
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Enfants non autorisés" class="pc-checkbox-field"> Enfants non autorisés</label>
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Animaux non autorisés" class="pc-checkbox-field"> Animaux non autorisés</label>
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Fumeurs non autorisés" class="pc-checkbox-field"> Fumeurs non autorisés</label>
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Fumeurs autorisés en extérieur" class="pc-checkbox-field"> Fumeurs autorisés en extérieur</label>
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Convient aux personnes âgées ou à mobilité réduite" class="pc-checkbox-field"> Convient aux personnes âgées ou à mobilité réduite</label>
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Ne convient pas aux personnes âgées ou à mobilité réduite" class="pc-checkbox-field"> Ne convient pas aux personnes âgées ou à mobilité réduite</label>
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Accessible aux fauteuils roulants" class="pc-checkbox-field"> Accessible aux fauteuils roulants</label>
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Non accessible aux fauteuils roulants" class="pc-checkbox-field"> Non accessible aux fauteuils roulants</label>
+                                        <label><input type="checkbox" name="eq_politiques[]" value="Services de conciergerie accessibles" class="pc-checkbox-field"> Services de conciergerie accessibles</label>
+                                    </div>
+                                </div>
+
+                                <div class="pc-form-group pc-form-group--full">
+                                    <label>Divertissements</label>
+                                    <div class="pc-checkbox-group">
+                                        <label><input type="checkbox" name="eq_divertissements[]" value="Chaises de plage disponibles" class="pc-checkbox-field"> Chaises de plage disponibles</label>
+                                        <label><input type="checkbox" name="eq_divertissements[]" value="Glacière disponible" class="pc-checkbox-field"> Glacière disponible</label>
+                                        <label><input type="checkbox" name="eq_divertissements[]" value="Parasols disponibles" class="pc-checkbox-field"> Parasols disponibles</label>
+                                        <label><input type="checkbox" name="eq_divertissements[]" value="Billard" class="pc-checkbox-field"> Billard</label>
+                                        <label><input type="checkbox" name="eq_divertissements[]" value="Baby-foot" class="pc-checkbox-field"> Baby-foot</label>
+                                        <label><input type="checkbox" name="eq_divertissements[]" value="Jeux de société" class="pc-checkbox-field"> Jeux de société</label>
+                                        <label><input type="checkbox" name="eq_divertissements[]" value="Livres" class="pc-checkbox-field"> Livres</label>
+                                        <label><input type="checkbox" name="eq_divertissements[]" value="Chaîne Hi-Fi" class="pc-checkbox-field"> Chaîne Hi-Fi</label>
+                                        <label><input type="checkbox" name="eq_divertissements[]" value="TV" class="pc-checkbox-field"> TV</label>
+                                        <label><input type="checkbox" name="eq_divertissements[]" value="Streaming disponible (avec votre compte)" class="pc-checkbox-field"> Streaming disponible (avec votre compte)</label>
+                                    </div>
+                                </div>
+
+                                <div class="pc-form-group pc-form-group--full">
+                                    <label>Caractéristiques de l'emplacement</label>
+                                    <div class="pc-checkbox-group">
+                                        <label><input type="checkbox" name="eq_caracteristiques_emplacement[]" value="Proche de la mer" class="pc-checkbox-field"> Proche de la mer</label>
+                                        <label><input type="checkbox" name="eq_caracteristiques_emplacement[]" value="Bord de plage" class="pc-checkbox-field"> Bord de plage</label>
+                                        <label><input type="checkbox" name="eq_caracteristiques_emplacement[]" value="Plage accessible à pied" class="pc-checkbox-field"> Plage accessible à pied</label>
+                                        <label><input type="checkbox" name="eq_caracteristiques_emplacement[]" value="Plages accessibles en voiture" class="pc-checkbox-field"> Plages accessibles en voiture</label>
+                                        <label><input type="checkbox" name="eq_caracteristiques_emplacement[]" value="Plage accessible en voiture -15 min" class="pc-checkbox-field"> Plage accessible en voiture -15 min</label>
+                                        <label><input type="checkbox" name="eq_caracteristiques_emplacement[]" value="Centre-ville" class="pc-checkbox-field"> Centre-ville</label>
+                                        <label><input type="checkbox" name="eq_caracteristiques_emplacement[]" value="Vue sur mer" class="pc-checkbox-field"> Vue sur mer</label>
+                                    </div>
+                                </div>
+
+                                <div class="pc-form-group pc-form-group--full">
+                                    <label>Salle de bain & buanderie</label>
+                                    <div class="pc-checkbox-group">
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Linge de lit fournis" class="pc-checkbox-field"> Linge de lit fournis</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Serviettes de bain" class="pc-checkbox-field"> Serviettes de bain</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Serviettes de toilette" class="pc-checkbox-field"> Serviettes de toilette</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Serviettes de plage" class="pc-checkbox-field"> Serviettes de plage</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Foutas" class="pc-checkbox-field"> Foutas</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Sèche-cheveux" class="pc-checkbox-field"> Sèche-cheveux</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Machine à laver" class="pc-checkbox-field"> Machine à laver</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Lave-linge dans cuisine" class="pc-checkbox-field"> Lave-linge dans cuisine</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Sèche-linge" class="pc-checkbox-field"> Sèche-linge</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Douche" class="pc-checkbox-field"> Douche</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Baignoire" class="pc-checkbox-field"> Baignoire</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Buanderie séparée" class="pc-checkbox-field"> Buanderie séparée</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Fer et table à repasser" class="pc-checkbox-field"> Fer et table à repasser</label>
+                                        <label><input type="checkbox" name="eq_salle_de_bain_blanchisserie[]" value="Toilette invités" class="pc-checkbox-field"> Toilette invités</label>
+                                    </div>
+                                </div>
+
+                                <div class="pc-form-group pc-form-group--full">
+                                    <label>Sécurité à la maison</label>
+                                    <div class="pc-checkbox-group">
+                                        <label><input type="checkbox" name="eq_securite_maison[]" value="Détecteur de monoxyde de carbone" class="pc-checkbox-field"> Détecteur de monoxyde de carbone</label>
+                                        <label><input type="checkbox" name="eq_securite_maison[]" value="Détecteur de fumée" class="pc-checkbox-field"> Détecteur de fumée</label>
+                                        <label><input type="checkbox" name="eq_securite_maison[]" value="Coffre-fort" class="pc-checkbox-field"> Coffre-fort</label>
+                                        <label><input type="checkbox" name="eq_securite_maison[]" value="Extincteur" class="pc-checkbox-field"> Extincteur</label>
+                                        <label><input type="checkbox" name="eq_securite_maison[]" value="Sécurité piscine (alarme)" class="pc-checkbox-field"> Sécurité piscine (alarme)</label>
+                                        <label><input type="checkbox" name="eq_securite_maison[]" value="Sécurité piscine (clôture)" class="pc-checkbox-field"> Sécurité piscine (clôture)</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -961,7 +1062,7 @@ function pc_shortcode_housing_dashboard($atts = [])
 
             <div class="pc-modal-footer">
                 <div class="pc-modal-actions">
-                    <button type="button" class="pc-btn pc-btn-danger" id="pc-housing-delete-btn" onclick="deleteHousingDetails()">
+                    <button type="button" class="pc-btn pc-btn-danger" id="pc-housing-delete-btn">
                         <span class="pc-btn-text">Supprimer</span>
                         <span class="pc-btn-spinner" style="display: none;">
                             <div class="pc-spinner-sm"></div>
@@ -971,7 +1072,7 @@ function pc_shortcode_housing_dashboard($atts = [])
                         <button type="button" class="pc-btn pc-btn-secondary" onclick="closeHousingModal()">
                             Annuler
                         </button>
-                        <button type="button" class="pc-btn pc-btn-primary" id="pc-housing-save-btn" onclick="saveHousingDetails()">
+                        <button type="button" class="pc-btn pc-btn-primary" id="pc-housing-save-btn">
                             <span class="pc-btn-text">Enregistrer</span>
                             <span class="pc-btn-spinner" style="display: none;">
                                 <div class="pc-spinner-sm"></div>

@@ -41,6 +41,7 @@ class PCR_Dashboard_Ajax
         add_action('wp_ajax_pc_housing_get_list', [__CLASS__, 'ajax_housing_get_list']);
         add_action('wp_ajax_pc_housing_get_details', [__CLASS__, 'ajax_housing_get_details']);
         add_action('wp_ajax_pc_housing_save', [__CLASS__, 'ajax_housing_save']);
+        add_action('wp_ajax_pc_housing_delete', [__CLASS__, 'ajax_housing_delete']);
 
         // 3. API DOCUMENTS (Le correctif final)
         // On connecte les actions AJAX directement aux méthodes statiques de la classe Documents
@@ -1782,8 +1783,8 @@ class PCR_Dashboard_Ajax
 
         // 3. Paramètres
         $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
-        if ($post_id <= 0) {
-            wp_send_json_error(['message' => 'ID de logement manquant.']);
+        if ($post_id < 0) {
+            wp_send_json_error(['message' => 'ID invalide.']);
         }
 
         // 4. Récupérer les données à sauvegarder
@@ -1804,6 +1805,11 @@ class PCR_Dashboard_Ajax
         }
         if (isset($_POST['excerpt'])) {
             $data['excerpt'] = wp_kses_post($_POST['excerpt']);
+        }
+
+        // 🔧 FIX CRITIQUE : Type de logement pour la création
+        if (isset($_POST['post_type'])) {
+            $data['post_type'] = sanitize_text_field($_POST['post_type']);
         }
 
         // Image à la une
@@ -1837,6 +1843,41 @@ class PCR_Dashboard_Ajax
             'post_id' => $post_id,
             'updated_fields' => $result['data']['updated_fields'] ?? 0,
             'edit_url' => admin_url('post.php?post=' . $post_id . '&action=edit'),
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT HOUSING MANAGER : Supprime un logement
+     */
+    public static function ajax_housing_delete()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Vérifier que la classe est disponible
+        if (!class_exists('PCR_Housing_Manager')) {
+            wp_send_json_error(['message' => 'Module Housing Manager indisponible.']);
+        }
+
+        // 3. Paramètres
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+        if ($post_id <= 0) {
+            wp_send_json_error(['message' => 'ID de logement manquant ou invalide.']);
+        }
+
+        // 4. Supprimer
+        $result = PCR_Housing_Manager::delete_housing($post_id);
+
+        if (!$result['success']) {
+            wp_send_json_error(['message' => $result['message']]);
+        }
+
+        wp_send_json_success([
+            'message' => $result['message'],
+            'deleted_post_id' => $post_id
         ]);
     }
 }

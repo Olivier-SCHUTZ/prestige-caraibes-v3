@@ -1370,6 +1370,47 @@ select#housing-mode-reservation option {
 /* === ANCIENS STYLES SUPPRIMÉS - Les champs sont maintenant traités comme des champs standards === */
 /* Suppression de .pc-payment-grid, .pc-payment-rules et .pc-section-title pour traiter les champs de paiement comme les autres */
 
+/* === NOTIFICATIONS TOAST === */
+.pc-toast {
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--pc-housing-surface);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--pc-housing-border);
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  box-shadow: var(--pc-housing-shadow-lg);
+  z-index: 99999;
+  font-weight: 600;
+  font-size: 14px;
+  max-width: 90vw;
+  word-wrap: break-word;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--pc-housing-transition);
+}
+
+.pc-toast--success {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+  border-color: #059669;
+}
+
+.pc-toast--error {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: white;
+  border-color: #dc2626;
+}
+
+.pc-toast:hover {
+  transform: translateX(-50%) scale(1.02);
+  box-shadow:
+    var(--pc-housing-shadow-lg),
+    0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
   .pc-housing-controls {

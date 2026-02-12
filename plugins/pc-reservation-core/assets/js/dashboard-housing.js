@@ -71,6 +71,12 @@
         this.openHousingModal(housingId);
       });
 
+      // NOUVEAU : Bouton "Nouveau Logement"
+      $(document).on("click", "#pc-new-housing-btn", (e) => {
+        e.preventDefault();
+        this.openNewHousingModal();
+      });
+
       // Pagination
       $(document).on("click", ".pc-pagination button[data-page]", (e) => {
         e.preventDefault();
@@ -100,6 +106,11 @@
       // Sauvegarde
       $("#pc-housing-save-btn").on("click", () => {
         this.saveHousingDetails();
+      });
+
+      // Suppression
+      $("#pc-housing-delete-btn").on("click", () => {
+        this.deleteHousingDetails();
       });
 
       // Empêcher la fermeture accidentelle
@@ -325,6 +336,30 @@
       this.loadHousingDetails(housingId);
     }
 
+    // NOUVEAU : Ouvrir la modale pour créer un nouveau logement
+    openNewHousingModal() {
+      currentHousingId = 0; // Signal de création
+
+      // Changer le titre de la modale
+      $("#pc-housing-modal-title").text("Nouveau logement");
+
+      // Afficher la modale
+      $("#housing-modal").removeClass("hidden").addClass("active");
+
+      // Masquer le loading et afficher les détails directement
+      $("#pc-housing-modal-loading").hide();
+      $("#pc-housing-modal-details").show();
+
+      // Réinitialiser complètement le formulaire
+      this.resetModalFields();
+
+      // Activer le sélecteur de type pour la création
+      this.toggleHousingTypeSelector(true);
+
+      // Aller à l'onglet général
+      this.switchModalTab("general");
+    }
+
     loadHousingDetails(housingId) {
       $.ajax({
         url: pcReservationVars.ajax_url,
@@ -361,6 +396,10 @@
 
     populateModalFields(housing) {
       // Remplir tous les champs avec les données du logement
+
+      // NOUVEAU : Gérer le sélecteur de type pour l'édition
+      $("#housing-type-selector").val(housing.type || "");
+      this.toggleHousingTypeSelector(false); // Désactiver en mode édition
 
       // Onglet Général
       $("#housing-title").val(housing.title || "");
@@ -457,9 +496,20 @@
       // Onglet Équipements
       this.populateCheckboxes("eq_piscine_spa", housing.eq_piscine_spa);
       this.populateCheckboxes("eq_parking", housing.eq_parking_installations);
+      this.populateCheckboxes("eq_politiques", housing.eq_politiques);
+      this.populateCheckboxes("eq_divertissements", housing.eq_divertissements);
       this.populateCheckboxes("eq_cuisine", housing.eq_cuisine_salle_a_manger);
+      this.populateCheckboxes(
+        "eq_caracteristiques_emplacement",
+        housing.eq_caracteristiques_emplacement,
+      );
+      this.populateCheckboxes(
+        "eq_salle_de_bain_blanchisserie",
+        housing.eq_salle_de_bain_blanchisserie,
+      );
       this.populateCheckboxes("eq_clim", housing.eq_chauffage_climatisation);
       this.populateCheckboxes("eq_internet", housing.eq_internet_bureautique);
+      this.populateCheckboxes("eq_securite_maison", housing.eq_securite_maison);
 
       // Onglet Contenu & SEO
       $("#housing-h1-custom").val(housing.contenu_seo_titre_h1 || "");
@@ -623,9 +673,133 @@
       currentHousingId = null;
     }
 
+    // NOUVEAU : Réinitialiser complètement le formulaire pour la création
+    resetModalFields() {
+      console.log("🔧 Réinitialisation complète du formulaire");
+
+      // Reset tous les inputs text
+      $(
+        "#housing-modal input[type='text'], #housing-modal input[type='number'], #housing-modal input[type='email'], #housing-modal input[type='url'], #housing-modal textarea",
+      ).val("");
+
+      // Reset tous les selects aux valeurs par défaut
+      $("#housing-status").val("draft"); // Nouveau logement en brouillon par défaut
+      $("#housing-unite-prix").val("par nuit");
+      $("#housing-mode-reservation").val("log_directe");
+      $("#housing-google-accommodation-type").val("EntirePlace");
+      $("#housing-meta-robots").val("index,follow");
+      $("#pc_pay_mode").val("acompte_plus_solde");
+      $("#pc_deposit_type").val("pourcentage");
+      $("#pc_caution_type").val("aucune");
+
+      // Reset valeurs par défaut spéciales
+      $("#housing-geo-radius").val("600");
+
+      // Reset toutes les checkboxes
+      $("#housing-modal input[type='checkbox']").prop("checked", false);
+
+      // Reset les images
+      this.removeImage("hero-desktop");
+      this.removeImage("hero-mobile");
+
+      // Reset le repeater galerie
+      $("#gallery-categories-container").empty();
+      $("#gallery-categories-empty").show();
+
+      // Reset le sélecteur de type (vide par défaut pour forcer le choix)
+      $("#housing-type-selector").val("");
+
+      console.log("✅ Formulaire réinitialisé");
+    }
+
+    // NOUVEAU : Gérer l'état du sélecteur de type de logement
+    toggleHousingTypeSelector(isCreation) {
+      const $selector = $("#housing-type-selector");
+      const $helpCreation = $("#housing-type-help-creation");
+      const $helpEdit = $("#housing-type-help-edit");
+
+      if (isCreation) {
+        // Mode création : sélecteur actif
+        $selector.prop("disabled", false);
+        $helpCreation.show();
+        $helpEdit.hide();
+      } else {
+        // Mode édition : sélecteur verrouillé
+        $selector.prop("disabled", true);
+        $helpCreation.hide();
+        $helpEdit.show();
+      }
+    }
+
+    // === SUPPRESSION ===
+    deleteHousingDetails() {
+      if (currentHousingId === null || currentHousingId === 0) {
+        this.showError("Impossible de supprimer un logement non enregistré.");
+        return;
+      }
+
+      // Demander confirmation
+      if (
+        !confirm(
+          "Êtes-vous sûr de vouloir supprimer ce logement ? Cette action est irréversible.",
+        )
+      ) {
+        return;
+      }
+
+      const $btn = $("#pc-housing-delete-btn");
+      $btn.addClass("loading").prop("disabled", true);
+
+      $.ajax({
+        url: pcReservationVars.ajax_url,
+        type: "POST",
+        data: {
+          action: "pc_housing_delete",
+          nonce: pcReservationVars.nonce,
+          post_id: currentHousingId,
+        },
+        success: (response) => {
+          $btn.removeClass("loading").prop("disabled", false);
+
+          if (response.success) {
+            this.showSuccess("Logement supprimé avec succès!");
+            this.closeHousingModal();
+            this.loadHousingList(); // Recharger la liste
+          } else {
+            this.showError(
+              "Erreur lors de la suppression: " + response.data.message,
+            );
+          }
+        },
+        error: (xhr, status, error) => {
+          $btn.removeClass("loading").prop("disabled", false);
+          console.error("Erreur AJAX:", error);
+          this.showError("Erreur de connexion lors de la suppression.");
+        },
+      });
+    }
+
     // === SAUVEGARDE ===
     saveHousingDetails() {
-      if (!currentHousingId) {
+      // NOUVEAU : Validation pour la création
+      if (currentHousingId === 0) {
+        // Mode création : validation du type obligatoire
+        const selectedType = $("#housing-type-selector").val();
+        if (!selectedType) {
+          this.showError(
+            "Veuillez sélectionner le type de logement (Villa ou Appartement).",
+          );
+          return;
+        }
+
+        const title = $("#housing-title").val().trim();
+        if (!title) {
+          this.showError("Le nom du logement est obligatoire.");
+          return;
+        }
+      }
+
+      if (currentHousingId === null) {
         this.showError("Aucun logement sélectionné.");
         return;
       }
@@ -659,6 +833,12 @@
         title: $("#housing-title").val(),
         status: $("#housing-status").val(),
         content: $("#housing-content").val(),
+
+        // NOUVEAU : Type de logement (pour la création)
+        post_type:
+          currentHousingId === 0
+            ? $("#housing-type-selector").val()
+            : undefined,
 
         // Onglet Général
         acf_identifiant_lodgify: $("#housing-identifiant-lodgify").val(),
@@ -719,9 +899,18 @@
         // Onglet Équipements
         acf_eq_piscine_spa: this.collectCheckboxes("eq_piscine_spa"),
         acf_eq_parking_installations: this.collectCheckboxes("eq_parking"),
+        acf_eq_politiques: this.collectCheckboxes("eq_politiques"),
+        acf_eq_divertissements: this.collectCheckboxes("eq_divertissements"),
         acf_eq_cuisine_salle_a_manger: this.collectCheckboxes("eq_cuisine"),
+        acf_eq_caracteristiques_emplacement: this.collectCheckboxes(
+          "eq_caracteristiques_emplacement",
+        ),
+        acf_eq_salle_de_bain_blanchisserie: this.collectCheckboxes(
+          "eq_salle_de_bain_blanchisserie",
+        ),
         acf_eq_chauffage_climatisation: this.collectCheckboxes("eq_clim"),
         acf_eq_internet_bureautique: this.collectCheckboxes("eq_internet"),
+        acf_eq_securite_maison: this.collectCheckboxes("eq_securite_maison"),
 
         // Onglet Contenu & SEO
         acf_contenu_seo_titre_h1: $("#housing-h1-custom").val(),
@@ -822,24 +1011,10 @@
     }
 
     showNotification(message, type) {
-      // Simple notification toast
-      const $toast = $(`
-                <div class="pc-toast pc-toast--${type}" style="
-                    position: fixed;
-                    top: 2rem;
-                    right: 2rem;
-                    background: ${type === "success" ? "#059669" : "#dc2626"};
-                    color: white;
-                    padding: 1rem 1.5rem;
-                    border-radius: 12px;
-                    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-                    z-index: 10000;
-                    font-weight: 600;
-                    backdrop-filter: blur(20px);
-                ">
-                    ${this.escapeHtml(message)}
-                </div>
-            `);
+      // 🔧 FIX: Utilisation des classes CSS pour les notifications
+      const $toast = $(
+        `<div class="pc-toast pc-toast--${type}">${this.escapeHtml(message)}</div>`,
+      );
 
       $("body").append($toast);
 
@@ -847,29 +1022,44 @@
       $toast
         .css({
           opacity: 0,
-          transform: "translateX(100%)",
+          transform: "translateX(-50%) translateY(-20px)",
         })
         .animate(
           {
             opacity: 1,
-            transform: "translateX(0)",
+            transform: "translateX(-50%) translateY(0)",
           },
           300,
         );
 
-      // Disparition automatique
+      // Disparition automatique (plus long pour les erreurs)
+      const delay = type === "error" ? 8000 : 4000;
       setTimeout(() => {
         $toast.animate(
           {
             opacity: 0,
-            transform: "translateX(100%)",
+            transform: "translateX(-50%) translateY(-20px)",
           },
           300,
           function () {
             $toast.remove();
           },
         );
-      }, 4000);
+      }, delay);
+
+      // 🔧 FIX: Permettre de fermer manuellement en cliquant
+      $toast.on("click", function () {
+        $(this).animate(
+          {
+            opacity: 0,
+            transform: "translateX(-50%) translateY(-20px)",
+          },
+          200,
+          function () {
+            $(this).remove();
+          },
+        );
+      });
     }
 
     debounce(func, wait) {

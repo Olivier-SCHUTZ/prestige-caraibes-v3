@@ -183,7 +183,7 @@ class PCR_Housing_Manager
             'capacite' => 'field_pc_capacite',
             'base_price_from' => 'field_pc_prix_base',
             'prix_nuit' => 'field_pc_prix_nuit', // Si ce champ existe
-            'mode_reservation' => 'field_pc_mode_reservation',
+            'mode_reservation' => 'field_692986ddcf6e3',
             'ical_url' => 'field_pc_ical_url',
 
             // === CHAMPS DE BASE (souvent sans field key spéciale) ===
@@ -217,8 +217,14 @@ class PCR_Housing_Manager
             // === ÉQUIPEMENTS (checkboxes) ===
             'eq_piscine_spa' => 'eq_piscine_spa',
             'eq_parking_installations' => 'eq_parking_installations',
+            'eq_politiques' => 'eq_politiques',
+            'eq_divertissements' => 'eq_divertissements',
             'eq_cuisine_salle_a_manger' => 'eq_cuisine_salle_a_manger',
+            'eq_caracteristiques_emplacement' => 'eq_caracteristiques_emplacement',
+            'eq_salle_de_bain_blanchisserie' => 'eq_salle_de_bain_blanchisserie',
+            'eq_chauffage_climatisation' => 'eq_chauffage_climatisation',
             'eq_internet_bureautique' => 'eq_internet_bureautique',
+            'eq_securite_maison' => 'eq_securite_maison',
 
             // === RÈGLES DE PAIEMENT (field keys ACF) ===
             'pc_pay_mode' => 'field_6919e7994db4b',
@@ -516,75 +522,116 @@ class PCR_Housing_Manager
 
     /**
      * Met à jour un logement avec les données fournies.
-     * 
-     * @param int $post_id ID du post
+     * NOUVEAU : Accepte ID = 0 pour créer un nouveau logement.
+     * * @param int $post_id ID du post (0 pour création)
      * @param array $data Données à mettre à jour
      * @return array
      */
     public static function update_housing($post_id, $data)
     {
-        // 🕵️‍♂️ DEBUG: Log des données reçues
-        error_log("=== PC HOUSING UPDATE DEBUG ===");
-        error_log("Post ID: {$post_id}");
-        error_log('Data received: ' . print_r($data, true));
-
-        // 🔧 DEBUG SPÉCIAL: Log des données du Repeater si présentes
-        if (isset($data['acf_groupes_images'])) {
-            error_log('🔍 REPEATER groupes_images: ' . print_r($data['acf_groupes_images'], true));
-        }
-        error_log("===============================");
-
         $post_id = (int) $post_id;
-        if ($post_id <= 0) {
-            return [
-                'success' => false,
-                'message' => 'ID de logement invalide.',
-            ];
-        }
+        $is_creation = ($post_id === 0);
 
-        $post = get_post($post_id);
-        if (!$post || !in_array($post->post_type, ['villa', 'appartement'])) {
-            return [
-                'success' => false,
-                'message' => 'Logement introuvable.',
-            ];
-        }
+        if (!$is_creation) {
+            // Mode édition : validation normale
+            $post = get_post($post_id);
+            if (!$post || !in_array($post->post_type, ['villa', 'appartement'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Logement introuvable.',
+                ];
+            }
 
-        // Vérification des permissions
-        if (!current_user_can('edit_post', $post_id)) {
-            return [
-                'success' => false,
-                'message' => 'Permission insuffisante.',
-            ];
+            // Vérification des permissions pour édition
+            if (!current_user_can('edit_post', $post_id)) {
+                return [
+                    'success' => false,
+                    'message' => 'Permission insuffisante.',
+                ];
+            }
+        } else {
+            // Mode création : validation du type de post
+            if (empty($data['post_type']) || !in_array($data['post_type'], ['villa', 'appartement'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Type de logement invalide. Doit être "villa" ou "appartement".',
+                ];
+            }
+
+            // Vérification des permissions pour création
+            if (!current_user_can('publish_posts')) {
+                return [
+                    'success' => false,
+                    'message' => 'Permission insuffisante pour créer un logement.',
+                ];
+            }
+
+            // Validation du titre obligatoire
+            if (empty($data['title'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Le nom du logement est obligatoire.',
+                ];
+            }
         }
 
         try {
-            // 1. Mise à jour des données de base du post
-            $post_data = [];
-            if (isset($data['title'])) {
-                $post_data['post_title'] = sanitize_text_field($data['title']);
-            }
-            if (isset($data['slug'])) {
-                $post_data['post_name'] = sanitize_title($data['slug']);
-            }
-            if (isset($data['status'])) {
-                $status = sanitize_text_field($data['status']);
-                if (in_array($status, ['publish', 'pending', 'draft', 'private'])) {
-                    $post_data['post_status'] = $status;
-                }
-            }
-            if (isset($data['content'])) {
-                $post_data['post_content'] = wp_kses_post($data['content']);
-            }
-            if (isset($data['excerpt'])) {
-                $post_data['post_excerpt'] = wp_kses_post($data['excerpt']);
-            }
+            // 1. Création ou mise à jour des données de base du post
+            if ($is_creation) {
+                // NOUVELLE LOGIQUE : Créer le post
+                $new_post_data = [
+                    'post_type' => sanitize_text_field($data['post_type']),
+                    'post_title' => sanitize_text_field($data['title']),
+                    'post_content' => wp_kses_post($data['content'] ?? ''),
+                    'post_excerpt' => wp_kses_post($data['excerpt'] ?? ''),
+                    'post_status' => in_array($data['status'] ?? 'draft', ['publish', 'pending', 'draft', 'private'])
+                        ? sanitize_text_field($data['status']) : 'draft',
+                    'post_author' => get_current_user_id(),
+                ];
 
-            if (!empty($post_data)) {
-                $post_data['ID'] = $post_id;
-                $result = wp_update_post($post_data);
-                if (is_wp_error($result)) {
-                    throw new Exception('Erreur lors de la mise à jour du post : ' . $result->get_error_message());
+                // Générer un slug si nécessaire
+                if (!empty($data['slug'])) {
+                    $new_post_data['post_name'] = sanitize_title($data['slug']);
+                }
+
+                // Créer le nouveau post
+                $post_id = wp_insert_post($new_post_data);
+
+                if (is_wp_error($post_id)) {
+                    throw new Exception('Erreur lors de la création du post : ' . $post_id->get_error_message());
+                }
+
+                if (!$post_id) {
+                    throw new Exception('Échec de la création du logement.');
+                }
+            } else {
+                // LOGIQUE EXISTANTE : Mise à jour du post
+                $post_data = [];
+                if (isset($data['title'])) {
+                    $post_data['post_title'] = sanitize_text_field($data['title']);
+                }
+                if (isset($data['slug'])) {
+                    $post_data['post_name'] = sanitize_title($data['slug']);
+                }
+                if (isset($data['status'])) {
+                    $status = sanitize_text_field($data['status']);
+                    if (in_array($status, ['publish', 'pending', 'draft', 'private'])) {
+                        $post_data['post_status'] = $status;
+                    }
+                }
+                if (isset($data['content'])) {
+                    $post_data['post_content'] = wp_kses_post($data['content']);
+                }
+                if (isset($data['excerpt'])) {
+                    $post_data['post_excerpt'] = wp_kses_post($data['excerpt']);
+                }
+
+                if (!empty($post_data)) {
+                    $post_data['ID'] = $post_id;
+                    $result = wp_update_post($post_data);
+                    if (is_wp_error($result)) {
+                        throw new Exception('Erreur lors de la mise à jour du post : ' . $result->get_error_message());
+                    }
                 }
             }
 
@@ -594,33 +641,27 @@ class PCR_Housing_Manager
 
                 foreach ($data as $normalized_key => $value) {
                     // Skip les champs de base du post
-                    if (in_array($normalized_key, ['title', 'slug', 'status', 'content', 'excerpt', 'featured_image_id'])) {
+                    if (in_array($normalized_key, ['title', 'slug', 'status', 'content', 'excerpt', 'featured_image_id', 'post_type'])) {
                         continue;
                     }
 
-                    // 🔧 FIX CRITIQUE: Gestion spéciale du champ Repeater "groupes_images"
+                    // Gestion spéciale du champ Repeater "groupes_images"
                     if ($normalized_key === 'acf_groupes_images') {
                         $success = self::update_repeater_field($post_id, 'groupes_images', $value);
-                        if ($success) {
-                            $updated_fields++;
-                            error_log("[PCR Housing Manager] ✅ Repeater groupes_images mis à jour");
-                        } else {
-                            error_log("[PCR Housing Manager] ❌ Échec Repeater groupes_images");
-                        }
+                        if ($success) $updated_fields++;
                         continue;
                     }
 
                     // Éliminer le préfixe 'acf_' pour trouver la clé normalisée
                     $clean_key = str_replace('acf_', '', $normalized_key);
 
-                    // 🔧 SOLUTION : Utiliser get_field_config_by_slug() pour trouver la bonne clé
+                    // Utiliser get_field_config_by_slug() pour trouver la bonne clé
                     $field_config = self::get_field_config_by_slug($clean_key);
                     if (!$field_config) {
-                        error_log("[PCR Housing Manager] Champ non mappé ignoré : {$clean_key}");
                         continue;
                     }
 
-                    // 🔧 FIX CRITIQUE: Traitement spécial pour les champs Images (Hero)
+                    // Traitement spécial pour les champs Images (Hero)
                     if (in_array($clean_key, ['hero_desktop_url', 'hero_mobile_url'])) {
                         $value = self::process_image_field($value);
                     }
@@ -628,25 +669,16 @@ class PCR_Housing_Manager
                     // Sanitisation selon le type de champ
                     $clean_value = self::sanitize_field_value($clean_key, $value);
 
-                    // 🔧 ACTION CRUCIALE : Priorité à la field key ACF, sinon meta_key
+                    // ACTION CRUCIALE : Priorité à la field key ACF, sinon meta_key
                     $update_key = $field_config['key'] ?? $field_config['meta_key'];
-
-                    // Log pour debug
-                    error_log("[PCR Housing Manager] Updating {$clean_key} (Key: {$update_key}) -> " . var_export($clean_value, true));
 
                     // Mise à jour via ACF pour garder la compatibilité maximale
                     $result = update_field($update_key, $clean_value, $post_id);
                     if ($result !== false) {
                         $updated_fields++;
-                        error_log("[PCR Housing Manager] ✅ Succès pour {$clean_key}");
-                    } else {
-                        error_log("[PCR Housing Manager] ❌ Échec pour {$clean_key}");
                     }
                 }
-
-                error_log("[PCR Housing Manager] Mis à jour {$updated_fields} champs pour le logement #{$post_id}");
             } else {
-                error_log('[PCR Housing Manager] ACF non disponible pour la mise à jour');
                 return [
                     'success' => false,
                     'message' => 'ACF non disponible pour la sauvegarde.',
@@ -665,7 +697,7 @@ class PCR_Housing_Manager
 
             return [
                 'success' => true,
-                'message' => 'Logement mis à jour avec succès.',
+                'message' => $is_creation ? 'Logement créé avec succès.' : 'Logement mis à jour avec succès.',
                 'data' => [
                     'id' => $post_id,
                     'updated_fields' => $updated_fields ?? 0,
@@ -675,7 +707,7 @@ class PCR_Housing_Manager
             error_log('[PCR Housing Manager] Erreur mise à jour : ' . $e->getMessage());
             return [
                 'success' => false,
-                'message' => 'Erreur lors de la mise à jour : ' . $e->getMessage(),
+                'message' => 'Erreur lors de la sauvegarde : ' . $e->getMessage(),
             ];
         }
     }
@@ -1161,5 +1193,64 @@ class PCR_Housing_Manager
         }
 
         return 0;
+    }
+
+    /**
+     * Supprime définitivement un logement et toutes ses données associées.
+     * 
+     * @param int $post_id ID du post à supprimer
+     * @return array
+     */
+    public static function delete_housing($post_id)
+    {
+        $post_id = (int) $post_id;
+        if ($post_id <= 0) {
+            return [
+                'success' => false,
+                'message' => 'ID de logement invalide.',
+            ];
+        }
+
+        $post = get_post($post_id);
+        if (!$post || !in_array($post->post_type, ['villa', 'appartement'])) {
+            return [
+                'success' => false,
+                'message' => 'Logement introuvable.',
+            ];
+        }
+
+        // Vérification des permissions
+        if (!current_user_can('delete_post', $post_id)) {
+            return [
+                'success' => false,
+                'message' => 'Permission insuffisante pour supprimer ce logement.',
+            ];
+        }
+
+        try {
+            // Récupérer le titre pour le message de confirmation
+            $housing_title = $post->post_title;
+
+            // Supprimer définitivement le post et toutes ses métadonnées
+            $result = wp_delete_post($post_id, true);
+
+            if (!$result) {
+                throw new Exception('Échec de la suppression du logement.');
+            }
+
+            return [
+                'success' => true,
+                'message' => sprintf('Le logement "%s" a été supprimé définitivement.', $housing_title),
+                'data' => [
+                    'deleted_id' => $post_id,
+                ],
+            ];
+        } catch (Exception $e) {
+            error_log('[PCR Housing Manager] Erreur suppression : ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Erreur lors de la suppression : ' . $e->getMessage(),
+            ];
+        }
     }
 }
