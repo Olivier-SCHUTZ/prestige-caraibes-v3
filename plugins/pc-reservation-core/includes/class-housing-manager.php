@@ -103,6 +103,8 @@ class PCR_Housing_Manager
 
             // === TARIFS SAISON ===
             'pc_season_blocks' => 'pc_season_blocks',
+
+            // === PROMOTIONS ===
             'pc_promo_blocks' => 'pc_promo_blocks',
 
             // === HÔTE ===
@@ -126,8 +128,24 @@ class PCR_Housing_Manager
             'taux_tva' => 'taux_tva',
             'taux_tva_menage' => 'taux_tva_menage',
             'mode_reservation' => 'mode_reservation',
-            'regles_de_paiement' => 'regles_de_paiement',
-            'information_contrat_location' => 'information_contrat_location',
+
+            // === RÈGLES DE PAIEMENT (APLATIES) ===
+            'pc_pay_mode' => 'pc_pay_mode',
+            'pc_deposit_type' => 'pc_deposit_type',
+            'pc_deposit_value' => 'pc_deposit_value',
+            'pc_balance_delay_days' => 'pc_balance_delay_days',
+            'pc_caution_amount' => 'pc_caution_amount',
+            'pc_caution_type' => 'pc_caution_type',
+
+            // === INFOS CONTRAT & PROPRIÉTAIRE (APLATIES) ===
+            'log_proprietaire_identite' => 'log_proprietaire_identite',
+            'personne_logement' => 'personne_logement',
+            'proprietaire_adresse' => 'proprietaire_adresse',
+            'description_contrat' => 'description_contrat',
+            'equipements_contrat' => 'equipements_contrat',
+            'has_piscine' => 'has_piscine',
+            'has_jacuzzi' => 'has_jacuzzi',
+            'has_guide_numerique' => 'has_guide_numerique',
         ];
     }
 
@@ -202,6 +220,24 @@ class PCR_Housing_Manager
             'eq_cuisine_salle_a_manger' => 'eq_cuisine_salle_a_manger',
             'eq_internet_bureautique' => 'eq_internet_bureautique',
 
+            // === RÈGLES DE PAIEMENT (field keys ACF) ===
+            'pc_pay_mode' => 'field_6919e7994db4b',
+            'pc_deposit_type' => 'field_6919e7994db4c',
+            'pc_deposit_value' => 'field_6919e7994db4d',
+            'pc_balance_delay_days' => 'field_6919e7994db4e',
+            'pc_caution_amount' => 'field_6919e7994db4f',
+            'pc_caution_type' => 'field_6919e7994db50',
+
+            // === INFOS CONTRAT & PROPRIÉTAIRE (field keys ACF) ===
+            'log_proprietaire_identite' => 'field_6930b2a1248f7',
+            'personne_logement' => 'field_6930b83a248fe',
+            'proprietaire_adresse' => 'field_6930b32b248f8',
+            'description_contrat' => 'field_6930b751248fd',
+            'equipements_contrat' => 'field_6930b54c248fc',
+            'has_piscine' => 'field_6930b427248f9',
+            'has_jacuzzi' => 'field_6930b4a5248fa',
+            'has_guide_numerique' => 'field_6930b4c9248fb',
+
             // Note : Les champs spéciaux (prix-a-partir-de-e-nuit-prix-de-base, etc.)
             // seront gérés par get_special_meta_keys()
         ];
@@ -262,26 +298,55 @@ class PCR_Housing_Manager
             'order' => 'ASC',
             's' => '',
             'meta_query' => [],
+            // Nouveaux filtres par défaut
+            'type_filter' => '',
+            'status_filter' => '',
+            'mode_filter' => '',
         ];
 
         $args = wp_parse_args($args, $defaults);
 
-        // Types de posts logements
-        $housing_types = ['villa', 'appartement'];
+        // --- LOGIQUE DE FILTRE PAR TYPE ---
+        // Par défaut : on prend tout (Villa + Appartement)
+        $post_types = ['villa', 'appartement'];
+
+        // Si un filtre spécifique est demandé (et que ce n'est pas "logement" qui veut dire "tous")
+        if (!empty($args['type_filter']) && in_array($args['type_filter'], ['villa', 'appartement'])) {
+            $post_types = [$args['type_filter']];
+        }
 
         $query_args = [
-            'post_type' => $housing_types,
-            'post_status' => ['publish', 'pending', 'draft'],
+            'post_type' => $post_types, // C'est ici que le filtre s'applique !
+            'post_status' => ['publish', 'pending', 'draft', 'private', 'future'],
             'posts_per_page' => $args['posts_per_page'],
             'paged' => $args['paged'],
             'orderby' => $args['orderby'],
             'order' => $args['order'],
-            'meta_query' => $args['meta_query'],
         ];
 
-        // Recherche textuelle
+        // --- FILTRE STATUS ---
+        if (!empty($args['status_filter']) && $args['status_filter'] !== 'all') {
+            $query_args['post_status'] = $args['status_filter'];
+        }
+
+        // --- FILTRE SEARCH ---
         if (!empty($args['s'])) {
-            $query_args['s'] = sanitize_text_field($args['s']);
+            $query_args['s'] = $args['s'];
+        }
+
+        // --- FILTRE META (MODE RESERVATION) ---
+        $meta_query = $args['meta_query']; // Récupère ceux déjà passés
+
+        if (!empty($args['mode_filter'])) {
+            $meta_query[] = [
+                'key' => 'mode_reservation',
+                'value' => $args['mode_filter'],
+                'compare' => '='
+            ];
+        }
+
+        if (!empty($meta_query)) {
+            $query_args['meta_query'] = $meta_query;
         }
 
         $query = new WP_Query($query_args);
@@ -394,7 +459,7 @@ class PCR_Housing_Manager
             'date_modified' => $post->post_modified,
         ];
 
-        // Chargement de tous les champs ACF mappés
+        // Chargement de tous les champs ACF mappés (SIMPLIFIÉ)
         if (function_exists('get_field')) {
             $mapped_fields = self::get_mapped_fields();
             $special_keys = self::get_special_meta_keys();
@@ -523,7 +588,7 @@ class PCR_Housing_Manager
                 }
             }
 
-            // 2. 🔧 CORRECTION CRUCIALE : Mise à jour des champs ACF avec gestion spéciale
+            // 2. Mise à jour des champs ACF (SIMPLIFIÉ - Plus de logique de groupe complexe)
             if (function_exists('update_field')) {
                 $updated_fields = 0;
 
@@ -664,14 +729,23 @@ class PCR_Housing_Manager
             case 'min_nights':
             case 'max_nights':
             case 'extra_guest_fee':
-            case 'extra_guest_from':
             case 'caution':
             case 'frais_menage':
             case 'autres_frais':
             case 'taux_tva':
             case 'taux_tva_menage':
-                // Champs numériques
+                // Champs numériques standards
                 return is_numeric($value) ? (float) $value : 0;
+
+            case 'extra_guest_from':
+            case 'season_extra_guest_from':
+                // ⚠️ CHAMPS AVEC CONTRAINTE MIN=1 : Valeurs vides doivent rester vides
+                // Sinon ACF rejette avec "Échec de la validation" car 0 < 1
+                if (empty($value) || !is_numeric($value)) {
+                    return ''; // Garder vide au lieu de forcer à 0
+                }
+                $numeric_value = (float) $value;
+                return $numeric_value >= 1 ? $numeric_value : ''; // Respecter la contrainte min=1
 
             case 'pc_promo_log':
             case 'log_exclude_sitemap':
@@ -741,14 +815,23 @@ class PCR_Housing_Manager
             case 'min_nights':
             case 'max_nights':
             case 'extra_guest_fee':
-            case 'extra_guest_from':
             case 'caution':
             case 'frais_menage':
             case 'autres_frais':
             case 'taux_tva':
             case 'taux_tva_menage':
-                // Champs numériques
+                // Champs numériques standards
                 return is_numeric($value) ? (float) $value : 0;
+
+            case 'extra_guest_from':
+            case 'season_extra_guest_from':
+                // ⚠️ CHAMPS AVEC CONTRAINTE MIN=1 : Valeurs vides doivent rester vides
+                // Sinon ACF rejette avec "Échec de la validation" car 0 < 1
+                if (empty($value) || !is_numeric($value)) {
+                    return ''; // Garder vide au lieu de forcer à 0
+                }
+                $numeric_value = (float) $value;
+                return $numeric_value >= 1 ? $numeric_value : ''; // Respecter la contrainte min=1
 
             case 'ical_url':
             case 'url_canonique':

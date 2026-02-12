@@ -111,147 +111,6 @@
             "placeholder": ""
         },
         {
-            "key": "field_693abe7947b66",
-            "label": "Galerie Photos (Par Catégorie)",
-            "name": "",
-            "aria-label": "",
-            "type": "tab",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "placement": "left",
-            "endpoint": 0,
-            "selected": 0
-        },
-        {
-            "key": "field_693abf0447b67",
-            "label": "Groupes d'images",
-            "name": "groupes_images",
-            "aria-label": "",
-            "type": "repeater",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "layout": "row",
-            "pagination": 0,
-            "min": 0,
-            "max": 0,
-            "collapsed": "",
-            "button_label": "Ajouter un élément",
-            "rows_per_page": 20,
-            "sub_fields": [
-                {
-                    "key": "field_693abf6847b68",
-                    "label": "Catégorie d'images",
-                    "name": "categorie",
-                    "aria-label": "",
-                    "type": "select",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "choices": {
-                        "salon": "Salon",
-                        "cuisine": "Cuisine",
-                        "chambre_1": "Chambre 1",
-                        "chambre_2": "Chambre 2",
-                        "chambre_3": "Chambre 3",
-                        "chambre_4": "Chambre 4",
-                        "salle_de_bain": "Salle de bain",
-                        "terrasse": "Terrasse",
-                        "piscine": "Piscine",
-                        "exterieur": "Extérieur",
-                        "vue": "Vue",
-                        "autre": "Autre (Personnalisé)"
-                    },
-                    "default_value": false,
-                    "return_format": "value",
-                    "multiple": 0,
-                    "allow_null": 1,
-                    "allow_in_bindings": 1,
-                    "ui": 0,
-                    "ajax": 0,
-                    "placeholder": "",
-                    "create_options": 0,
-                    "save_options": 0,
-                    "parent_repeater": "field_693abf0447b67"
-                },
-                {
-                    "key": "field_693abfe847b69",
-                    "label": "Titre personnalisé (si \"Autre\")",
-                    "name": "categorie_personnalisee",
-                    "aria-label": "",
-                    "type": "text",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": [
-                        [
-                            {
-                                "field": "field_693abf6847b68",
-                                "operator": "==",
-                                "value": "autre"
-                            }
-                        ]
-                    ],
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "maxlength": "",
-                    "allow_in_bindings": 0,
-                    "placeholder": "",
-                    "prepend": "",
-                    "append": "",
-                    "parent_repeater": "field_693abf0447b67"
-                },
-                {
-                    "key": "field_693ac02f47b6a",
-                    "label": "Images du groupe",
-                    "name": "images_du_groupe",
-                    "aria-label": "",
-                    "type": "gallery",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "return_format": "array",
-                    "library": "all",
-                    "min": "",
-                    "max": "",
-                    "min_width": "",
-                    "min_height": "",
-                    "min_size": "",
-                    "max_width": "",
-                    "max_height": "",
-                    "max_size": "",
-                    "mime_types": "",
-                    "insert": "append",
-                    "preview_size": "medium",
-                    "parent_repeater": "field_693abf0447b67"
-                }
-            ]
-        },
-        {
             "key": "tab_seo_long",
             "label": "Contenu SEO (long)",
             "name": "",
@@ -595,8 +454,8 @@
             "aria-label": "",
             "type": "checkbox",
             "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
+            "required": false,
+            "conditional_logic": false,
             "wrapper": {
                 "width": "",
                 "class": "",
@@ -609,17 +468,14 @@
                 "Jardin privé": "Jardin privé",
                 "Jardin commun": "Jardin commun",
                 "Aire de jeux": "Aire de jeux",
-                "Terrain de pétanque": "Terrain de pétanque",
-                "Citerne de réserve d'eau": "Citerne de réserve d'eau",
-                "Groupe électrogène": "Groupe électrogène"
+                "Terrain de pétanque": "Terrain de pétanque"
             },
-            "default_value": [],
-            "return_format": "value",
-            "allow_custom": 0,
-            "allow_in_bindings": 1,
             "layout": "vertical",
-            "toggle": 0,
+            "default_value": [],
+            "allow_custom": 0,
             "save_custom": 0,
+            "toggle": 0,
+            "return_format": "value",
             "custom_choice_button_text": "Ajouter un nouveau choix"
         },
         {
@@ -664,8 +520,8 @@
             "aria-label": "",
             "type": "checkbox",
             "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
+            "required": false,
+            "conditional_logic": false,
             "wrapper": {
                 "width": "",
                 "class": "",
@@ -680,18 +536,15 @@
                 "Jeux de société": "Jeux de société",
                 "Livres": "Livres",
                 "Chaîne Hi-Fi": "Chaîne Hi-Fi",
-                "Enceintes bluetooth": "Enceintes bluetooth",
                 "TV": "TV",
-                "Android TV": "Android TV",
                 "Streaming disponible (avec votre compte)": "Streaming disponible (avec votre compte)"
             },
-            "default_value": [],
-            "return_format": "value",
-            "allow_custom": 0,
-            "allow_in_bindings": 1,
             "layout": "vertical",
-            "toggle": 0,
+            "default_value": [],
+            "allow_custom": 0,
             "save_custom": 0,
+            "toggle": 0,
+            "return_format": "value",
             "custom_choice_button_text": "Ajouter un nouveau choix"
         },
         {
@@ -701,8 +554,8 @@
             "aria-label": "",
             "type": "checkbox",
             "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
+            "required": false,
+            "conditional_logic": false,
             "wrapper": {
                 "width": "",
                 "class": "",
@@ -712,7 +565,6 @@
                 "Barbecue à gaz": "Barbecue à gaz",
                 "Barbecue électrique": "Barbecue électrique",
                 "Barbecue au charbon": "Barbecue au charbon",
-                "Plancha": "Plancha",
                 "Mixeur \/ Blender": "Mixeur \/ Blender",
                 "Chaise haute bébé": "Chaise haute bébé",
                 "Cafetière filtre": "Cafetière filtre",
@@ -737,13 +589,12 @@
                 "Vaisselle": "Vaisselle",
                 "Verres": "Verres"
             },
-            "default_value": [],
-            "return_format": "value",
-            "allow_custom": 0,
-            "allow_in_bindings": 1,
             "layout": "vertical",
-            "toggle": 0,
+            "default_value": [],
+            "allow_custom": 0,
             "save_custom": 0,
+            "toggle": 0,
+            "return_format": "value",
             "custom_choice_button_text": "Ajouter un nouveau choix"
         },
         {
@@ -1735,20 +1586,21 @@
                     "aria-label": "",
                     "type": "number",
                     "instructions": "Si vide, on utilise le paramètre global (onglet Tarifs).",
-                    "required": false,
-                    "conditional_logic": false,
+                    "required": 0,
+                    "conditional_logic": 0,
                     "wrapper": {
-                        "width": 25,
+                        "width": "25",
                         "class": "",
                         "id": ""
                     },
-                    "min": 1,
-                    "step": 1,
-                    "append": "invités",
                     "default_value": "",
+                    "min": "",
                     "max": "",
+                    "allow_in_bindings": 1,
                     "placeholder": "",
+                    "step": 1,
                     "prepend": "",
+                    "append": "invités",
                     "parent_repeater": "field_pc_season_blocks_20250826"
                 },
                 {
@@ -1771,6 +1623,7 @@
                     "min": 0,
                     "max": 0,
                     "rows_per_page": 20,
+                    "parent_repeater": "field_pc_season_blocks_20250826",
                     "sub_fields": [
                         {
                             "key": "field_pc_period_date_from_20250826",
@@ -1812,214 +1665,7 @@
                             "default_to_current_date": 0,
                             "parent_repeater": "field_pc_season_periods_20250826"
                         }
-                    ],
-                    "parent_repeater": "field_pc_season_blocks_20250826"
-                }
-            ]
-        },
-        {
-            "key": "field_693425857049c",
-            "label": "Promotions",
-            "name": "",
-            "aria-label": "",
-            "type": "tab",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "placement": "left",
-            "endpoint": 0,
-            "selected": 0
-        },
-        {
-            "key": "field_693425b17049d",
-            "label": "Promotions & Offres",
-            "name": "pc_promo_blocks",
-            "aria-label": "",
-            "type": "repeater",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "layout": "block",
-            "pagination": 0,
-            "min": 0,
-            "max": 0,
-            "collapsed": "",
-            "button_label": "Ajouter une promotion",
-            "rows_per_page": 20,
-            "sub_fields": [
-                {
-                    "key": "field_693425fe7049e",
-                    "label": "Nom de la promotion",
-                    "name": "nom_de_la_promotion",
-                    "aria-label": "",
-                    "type": "text",
-                    "instructions": "",
-                    "required": 1,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "promo_name",
-                    "maxlength": "",
-                    "allow_in_bindings": 0,
-                    "placeholder": "",
-                    "prepend": "",
-                    "append": "",
-                    "parent_repeater": "field_693425b17049d"
-                },
-                {
-                    "key": "field_693426267049f",
-                    "label": "Type de remise",
-                    "name": "promo_type",
-                    "aria-label": "",
-                    "type": "select",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "choices": {
-                        "percent": "Pourcentage (%)",
-                        "fixed": "Montant fixe (€)"
-                    },
-                    "default_value": false,
-                    "return_format": "value",
-                    "multiple": 0,
-                    "allow_null": 0,
-                    "allow_in_bindings": 1,
-                    "ui": 0,
-                    "ajax": 0,
-                    "placeholder": "",
-                    "create_options": 0,
-                    "save_options": 0,
-                    "parent_repeater": "field_693425b17049d"
-                },
-                {
-                    "key": "field_69342665704a0",
-                    "label": "Valeur",
-                    "name": "promo_value",
-                    "aria-label": "",
-                    "type": "number",
-                    "instructions": "ex: 10 pour 10% ou 50 pour 50€",
-                    "required": 1,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "min": "",
-                    "max": "",
-                    "allow_in_bindings": 0,
-                    "placeholder": "",
-                    "step": "",
-                    "prepend": "",
-                    "append": "",
-                    "parent_repeater": "field_693425b17049d"
-                },
-                {
-                    "key": "field_693426ac704a1",
-                    "label": "Offre valable jusqu'au...",
-                    "name": "promo_valid_until",
-                    "aria-label": "",
-                    "type": "date_picker",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "display_format": "d\/m\/Y",
-                    "return_format": "Y-m-d",
-                    "first_day": 1,
-                    "default_to_current_date": 0,
-                    "allow_in_bindings": 0,
-                    "parent_repeater": "field_693425b17049d"
-                },
-                {
-                    "key": "field_693426fa704a2",
-                    "label": "Périodes de séjour concernées",
-                    "name": "promo_periods",
-                    "aria-label": "",
-                    "type": "repeater",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "layout": "table",
-                    "pagination": 0,
-                    "min": 0,
-                    "max": 0,
-                    "collapsed": "",
-                    "button_label": "Ajouter une période",
-                    "rows_per_page": 20,
-                    "sub_fields": [
-                        {
-                            "key": "field_69342734704a3",
-                            "label": "Du...",
-                            "name": "date_from",
-                            "aria-label": "",
-                            "type": "date_picker",
-                            "instructions": "",
-                            "required": 0,
-                            "conditional_logic": 0,
-                            "wrapper": {
-                                "width": "",
-                                "class": "",
-                                "id": ""
-                            },
-                            "display_format": "d\/m\/Y",
-                            "return_format": "Y-m-d",
-                            "first_day": 1,
-                            "default_to_current_date": 0,
-                            "allow_in_bindings": 0,
-                            "parent_repeater": "field_693426fa704a2"
-                        },
-                        {
-                            "key": "field_69342777704a4",
-                            "label": "Au...",
-                            "name": "date_to",
-                            "aria-label": "",
-                            "type": "date_picker",
-                            "instructions": "",
-                            "required": 0,
-                            "conditional_logic": 0,
-                            "wrapper": {
-                                "width": "",
-                                "class": "",
-                                "id": ""
-                            },
-                            "display_format": "d\/m\/Y",
-                            "return_format": "Y-m-d",
-                            "first_day": 1,
-                            "default_to_current_date": 0,
-                            "allow_in_bindings": 0,
-                            "parent_repeater": "field_693426fa704a2"
-                        }
-                    ],
-                    "parent_repeater": "field_693425b17049d"
+                    ]
                 }
             ]
         },
@@ -2066,21 +1712,20 @@
             "label": "Descriptif hôte",
             "name": "hote_description",
             "aria-label": "",
-            "type": "wysiwyg",
+            "type": "textarea",
             "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
+            "required": false,
+            "conditional_logic": false,
             "wrapper": {
                 "width": "60",
                 "class": "",
                 "id": ""
             },
+            "rows": 4,
             "default_value": "",
-            "allow_in_bindings": 1,
-            "tabs": "all",
-            "toolbar": "full",
-            "media_upload": 1,
-            "delay": 0
+            "new_lines": "",
+            "maxlength": "",
+            "placeholder": ""
         },
         {
             "key": "tab_overrides",
@@ -2274,8 +1919,8 @@
             "aria-label": "",
             "type": "select",
             "instructions": "Indiquez le type de location. Pour un logement complet, choisissez \"Logement entier\".",
-            "required": 1,
-            "conditional_logic": false,
+            "required": 0,
+            "conditional_logic": 0,
             "wrapper": {
                 "width": "50",
                 "class": "",
@@ -2287,10 +1932,11 @@
                 "SharedRoom": "Chambre partagée (SharedRoom)"
             },
             "default_value": "EntirePlace",
-            "allow_null": 0,
-            "multiple": 0,
-            "ui": 1,
             "return_format": "value",
+            "multiple": 0,
+            "allow_null": 0,
+            "allow_in_bindings": 1,
+            "ui": 1,
             "ajax": 0,
             "placeholder": "",
             "create_options": 0,
@@ -2333,481 +1979,6 @@
             "allow_custom": 0,
             "save_custom": 0,
             "custom_choice_button_text": "Ajouter un nouveau choix"
-        },
-        {
-            "key": "field_6919e74557fd5",
-            "label": "Règles Channel Manager",
-            "name": "",
-            "aria-label": "",
-            "type": "tab",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "placement": "top",
-            "endpoint": 0,
-            "selected": 0
-        },
-        {
-            "key": "field_692db54735845",
-            "label": "Taux de TVA applicable",
-            "name": "taux_tva",
-            "aria-label": "",
-            "type": "number",
-            "instructions": "Saisissez le pourcentage de TVA (ex: 20 pour 20%, 8.5 pour 8.5%). Laissez à 0 si non assujetti.",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "50",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "min": 0,
-            "max": 100,
-            "allow_in_bindings": 0,
-            "placeholder": "",
-            "step": "0.01",
-            "prepend": "",
-            "append": "%"
-        },
-        {
-            "key": "field_692ffbf5ec554",
-            "label": "Taux de TVA applicable ménage",
-            "name": "taux_tva_menage",
-            "aria-label": "",
-            "type": "number",
-            "instructions": "Saisissez le pourcentage de TVA (ex: 20 pour 20%, 8.5 pour 8.5%). Laissez à 0 si non assujetti ou si ménage retour propriétaire.",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "50",
-                "class": "",
-                "id": ""
-            },
-            "default_value": "",
-            "min": 0,
-            "max": 100,
-            "allow_in_bindings": 0,
-            "placeholder": "",
-            "step": "0.01",
-            "prepend": "",
-            "append": "%"
-        },
-        {
-            "key": "field_692986ddcf6e3",
-            "label": "Mode de réservation",
-            "name": "mode_reservation",
-            "aria-label": "",
-            "type": "select",
-            "instructions": "Indiquer le mode de réservation pour ce logement ! Channel Manager ne sera plus géré sur le site",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "choices": {
-                "log_demande": "Logement sur demande avec accord au préalable",
-                "log_directe": "Logement en réservation directe",
-                "log_channel": "Logement géré par un autre Channet Manager"
-            },
-            "default_value": false,
-            "return_format": "value",
-            "multiple": 0,
-            "allow_null": 0,
-            "allow_in_bindings": 1,
-            "ui": 0,
-            "ajax": 0,
-            "placeholder": "",
-            "create_options": 0,
-            "save_options": 0
-        },
-        {
-            "key": "field_6919e7994db4a",
-            "label": "Règles de paiement",
-            "name": "regles_de_paiement",
-            "aria-label": "",
-            "type": "group",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "layout": "row",
-            "sub_fields": [
-                {
-                    "key": "field_6919e7994db4b",
-                    "label": "Mode de paiement",
-                    "name": "pc_pay_mode",
-                    "aria-label": "",
-                    "type": "select",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "30",
-                        "class": "",
-                        "id": ""
-                    },
-                    "choices": {
-                        "acompte_plus_solde": "Acompte plus solde",
-                        "total_a_la_reservation": "Total à la réservation",
-                        "sur_place": "Sur place",
-                        "sur_devis": "Sur devis"
-                    },
-                    "default_value": false,
-                    "return_format": "value",
-                    "multiple": 0,
-                    "allow_null": 0,
-                    "allow_in_bindings": 1,
-                    "ui": 0,
-                    "ajax": 0,
-                    "placeholder": "",
-                    "create_options": 0,
-                    "save_options": 0
-                },
-                {
-                    "key": "field_6919e7994db4c",
-                    "label": "Acompte",
-                    "name": "pc_deposit_type",
-                    "aria-label": "",
-                    "type": "select",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": [
-                        [
-                            {
-                                "field": "field_6919e7994db4b",
-                                "operator": "==",
-                                "value": "acompte_plus_solde"
-                            }
-                        ]
-                    ],
-                    "wrapper": {
-                        "width": "30",
-                        "class": "",
-                        "id": ""
-                    },
-                    "choices": {
-                        "pourcentage": "Pourcentage",
-                        "montant_fixe": "Montant fixe"
-                    },
-                    "default_value": false,
-                    "return_format": "value",
-                    "multiple": 0,
-                    "allow_null": 0,
-                    "allow_in_bindings": 1,
-                    "ui": 0,
-                    "ajax": 0,
-                    "placeholder": "",
-                    "create_options": 0,
-                    "save_options": 0
-                },
-                {
-                    "key": "field_6919e7994db4d",
-                    "label": "Sommes ou %",
-                    "name": "pc_deposit_value",
-                    "aria-label": "",
-                    "type": "number",
-                    "instructions": "valeur numérique (ex : 30 ou 500)",
-                    "required": 0,
-                    "conditional_logic": [
-                        [
-                            {
-                                "field": "field_6919e7994db4b",
-                                "operator": "==",
-                                "value": "acompte_plus_solde"
-                            }
-                        ]
-                    ],
-                    "wrapper": {
-                        "width": "30",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "min": "",
-                    "max": "",
-                    "allow_in_bindings": 0,
-                    "placeholder": "",
-                    "step": "",
-                    "prepend": "",
-                    "append": ""
-                },
-                {
-                    "key": "field_6919e7994db4e",
-                    "label": "Solde",
-                    "name": "pc_balance_delay_days",
-                    "aria-label": "",
-                    "type": "number",
-                    "instructions": "ex : 30 (= X jours avant arrivée \/ expérience)",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "min": "",
-                    "max": "",
-                    "allow_in_bindings": 0,
-                    "placeholder": "",
-                    "step": "",
-                    "prepend": "",
-                    "append": ""
-                },
-                {
-                    "key": "field_6919e7994db4f",
-                    "label": "Montant de la caution",
-                    "name": "pc_caution_amount",
-                    "aria-label": "",
-                    "type": "number",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "50",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "min": "",
-                    "max": "",
-                    "allow_in_bindings": 0,
-                    "placeholder": "",
-                    "step": "",
-                    "prepend": "€",
-                    "append": ""
-                },
-                {
-                    "key": "field_6919e7994db50",
-                    "label": "Méthode de caution",
-                    "name": "pc_caution_type",
-                    "aria-label": "",
-                    "type": "select",
-                    "instructions": "Aucune caution = Le propriétaire sans occupe",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "50",
-                        "class": "",
-                        "id": ""
-                    },
-                    "choices": {
-                        "aucune": "Aucune caution",
-                        "empreinte": "Empreinte bancaire",
-                        "encaissement": "Caution encaisser"
-                    },
-                    "default_value": false,
-                    "return_format": "value",
-                    "multiple": 0,
-                    "allow_null": 0,
-                    "allow_in_bindings": 1,
-                    "ui": 0,
-                    "ajax": 0,
-                    "placeholder": "",
-                    "create_options": 0,
-                    "save_options": 0
-                }
-            ]
-        },
-        {
-            "key": "field_6930b219248f6",
-            "label": "Infos Contrat & Propriétaire",
-            "name": "information_contrat_location",
-            "aria-label": "",
-            "type": "group",
-            "instructions": "",
-            "required": 0,
-            "conditional_logic": 0,
-            "wrapper": {
-                "width": "",
-                "class": "",
-                "id": ""
-            },
-            "layout": "row",
-            "sub_fields": [
-                {
-                    "key": "field_6930b2a1248f7",
-                    "label": "Identité du propriétaire",
-                    "name": "log_proprietaire_identite",
-                    "aria-label": "",
-                    "type": "text",
-                    "instructions": "ex : EI VILLA TREZEL si entreprise ou Yves MERCIER si particulier",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "maxlength": "",
-                    "allow_in_bindings": 0,
-                    "placeholder": "EI VILLA TREZEL",
-                    "prepend": "",
-                    "append": ""
-                },
-                {
-                    "key": "field_6930b32b248f8",
-                    "label": "Adresse du bien loué",
-                    "name": "proprietaire_adresse",
-                    "aria-label": "",
-                    "type": "textarea",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "maxlength": "",
-                    "allow_in_bindings": 1,
-                    "rows": 6,
-                    "placeholder": "",
-                    "new_lines": "br"
-                },
-                {
-                    "key": "field_6930b54c248fc",
-                    "label": "Équipement logement",
-                    "name": "equipements_contrat",
-                    "aria-label": "",
-                    "type": "textarea",
-                    "instructions": "Piscine, climatisation dans les chambres, Wi-Fi, télévision, électroménager, barbecue, vaisselles, linges de maison (draps et serviettes de bain et toilette).",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "maxlength": "",
-                    "allow_in_bindings": 1,
-                    "rows": 6,
-                    "placeholder": "Piscine, climatisation, Wi-Fi...",
-                    "new_lines": ""
-                },
-                {
-                    "key": "field_6930b751248fd",
-                    "label": "Descriptif logement",
-                    "name": "description_contrat",
-                    "aria-label": "",
-                    "type": "textarea",
-                    "instructions": "Ex : Villa individuelle avec piscine privée, comprenant 3 chambres, 2 salles de bain, cuisine,\r\nsalon et terrasse privative.",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "maxlength": "",
-                    "allow_in_bindings": 1,
-                    "rows": 6,
-                    "placeholder": "Villa individuelle avec piscine privée, comprenant 3 chambres...",
-                    "new_lines": ""
-                },
-                {
-                    "key": "field_6930b83a248fe",
-                    "label": "Capacité du logement",
-                    "name": "personne_logement",
-                    "aria-label": "",
-                    "type": "number",
-                    "instructions": "Capacité du logement hors BB",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "25",
-                        "class": "",
-                        "id": ""
-                    },
-                    "default_value": "",
-                    "min": "",
-                    "max": "",
-                    "allow_in_bindings": 0,
-                    "placeholder": "",
-                    "step": "",
-                    "prepend": "",
-                    "append": ""
-                },
-                {
-                    "key": "field_6930b427248f9",
-                    "label": "Dispose d'une piscine ?",
-                    "name": "has_piscine",
-                    "aria-label": "",
-                    "type": "true_false",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "25",
-                        "class": "",
-                        "id": ""
-                    },
-                    "message": "",
-                    "default_value": 0,
-                    "allow_in_bindings": 0,
-                    "ui_on_text": "Oui",
-                    "ui_off_text": "Non",
-                    "ui": 1
-                },
-                {
-                    "key": "field_6930b4a5248fa",
-                    "label": "Dispose d'un jacuzzi ?",
-                    "name": "has_jacuzzi",
-                    "aria-label": "",
-                    "type": "true_false",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "25",
-                        "class": "",
-                        "id": ""
-                    },
-                    "message": "",
-                    "default_value": 0,
-                    "allow_in_bindings": 0,
-                    "ui_on_text": "Oui",
-                    "ui_off_text": "Non",
-                    "ui": 1
-                },
-                {
-                    "key": "field_6930b4c9248fb",
-                    "label": "Utilise un livret d'accueil numérique ?",
-                    "name": "has_guide_numerique",
-                    "aria-label": "",
-                    "type": "true_false",
-                    "instructions": "",
-                    "required": 0,
-                    "conditional_logic": 0,
-                    "wrapper": {
-                        "width": "25",
-                        "class": "",
-                        "id": ""
-                    },
-                    "message": "",
-                    "default_value": 0,
-                    "allow_in_bindings": 0,
-                    "ui_on_text": "Oui",
-                    "ui_off_text": "Non",
-                    "ui": 1
-                }
-            ]
         }
     ],
     "location": [
@@ -2836,5 +2007,5 @@
     "description": "",
     "show_in_rest": 0,
     "display_title": "",
-    "modified": 1765548587
+    "modified": 1770850337
 }

@@ -1367,6 +1367,9 @@ select#housing-mode-reservation option {
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
+/* === ANCIENS STYLES SUPPRIMÉS - Les champs sont maintenant traités comme des champs standards === */
+/* Suppression de .pc-payment-grid, .pc-payment-rules et .pc-section-title pour traiter les champs de paiement comme les autres */
+
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
   .pc-housing-controls {

@@ -22,6 +22,7 @@
   // === CLASSE PRINCIPALE ===
   class PCHousingManager {
     constructor() {
+      this.rateManager = new PCRateManager(); // Initialisation de l'instance
       this.init();
     }
 
@@ -406,6 +407,14 @@
       // Taxe de séjour (checkboxes multiples - même logique que les équipements)
       this.populateCheckboxes("taxe_sejour", housing.taxe_sejour);
 
+      // === RÈGLES DE PAIEMENT ===
+      $("#pc_pay_mode").val(housing.pc_pay_mode || "acompte_plus_solde");
+      $("#pc_deposit_type").val(housing.pc_deposit_type || "pourcentage");
+      $("#pc_deposit_value").val(housing.pc_deposit_value || "");
+      $("#pc_balance_delay_days").val(housing.pc_balance_delay_days || "");
+      $("#pc_caution_amount").val(housing.pc_caution_amount || "");
+      $("#pc_caution_type").val(housing.pc_caution_type || "aucune");
+
       // Onglet Images & Galerie - 🔧 FIX HERO IMAGES: Utiliser la méthode populateImageUploaders
       this.populateImageUploaders(housing);
 
@@ -493,9 +502,39 @@
         housing.google_vr_accommodation_type || "EntirePlace",
       );
 
+      // Section Infos Contrat (Onglet Configuration)
+      $("#housing-proprietaire-identite").val(
+        housing.log_proprietaire_identite || "",
+      );
+      $("#housing-personne-logement").val(housing.personne_logement || "");
+      $("#housing-proprietaire-adresse").val(
+        housing.proprietaire_adresse || "",
+      );
+      $("#housing-description-contrat").val(housing.description_contrat || "");
+      $("#housing-equipements-contrat").val(housing.equipements_contrat || "");
+
+      // Switchs
+      this.populateBooleanCheckbox("housing-has-piscine", housing.has_piscine);
+      this.populateBooleanCheckbox("housing-has-jacuzzi", housing.has_jacuzzi);
+      this.populateBooleanCheckbox(
+        "housing-has-guide",
+        housing.has_guide_numerique,
+      );
+
       // Google amenities (checkboxes)
       this.populateCheckboxes("google_amenities", housing.google_vr_amenities);
       this.populateGalleryRepeater(housing.groupes_images);
+
+      // --- INITIALISATION RATE MANAGER ---
+      // On passe l'ID du container, les données brutes (saisons/promos stockées en JSON ou ACF) et le prix de base
+      this.rateManager.init(
+        "pc-rates-calendar",
+        {
+          seasons: housing.seasons_data, // Le backend devra renvoyer ça
+          promos: housing.promos_data,
+        },
+        housing.base_price_from,
+      );
     }
 
     // 🔧 FIX CRITIQUE: Fonction utilitaire pour peupler les checkboxes (multi-sélection)
@@ -570,6 +609,13 @@
       // Mettre à jour le contenu - utiliser les nouveaux IDs et classes
       $(".pc-tab-content").hide();
       $(`#tab-${tabId}`).show();
+
+      // HACK: FullCalendar a besoin d'être rafraîchi s'il était caché
+      if (tabId === "rates" && this.rateManager && this.rateManager.calendar) {
+        setTimeout(() => {
+          this.rateManager.calendar.render();
+        }, 50);
+      }
     }
 
     closeHousingModal() {
@@ -589,6 +635,17 @@
 
       // 🔧 FIX CRITIQUE: Collecte des données du Repeater "Groupes d'images"
       const groupesImages = this.collectRepeaterData();
+
+      // 👇 AJOUTE LE DEBUG ICI (AVANT le const formData) 👇
+      console.log("DEBUG PAIEMENT - Valeurs du formulaire HTML :", {
+        mode: $("#pc_pay_mode").val(),
+        acompte: $("#pc_deposit_type").val(),
+        valeur: $("#pc_deposit_value").val(),
+        solde: $("#pc_balance_delay_days").val(),
+        caution: $("#pc_caution_amount").val(),
+        type_caution: $("#pc_caution_type").val(),
+      });
+      // 👆 FIN DU DEBUG 👆
 
       console.log("🔍 DEBUG - Groupes d'images collectés:", groupesImages);
 
@@ -641,6 +698,14 @@
         acf_mode_reservation: $("#housing-mode-reservation").val(),
         acf_taxe_sejour: this.collectCheckboxes("taxe_sejour"),
 
+        // === RÈGLES DE PAIEMENT (Correction IDs) ===
+        acf_pc_pay_mode: $("#pc_pay_mode").val(),
+        acf_pc_deposit_type: $("#pc_deposit_type").val(),
+        acf_pc_deposit_value: $("#pc_deposit_value").val(),
+        acf_pc_balance_delay_days: $("#pc_balance_delay_days").val(),
+        acf_pc_caution_amount: $("#pc_caution_amount").val(),
+        acf_pc_caution_type: $("#pc_caution_type").val(),
+
         // Onglet Images & Galerie - On envoie la valeur brute (ID ou URL), le PHP gérera la conversion
         acf_hero_desktop_url: $("#housing-hero-desktop").val(),
         acf_hero_mobile_url: $("#housing-hero-mobile").val(),
@@ -691,6 +756,23 @@
           "#housing-google-accommodation-type",
         ).val(),
         acf_google_vr_amenities: this.collectCheckboxes("google_amenities"),
+
+        // Section Infos Contrat
+        acf_log_proprietaire_identite: $(
+          "#housing-proprietaire-identite",
+        ).val(),
+        acf_personne_logement: $("#housing-personne-logement").val(),
+        acf_proprietaire_adresse: $("#housing-proprietaire-adresse").val(),
+        acf_description_contrat: $("#housing-description-contrat").val(),
+        acf_equipements_contrat: $("#housing-equipements-contrat").val(),
+
+        acf_has_piscine: this.collectBooleanCheckbox("housing-has-piscine"),
+        acf_has_jacuzzi: this.collectBooleanCheckbox("housing-has-jacuzzi"),
+        acf_has_guide_numerique:
+          this.collectBooleanCheckbox("housing-has-guide"),
+
+        // --- DONNÉES RATE MANAGER ---
+        rate_manager_data: JSON.stringify(this.rateManager.getData()), // On envoie le JSON complet
       };
 
       $.ajax({

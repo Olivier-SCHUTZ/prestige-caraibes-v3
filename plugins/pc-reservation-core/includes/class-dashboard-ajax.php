@@ -1681,56 +1681,25 @@ class PCR_Dashboard_Ajax
             wp_send_json_error(['message' => 'Action non autorisée.']);
         }
 
-        // 2. Vérifier que la classe est disponible
         if (!class_exists('PCR_Housing_Manager')) {
             wp_send_json_error(['message' => 'Module Housing Manager indisponible.']);
         }
 
-        // 3. Paramètres de pagination et filtres
+        // 2. On prépare les arguments à passer à get_housing_list
         $args = [
             'posts_per_page' => isset($_REQUEST['per_page']) ? (int) $_REQUEST['per_page'] : 20,
-            'paged' => isset($_REQUEST['page']) ? (int) $_REQUEST['page'] : 1,
-            'orderby' => isset($_REQUEST['orderby']) ? sanitize_text_field($_REQUEST['orderby']) : 'title',
-            'order' => isset($_REQUEST['order']) ? sanitize_text_field($_REQUEST['order']) : 'ASC',
-            's' => isset($_REQUEST['search']) ? sanitize_text_field($_REQUEST['search']) : '',
+            'paged'          => isset($_REQUEST['page']) ? (int) $_REQUEST['page'] : 1,
+            'orderby'        => isset($_REQUEST['orderby']) ? sanitize_text_field($_REQUEST['orderby']) : 'title',
+            'order'          => isset($_REQUEST['order']) ? sanitize_text_field($_REQUEST['order']) : 'ASC',
+            's'              => isset($_REQUEST['search']) ? sanitize_text_field($_REQUEST['search']) : '',
+
+            // On passe simplement les filtres bruts, la fonction get_housing_list gérera la logique
+            'type_filter'    => isset($_REQUEST['type_filter']) ? sanitize_text_field($_REQUEST['type_filter']) : '',
+            'status_filter'  => isset($_REQUEST['status_filter']) ? sanitize_text_field($_REQUEST['status_filter']) : '',
+            'mode_filter'    => isset($_REQUEST['mode_filter']) ? sanitize_text_field($_REQUEST['mode_filter']) : '',
         ];
 
-        // Filtres supplémentaires
-        $meta_query = [];
-
-        // Filtre par statut
-        if (!empty($_REQUEST['status_filter'])) {
-            $status_filter = sanitize_text_field($_REQUEST['status_filter']);
-            if (in_array($status_filter, ['publish', 'pending', 'draft', 'private'])) {
-                $args['post_status'] = [$status_filter];
-            }
-        }
-
-        // Filtre par mode de réservation
-        if (!empty($_REQUEST['mode_filter'])) {
-            $mode_filter = sanitize_text_field($_REQUEST['mode_filter']);
-            if (in_array($mode_filter, ['log_demande', 'log_directe', 'log_channel'])) {
-                $meta_query[] = [
-                    'key' => 'mode_reservation',
-                    'value' => $mode_filter,
-                    'compare' => '='
-                ];
-            }
-        }
-
-        // Filtre par type de logement
-        if (!empty($_REQUEST['type_filter'])) {
-            $type_filter = sanitize_text_field($_REQUEST['type_filter']);
-            if (in_array($type_filter, ['villa', 'appartement', 'logement'])) {
-                $args['post_type'] = [$type_filter];
-            }
-        }
-
-        if (!empty($meta_query)) {
-            $args['meta_query'] = $meta_query;
-        }
-
-        // 4. Récupérer la liste
+        // 3. Récupérer la liste
         $result = PCR_Housing_Manager::get_housing_list($args);
 
         if (!$result['success']) {
@@ -1742,13 +1711,7 @@ class PCR_Dashboard_Ajax
             'total' => $result['total'],
             'pages' => $result['pages'],
             'current_page' => $result['current_page'],
-            'per_page' => $args['posts_per_page'],
-            'filters_applied' => [
-                'search' => $args['s'],
-                'status' => isset($status_filter) ? $status_filter : '',
-                'mode' => isset($mode_filter) ? $mode_filter : '',
-                'type' => isset($type_filter) ? $type_filter : '',
-            ]
+            'per_page' => $args['posts_per_page']
         ]);
     }
 
@@ -1779,6 +1742,13 @@ class PCR_Dashboard_Ajax
 
         if (!$result || !$result['success']) {
             wp_send_json_error(['message' => 'Logement introuvable ou erreur de chargement.']);
+        }
+
+        // ✨ Injection des données Rate Manager via la nouvelle classe
+        if (class_exists('PCR_Rate_Manager')) {
+            $rates_data = PCR_Rate_Manager::get_rates_data($post_id);
+            $result['data']['seasons_data'] = $rates_data['seasons'];
+            $result['data']['promos_data'] = $rates_data['promos'];
         }
 
         wp_send_json_success([
@@ -1855,6 +1825,11 @@ class PCR_Dashboard_Ajax
 
         if (!$result['success']) {
             wp_send_json_error(['message' => $result['message']]);
+        }
+
+        // ✨ Sauvegarde Rate Manager via la nouvelle classe
+        if (class_exists('PCR_Rate_Manager') && isset($_POST['rate_manager_data'])) {
+            PCR_Rate_Manager::save_rates_data($post_id, $_POST['rate_manager_data']);
         }
 
         wp_send_json_success([

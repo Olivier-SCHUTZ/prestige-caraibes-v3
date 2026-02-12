@@ -151,6 +151,10 @@ function pc_shortcode_housing_dashboard($atts = [])
                             <span class="pc-tab-icon">💰</span>
                             Tarifs & Paiement
                         </button>
+                        <button class="pc-tab-btn" data-tab="rates">
+                            <span class="pc-tab-icon">📅</span>
+                            Saisons & Promos
+                        </button>
                         <button class="pc-tab-btn" data-tab="media">
                             <span class="pc-tab-icon">🖼️</span>
                             Images & Galerie
@@ -372,6 +376,59 @@ function pc_shortcode_housing_dashboard($atts = [])
                                         <option value="log_directe">Logement en réservation directe</option>
                                         <option value="log_channel">Logement géré par un autre Channel Manager</option>
                                     </select>
+                                </div>
+
+                                <!-- Séparateur visuel pour les Règles de Paiement -->
+                                <div class="pc-form-group pc-form-group--full" style="margin-top: 2rem;">
+                                    <h3 style="font-size: 1.2rem; font-weight: 700; color: #1e293b; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.8rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(148, 163, 184, 0.3);">
+                                        💳 Règles de Paiement
+                                    </h3>
+                                </div>
+
+                                <!-- Champs Règles de Paiement - Intégrés dans la grille standard 2 colonnes -->
+                                <div class="pc-form-group">
+                                    <label for="pc_pay_mode">Mode de paiement</label>
+                                    <select id="pc_pay_mode" class="pc-select">
+                                        <option value="acompte_plus_solde">Acompte plus solde</option>
+                                        <option value="total_a_la_reservation">Total à la réservation</option>
+                                        <option value="sur_place">Sur place</option>
+                                        <option value="sur_devis">Sur devis</option>
+                                    </select>
+                                </div>
+
+                                <div class="pc-form-group">
+                                    <label for="pc_deposit_type">Type d'acompte</label>
+                                    <select id="pc_deposit_type" class="pc-select">
+                                        <option value="pourcentage">Pourcentage</option>
+                                        <option value="montant_fixe">Montant fixe</option>
+                                    </select>
+                                </div>
+
+                                <div class="pc-form-group">
+                                    <label for="pc_deposit_value">Somme ou %</label>
+                                    <input type="number" id="pc_deposit_value" class="pc-input" placeholder="30">
+                                    <small class="pc-field-help">valeur numérique (ex : 30 ou 500)</small>
+                                </div>
+
+                                <div class="pc-form-group">
+                                    <label for="pc_balance_delay_days">Solde / Jours</label>
+                                    <input type="number" id="pc_balance_delay_days" class="pc-input" placeholder="30">
+                                    <small class="pc-field-help">ex : 30 (= X jours avant arrivée / expérience)</small>
+                                </div>
+
+                                <div class="pc-form-group">
+                                    <label for="pc_caution_amount">Montant Caution</label>
+                                    <input type="number" id="pc_caution_amount" class="pc-input" min="0" step="1" placeholder="500">
+                                </div>
+
+                                <div class="pc-form-group">
+                                    <label for="pc_caution_type">Méthode Caution</label>
+                                    <select id="pc_caution_type" class="pc-select">
+                                        <option value="aucune">Aucune caution</option>
+                                        <option value="empreinte">Empreinte bancaire</option>
+                                        <option value="encaissement">Caution encaisser</option>
+                                    </select>
+                                    <small class="pc-field-help">Aucune caution = Le propriétaire s'en occupe</small>
                                 </div>
                             </div>
                         </div>
@@ -628,7 +685,132 @@ function pc_shortcode_housing_dashboard($atts = [])
                             </div>
                         </div>
 
-                        <!-- Onglet Configuration -->
+                        <!-- Onglet Saisons & Promos -->
+                        <div class="pc-tab-content" id="tab-rates" style="display: none;">
+                            <div class="pc-rates-container">
+                                <div class="pc-rates-sidebar">
+                                    <h3>Gestion Saisons</h3>
+                                    <div class="pc-draggable-list" id="pc-rates-list">
+                                    </div>
+                                    <div class="pc-rates-actions">
+                                        <button type="button" class="pc-btn pc-btn-primary pc-btn-full" id="btn-add-season" style="margin-bottom:10px;">
+                                            <span style="color: #fff;">➕</span> Ajouter une saison
+                                        </button>
+                                        <button type="button" class="pc-btn pc-btn-secondary pc-btn-full" id="btn-add-promo">
+                                            <span>🏷️</span> Ajouter une promo
+                                        </button>
+                                    </div>
+                                    <p style="font-size:11px;color:#666;margin-top:15px;text-align:center;">
+                                        Glissez les éléments sur le calendrier pour créer des périodes.
+                                    </p>
+                                </div>
+
+                                <div class="pc-rates-calendar-wrapper">
+                                    <div id="pc-rates-calendar"></div>
+                                </div>
+                            </div>
+
+                            <div id="pc-rate-internal-modal" style="display:none;">
+                                <div class="pc-modal-content">
+                                    <h3 style="margin-top:0;">Éditer</h3>
+                                    <input type="hidden" id="pc-rate-modal-type">
+                                    <input type="hidden" id="pc-rate-modal-id">
+
+                                    <div class="pc-form-group">
+                                        <label>Nom</label>
+                                        <input type="text" id="pc-rate-name" class="pc-input">
+                                    </div>
+
+                                    <div id="pc-rate-season-fields">
+                                        <div class="pc-rate-form-grid">
+                                            <div class="pc-form-group">
+                                                <label>Prix (€)</label>
+                                                <input type="number" id="pc-rate-price" class="pc-input">
+                                            </div>
+                                            <div class="pc-form-group">
+                                                <label>Min. Nuits</label>
+                                                <input type="number" id="pc-rate-min-nights" class="pc-input">
+                                            </div>
+                                        </div>
+
+                                        <div class="pc-form-group">
+                                            <label>Note interne</label>
+                                            <input type="text" id="pc-rate-note" class="pc-input" placeholder="Note privée pour cette saison">
+                                        </div>
+
+                                        <div class="pc-rate-form-grid">
+                                            <div class="pc-form-group">
+                                                <label>Frais invités supp. (€)</label>
+                                                <input type="number" id="pc-rate-guest-fee" class="pc-input" step="0.01" min="0" placeholder="0.00">
+                                            </div>
+                                            <div class="pc-form-group">
+                                                <label>À partir de ... invités</label>
+                                                <input type="number" id="pc-rate-guest-from" class="pc-input" min="1" placeholder="0">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="pc-rate-promo-fields" style="display:none;">
+                                        <div class="pc-rate-form-grid">
+                                            <div class="pc-form-group">
+                                                <label>Type</label>
+                                                <select id="pc-rate-promo-type" class="pc-select">
+                                                    <option value="percent">%</option>
+                                                    <option value="fixed">€</option>
+                                                </select>
+                                            </div>
+                                            <div class="pc-form-group">
+                                                <label>Valeur</label>
+                                                <input type="number" id="pc-rate-promo-val" class="pc-input">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Section Périodes -->
+                                    <div class="pc-form-group pc-form-group--full" style="margin-top: 20px;">
+                                        <label>Période(s) d'application</label>
+
+                                        <!-- Message de feedback -->
+                                        <div id="pc-period-feedback" class="pc-period-feedback" style="display: none;">
+                                            <!-- Message de confirmation généré dynamiquement -->
+                                        </div>
+
+                                        <!-- Liste des périodes existantes -->
+                                        <ul id="pc-rate-periods-list" style="list-style: none; padding: 0; margin: 10px 0; max-height: 150px; overflow-y: auto;">
+                                            <!-- Périodes générées dynamiquement -->
+                                        </ul>
+
+                                        <!-- Zone d'ajout avec Flatpickr -->
+                                        <div class="pc-form-group" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc;">
+                                            <label style="font-size: 13px; color: #64748b; margin-bottom: 8px; display: block;">Sélectionner une période :</label>
+
+                                            <div class="pc-flatpickr-container" style="margin-bottom: 15px;">
+                                                <input type="text" id="pc-rate-period-range" class="pc-input" placeholder="Sélectionnez une période..." readonly style="cursor: pointer; background: white;">
+                                            </div>
+
+                                            <button type="button" id="btn-add-period-range" class="pc-btn pc-btn-primary" style="width: 100%; font-size: 13px;">
+                                                <span>➕</span> Ajouter cette période
+                                            </button>
+
+                                            <p style="font-size: 11px; color: #64748b; margin: 8px 0 0 0; font-style: italic;">
+                                                * Cliquez sur le champ pour ouvrir le calendrier et sélectionner une plage de dates.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div style="display:flex; justify-content:space-between; margin-top:20px;">
+                                        <button type="button" class="pc-btn pc-btn-danger" id="btn-delete-rate-internal">Supprimer</button>
+                                        <div style="display:flex; gap:10px;">
+                                            <button type="button" class="pc-btn pc-btn-secondary" id="btn-cancel-rate-internal">Annuler</button>
+                                            <button type="button" class="pc-btn pc-btn-primary" id="btn-save-rate-internal">Valider</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Onglet Configuration & SEO -->
                         <div class="pc-tab-content" id="tab-advanced" style="display: none;">
                             <div class="pc-form-grid">
                                 <div class="pc-form-group">
@@ -719,6 +901,58 @@ function pc_shortcode_housing_dashboard($atts = [])
                                     <label for="housing-content">Description (Google)</label>
                                     <textarea id="housing-content" class="pc-textarea" rows="4" placeholder="Description du logement..."></textarea>
                                 </div>
+
+                                <!-- Séparateur visuel pour les Infos Contrat & Propriétaire -->
+                                <div class="pc-form-group pc-form-group--full" style="margin-top: 3rem;">
+                                    <h3 style="font-size: 1.3rem; font-weight: 700; color: #1e293b; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.8rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(148, 163, 184, 0.3);">
+                                        📋 Informations Contrat & Propriétaire
+                                    </h3>
+                                    <p style="color: #64748b; font-size: 0.9rem; margin: 0 0 1.5rem 0;">Ces informations apparaissent sur le contrat de location PDF.</p>
+                                </div>
+
+                                <div class="pc-form-group">
+                                    <label for="housing-proprietaire-identite">Identité du propriétaire (Société ou Nom)</label>
+                                    <input type="text" id="housing-proprietaire-identite" class="pc-input" placeholder="ex: EI VILLA TREZEL">
+                                </div>
+
+                                <div class="pc-form-group">
+                                    <label for="housing-personne-logement">Capacité Max (Assurance)</label>
+                                    <input type="number" id="housing-personne-logement" class="pc-input" min="1" max="50" placeholder="6">
+                                </div>
+
+                                <div class="pc-form-group pc-form-group--full">
+                                    <label for="housing-proprietaire-adresse">Adresse complète du bien loué</label>
+                                    <textarea id="housing-proprietaire-adresse" class="pc-textarea" rows="3" placeholder="Adresse complète du bien en location..."></textarea>
+                                </div>
+
+                                <div class="pc-form-group pc-form-group--full">
+                                    <label for="housing-description-contrat">Descriptif succinct du logement</label>
+                                    <textarea id="housing-description-contrat" class="pc-textarea" rows="3" placeholder="Ex: Villa T4 avec piscine..."></textarea>
+                                </div>
+
+                                <div class="pc-form-group pc-form-group--full">
+                                    <label for="housing-equipements-contrat">Liste des équipements (Contrat)</label>
+                                    <textarea id="housing-equipements-contrat" class="pc-textarea" rows="3" placeholder="Clim, Wifi, TV..."></textarea>
+                                </div>
+
+                                <!-- Options Booléennes (Checkboxes) - Alignées sur une ligne -->
+                                <div class="pc-form-group pc-form-group--full">
+                                    <label>Équipements spéciaux</label>
+                                    <div class="pc-checkbox-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                                        <label class="pc-checkbox-container">
+                                            <input type="checkbox" id="housing-has-piscine" name="has_piscine" value="1" class="pc-checkbox-field pc-checkbox-boolean">
+                                            <span class="pc-checkbox-label">Piscine</span>
+                                        </label>
+                                        <label class="pc-checkbox-container">
+                                            <input type="checkbox" id="housing-has-jacuzzi" name="has_jacuzzi" value="1" class="pc-checkbox-field pc-checkbox-boolean">
+                                            <span class="pc-checkbox-label">Jacuzzi</span>
+                                        </label>
+                                        <label class="pc-checkbox-container">
+                                            <input type="checkbox" id="housing-has-guide" name="has_guide_numerique" value="1" class="pc-checkbox-field pc-checkbox-boolean">
+                                            <span class="pc-checkbox-label">Livret d'accueil numérique</span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -727,15 +961,23 @@ function pc_shortcode_housing_dashboard($atts = [])
 
             <div class="pc-modal-footer">
                 <div class="pc-modal-actions">
-                    <button type="button" class="pc-btn pc-btn-secondary" onclick="closeHousingModal()">
-                        Annuler
-                    </button>
-                    <button type="button" class="pc-btn pc-btn-primary" id="pc-housing-save-btn" onclick="saveHousingDetails()">
-                        <span class="pc-btn-text">Enregistrer</span>
+                    <button type="button" class="pc-btn pc-btn-danger" id="pc-housing-delete-btn" onclick="deleteHousingDetails()">
+                        <span class="pc-btn-text">Supprimer</span>
                         <span class="pc-btn-spinner" style="display: none;">
                             <div class="pc-spinner-sm"></div>
                         </span>
                     </button>
+                    <div class="pc-modal-actions-right">
+                        <button type="button" class="pc-btn pc-btn-secondary" onclick="closeHousingModal()">
+                            Annuler
+                        </button>
+                        <button type="button" class="pc-btn pc-btn-primary" id="pc-housing-save-btn" onclick="saveHousingDetails()">
+                            <span class="pc-btn-text">Enregistrer</span>
+                            <span class="pc-btn-spinner" style="display: none;">
+                                <div class="pc-spinner-sm"></div>
+                            </span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -750,6 +992,15 @@ function pc_shortcode_housing_dashboard($atts = [])
  */
 function pc_housing_enqueue_assets()
 {
+    // FullCalendar (Requis pour Rate Manager)
+    wp_enqueue_style('fullcalendar-css', 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css');
+    wp_enqueue_script('fullcalendar-js', 'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js', [], '6.1.10', true);
+
+    // Flatpickr (pour le sélecteur de dates moderne)
+    wp_enqueue_style('flatpickr-css', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css');
+    wp_enqueue_script('flatpickr-js', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js', [], '4.6.13', true);
+    wp_enqueue_script('flatpickr-fr', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js', ['flatpickr-js'], '4.6.13', true);
+
     // Éviter les enqueues multiples
     static $assets_loaded = false;
     if ($assets_loaded) {
@@ -765,11 +1016,26 @@ function pc_housing_enqueue_assets()
         PC_RES_CORE_VERSION
     );
 
+    // Rate Manager Logic & CSS
+    wp_enqueue_style(
+        'pc-rates-css',
+        PC_RES_CORE_URL . 'assets/css/dashboard-rates.css',
+        [],
+        PC_RES_CORE_VERSION
+    );
+    wp_enqueue_script(
+        'pc-rates-js',
+        PC_RES_CORE_URL . 'assets/js/dashboard-rates.js',
+        ['jquery', 'fullcalendar-js'],
+        PC_RES_CORE_VERSION,
+        true
+    );
+
     // JavaScript pour le Housing Manager
     wp_enqueue_script(
         'pc-housing-dashboard-js',
         PC_RES_CORE_URL . 'assets/js/dashboard-housing.js',
-        ['jquery'],
+        ['jquery', 'pc-rates-js'], // Dépendance ajoutée
         PC_RES_CORE_VERSION,
         true
     );

@@ -23,6 +23,8 @@ require_once PC_RES_CORE_PATH . 'includes/class-payment.php';
 require_once PC_RES_CORE_PATH . 'includes/class-booking-engine.php';
 require_once PC_RES_CORE_PATH . 'includes/class-dashboard-ajax.php';
 require_once PC_RES_CORE_PATH . 'includes/class-housing-manager.php';
+require_once PC_RES_CORE_PATH . 'includes/class-rate-manager.php';
+require_once PC_RES_CORE_PATH . 'includes/acf-fields.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-calendar.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-dashboard.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-housing.php';
@@ -117,6 +119,11 @@ add_action('plugins_loaded', function () {
     // ✨ NOUVEAU : Initialisation des Webhooks REST API
     if (class_exists('PCR_Rest_Webhook')) {
         PCR_Rest_Webhook::init();
+    }
+
+    // 🎯 NOUVEAU : Initialisation des champs ACF (onglet Promotions)
+    if (class_exists('PCR_ACF_Fields')) {
+        PCR_ACF_Fields::init();
     }
 
     // --- AUTOMATISATION : CRON JOB (Vérification quotidienne des cautions) ---
