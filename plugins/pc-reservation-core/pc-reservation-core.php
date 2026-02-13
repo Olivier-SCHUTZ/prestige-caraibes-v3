@@ -28,6 +28,16 @@ require_once PC_RES_CORE_PATH . 'includes/acf-fields.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-calendar.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-dashboard.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-housing.php';
+
+// ============================================================
+// 🎯 MODULE EXPERIENCE : Chargement des classes PHP
+// ============================================================
+require_once PC_RES_CORE_PATH . 'includes/experience/class-experience-data-mapper.php';
+require_once PC_RES_CORE_PATH . 'includes/experience/class-experience-crud.php';
+require_once PC_RES_CORE_PATH . 'includes/experience/class-experience-list.php';
+require_once PC_RES_CORE_PATH . 'includes/experience/class-experience-controller.php';
+require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-experience.php';
+
 require_once PC_RES_CORE_PATH . 'includes/class-ical-export.php';
 require_once PC_RES_CORE_PATH . 'includes/class-settings.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-manager.php';
@@ -126,6 +136,13 @@ add_action('plugins_loaded', function () {
         PCR_ACF_Fields::init();
     }
 
+    // ============================================================
+    // 🎯 MODULE EXPERIENCE : Initialisation du contrôleur
+    // ============================================================
+    if (class_exists('PCR_Experience_Controller')) {
+        PCR_Experience_Controller::init();
+    }
+
     // --- AUTOMATISATION : CRON JOB (Vérification quotidienne des cautions) ---
     if (!wp_next_scheduled('pc_cron_daily_caution_check')) {
         wp_schedule_event(time(), 'daily', 'pc_cron_daily_caution_check');
@@ -139,6 +156,80 @@ add_action('plugins_loaded', function () {
     // 3. Messagerie Automatique (Vérification des envois J-7, J-1, etc.)
     if (class_exists('PCR_Messaging')) {
         add_action('pc_cron_daily_caution_check', ['PCR_Messaging', 'process_auto_messages']);
+    }
+});
+
+// ============================================================
+// 🎯 MODULE EXPERIENCE : Enregistrement du shortcode
+// ============================================================
+add_shortcode('pc_dashboard_experience', 'pc_shortcode_experience_dashboard');
+
+// ============================================================
+// 🎯 MODULE EXPERIENCE : Assets CSS/JS avec dépendances
+// ============================================================
+function pcr_enqueue_experience_assets()
+{
+    // Éviter les enqueues multiples
+    static $assets_loaded = false;
+    if ($assets_loaded) {
+        return;
+    }
+    $assets_loaded = true;
+
+    // CSS
+    wp_enqueue_style(
+        'pcr-experience-dashboard-css',
+        PC_RES_CORE_URL . 'assets/css/dashboard-experience.css',
+        array(),
+        PC_RES_CORE_VERSION
+    );
+
+    // JavaScript - Ordre de chargement respecté selon les dépendances
+
+    // 1. UI Manager (pas de dépendances)
+    wp_enqueue_script(
+        'pcr-exp-ui',
+        PC_RES_CORE_URL . 'assets/js/experience/ui-manager.js',
+        array(),
+        PC_RES_CORE_VERSION,
+        true
+    );
+
+    // 2. Data Manager (dépend de jQuery)
+    wp_enqueue_script(
+        'pcr-exp-data',
+        PC_RES_CORE_URL . 'assets/js/experience/data-manager.js',
+        array('jquery'),
+        PC_RES_CORE_VERSION,
+        true
+    );
+
+    // 3. Dashboard Experience (dépend de UI et Data)
+    wp_enqueue_script(
+        'pcr-exp-core',
+        PC_RES_CORE_URL . 'assets/js/dashboard-experience.js',
+        array('pcr-exp-ui', 'pcr-exp-data'),
+        PC_RES_CORE_VERSION,
+        true
+    );
+
+    // Localize Script pour AJAX (CRITIQUE)
+    wp_localize_script('pcr-exp-core', 'pcReservationVars', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('pc_resa_manual_create')
+    ));
+}
+
+// Hook pour charger automatiquement les assets si le shortcode est détecté
+add_action('wp_enqueue_scripts', function () {
+    // Vérifier si on est dans le dashboard ou si la page contient le shortcode
+    global $post;
+
+    if (
+        get_query_var('pc_app_dashboard') ||
+        (is_object($post) && has_shortcode($post->post_content, 'pc_dashboard_experience'))
+    ) {
+        pcr_enqueue_experience_assets();
     }
 });
 

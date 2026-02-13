@@ -518,6 +518,10 @@ do_action('pc_resa_app_enqueue_assets');
                         <span class="pc-nav-icon">🏘️</span>
                         <span class="pc-nav-label">Mes Logements</span>
                     </a>
+                    <a href="#experience" class="pc-nav-item" onclick="switchTab('experience')">
+                        <span class="pc-nav-icon">🎯</span>
+                        <span class="pc-nav-label">Mes Expériences</span>
+                    </a>
                 </nav>
 
                 <div class="pc-sidebar-footer">
@@ -548,6 +552,16 @@ do_action('pc_resa_app_enqueue_assets');
                         pc_housing_enqueue_assets();
                     }
                     echo do_shortcode('[pc_housing_dashboard]');
+                    ?>
+                </div>
+
+                <div id="view-experience" class="pc-view-section">
+                    <?php
+                    // Force le chargement des assets experience
+                    if (function_exists('pcr_enqueue_experience_assets')) {
+                        pcr_enqueue_experience_assets();
+                    }
+                    echo do_shortcode('[pc_dashboard_experience]');
                     ?>
                 </div>
             </main>
