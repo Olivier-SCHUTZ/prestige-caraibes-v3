@@ -43,6 +43,12 @@ class PCR_Dashboard_Ajax
         add_action('wp_ajax_pc_housing_save', [__CLASS__, 'ajax_housing_save']);
         add_action('wp_ajax_pc_housing_delete', [__CLASS__, 'ajax_housing_delete']);
 
+        // ✨ 2.4 NOUVEAUX ENDPOINTS EXPERIENCE MANAGER
+        add_action('wp_ajax_pc_experience_get_list', [__CLASS__, 'ajax_experience_get_list']);
+        add_action('wp_ajax_pc_experience_get_details', [__CLASS__, 'ajax_experience_get_details']);
+        add_action('wp_ajax_pc_experience_save', [__CLASS__, 'ajax_experience_save']);
+        add_action('wp_ajax_pc_experience_delete', [__CLASS__, 'ajax_experience_delete']);
+
         // 3. API DOCUMENTS (Le correctif final)
         // On connecte les actions AJAX directement aux méthodes statiques de la classe Documents
         add_action('wp_ajax_pc_get_documents_templates', [__CLASS__, 'ajax_get_documents_templates']);
@@ -1870,6 +1876,216 @@ class PCR_Dashboard_Ajax
 
         // 4. Supprimer
         $result = PCR_Housing_Manager::delete_housing($post_id);
+
+        if (!$result['success']) {
+            wp_send_json_error(['message' => $result['message']]);
+        }
+
+        wp_send_json_success([
+            'message' => $result['message'],
+            'deleted_post_id' => $post_id
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT EXPERIENCE MANAGER : Récupère la liste des expériences
+     */
+    public static function ajax_experience_get_list()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        if (!class_exists('PCR_Experience_Manager')) {
+            wp_send_json_error(['message' => 'Module Experience Manager indisponible.']);
+        }
+
+        // 2. On prépare les arguments à passer à get_experience_list
+        $args = [
+            'posts_per_page' => isset($_REQUEST['per_page']) ? (int) $_REQUEST['per_page'] : 20,
+            'paged'          => isset($_REQUEST['page']) ? (int) $_REQUEST['page'] : 1,
+            'orderby'        => isset($_REQUEST['orderby']) ? sanitize_text_field($_REQUEST['orderby']) : 'title',
+            'order'          => isset($_REQUEST['order']) ? sanitize_text_field($_REQUEST['order']) : 'ASC',
+            's'              => isset($_REQUEST['search']) ? sanitize_text_field($_REQUEST['search']) : '',
+
+            // On passe simplement les filtres bruts, la fonction get_experience_list gérera la logique
+            'type_filter'    => isset($_REQUEST['type_filter']) ? sanitize_text_field($_REQUEST['type_filter']) : '',
+            'status_filter'  => isset($_REQUEST['status_filter']) ? sanitize_text_field($_REQUEST['status_filter']) : '',
+            'mode_filter'    => isset($_REQUEST['mode_filter']) ? sanitize_text_field($_REQUEST['mode_filter']) : '',
+        ];
+
+        // 3. Récupérer la liste
+        $result = PCR_Experience_Manager::get_experience_list($args);
+
+        if (!$result['success']) {
+            wp_send_json_error(['message' => 'Erreur lors du chargement des expériences.']);
+        }
+
+        wp_send_json_success([
+            'items' => $result['items'],
+            'total' => $result['total'],
+            'pages' => $result['pages'],
+            'current_page' => $result['current_page'],
+            'per_page' => $args['posts_per_page']
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT EXPERIENCE MANAGER : Récupère les détails d'une expérience
+     */
+    public static function ajax_experience_get_details()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Vérifier que la classe est disponible
+        if (!class_exists('PCR_Experience_Manager')) {
+            wp_send_json_error(['message' => 'Module Experience Manager indisponible.']);
+        }
+
+        // 3. Paramètres
+        $post_id = isset($_REQUEST['post_id']) ? (int) $_REQUEST['post_id'] : 0;
+        if ($post_id <= 0) {
+            wp_send_json_error(['message' => 'ID d\'expérience manquant.']);
+        }
+
+        // 4. Récupérer les détails
+        $result = PCR_Experience_Manager::get_experience_details($post_id);
+
+        if (!$result || !$result['success']) {
+            wp_send_json_error(['message' => 'Expérience introuvable ou erreur de chargement.']);
+        }
+
+        // ✨ Injection des données Rate Manager via la nouvelle classe (les expériences ont aussi des tarifs saisonniers)
+        if (class_exists('PCR_Rate_Manager')) {
+            $rates_data = PCR_Rate_Manager::get_rates_data($post_id);
+            $result['data']['seasons_data'] = $rates_data['seasons'];
+            $result['data']['promos_data'] = $rates_data['promos'];
+        }
+
+        wp_send_json_success([
+            'experience' => $result['data'],
+            'post_id' => $post_id,
+            'edit_url' => admin_url('post.php?post=' . $post_id . '&action=edit'),
+            'view_url' => get_permalink($post_id)
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT EXPERIENCE MANAGER : Sauvegarde les modifications d'une expérience
+     */
+    public static function ajax_experience_save()
+    {
+        // 🕵️‍♂️ DEBUG: Log des données POST reçues
+        error_log('=== PC EXPERIENCE SAVE DEBUG ===');
+        error_log('POST data received: ' . print_r($_POST, true));
+        error_log('=================================');
+
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Vérifier que la classe est disponible
+        if (!class_exists('PCR_Experience_Manager')) {
+            wp_send_json_error(['message' => 'Module Experience Manager indisponible.']);
+        }
+
+        // 3. Paramètres
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+        if ($post_id < 0) {
+            wp_send_json_error(['message' => 'ID invalide.']);
+        }
+
+        // 4. Récupérer les données à sauvegarder
+        $data = [];
+
+        // Données de base du post
+        if (isset($_POST['title'])) {
+            $data['title'] = sanitize_text_field($_POST['title']);
+        }
+        if (isset($_POST['slug'])) {
+            $data['slug'] = sanitize_title($_POST['slug']);
+        }
+        if (isset($_POST['status'])) {
+            $data['status'] = sanitize_text_field($_POST['status']);
+        }
+        if (isset($_POST['content'])) {
+            $data['content'] = wp_kses_post($_POST['content']);
+        }
+        if (isset($_POST['excerpt'])) {
+            $data['excerpt'] = wp_kses_post($_POST['excerpt']);
+        }
+
+        // 🔧 FIX CRITIQUE : Type d'expérience pour la création
+        if (isset($_POST['post_type'])) {
+            $data['post_type'] = sanitize_text_field($_POST['post_type']);
+        }
+
+        // Image à la une
+        if (isset($_POST['featured_image_id'])) {
+            $data['featured_image_id'] = (int) $_POST['featured_image_id'];
+        }
+
+        // Champs ACF : on récupère tous les champs postés avec le préfixe 'acf_'
+        foreach ($_POST as $key => $value) {
+            if (strpos($key, 'acf_') === 0) {
+                // Retirer le préfixe pour obtenir la clé normalisée
+                $field_key = substr($key, 4);
+                $data[$field_key] = $value; // La sanitisation sera faite par PCR_Experience_Manager::update_experience
+            }
+        }
+
+        // 5. Sauvegarder
+        $result = PCR_Experience_Manager::update_experience($post_id, $data);
+
+        if (!$result['success']) {
+            wp_send_json_error(['message' => $result['message']]);
+        }
+
+        // ✨ Sauvegarde Rate Manager via la nouvelle classe (les expériences ont aussi des tarifs saisonniers)
+        if (class_exists('PCR_Rate_Manager') && isset($_POST['rate_manager_data'])) {
+            PCR_Rate_Manager::save_rates_data($post_id, $_POST['rate_manager_data']);
+        }
+
+        wp_send_json_success([
+            'message' => $result['message'],
+            'post_id' => $post_id,
+            'updated_fields' => $result['data']['updated_fields'] ?? 0,
+            'edit_url' => admin_url('post.php?post=' . $post_id . '&action=edit'),
+        ]);
+    }
+
+    /**
+     * ✨ NOUVEAU ENDPOINT EXPERIENCE MANAGER : Supprime une expérience
+     */
+    public static function ajax_experience_delete()
+    {
+        // 1. Sécurité
+        check_ajax_referer('pc_resa_manual_create', 'nonce');
+        if (!is_user_logged_in() || !self::current_user_can_manage()) {
+            wp_send_json_error(['message' => 'Action non autorisée.']);
+        }
+
+        // 2. Vérifier que la classe est disponible
+        if (!class_exists('PCR_Experience_Manager')) {
+            wp_send_json_error(['message' => 'Module Experience Manager indisponible.']);
+        }
+
+        // 3. Paramètres
+        $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+        if ($post_id <= 0) {
+            wp_send_json_error(['message' => 'ID d\'expérience manquant ou invalide.']);
+        }
+
+        // 4. Supprimer
+        $result = PCR_Experience_Manager::delete_experience($post_id);
 
         if (!$result['success']) {
             wp_send_json_error(['message' => $result['message']]);

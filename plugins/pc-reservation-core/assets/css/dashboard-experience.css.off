@@ -1,0 +1,1646 @@
+/**
+ * PC Experience Dashboard - Styles High Fidelity
+ * Version complète synchronisée avec shortcode-experience.php & ui-manager.js
+ */
+
+:root {
+  /* --- VARIABLES GLASSMORPHISM & THEME AVANCÉES --- */
+  /* Design System Harmonisé Housing/Experience */
+  --pc-experience-primary: var(--pc-primary, #4f46e5);
+  --pc-experience-secondary: var(--pc-secondary, #6366f1);
+  --pc-experience-accent: var(--pc-accent, #8b5cf6);
+
+  /* Glassmorphism Avancé */
+  --pc-experience-surface: var(--pc-glass-bg, rgba(255, 255, 255, 0.95));
+  --pc-experience-surface-dark: rgba(255, 255, 255, 0.85);
+  --pc-experience-border: rgba(148, 163, 184, 0.3);
+  --pc-experience-shadow: var(--pc-shadow, 0 4px 20px rgba(79, 70, 229, 0.1));
+  --pc-experience-shadow-lg: 0 20px 40px rgba(79, 70, 229, 0.15);
+  --pc-experience-radius: var(--pc-border-radius, 16px);
+  --pc-experience-radius-lg: 24px;
+  --pc-experience-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Variables Legacy pour compatibilité */
+  --glass-bg: var(--pc-experience-surface);
+  --glass-border: 1px solid var(--pc-experience-border);
+  --glass-shadow: var(--pc-experience-shadow);
+  --glass-blur: blur(12px);
+
+  --primary: var(--pc-experience-primary);
+  --primary-hover: #135e96;
+  --primary-light: rgba(79, 70, 229, 0.05);
+  --danger: #d63638;
+  --danger-bg: rgba(214, 54, 56, 0.1);
+  --success: #00a32a;
+  --success-bg: rgba(0, 163, 42, 0.1);
+  --warning: #f0b849;
+  --warning-bg: rgba(240, 184, 73, 0.1);
+
+  --text-main: #1d2327;
+  --text-light: #646970;
+  --border-color: #dcdcde;
+  --input-bg: #ffffff;
+
+  --transition: var(--pc-experience-transition);
+}
+
+/* ==========================================================================
+   1. CONTENEUR GLOBAL & TYPOGRAPHIE
+   ========================================================================== */
+.pc-experience-manager {
+  max-width: 100%;
+  margin: 20px 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu,
+    Cantarell, "Helvetica Neue", sans-serif;
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
+.pc-experience-manager * {
+  box-sizing: border-box;
+}
+
+.pc-experience-header {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pc-experience-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1d2327;
+  margin: 0 0 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pc-experience-subtitle {
+  font-size: 14px;
+  color: var(--text-light);
+  margin: 0;
+  max-width: 600px;
+}
+
+/* ==========================================================================
+   2. CONTROLS BAR (RECHERCHE & FILTRES)
+   ========================================================================== */
+.pc-experience-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border: 1px solid #c3c4c7;
+}
+
+.pc-search-wrapper {
+  flex: 1;
+  min-width: 300px;
+  position: relative;
+}
+
+/* Inputs Standardisés */
+.pc-input,
+.pc-select,
+.pc-textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-main);
+  background-color: var(--input-bg);
+  border: 1px solid #8c8f94;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.pc-input:focus,
+.pc-select:focus,
+.pc-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+  outline: none;
+}
+
+/* Custom Select (Enlever flèche navigateur) */
+.pc-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%23555%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px top 50%;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+.pc-textarea {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  resize: vertical;
+}
+
+/* Boutons */
+.pc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pc-btn-primary {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 2px 4px rgba(34, 113, 177, 0.3);
+}
+.pc-btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.pc-btn-secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.pc-btn-secondary:hover {
+  background: var(--primary-light);
+}
+
+.pc-btn-danger {
+  background: #fff;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+.pc-btn-danger:hover {
+  background: var(--danger);
+  color: white;
+}
+
+/* ==========================================================================
+   3. TABLEAU DES EXPÉRIENCES
+   ========================================================================== */
+.pc-experience-table-wrapper {
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+table.pc-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.pc-table thead th {
+  background: #f0f0f1;
+  color: #1d2327;
+  font-weight: 600;
+  text-align: left;
+  padding: 15px;
+  font-size: 14px;
+  border-bottom: 1px solid #c3c4c7;
+}
+
+.pc-table tbody tr {
+  background: #fff;
+  border-bottom: 1px solid #f0f0f1;
+  transition: background-color 0.2s;
+}
+
+.pc-table tbody tr:last-child {
+  border-bottom: none;
+}
+.pc-table tbody tr:hover {
+  background: #f6f7f7;
+}
+
+.pc-table tbody td {
+  padding: 15px;
+  vertical-align: middle;
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+/* Styles Spécifiques Colonnes */
+.pc-col-image {
+  width: 80px;
+  text-align: center;
+}
+.pc-col-image img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.pc-col-name {
+  font-weight: 600;
+  color: var(--primary);
+}
+.pc-col-price {
+  font-weight: 700;
+  color: var(--text-main);
+}
+.pc-col-status {
+  text-align: center;
+  width: 120px;
+}
+.pc-col-actions {
+  text-align: right;
+  width: 140px;
+}
+
+/* Badges de Statut (Matching JS values) */
+.pc-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Pour cibler les selects ou badges générés dynamiquement */
+td[data-status="publish"] .pc-status-badge {
+  background: var(--success-bg);
+  color: var(--success);
+}
+td[data-status="draft"] .pc-status-badge {
+  background: #f0f0f1;
+  color: #50575e;
+}
+td[data-status="pending"] .pc-status-badge {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+td[data-status="private"] .pc-status-badge {
+  background: #e5e5e5;
+  color: #1d2327;
+}
+
+/* Actions dans le tableau */
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.pc-table tr:hover .row-actions {
+  opacity: 1;
+}
+
+.pc-btn-icon-only {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 16px;
+}
+.pc-btn-icon-only:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* ==========================================================================
+   4. MODALE & ANIMATIONS (Coeur du système)
+   ========================================================================== */
+#experience-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100000;
+  display: none; /* Géré par JS: .active => flex */
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#experience-modal.active {
+  display: flex !important;
+}
+
+/* Overlay Background */
+.pc-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  z-index: -1;
+  /* Transition opacity gérée si besoin */
+}
+
+/* Le Conteneur Principal (La carte) */
+.pc-modal-container {
+  position: relative;
+  background: #fff;
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* ANIMATIONS (Simplifiées et fonctionnelles) */
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Animation d'entrée quand la modale devient active */
+#experience-modal:not(.active) .pc-modal-container {
+  transform: scale(0.95);
+  opacity: 0;
+}
+
+#experience-modal.active .pc-modal-container {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Header Modale */
+.pc-modal-header {
+  padding: 20px 30px;
+  background: #fff;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pc-modal-title {
+  font-size: 20px;
+  margin: 0;
+  color: var(--primary);
+}
+
+.pc-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0 10px;
+  transition: color 0.2s;
+}
+.pc-modal-close:hover {
+  color: var(--danger);
+}
+
+/* Body Modale */
+.pc-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: #fcfcfc;
+}
+
+/* ==========================================================================
+   5. NAVIGATION & ONGLETS (TABS) - DESIGN GLASSMORPHISME AVANCÉ
+   ========================================================================== */
+/* Navigation Onglets - Style Glassmorphisme */
+.pc-experience-manager .pc-tabs-nav {
+  display: flex;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0.5rem 2rem;
+  overflow-x: auto;
+  border-bottom: none;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  /* Scroll horizontal fluide avec masquage de scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Masquer la scrollbar pour webkit */
+.pc-experience-manager .pc-tabs-nav::-webkit-scrollbar {
+  height: 6px;
+}
+
+.pc-experience-manager .pc-tabs-nav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.pc-experience-manager .pc-tabs-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.pc-experience-manager .pc-tabs-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.pc-experience-manager .pc-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px 12px 0 0;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--pc-experience-transition);
+  white-space: nowrap;
+  margin-right: 0.4rem;
+  border-bottom: none;
+  flex-shrink: 0;
+  min-width: fit-content;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pc-experience-manager .pc-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.pc-experience-manager .pc-tab-btn.active {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--pc-experience-primary);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.pc-experience-manager .pc-tab-btn.active::after {
+  display: none; /* Remplacé par le style glassmorphisme */
+}
+
+.pc-experience-manager .pc-tab-icon {
+  font-size: 1.1rem;
+}
+
+/* Contenu des Onglets - Style Glassmorphisme */
+.pc-experience-manager .pc-tabs-content {
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: 400px;
+}
+
+/* On laisse le JavaScript gérer l'affichage via .show() / .hide() */
+.pc-experience-manager .pc-tab-content {
+  display: none; /* État initial pour tous sauf le premier via PHP */
+  opacity: 1;
+  width: 100%;
+}
+
+/* On ne force le display block QUE si le JS ne l'a pas déjà fait */
+.pc-experience-manager .pc-tab-content.active {
+  display: block;
+}
+
+/* Correction pour l'animation qui peut bloquer l'opacité */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Legacy support pour l'ancien style */
+.pc-tabs-nav {
+  display: flex;
+  padding: 0 30px;
+  background: #fff;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  overflow-x: auto;
+}
+
+.pc-tab-btn {
+  background: none;
+  border: none;
+  padding: 18px 5px;
+  margin-right: 25px;
+  color: var(--text-light);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.pc-tab-btn:hover {
+  color: var(--primary);
+}
+
+.pc-tab-btn.active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.pc-tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 3px 3px 0 0;
+}
+
+.pc-tabs-content {
+  padding: 30px;
+}
+
+.pc-tab-content {
+  display: none;
+}
+
+.pc-tab-content.active {
+  display: block !important;
+  opacity: 1 !important;
+  animation: none !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   6. GRID & FORMULAIRES AVANCÉS - DESIGN GLASSMORPHISME
+   ========================================================================== */
+/* Grille de formulaire avancée avec préfixe experience-manager */
+.pc-experience-manager .pc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.pc-experience-manager .pc-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.pc-experience-manager .pc-form-group--full {
+  grid-column: 1 / -1;
+}
+
+.pc-experience-manager .pc-form-group label {
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Inputs, selects et textareas avec effet Glassmorphisme */
+.pc-experience-manager .pc-form-group .pc-input,
+.pc-experience-manager .pc-form-group .pc-textarea {
+  padding: 1rem 1.2rem;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  transition: var(--pc-experience-transition);
+  font-size: 0.95rem;
+  font-weight: 500;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Selects SANS backdrop-filter pour éviter les bugs de rendu */
+.pc-experience-manager .pc-form-group .pc-select {
+  padding: 1rem 1.2rem;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: #ffffff;
+  transition: var(--pc-experience-transition);
+  font-size: 0.95rem;
+  font-weight: 500;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #6b7280 50%),
+    linear-gradient(135deg, #6b7280 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) calc(50% - 2px),
+    calc(100% - 16px) calc(50% - 2px);
+  background-size:
+    4px 4px,
+    4px 4px;
+  background-repeat: no-repeat;
+}
+
+.pc-experience-manager .pc-form-group .pc-input:focus,
+.pc-experience-manager .pc-form-group .pc-select:focus,
+.pc-experience-manager .pc-form-group .pc-textarea:focus {
+  border-color: var(--pc-experience-primary);
+  background: #ffffff;
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(79, 70, 229, 0.15),
+    0 8px 25px rgba(79, 70, 229, 0.2);
+  transform: translateY(-1px);
+}
+
+.pc-experience-manager .pc-form-group .pc-input:hover,
+.pc-experience-manager .pc-form-group .pc-select:hover,
+.pc-experience-manager .pc-form-group .pc-textarea:hover {
+  box-shadow:
+    0 6px 15px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-0.5px);
+}
+
+.pc-experience-manager .pc-textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+}
+
+/* Instructions d'aide stylées */
+.pc-experience-manager .pc-field-help {
+  display: block;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+  background: rgba(100, 116, 139, 0.1);
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  border-left: 3px solid var(--pc-experience-primary);
+}
+
+.pc-experience-manager .pc-field-help::before {
+  content: "💡 ";
+  font-style: normal;
+}
+
+/* Checkboxes personnalisées avec Glassmorphisme */
+.pc-experience-manager .pc-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.pc-experience-manager .pc-checkbox-group label {
+  display: flex !important;
+  align-items: center;
+  gap: 0.8rem;
+  font-weight: 500 !important;
+  font-size: 0.9rem !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  margin-bottom: 0 !important;
+  cursor: pointer;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  transition: var(--pc-experience-transition);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  position: relative;
+  min-height: 40px;
+}
+
+.pc-experience-manager .pc-checkbox-group label:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--pc-experience-primary);
+}
+
+.pc-experience-manager .pc-checkbox-group input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--pc-experience-border);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+  transition: var(--pc-experience-transition);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pc-experience-manager .pc-checkbox-group input[type="checkbox"]:hover {
+  border-color: var(--pc-experience-primary);
+  background: #ffffff;
+}
+
+.pc-experience-manager .pc-checkbox-group input[type="checkbox"]:checked {
+  background: linear-gradient(
+    135deg,
+    var(--pc-experience-primary) 0%,
+    var(--pc-experience-secondary) 100%
+  );
+  border-color: var(--pc-experience-primary);
+}
+
+/* Zone Upload Image Avancée */
+.pc-experience-manager .pc-image-uploader {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 2px dashed var(--pc-experience-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  transition: var(--pc-experience-transition);
+}
+
+.pc-experience-manager .pc-image-uploader:hover {
+  border-color: var(--pc-experience-primary);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.pc-experience-manager .pc-image-preview {
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.pc-experience-manager .pc-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pc-experience-manager .pc-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: #64748b;
+  text-align: center;
+  height: 100%;
+  padding: 2rem;
+}
+
+.pc-experience-manager .pc-image-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+}
+
+.pc-experience-manager .pc-btn-select-image,
+.pc-experience-manager .pc-btn-remove-image {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--pc-experience-transition);
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.pc-experience-manager .pc-btn-select-image {
+  background: linear-gradient(
+    135deg,
+    var(--pc-experience-primary) 0%,
+    var(--pc-experience-secondary) 100%
+  );
+  color: white;
+}
+
+.pc-experience-manager .pc-btn-select-image:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.pc-experience-manager .pc-btn-remove-image {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: white;
+}
+
+.pc-experience-manager .pc-btn-remove-image:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* Legacy support pour les anciens styles */
+.pc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25px;
+}
+
+.pc-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pc-form-group--full {
+  grid-column: 1 / -1;
+}
+
+.pc-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pc-field-help {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.pc-image-uploader {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  background: #f9f9f9;
+  transition: border-color 0.2s;
+}
+
+.pc-image-uploader:hover {
+  border-color: var(--primary);
+}
+
+.pc-image-preview img {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.pc-image-placeholder {
+  padding: 40px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+/* ==========================================================================
+   7. FOOTER MODALE & LOADING
+   ========================================================================== */
+.pc-modal-footer {
+  padding: 20px 30px;
+  background: #fff;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pc-modal-actions-right {
+  display: flex;
+  gap: 12px;
+}
+
+/* Loading Spinner Centré */
+.pc-loading,
+.pc-experience-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: var(--text-light);
+}
+
+.pc-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e5e5e5;
+  border-top: 4px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   8. TOASTS / NOTIFICATIONS
+   ========================================================================== */
+#pc-toast-container {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pc-toast {
+  background: #fff;
+  color: var(--text-main);
+  padding: 16px 20px;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 320px;
+  border-left: 5px solid var(--primary);
+  animation: slideInRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pc-toast--success {
+  border-left-color: var(--success);
+}
+.pc-toast--error {
+  border-left-color: var(--danger);
+}
+.pc-toast--warning {
+  border-left-color: var(--warning);
+}
+
+.pc-toast-icon {
+  font-size: 20px;
+}
+.pc-toast-content {
+  flex: 1;
+  font-size: 14px;
+}
+.pc-toast-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 18px;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   9. EMPTY STATES
+   ========================================================================== */
+.pc-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+.pc-empty-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+.pc-empty-state h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+/* ==========================================================================
+   10. RESPONSIVE - OPTIMISATIONS CRITIQUES SYNCHRONISÉES AVEC HOUSING
+   ========================================================================== */
+
+/* === RÈGLES MOBILE PRINCIPALES === */
+@media (max-width: 782px) {
+  /* Masquage intelligent colonnes sur mobile */
+  .pc-col-image,
+  .pc-col-duration,
+  .pc-col-status {
+    display: none;
+  }
+
+  /* Contrôles empilés verticalement */
+  .pc-experience-controls {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+  }
+
+  .pc-filters-wrapper {
+    flex-direction: column;
+  }
+
+  .pc-filter-select {
+    min-width: auto;
+    width: 100%;
+  }
+
+  /* Table responsive avec scroll horizontal */
+  .pc-experience-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .pc-experience-table {
+    min-width: 800px;
+  }
+
+  /* === MODALE FULLSCREEN SUR MOBILE === */
+  .pc-modal-container,
+  #experience-modal .pc-modal-container {
+    margin: 1rem;
+    max-height: 95vh;
+    width: calc(100% - 2rem);
+    border-radius: 8px;
+  }
+
+  .pc-modal-header,
+  .pc-modal-footer {
+    padding: 1rem;
+  }
+
+  /* === NAVIGATION ONGLETS SCROLL HORIZONTAL === */
+  .pc-tabs-content,
+  .pc-experience-manager .pc-tabs-content {
+    padding: 1rem;
+  }
+
+  .pc-tabs-nav,
+  .pc-experience-manager .pc-tabs-nav {
+    padding: 0 1rem;
+    /* Scroll horizontal fluide */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pc-tab-btn,
+  .pc-experience-manager .pc-tab-btn {
+    padding: 0.8rem 1rem;
+    font-size: 0.85rem;
+    /* Évite le rétrécissement */
+    flex-shrink: 0;
+    min-width: fit-content;
+  }
+
+  /* === BOUTONS STACK VERTICAL SUR PETIT ÉCRAN === */
+  .pc-modal-footer {
+    flex-direction: column-reverse;
+    gap: 15px;
+  }
+
+  .pc-modal-actions-right,
+  .pc-modal-actions {
+    flex-direction: column-reverse;
+    gap: 0.8rem;
+    width: 100%;
+  }
+
+  .pc-btn {
+    width: 100%;
+    justify-content: center;
+    flex: 1;
+  }
+
+  /* Grille formulaire mobile */
+  .pc-form-grid,
+  .pc-experience-manager .pc-form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* === TRÈS PETITS ÉCRANS === */
+@media (max-width: 480px) {
+  .pc-experience-header {
+    padding: 1.5rem;
+  }
+
+  .pc-experience-title {
+    font-size: 1.5rem;
+  }
+
+  .pc-experience-icon {
+    font-size: 2rem;
+  }
+
+  .pc-modal-container,
+  #experience-modal .pc-modal-container {
+    margin: 0.5rem;
+    width: calc(100% - 1rem);
+  }
+}
+
+/* ==========================================================================
+   11. REPEATER & GALLERY UPLOADERS AVANCÉS - GLASSMORPHISME
+   ========================================================================== */
+
+/* === REPEATER EXPERIENCE === */
+.pc-experience-manager .pc-repeater {
+  border: 2px solid var(--pc-experience-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  overflow: hidden;
+  box-shadow: var(--pc-experience-shadow);
+}
+
+.pc-experience-manager .pc-repeater-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(
+    135deg,
+    var(--pc-experience-primary) 0%,
+    var(--pc-experience-secondary) 100%
+  );
+  color: white;
+}
+
+.pc-experience-manager .pc-repeater-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pc-experience-manager .pc-btn-add-group {
+  padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--pc-experience-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pc-experience-manager .pc-btn-add-group:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.pc-experience-manager .pc-repeater-items {
+  padding: 0;
+}
+
+.pc-experience-manager .pc-repeater-item {
+  border-bottom: 1px solid var(--pc-experience-border);
+  background: rgba(255, 255, 255, 0.9);
+  animation: slideInDown 0.3s ease;
+}
+
+.pc-experience-manager .pc-repeater-item:last-child {
+  border-bottom: none;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pc-experience-manager .pc-repeater-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: rgba(248, 250, 252, 0.8);
+  border-bottom: 1px solid var(--pc-experience-border);
+}
+
+.pc-experience-manager .pc-repeater-item-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0;
+}
+
+.pc-experience-manager .pc-remove-group {
+  padding: 0.4rem 0.8rem;
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--pc-experience-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pc-experience-manager .pc-remove-group:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.pc-experience-manager .pc-repeater-item-content {
+  padding: 1.5rem;
+}
+
+.pc-experience-manager .pc-repeater-empty {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #64748b;
+  background: rgba(248, 250, 252, 0.5);
+}
+
+.pc-experience-manager .pc-repeater-empty .pc-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.pc-experience-manager .pc-repeater-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* === GALLERY UPLOADER EXPERIENCE === */
+.pc-experience-manager .pc-gallery-uploader {
+  border: 2px dashed var(--pc-experience-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.6);
+  transition: var(--pc-experience-transition);
+  text-align: center;
+}
+
+.pc-experience-manager .pc-gallery-uploader:hover {
+  border-color: var(--pc-experience-primary);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.pc-experience-manager .pc-gallery-preview {
+  margin-bottom: 1rem;
+}
+
+.pc-experience-manager .pc-gallery-placeholder {
+  padding: 2rem;
+  color: #64748b;
+}
+
+.pc-experience-manager .pc-gallery-placeholder-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
+}
+
+.pc-experience-manager .pc-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.pc-experience-manager .pc-gallery-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--pc-experience-border);
+  transition: var(--pc-experience-transition);
+}
+
+.pc-experience-manager .pc-gallery-thumb:hover {
+  border-color: var(--pc-experience-primary);
+  transform: scale(1.05);
+}
+
+.pc-experience-manager .pc-gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pc-experience-manager .pc-gallery-count {
+  font-size: 0.85rem;
+  color: #059669;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pc-experience-manager .pc-select-gallery-images {
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(
+    135deg,
+    var(--pc-experience-primary) 0%,
+    var(--pc-experience-secondary) 100%
+  );
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--pc-experience-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pc-experience-manager .pc-select-gallery-images:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* === SÉLECTEURS OPTIMISÉS EXPERIENCE === */
+.pc-experience-manager select,
+.pc-experience-manager .pc-select,
+.pc-experience-manager .pc-filter-select,
+.pc-experience-manager .pc-form-group select,
+.pc-experience-controls select,
+.pc-experience-controls .pc-filter-select,
+#experience-modal select,
+#experience-modal .pc-select,
+select[id*="experience"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  background-color: #ffffff;
+  color: #1e293b;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.75rem 2.5rem 0.75rem 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.5;
+  width: 100%;
+  cursor: pointer;
+  height: auto;
+  min-height: 40px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #6b7280 50%),
+    linear-gradient(135deg, #6b7280 50%, transparent 50%) !important;
+  background-position:
+    calc(100% - 20px) calc(50% - 2px),
+    calc(100% - 16px) calc(50% - 2px) !important;
+  background-size:
+    4px 4px,
+    4px 4px !important;
+  background-repeat: no-repeat !important;
+}
+
+/* États interactifs */
+.pc-experience-manager select:hover,
+.pc-experience-controls select:hover,
+#experience-modal select:hover,
+select[id*="experience"]:hover {
+  border-color: var(--pc-experience-primary);
+  background-color: #ffffff;
+}
+
+.pc-experience-manager select:focus,
+.pc-experience-controls select:focus,
+#experience-modal select:focus,
+select[id*="experience"]:focus {
+  border-color: var(--pc-experience-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  background-color: #ffffff;
+  color: #1e293b;
+}
+
+/* === RESPONSIVE EXPERIENCE === */
+@media (max-width: 768px) {
+  .pc-experience-manager .pc-image-uploader {
+    padding: 1rem;
+  }
+
+  .pc-experience-manager .pc-image-actions {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .pc-experience-manager .pc-btn-select-image,
+  .pc-experience-manager .pc-btn-remove-image {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pc-experience-manager .pc-repeater-header {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .pc-experience-manager .pc-repeater-item-header {
+    padding: 0.8rem 1rem;
+    flex-direction: column;
+    gap: 0.8rem;
+    align-items: stretch;
+  }
+
+  .pc-experience-manager .pc-repeater-item-content {
+    padding: 1rem;
+  }
+
+  .pc-experience-manager .pc-gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .pc-experience-manager .pc-remove-group,
+  .pc-experience-manager .pc-btn-add-group,
+  .pc-experience-manager .pc-select-gallery-images {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .pc-experience-manager .pc-gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  }
+
+  .pc-experience-manager .pc-repeater-empty {
+    padding: 2rem 1rem;
+  }
+}
+
+/* Utilitaires JS */
+.hidden {
+  display: none !important;
+}
+body.modal-open {
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   12. ALIASES COMPATIBILITÉ HOUSING
+   ========================================================================== */
+
+/* === CLASSES PRINCIPALES === */
+.pc-housing-manager,
+.pc-experience-manager {
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu,
+    Cantarell, "Helvetica Neue", sans-serif;
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
+.pc-housing-header,
+.pc-experience-header {
+  background: var(--pc-experience-surface);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--pc-experience-border);
+  border-radius: var(--pc-experience-radius-lg);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--pc-experience-shadow);
+}
+
+.pc-housing-title,
+.pc-experience-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+}
+
+.pc-housing-subtitle,
+.pc-experience-subtitle {
+  color: #64748b;
+  font-size: 1.1rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pc-housing-controls,
+.pc-experience-controls {
+  background: var(--pc-experience-surface);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--pc-experience-border);
+  border-radius: var(--pc-experience-radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--pc-experience-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pc-housing-table-wrapper,
+.pc-experience-table-wrapper {
+  background: var(--pc-experience-surface);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--pc-experience-border);
+  border-radius: var(--pc-experience-radius);
+  overflow: hidden;
+  box-shadow: var(--pc-experience-shadow);
+  margin-bottom: 2rem;
+}
+
+.pc-housing-table,
+.pc-experience-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+
+/* === ICONS === */
+.pc-housing-icon,
+.pc-experience-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 4px 8px rgba(79, 70, 229, 0.3));
+}

@@ -1,545 +1,990 @@
 /**
- * PC Experience Dashboard - Fichier principal coordinateur
- * Gère l'orchestration des classes UI et Data, les événements et les appels AJAX
+ * PC Reservation Core - Experience Dashboard JavaScript
+ * Gestionnaire des expériences avec interface Table + Modale
  *
- * @since 0.2.0
+ * @since 0.1.4
  */
+
 (function ($) {
-  class PCExperienceManager {
+  "use strict";
+
+  // === VARIABLES GLOBALES ===
+  let currentPage = 1;
+  let totalPages = 1;
+  let currentExperienceId = null;
+  let currentFilters = {
+    search: "",
+    status: "",
+  };
+
+  // === CLASSE PRINCIPALE ===
+  class PCExperienceDashboard {
     constructor() {
-      this.ui = null;
-      this.data = null;
-      this.isLoading = false;
-      this.currentExperienceId = null;
-
       // Configuration AJAX
-      this.ajaxUrl = pcReservationVars.ajax_url || "/wp-admin/admin-ajax.php";
-      this.nonce = pcReservationVars.nonce || "";
-      this.debug = pcReservationVars.debug || false;
+      this.ajaxUrl = pcReservationVars.ajax_url;
+      this.nonce = pcReservationVars.nonce;
+
+      // Sélecteurs DOM
+      this.selectors = {
+        table: "#pc-experience-table",
+        tbody: "#pc-experience-table-body",
+        empty: "#pc-experience-empty",
+        loading: "#pc-experience-loading",
+        search: "#pc-experience-search",
+        statusFilter: "#pc-experience-status-filter",
+        pagination: "#pc-experience-pagination",
+        newBtn: "#pc-new-experience-btn",
+      };
+
+      // Initialiser le Rate Manager pour la suite
+      this.rateManager = new PCRateManager();
+
+      this.init();
     }
 
-    /**
-     * Initialise le manager principal
-     */
     init() {
-      console.log("🚀 PCExperienceManager: Initialisation complète");
-
-      // Initialiser les modules
-      this.ui = new PCExperienceUI();
-      this.data = new PCExperienceData();
-
-      this.ui.init();
-      this.data.init();
-
-      // Bind les événements principaux
       this.bindEvents();
-
-      // Charger la liste initiale
-      this.loadExperiencesList();
-
-      console.log("✅ PCExperienceManager: Prêt");
+      this.loadList();
     }
 
-    /**
-     * Gère les événements principaux
-     */
+    // === GESTION DES ÉVÉNEMENTS ===
     bindEvents() {
-      // Boutons d'action principale
-      $(document).on("click", "#pc-btn-add-experience", (e) => {
-        e.preventDefault();
-        this.openNewExperienceModal();
-      });
-
-      $(document).on("click", ".pc-btn-edit-experience", (e) => {
-        e.preventDefault();
-        const experienceId = $(e.currentTarget).data("id");
-        this.openEditExperienceModal(experienceId);
-      });
-
-      // Boutons de sauvegarde
-      $(document).on("click", "#btn-save-experience", (e) => {
-        e.preventDefault();
-        this.saveExperience();
-      });
-
-      $(document).on("click", "#btn-save-experience-draft", (e) => {
-        e.preventDefault();
-        this.saveExperience("draft");
-      });
-
-      // Boutons de suppression
-      $(document).on("click", ".pc-btn-delete-experience", (e) => {
-        e.preventDefault();
-        const experienceId = $(e.currentTarget).data("id");
-        this.confirmDeleteExperience(experienceId);
-      });
-
-      // Refresh de la liste
-      $(document).on("click", "#btn-refresh-experiences", (e) => {
-        e.preventDefault();
-        this.loadExperiencesList();
-      });
-
-      // Filtres et recherche
-      $(document).on(
+      // Recherche avec debounce
+      $(this.selectors.search).on(
         "input",
-        "#pc-experience-search",
         this.debounce(() => {
-          this.loadExperiencesList();
+          currentFilters.search = $(this.selectors.search).val();
+          currentPage = 1;
+          this.loadList();
         }, 500),
       );
 
-      $(document).on("change", "#pc-experience-status-filter", () => {
-        this.loadExperiencesList();
+      // Filtre statut
+      $(this.selectors.statusFilter).on("change", () => {
+        currentFilters.status = $(this.selectors.statusFilter).val();
+        currentPage = 1;
+        this.loadList();
       });
 
-      // Gestion des raccourcis clavier
+      // Pagination
+      $(document).on("click", ".pc-pagination a[data-page]", (e) => {
+        e.preventDefault();
+        const page = parseInt($(e.currentTarget).data("page"));
+        if (page !== currentPage && page >= 1 && page <= totalPages) {
+          currentPage = page;
+          this.loadList();
+        }
+      });
+
+      // Bouton "Nouvelle Expérience"
+      $(document).on("click", this.selectors.newBtn, (e) => {
+        e.preventDefault();
+        this.openModal();
+      });
+
+      // Actions sur les lignes
+      $(document).on("click", ".pc-action-edit", (e) => {
+        e.preventDefault();
+        const experienceId = $(e.currentTarget).data("experience-id");
+        this.openModal(experienceId);
+      });
+
+      $(document).on("click", ".pc-action-delete", (e) => {
+        e.preventDefault();
+        const experienceId = $(e.currentTarget).data("experience-id");
+        this.handleDelete(experienceId);
+      });
+
+      // Événement personnalisé pour le switch d'onglet
+      $(document).on("pc:tab-switched", (e, tabId) => {
+        if (tabId === "experience") {
+          this.loadList();
+        }
+      });
+
+      // === GESTION MODALE ===
+      // Fermer la modale
+      $(document).on(
+        "click",
+        "#experience-modal .pc-modal-overlay, #experience-modal .pc-modal-close",
+        () => {
+          this.closeModal();
+        },
+      );
+
+      // Sauvegarder
+      $(document).on("click", "#pc-experience-save-btn", () => {
+        this.handleSave();
+      });
+
+      // Empêcher la fermeture accidentelle
       $(document).on("keydown", (e) => {
-        this.handleKeyboardShortcuts(e);
+        if (e.key === "Escape" && !$("#experience-modal").hasClass("hidden")) {
+          this.closeModal();
+        }
+      });
+
+      // === GESTION REPEATERS ===
+      // Lieux - Ajouter
+      $(document).on("click", ".add-lieu-row", () => {
+        this.addLieuRow();
+      });
+
+      // Lieux - Supprimer
+      $(document).on("click", ".remove-lieu-row", (e) => {
+        $(e.currentTarget).closest(".pc-repeater-row").remove();
+      });
+
+      // Fermeture - Ajouter
+      $(document).on("click", ".add-fermeture-row", () => {
+        this.addFermetureRow();
+      });
+
+      // Fermeture - Supprimer
+      $(document).on("click", ".remove-fermeture-row", (e) => {
+        $(e.currentTarget).closest(".pc-repeater-row").remove();
+      });
+
+      // FAQ - Ajouter
+      $(document).on("click", ".add-faq-row", () => {
+        this.addFaqRow();
+      });
+
+      // FAQ - Supprimer
+      $(document).on("click", ".remove-faq-row", (e) => {
+        $(e.currentTarget).closest(".pc-repeater-row").remove();
+      });
+
+      // === GESTION IMAGES ===
+      $(document).on("click", ".pc-btn-select-image", (e) => {
+        e.preventDefault();
+        const target = $(e.currentTarget).data("target");
+        this.openMediaUploader(target);
+      });
+
+      $(document).on("click", ".pc-btn-remove-image", (e) => {
+        e.preventDefault();
+        const target = $(e.currentTarget).data("target");
+        this.resetImageField(target);
       });
     }
 
-    /**
-     * Ouvre la modale pour une nouvelle expérience
-     */
-    openNewExperienceModal() {
-      console.log("🆕 Ouverture nouvelle expérience");
-
-      this.currentExperienceId = 0;
-      this.data.reset();
-      this.ui.openNewModal();
-      this.ui.setModalTitle("Nouvelle expérience");
-    }
-
-    /**
-     * Ouvre la modale pour éditer une expérience existante
-     * @param {number} experienceId ID de l'expérience
-     */
-    openEditExperienceModal(experienceId) {
-      if (!experienceId || experienceId <= 0) {
-        this.ui.showError("ID expérience invalide");
-        return;
-      }
-
-      console.log(`✏️ Ouverture édition expérience #${experienceId}`);
-
-      this.currentExperienceId = experienceId;
-      this.ui.openModal(experienceId);
-
-      this.loadExperienceDetails(experienceId);
-    }
-
-    /**
-     * Charge les détails d'une expérience
-     * @param {number} experienceId ID de l'expérience
-     */
-    loadExperienceDetails(experienceId) {
-      this.setLoading(true);
+    // === CHARGEMENT DE LA LISTE ===
+    loadList(page = 1) {
+      currentPage = page;
+      this.showLoading(true);
 
       const requestData = {
-        action: "pc_get_experience_details",
+        action: "pc_experience_get_list",
         nonce: this.nonce,
-        experience_id: experienceId,
-      };
-
-      $.ajax({
-        url: this.ajaxUrl,
-        type: "POST",
-        data: requestData,
-        timeout: 30000,
-      })
-        .done((response) => {
-          if (response.success && response.data) {
-            this.ui.setModalTitle(
-              `Édition: ${response.data.title || "Expérience"}`,
-            );
-            this.data.populate(response.data);
-            this.ui.showContent();
-            this.ui.showSuccess("Expérience chargée avec succès");
-          } else {
-            this.ui.showError(
-              response.data?.message || "Erreur lors du chargement",
-            );
-            this.ui.closeModal();
-          }
-        })
-        .fail((xhr, textStatus, errorThrown) => {
-          console.error("Erreur AJAX chargement expérience:", {
-            xhr,
-            textStatus,
-            errorThrown,
-          });
-          this.ui.showError("Erreur de communication avec le serveur");
-          this.ui.closeModal();
-        })
-        .always(() => {
-          this.setLoading(false);
-        });
-    }
-
-    /**
-     * Sauvegarde une expérience (création ou mise à jour)
-     * @param {string} status Statut de publication ('publish', 'draft')
-     */
-    saveExperience(status = "publish") {
-      console.log(`💾 Sauvegarde expérience (${status})`);
-
-      // Validation
-      const validationErrors = this.data.validate();
-      if (validationErrors.length > 0) {
-        this.ui.showError(
-          "Erreurs de validation:<br>• " + validationErrors.join("<br>• "),
-        );
-        return;
-      }
-
-      this.setLoading(true, "save");
-
-      // Collecte des données
-      const formData = this.data.collect();
-      formData.status = status;
-
-      const requestData = {
-        action:
-          this.currentExperienceId === 0
-            ? "pc_create_experience"
-            : "pc_update_experience",
-        nonce: this.nonce,
-        experience_id: this.currentExperienceId,
-        ...formData,
-      };
-
-      $.ajax({
-        url: this.ajaxUrl,
-        type: "POST",
-        data: requestData,
-        timeout: 45000,
-      })
-        .done((response) => {
-          if (response.success) {
-            const isCreation = this.currentExperienceId === 0;
-            const message = isCreation
-              ? `Expérience créée avec succès (${status})`
-              : `Expérience mise à jour avec succès (${status})`;
-
-            this.ui.showSuccess(message);
-
-            // Mettre à jour l'ID si création
-            if (isCreation && response.data?.experience_id) {
-              this.currentExperienceId = response.data.experience_id;
-              this.ui.setModalTitle(
-                `Édition: ${formData.title || "Expérience"}`,
-              );
-            }
-
-            // Marquer comme propre
-            this.data.isDirty = false;
-
-            // Rafraîchir la liste
-            this.loadExperiencesList();
-          } else {
-            this.ui.showError(
-              response.data?.message || "Erreur lors de la sauvegarde",
-            );
-          }
-        })
-        .fail((xhr, textStatus, errorThrown) => {
-          console.error("Erreur AJAX sauvegarde:", {
-            xhr,
-            textStatus,
-            errorThrown,
-          });
-          this.ui.showError("Erreur de communication lors de la sauvegarde");
-        })
-        .always(() => {
-          this.setLoading(false, "save");
-        });
-    }
-
-    /**
-     * Confirme et supprime une expérience
-     * @param {number} experienceId ID de l'expérience
-     */
-    confirmDeleteExperience(experienceId) {
-      if (!experienceId || experienceId <= 0) return;
-
-      const confirmed = confirm(
-        "Êtes-vous sûr de vouloir supprimer cette expérience ?\n\nCette action est irréversible.",
-      );
-
-      if (confirmed) {
-        this.deleteExperience(experienceId);
-      }
-    }
-
-    /**
-     * Supprime une expérience
-     * @param {number} experienceId ID de l'expérience
-     */
-    deleteExperience(experienceId) {
-      console.log(`🗑️ Suppression expérience #${experienceId}`);
-
-      const requestData = {
-        action: "pc_delete_experience",
-        nonce: this.nonce,
-        experience_id: experienceId,
-      };
-
-      // Désactiver le bouton de suppression
-      $(`.pc-btn-delete-experience[data-id="${experienceId}"]`).prop(
-        "disabled",
-        true,
-      );
-
-      $.ajax({
-        url: this.ajaxUrl,
-        type: "POST",
-        data: requestData,
-        timeout: 15000,
-      })
-        .done((response) => {
-          if (response.success) {
-            this.ui.showSuccess("Expérience supprimée avec succès");
-            this.loadExperiencesList();
-          } else {
-            this.ui.showError(
-              response.data?.message || "Erreur lors de la suppression",
-            );
-          }
-        })
-        .fail((xhr, textStatus, errorThrown) => {
-          console.error("Erreur AJAX suppression:", {
-            xhr,
-            textStatus,
-            errorThrown,
-          });
-          this.ui.showError("Erreur de communication lors de la suppression");
-        })
-        .always(() => {
-          $(`.pc-btn-delete-experience[data-id="${experienceId}"]`).prop(
-            "disabled",
-            false,
-          );
-        });
-    }
-
-    /**
-     * Charge la liste des expériences avec filtres
-     */
-    loadExperiencesList() {
-      console.log("📋 Chargement liste expériences");
-
-      const requestData = {
-        action: "pc_get_experiences_list",
-        nonce: this.nonce,
-        search: $("#pc-experience-search").val() || "",
-        status: $("#pc-experience-status-filter").val() || "all",
-        page: $("#pc-experience-pagination").data("current-page") || 1,
+        page: currentPage,
         per_page: 20,
+        search: currentFilters.search,
+        status_filter: currentFilters.status,
+        orderby: "title",
+        order: "ASC",
       };
-
-      // Afficher loading sur la liste
-      this.setListLoading(true);
 
       $.ajax({
         url: this.ajaxUrl,
         type: "POST",
         data: requestData,
-        timeout: 20000,
-      })
-        .done((response) => {
-          if (response.success && response.data) {
-            this.renderExperiencesList(response.data);
+        success: (response) => {
+          this.showLoading(false);
+
+          if (response.success) {
+            this.renderList(response.data.items || []);
+            this.renderPagination(response.data);
           } else {
-            this.ui.showError(
-              response.data?.message || "Erreur lors du chargement de la liste",
+            this.showError(
+              "Erreur lors du chargement des expériences: " +
+                (response.data?.message || "Erreur inconnue"),
             );
           }
-        })
-        .fail((xhr, textStatus, errorThrown) => {
-          console.error("Erreur AJAX liste:", { xhr, textStatus, errorThrown });
-          this.ui.showError("Erreur de chargement de la liste");
-        })
-        .always(() => {
-          this.setListLoading(false);
-        });
+        },
+        error: (xhr, status, error) => {
+          this.showLoading(false);
+          console.error("Erreur AJAX:", error);
+          this.showError(
+            "Erreur de connexion lors du chargement des expériences.",
+          );
+        },
+      });
     }
 
-    /**
-     * Rendu de la liste des expériences
-     * @param {Object} data Données de la liste
-     */
-    renderExperiencesList(data) {
-      // Cible le CORPS du tableau, pas un conteneur générique
-      const $tbody = $("#pc-experience-table-body");
-      const $table = $("#pc-experience-table");
-      const $pagination = $("#pc-experience-pagination"); // ID corrigé
+    // === RENDU DU TABLEAU ===
+    renderList(items) {
+      const $table = $(this.selectors.table);
+      const $tbody = $(this.selectors.tbody);
+      const $empty = $(this.selectors.empty);
 
-      // Si pas de données
-      if (!data.experiences || data.experiences.length === 0) {
-        $("#pc-experience-empty").show();
+      if (!items || items.length === 0) {
         $table.hide();
-        $pagination.hide();
+        $empty.show();
         return;
       }
 
-      // On affiche le tableau et cache le message vide
-      $("#pc-experience-empty").hide();
+      $empty.hide();
+      $tbody.empty();
+
+      items.forEach((item) => {
+        const $row = this.createExperienceRow(item);
+        $tbody.append($row);
+      });
+
       $table.show();
+    }
 
-      let html = "";
+    createExperienceRow(item) {
+      // Image avec fallback
+      const imageUrl =
+        item.image && item.image.thumbnail
+          ? item.image.thumbnail
+          : "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg0MEMzNS41ODE3IDMzLjMzMzMgMjguNDE4MyAzMy4zMzMzIDI0IDMzLjMzMzNWNDBIMjBWMjBaIiBmaWxsPSIjOTRBM0I4Ci8+Cjwvc3ZnPgo=";
 
-      data.experiences.forEach((experience) => {
-        // Sécurisation des valeurs
-        const imgHtml = experience.image?.thumbnail
-          ? `<img src="${experience.image.thumbnail}" alt="Img">`
-          : '<span class="no-img">📷</span>';
+      // Données formatées
+      const duree = item.duree ? `${item.duree}h` : "Non définie";
+      const capacite = item.capacite ? `${item.capacite} pers` : "Non définie";
+      const price =
+        item.prix_base > 0
+          ? `${parseFloat(item.prix_base).toFixed(0)}€`
+          : "Non défini";
 
-        const statusLabel =
-          experience.status === "publish"
-            ? "Publié"
-            : experience.status === "draft"
-              ? "Brouillon"
-              : experience.status;
+      // Badge de statut
+      const statusBadge = `<span class="pc-status-badge ${item.status_class || "pc-status-draft"}">${item.status_label || "Brouillon"}</span>`;
 
-        // Génération des LIGNES DE TABLEAU (TR) pour matcher le CSS
-        html += `
-        <tr data-id="${experience.id}">
-          <td class="pc-col-image">${imgHtml}</td>
-          <td class="pc-col-name">
-            <strong>${this.escapeHtml(experience.title)}</strong>
+      return $(`
+        <tr data-experience-id="${item.id}">
+          <td class="pc-col-image">
+            <img src="${imageUrl}" alt="${this.escapeHtml(item.title)}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjNGNEY2Ci8+CjxwYXRoIGQ9Ik0yMCAyMEg0MEMzNS41ODE3IDMzLjMzMzMgMjguNDE4MyAzMy4zMzMzIDI0IDMzLjMzMzNWNDBIMjBWMjBaIiBmaWxsPSIjOTRBM0I4Ci8+Cjwvc3ZnPgo='">
           </td>
-          <td class="pc-col-price">${experience.prix_base ? experience.prix_base + " €" : "-"}</td>
-          <td class="pc-col-duration">${experience.duree ? experience.duree + "h" : "-"}</td>
+          <td class="pc-col-name">
+            <div class="pc-experience-name">${this.escapeHtml(item.title)}</div>
+          </td>
+          <td class="pc-col-duree">
+            <span class="pc-experience-duree">${duree}</span>
+          </td>
+          <td class="pc-col-capacity">
+            <span class="pc-experience-capacity">${capacite}</span>
+          </td>
+          <td class="pc-col-price">
+            <span class="pc-experience-price">${price}</span>
+          </td>
           <td class="pc-col-status">
-            <span class="pc-status-badge status-${experience.status}">${statusLabel}</span>
+            ${statusBadge}
           </td>
           <td class="pc-col-actions">
-            <div class="row-actions">
-                <button type="button" class="pc-btn pc-btn-secondary pc-btn-edit-experience" data-id="${experience.id}">✏️</button>
-                <button type="button" class="pc-btn pc-btn-danger pc-btn-delete-experience" data-id="${experience.id}">🗑️</button>
-            </div>
+            <button class="pc-btn pc-btn-sm pc-action-edit" data-experience-id="${item.id}">
+              <span>✏️</span>
+              Éditer
+            </button>
+            <button class="pc-btn pc-btn-sm pc-btn-danger pc-action-delete" data-experience-id="${item.id}">
+              <span>🗑️</span>
+              Supprimer
+            </button>
           </td>
         </tr>
-      `;
-      });
-
-      $tbody.html(html);
-
-      // Mise à jour pagination
-      if (data.pagination && data.pagination.total_pages > 1) {
-        this.renderPagination(data.pagination);
-        $pagination.show();
-      } else {
-        $pagination.hide();
-      }
+      `);
     }
 
-    /**
-     * Rendu de la pagination
-     * @param {Object} paginationData Données de pagination
-     */
-    renderPagination(paginationData) {
-      const $pagination = $("#pc-experience-pagination");
-      const currentPage = paginationData.current_page;
-      const totalPages = paginationData.total_pages;
+    // === PAGINATION ===
+    renderPagination(data) {
+      const $pagination = $(this.selectors.pagination);
+      totalPages = data.pages || 1;
+      currentPage = data.current_page || 1;
+
+      if (totalPages <= 1) {
+        $pagination.empty();
+        return;
+      }
 
       let html = '<div class="pc-pagination">';
 
       // Bouton précédent
-      if (currentPage > 1) {
-        html += `<button type="button" class="pc-pagination-btn" data-page="${currentPage - 1}">← Précédent</button>`;
-      }
+      const prevDisabled = currentPage <= 1 ? "pc-disabled" : "";
+      html += `<a href="#" class="${prevDisabled}" data-page="${currentPage - 1}">‹</a>`;
 
-      // Numéros de pages
-      for (
-        let i = Math.max(1, currentPage - 2);
-        i <= Math.min(totalPages, currentPage + 2);
-        i++
-      ) {
-        const activeClass =
-          i === currentPage ? "pc-pagination-btn--active" : "";
-        html += `<button type="button" class="pc-pagination-btn ${activeClass}" data-page="${i}">${i}</button>`;
+      // Pages
+      for (let i = 1; i <= totalPages; i++) {
+        if (
+          i === 1 ||
+          i === totalPages ||
+          (i >= currentPage - 2 && i <= currentPage + 2)
+        ) {
+          const active = i === currentPage ? "pc-active" : "";
+          html += `<a href="#" class="${active}" data-page="${i}">${i}</a>`;
+        } else if (i === currentPage - 3 || i === currentPage + 3) {
+          html += '<span class="pc-pagination-dots">...</span>';
+        }
       }
 
       // Bouton suivant
-      if (currentPage < totalPages) {
-        html += `<button type="button" class="pc-pagination-btn" data-page="${currentPage + 1}">Suivant →</button>`;
-      }
+      const nextDisabled = currentPage >= totalPages ? "pc-disabled" : "";
+      html += `<a href="#" class="${nextDisabled}" data-page="${currentPage + 1}">›</a>`;
 
       html += "</div>";
-
-      $pagination.html(html).data("current-page", currentPage);
+      $pagination.html(html);
     }
 
-    /**
-     * Gère les raccourcis clavier
-     * @param {Event} e Événement clavier
-     */
-    handleKeyboardShortcuts(e) {
-      if (!this.ui.isModalCurrentlyOpen()) return;
+    // === GESTION MODALE ===
+    openModal(id = null) {
+      currentExperienceId = id;
 
-      // Ctrl+S : Sauvegarder
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        this.saveExperience();
-      }
+      // Afficher la modale
+      $("#experience-modal").removeClass("hidden").addClass("active");
 
-      // Ctrl+Shift+S : Sauvegarder en brouillon
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "S") {
-        e.preventDefault();
-        this.saveExperience("draft");
-      }
-    }
-
-    /**
-     * Gère l'état de loading
-     * @param {boolean} isLoading État de loading
-     * @param {string} context Contexte ('save', 'load', etc.)
-     */
-    setLoading(isLoading, context = "load") {
-      this.isLoading = isLoading;
-
-      if (context === "save") {
-        this.ui.setButtonState(
-          "btn-save-experience",
-          isLoading ? "loading" : "normal",
-        );
-        this.ui.setButtonState(
-          "btn-save-experience-draft",
-          isLoading ? "disabled" : "normal",
-        );
+      if (id === null) {
+        // Mode création : réinitialiser le formulaire
+        $("#pc-experience-modal-title").text("Nouvelle expérience");
+        this.resetForm();
+        $("#pc-experience-modal-loading").hide();
+        $("#pc-experience-modal-details").show();
       } else {
-        this.ui.showLoading(isLoading);
+        // Mode édition : charger les détails
+        $("#pc-experience-modal-title").text("Édition expérience");
+        $("#pc-experience-modal-loading").show();
+        $("#pc-experience-modal-details").hide();
+        this.loadDetails(id);
       }
     }
 
-    /**
-     * Gère l'état de loading de la liste
-     * @param {boolean} isLoading État de loading
-     */
-    setListLoading(isLoading) {
-      // On utilise le loader déjà présent dans le HTML shortcode
-      const $loading = $("#pc-experience-loading");
-      const $table = $("#pc-experience-table");
-      const $empty = $("#pc-experience-empty");
+    loadDetails(id) {
+      $.ajax({
+        url: this.ajaxUrl,
+        type: "POST",
+        data: {
+          action: "pc_experience_get_details",
+          nonce: this.nonce,
+          post_id: id,
+        },
+        success: (response) => {
+          $("#pc-experience-modal-loading").hide();
 
-      if (isLoading) {
+          if (response.success) {
+            this.populateForm(response.data.experience);
+            $("#pc-experience-modal-details").show();
+          } else {
+            this.showError(
+              "Erreur lors du chargement: " +
+                (response.data?.message || "Erreur inconnue"),
+            );
+            this.closeModal();
+          }
+        },
+        error: (xhr, status, error) => {
+          $("#pc-experience-modal-loading").hide();
+          console.error("Erreur AJAX:", error);
+          this.showError("Erreur de connexion lors du chargement des détails.");
+          this.closeModal();
+        },
+      });
+    }
+
+    populateForm(experience) {
+      // === GÉNÉRAL ===
+      $("#exp_h1_custom").val(experience.h1_custom || "");
+      $("#exp_availability").prop("checked", experience.availability === "1");
+
+      // === DÉTAILS ===
+      $("#exp_duree").val(experience.duree || "");
+      $("#exp_capacite").val(experience.capacite || "");
+      $("#exp_age_minimum").val(experience.age_minimum || "");
+
+      // === CHECKBOXES (Arrays) ===
+      this.populateCheckboxArray("exp_accessibilite", experience.accessibilite);
+      this.populateCheckboxArray("exp_periode", experience.periode);
+      this.populateCheckboxArray("exp_jour", experience.jour);
+
+      // === INCLUSIONS ===
+      $("#exp_prix_comprend").val(experience.prix_comprend || "");
+      $("#exp_prix_ne_comprend_pas").val(experience.prix_ne_comprend_pas || "");
+
+      // === SERVICES ===
+      $("#exp_delai_de_reservation").val(experience.delai_de_reservation || "");
+      $("#exp_zone_intervention").val(experience.zone_intervention || "");
+
+      // === PAIEMENT ===
+      $("#taux_tva").val(experience.taux_tva || "");
+      $("#pc_pay_mode").val(experience.pc_pay_mode || "acompte_plus_solde");
+      $("#pc_deposit_type").val(experience.pc_deposit_type || "pourcentage");
+      $("#pc_deposit_value").val(experience.pc_deposit_value || "");
+
+      // === IMAGES ===
+      this.populateImageField("exp_hero_desktop", experience.hero_desktop_url);
+      this.populateImageField("exp_hero_mobile", experience.hero_mobile_url);
+
+      // === REPEATERS ===
+      this.renderLieuxRepeater(experience.lieux_horaires_depart || []);
+      this.renderFermetureRepeater(experience.periodes_fermeture || []);
+      this.renderFaqRepeater(experience.faq || []);
+
+      // === RATE MANAGER ===
+      if (this.rateManager) {
+        this.rateManager.init(
+          "pc-rates-calendar",
+          {
+            seasons: experience.seasons_data || [],
+            promos: experience.promos_data || [],
+          },
+          experience.prix_base || 0,
+        );
+      }
+    }
+
+    resetForm() {
+      // Reset tous les inputs text/textarea
+      $(
+        "#experience-modal input[type='text'], #experience-modal input[type='number'], #experience-modal textarea",
+      ).val("");
+
+      // Reset checkboxes
+      $("#experience-modal input[type='checkbox']").prop("checked", false);
+
+      // Reset selects aux valeurs par défaut
+      $("#pc_pay_mode").val("acompte_plus_solde");
+      $("#pc_deposit_type").val("pourcentage");
+
+      // Reset images
+      this.resetImageField("exp_hero_desktop");
+      this.resetImageField("exp_hero_mobile");
+
+      // Reset repeaters
+      this.renderLieuxRepeater([]);
+      this.renderFermetureRepeater([]);
+      this.renderFaqRepeater([]);
+
+      console.log("✅ Formulaire réinitialisé");
+    }
+
+    closeModal() {
+      $("#experience-modal").addClass("hidden").removeClass("active");
+      currentExperienceId = null;
+    }
+
+    handleDelete(id) {
+      if (
+        !confirm(
+          "Êtes-vous sûr de vouloir supprimer cette expérience ? Cette action est irréversible.",
+        )
+      ) {
+        return;
+      }
+
+      $.ajax({
+        url: this.ajaxUrl,
+        type: "POST",
+        data: {
+          action: "pc_experience_delete",
+          nonce: this.nonce,
+          post_id: id,
+        },
+        success: (response) => {
+          if (response.success) {
+            this.showSuccess("Expérience supprimée avec succès!");
+            this.loadList(); // Recharger la liste
+          } else {
+            this.showError(
+              "Erreur lors de la suppression: " +
+                (response.data?.message || "Erreur inconnue"),
+            );
+          }
+        },
+        error: (xhr, status, error) => {
+          console.error("Erreur AJAX:", error);
+          this.showError("Erreur de connexion lors de la suppression.");
+        },
+      });
+    }
+
+    handleSave() {
+      if (currentExperienceId === null) {
+        this.showError("Aucune expérience sélectionnée.");
+        return;
+      }
+
+      // Validation basique
+      const title = $("#exp_h1_custom").val().trim();
+      if (!title) {
+        this.showError("Le titre de l'expérience est obligatoire.");
+        return;
+      }
+
+      const $btn = $("#pc-experience-save-btn");
+      $btn.addClass("loading").prop("disabled", true);
+
+      // Collecte des données
+      const formData = {
+        action: "pc_experience_save",
+        nonce: this.nonce,
+        post_id: currentExperienceId,
+
+        // Général
+        acf_h1_custom: $("#exp_h1_custom").val(),
+        acf_availability: $("#exp_availability").is(":checked") ? "1" : "0",
+
+        // Détails
+        acf_duree: $("#exp_duree").val(),
+        acf_capacite: $("#exp_capacite").val(),
+        acf_age_minimum: $("#exp_age_minimum").val(),
+
+        // Checkboxes Arrays
+        acf_accessibilite: this.collectCheckboxArray("exp_accessibilite"),
+        acf_periode: this.collectCheckboxArray("exp_periode"),
+        acf_jour: this.collectCheckboxArray("exp_jour"),
+
+        // Inclusions
+        acf_prix_comprend: $("#exp_prix_comprend").val(),
+        acf_prix_ne_comprend_pas: $("#exp_prix_ne_comprend_pas").val(),
+
+        // Services
+        acf_delai_de_reservation: $("#exp_delai_de_reservation").val(),
+        acf_zone_intervention: $("#exp_zone_intervention").val(),
+
+        // Paiement
+        acf_taux_tva: $("#taux_tva").val(),
+        acf_pc_pay_mode: $("#pc_pay_mode").val(),
+        acf_pc_deposit_type: $("#pc_deposit_type").val(),
+        acf_pc_deposit_value: $("#pc_deposit_value").val(),
+
+        // Images
+        acf_hero_desktop_url: $("#exp_hero_desktop").val(),
+        acf_hero_mobile_url: $("#exp_hero_mobile").val(),
+
+        // Repeaters
+        acf_lieux_horaires_depart: this.collectLieuxData(),
+        acf_periodes_fermeture: this.collectFermetureData(),
+        acf_faq: this.collectFaqData(),
+
+        // Rate Manager
+        rate_manager_data: this.rateManager
+          ? JSON.stringify(this.rateManager.getData())
+          : "{}",
+      };
+
+      $.ajax({
+        url: this.ajaxUrl,
+        type: "POST",
+        data: formData,
+        success: (response) => {
+          $btn.removeClass("loading").prop("disabled", false);
+
+          if (response.success) {
+            this.showSuccess("Expérience sauvegardée avec succès!");
+            this.closeModal();
+            this.loadList(); // Recharger la liste
+          } else {
+            this.showError(
+              "Erreur lors de la sauvegarde: " +
+                (response.data?.message || "Erreur inconnue"),
+            );
+          }
+        },
+        error: (xhr, status, error) => {
+          $btn.removeClass("loading").prop("disabled", false);
+          console.error("Erreur AJAX:", error);
+          this.showError("Erreur de connexion lors de la sauvegarde.");
+        },
+      });
+    }
+
+    // === GESTION DES REPEATERS ===
+    renderLieuxRepeater(items) {
+      const $wrapper = $("#wrapper-exp_lieux_horaires_depart");
+      $wrapper.empty();
+
+      items.forEach((item, index) => {
+        const html = `
+          <div class="pc-repeater-row" data-index="${index}">
+            <div class="pc-form-grid">
+              <div class="pc-form-group">
+                <label>Lieu de départ</label>
+                <input type="text" class="pc-input lieu-depart" value="${this.escapeHtml(item.lieu_depart || "")}" placeholder="Ex: Marina de Pointe-à-Pitre">
+              </div>
+              <div class="pc-form-group">
+                <label>Horaires</label>
+                <input type="text" class="pc-input horaires" value="${this.escapeHtml(item.horaires || "")}" placeholder="Ex: 9h00 - 17h00">
+              </div>
+              <div class="pc-form-group">
+                <button type="button" class="pc-btn pc-btn-danger remove-lieu-row">
+                  <span>🗑️</span> Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        $wrapper.append(html);
+      });
+
+      // Bouton ajouter
+      $wrapper.append(`
+        <button type="button" class="pc-btn pc-btn-secondary add-lieu-row">
+          <span>➕</span> Ajouter un lieu
+        </button>
+      `);
+    }
+
+    renderFermetureRepeater(items) {
+      const $wrapper = $("#wrapper-exp_periodes_fermeture");
+      $wrapper.empty();
+
+      items.forEach((item, index) => {
+        const html = `
+          <div class="pc-repeater-row" data-index="${index}">
+            <div class="pc-form-grid">
+              <div class="pc-form-group">
+                <label>Date début</label>
+                <input type="date" class="pc-input date-debut" value="${item.date_debut || ""}">
+              </div>
+              <div class="pc-form-group">
+                <label>Date fin</label>
+                <input type="date" class="pc-input date-fin" value="${item.date_fin || ""}">
+              </div>
+              <div class="pc-form-group">
+                <label>Raison</label>
+                <input type="text" class="pc-input raison" value="${this.escapeHtml(item.raison || "")}" placeholder="Ex: Maintenance">
+              </div>
+              <div class="pc-form-group">
+                <button type="button" class="pc-btn pc-btn-danger remove-fermeture-row">
+                  <span>🗑️</span> Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        $wrapper.append(html);
+      });
+
+      // Bouton ajouter
+      $wrapper.append(`
+        <button type="button" class="pc-btn pc-btn-secondary add-fermeture-row">
+          <span>➕</span> Ajouter une période
+        </button>
+      `);
+    }
+
+    renderFaqRepeater(items) {
+      const $wrapper = $("#wrapper-exp_faq");
+      $wrapper.empty();
+
+      items.forEach((item, index) => {
+        const html = `
+          <div class="pc-repeater-row" data-index="${index}">
+            <div class="pc-form-grid">
+              <div class="pc-form-group pc-form-group--full">
+                <label>Question</label>
+                <input type="text" class="pc-input question" value="${this.escapeHtml(item.question || "")}" placeholder="Entrez votre question">
+              </div>
+              <div class="pc-form-group pc-form-group--full">
+                <label>Réponse</label>
+                <textarea class="pc-textarea reponse" rows="3" placeholder="Entrez la réponse">${this.escapeHtml(item.reponse || "")}</textarea>
+              </div>
+              <div class="pc-form-group">
+                <button type="button" class="pc-btn pc-btn-danger remove-faq-row">
+                  <span>🗑️</span> Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        $wrapper.append(html);
+      });
+
+      // Bouton ajouter
+      $wrapper.append(`
+        <button type="button" class="pc-btn pc-btn-secondary add-faq-row">
+          <span>➕</span> Ajouter une FAQ
+        </button>
+      `);
+    }
+
+    // === HELPERS REPEATERS ===
+    addLieuRow() {
+      const index = Date.now(); // ID unique
+      const html = `
+        <div class="pc-repeater-row" data-index="${index}">
+          <div class="pc-form-grid">
+            <div class="pc-form-group">
+              <label>Lieu de départ</label>
+              <input type="text" class="pc-input lieu-depart" value="" placeholder="Ex: Marina de Pointe-à-Pitre">
+            </div>
+            <div class="pc-form-group">
+              <label>Horaires</label>
+              <input type="text" class="pc-input horaires" value="" placeholder="Ex: 9h00 - 17h00">
+            </div>
+            <div class="pc-form-group">
+              <button type="button" class="pc-btn pc-btn-danger remove-lieu-row">
+                <span>🗑️</span> Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      $("#wrapper-exp_lieux_horaires_depart .add-lieu-row").before(html);
+    }
+
+    addFermetureRow() {
+      const index = Date.now(); // ID unique
+      const html = `
+        <div class="pc-repeater-row" data-index="${index}">
+          <div class="pc-form-grid">
+            <div class="pc-form-group">
+              <label>Date début</label>
+              <input type="date" class="pc-input date-debut" value="">
+            </div>
+            <div class="pc-form-group">
+              <label>Date fin</label>
+              <input type="date" class="pc-input date-fin" value="">
+            </div>
+            <div class="pc-form-group">
+              <label>Raison</label>
+              <input type="text" class="pc-input raison" value="" placeholder="Ex: Maintenance">
+            </div>
+            <div class="pc-form-group">
+              <button type="button" class="pc-btn pc-btn-danger remove-fermeture-row">
+                <span>🗑️</span> Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      $("#wrapper-exp_periodes_fermeture .add-fermeture-row").before(html);
+    }
+
+    addFaqRow() {
+      const index = Date.now(); // ID unique
+      const html = `
+        <div class="pc-repeater-row" data-index="${index}">
+          <div class="pc-form-grid">
+            <div class="pc-form-group pc-form-group--full">
+              <label>Question</label>
+              <input type="text" class="pc-input question" value="" placeholder="Entrez votre question">
+            </div>
+            <div class="pc-form-group pc-form-group--full">
+              <label>Réponse</label>
+              <textarea class="pc-textarea reponse" rows="3" placeholder="Entrez la réponse"></textarea>
+            </div>
+            <div class="pc-form-group">
+              <button type="button" class="pc-btn pc-btn-danger remove-faq-row">
+                <span>🗑️</span> Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      $("#wrapper-exp_faq .add-faq-row").before(html);
+    }
+
+    // === COLLECTE DES DONNÉES REPEATERS ===
+    collectLieuxData() {
+      const data = [];
+      $("#wrapper-exp_lieux_horaires_depart .pc-repeater-row").each(
+        (index, row) => {
+          const $row = $(row);
+          const item = {
+            lieu_depart: $row.find(".lieu-depart").val() || "",
+            horaires: $row.find(".horaires").val() || "",
+          };
+          if (item.lieu_depart || item.horaires) {
+            data.push(item);
+          }
+        },
+      );
+      return data;
+    }
+
+    collectFermetureData() {
+      const data = [];
+      $("#wrapper-exp_periodes_fermeture .pc-repeater-row").each(
+        (index, row) => {
+          const $row = $(row);
+          const item = {
+            date_debut: $row.find(".date-debut").val() || "",
+            date_fin: $row.find(".date-fin").val() || "",
+            raison: $row.find(".raison").val() || "",
+          };
+          if (item.date_debut || item.date_fin || item.raison) {
+            data.push(item);
+          }
+        },
+      );
+      return data;
+    }
+
+    collectFaqData() {
+      const data = [];
+      $("#wrapper-exp_faq .pc-repeater-row").each((index, row) => {
+        const $row = $(row);
+        const item = {
+          question: $row.find(".question").val() || "",
+          reponse: $row.find(".reponse").val() || "",
+        };
+        if (item.question || item.reponse) {
+          data.push(item);
+        }
+      });
+      return data;
+    }
+
+    // === GESTION DES CHECKBOXES ARRAY ===
+    populateCheckboxArray(name, values) {
+      // Décocher toutes les checkboxes d'abord
+      $(`input[name="${name}[]"]`).prop("checked", false);
+
+      if (values && Array.isArray(values)) {
+        values.forEach((value) => {
+          // Gestion des objets ACF {value: "key", label: "Label"}
+          const actualValue =
+            typeof value === "object" && value.value ? value.value : value;
+          $(`input[name="${name}[]"][value="${actualValue}"]`).prop(
+            "checked",
+            true,
+          );
+        });
+      }
+    }
+
+    collectCheckboxArray(name) {
+      const values = [];
+      $(`input[name="${name}[]"]:checked`).each(function () {
+        values.push($(this).val());
+      });
+      return values;
+    }
+
+    // === GESTION DES IMAGES ===
+    populateImageField(target, value) {
+      if (!value) return;
+
+      const $preview = $(`#preview-${target}`);
+      const $input = $(`#${target}`);
+      const $removeBtn = $(`.pc-btn-remove-image[data-target="${target}"]`);
+
+      // Si c'est un ID numérique, récupérer l'URL via WordPress
+      if (/^\d+$/.test(value.toString().trim())) {
+        const imageId = parseInt(value);
+        $input.val(imageId);
+
+        if (typeof wp !== "undefined" && wp.media && wp.media.attachment) {
+          const attachment = wp.media.attachment(imageId);
+          attachment
+            .fetch()
+            .then(() => {
+              const attachmentData = attachment.toJSON();
+              if (attachmentData && attachmentData.url) {
+                $preview.html(
+                  `<img src="${attachmentData.url}" alt="Image" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">`,
+                );
+              }
+            })
+            .catch(() => {
+              $preview.html(
+                `<div class="pc-image-placeholder">📷 Image #${imageId} (aperçu indisponible)</div>`,
+              );
+            });
+        } else {
+          $preview.html(
+            `<div class="pc-image-placeholder">📷 Image #${imageId} chargée</div>`,
+          );
+        }
+      } else {
+        // C'est une URL
+        $input.val(value);
+        $preview.html(
+          `<img src="${value}" alt="Image" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">`,
+        );
+      }
+
+      $removeBtn.show();
+    }
+
+    resetImageField(target) {
+      const $preview = $(`#preview-${target}`);
+      const $input = $(`#${target}`);
+      const $removeBtn = $(`.pc-btn-remove-image[data-target="${target}"]`);
+
+      const defaultText = target.includes("mobile")
+        ? "📱 Aucune image sélectionnée"
+        : "📷 Aucune image sélectionnée";
+
+      $preview.html(`<div class="pc-image-placeholder">${defaultText}</div>`);
+      $input.val("");
+      $removeBtn.hide();
+    }
+
+    openMediaUploader(target) {
+      if (typeof wp === "undefined" || !wp.media) {
+        this.showError("WordPress Media Library n'est pas disponible.");
+        return;
+      }
+
+      const mediaUploader = wp.media({
+        title: "Sélectionner une image",
+        button: {
+          text: "Utiliser cette image",
+        },
+        multiple: false,
+        library: {
+          type: "image",
+        },
+      });
+
+      mediaUploader.on("select", () => {
+        const attachment = mediaUploader
+          .state()
+          .get("selection")
+          .first()
+          .toJSON();
+        this.setImageFromUploader(target, attachment);
+      });
+
+      mediaUploader.open();
+    }
+
+    setImageFromUploader(target, attachment) {
+      const $preview = $(`#preview-${target}`);
+      const $input = $(`#${target}`);
+      const $removeBtn = $(`.pc-btn-remove-image[data-target="${target}"]`);
+
+      // Mettre à jour l'aperçu
+      $preview.html(
+        `<img src="${attachment.url}" alt="${attachment.alt || "Image"}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">`,
+      );
+
+      // Stocker l'ID de l'attachment (pas l'URL)
+      $input.val(attachment.id);
+      $input.data("image-url", attachment.url); // Garder l'URL pour référence
+
+      // Afficher le bouton de suppression
+      $removeBtn.show();
+    }
+
+    // === UTILITAIRES ===
+    showLoading(show) {
+      const $loading = $(this.selectors.loading);
+      const $table = $(this.selectors.table);
+      const $empty = $(this.selectors.empty);
+
+      if (show) {
         $loading.show();
         $table.hide();
         $empty.hide();
       } else {
         $loading.hide();
-        // Le show() du tableau est géré par renderExperiencesList s'il y a des résultats
       }
     }
 
-    /**
-     * Utilitaire debounce
-     * @param {Function} func Fonction à débouncer
-     * @param {number} wait Délai d'attente en ms
-     * @return {Function} Fonction débouncée
-     */
+    showError(message) {
+      console.error(message);
+      // TODO: Système de notifications dans la PARTIE 2
+      alert(message); // Temporaire
+    }
+
+    showSuccess(message) {
+      console.log(message);
+      // TODO: Système de notifications dans la PARTIE 2
+      alert(message); // Temporaire
+    }
+
     debounce(func, wait) {
       let timeout;
       return function executedFunction(...args) {
@@ -552,11 +997,6 @@
       };
     }
 
-    /**
-     * Utilitaire pour échapper le HTML
-     * @param {string} text Texte à échapper
-     * @return {string} Texte échappé
-     */
     escapeHtml(text) {
       if (!text) return "";
       const map = {
@@ -568,91 +1008,24 @@
       };
       return text.toString().replace(/[&<>"']/g, (m) => map[m]);
     }
-
-    /**
-     * Formate une date
-     * @param {string} dateString Date string
-     * @return {string} Date formatée
-     */
-    formatDate(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("fr-FR", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    }
-
-    /**
-     * Getters pour l'état actuel
-     */
-    getCurrentExperienceId() {
-      return this.currentExperienceId;
-    }
-
-    isCurrentlyLoading() {
-      return this.isLoading;
-    }
-
-    getUI() {
-      return this.ui;
-    }
-
-    getData() {
-      return this.data;
-    }
   }
 
-  // ========================================
-  // INITIALISATION GLOBALE
-  // ========================================
-
-  let pcExperienceManager = null;
-
-  // Initialisation au chargement du DOM
-  $(document).ready(() => {
-    // Vérifier que les dépendances sont disponibles
-    if (typeof PCExperienceUI === "undefined") {
-      console.error(
-        "❌ PCExperienceUI non trouvé. Vérifiez que ui-manager.js est chargé.",
-      );
-      return;
-    }
-
-    if (typeof PCExperienceData === "undefined") {
-      console.error(
-        "❌ PCExperienceData non trouvé. Vérifiez que data-manager.js est chargé.",
-      );
-      return;
-    }
-
+  // === INITIALISATION ===
+  $(document).ready(function () {
+    // Vérifier que nous sommes dans l'environnement correct
     if (typeof pcReservationVars === "undefined") {
-      console.error(
-        "❌ pcReservationVars non trouvé. Vérifiez la localisation des variables.",
-      );
+      console.error("PCR Experience Dashboard: Variables AJAX manquantes");
       return;
     }
 
-    // Initialiser le manager principal
-    pcExperienceManager = new PCExperienceManager();
-    pcExperienceManager.init();
+    // Initialiser le gestionnaire
+    window.pcExperienceDashboard = new PCExperienceDashboard();
 
-    // Exposer globalement pour debug
-    if (window.pcReservationVars?.debug) {
-      window.pcExperienceManager = pcExperienceManager;
-      console.log("🐞 Debug mode: pcExperienceManager exposé globalement");
-    }
-  });
-
-  // Gérer la pagination (événement délégué global)
-  $(document).on("click", ".pc-pagination-btn", function (e) {
-    e.preventDefault();
-    const page = $(this).data("page");
-    if (page && pcExperienceManager) {
-      $("#pc-experience-pagination").data("current-page", page);
-      pcExperienceManager.loadExperiencesList();
-    }
+    // Hook personnalisé pour l'integration avec app-shell.php
+    $(window).on("pc-tab-switch", function (e, tabId) {
+      if (tabId === "experience" && window.pcExperienceDashboard) {
+        window.pcExperienceDashboard.loadList();
+      }
+    });
   });
 })(jQuery);

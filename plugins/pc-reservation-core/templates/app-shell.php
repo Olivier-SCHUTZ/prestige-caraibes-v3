@@ -561,7 +561,7 @@ do_action('pc_resa_app_enqueue_assets');
                     if (function_exists('pcr_enqueue_experience_assets')) {
                         pcr_enqueue_experience_assets();
                     }
-                    echo do_shortcode('[pc_dashboard_experience]');
+                    echo do_shortcode('[pc_experience_dashboard]');
                     ?>
                 </div>
             </main>

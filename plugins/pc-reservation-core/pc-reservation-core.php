@@ -32,10 +32,7 @@ require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-housing.php';
 // ============================================================
 // 🎯 MODULE EXPERIENCE : Chargement des classes PHP
 // ============================================================
-require_once PC_RES_CORE_PATH . 'includes/experience/class-experience-data-mapper.php';
-require_once PC_RES_CORE_PATH . 'includes/experience/class-experience-crud.php';
-require_once PC_RES_CORE_PATH . 'includes/experience/class-experience-list.php';
-require_once PC_RES_CORE_PATH . 'includes/experience/class-experience-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/class-experience-manager.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-experience.php';
 
 require_once PC_RES_CORE_PATH . 'includes/class-ical-export.php';
@@ -139,8 +136,8 @@ add_action('plugins_loaded', function () {
     // ============================================================
     // 🎯 MODULE EXPERIENCE : Initialisation du contrôleur
     // ============================================================
-    if (class_exists('PCR_Experience_Controller')) {
-        PCR_Experience_Controller::init();
+    if (class_exists('PCR_Experience_Manager')) {
+        PCR_Experience_Manager::init();
     }
 
     // --- AUTOMATISATION : CRON JOB (Vérification quotidienne des cautions) ---
@@ -162,7 +159,7 @@ add_action('plugins_loaded', function () {
 // ============================================================
 // 🎯 MODULE EXPERIENCE : Enregistrement du shortcode
 // ============================================================
-add_shortcode('pc_dashboard_experience', 'pc_shortcode_experience_dashboard');
+add_shortcode('pc_experience_dashboard', 'pc_shortcode_experience_dashboard');
 
 // ============================================================
 // 🎯 MODULE EXPERIENCE : Assets CSS/JS avec dépendances
@@ -188,30 +185,17 @@ function pcr_enqueue_experience_assets()
 
     // 1. UI Manager (pas de dépendances)
     wp_enqueue_script(
-        'pcr-exp-ui',
-        PC_RES_CORE_URL . 'assets/js/experience/ui-manager.js',
-        array(),
-        PC_RES_CORE_VERSION,
-        true
-    );
-
-    // 2. Data Manager (dépend de jQuery)
-    wp_enqueue_script(
-        'pcr-exp-data',
-        PC_RES_CORE_URL . 'assets/js/experience/data-manager.js',
+        'pcr-exp-core',
+        PC_RES_CORE_URL . 'assets/js/dashboard-experience.js',
         array('jquery'),
         PC_RES_CORE_VERSION,
         true
     );
 
-    // 3. Dashboard Experience (dépend de UI et Data)
-    wp_enqueue_script(
-        'pcr-exp-core',
-        PC_RES_CORE_URL . 'assets/js/dashboard-experience.js',
-        array('pcr-exp-ui', 'pcr-exp-data'),
-        PC_RES_CORE_VERSION,
-        true
-    );
+    wp_localize_script('pcr-exp-core', 'pcReservationVars', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('pc_resa_manual_create')
+    ));
 
     // Localize Script pour AJAX (CRITIQUE)
     wp_localize_script('pcr-exp-core', 'pcReservationVars', array(
