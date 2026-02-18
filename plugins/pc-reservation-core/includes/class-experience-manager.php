@@ -87,6 +87,9 @@ class PCR_Experience_Manager
             'pc_deposit_value' => 'field_6919e7994db4d',
             'pc_balance_delay_days' => 'field_6919e7994db4e',
             'pc_caution_amount' => 'field_6919e7994db4f',
+
+            // === FAQ ===
+            'exp_faq' => 'field_exp_faq',
         ];
     }
 
@@ -242,6 +245,8 @@ class PCR_Experience_Manager
             'pc_deposit_value' => 'pc_deposit_value',
             'pc_balance_delay_days' => 'pc_balance_delay_days',
             'pc_caution_amount' => 'pc_caution_amount',
+
+            'exp_faq' => 'exp_faq',
         ];
     }
 
@@ -338,20 +343,24 @@ class PCR_Experience_Manager
 
                 // Champs critiques via ACF
                 if (function_exists('get_field')) {
-                    $item['exp_duree'] = get_field('exp_duree', $post_id) ?: '';
-                    $item['exp_capacite'] = get_field('exp_capacite', $post_id) ?: 0;
-                    $item['exp_availability'] = get_field('exp_availability', $post_id) ?: true;
-                    $item['exp_type_de_prestation'] = get_field('exp_type_de_prestation', $post_id) ?: '';
+                    // CORRECTION : Clés simplifiées pour matcher le JS (item.duree, item.capacite)
+                    $item['duree'] = get_field('exp_duree', $post_id) ?: '';
+                    $item['capacite'] = get_field('exp_capacite', $post_id) ?: 0;
+                    $item['availability'] = get_field('exp_availability', $post_id) ?: true;
+                    $item['type_de_prestation'] = get_field('exp_type_de_prestation', $post_id) ?: '';
 
                     // Zone d'intervention
-                    $item['exp_zone_intervention'] = get_field('exp_zone_intervention', $post_id) ?: '';
+                    $item['zone_intervention'] = get_field('exp_zone_intervention', $post_id) ?: '';
                 } else {
-                    $item['exp_duree'] = '';
-                    $item['exp_capacite'] = 0;
-                    $item['exp_availability'] = true;
-                    $item['exp_type_de_prestation'] = '';
-                    $item['exp_zone_intervention'] = '';
+                    $item['duree'] = '';
+                    $item['capacite'] = 0;
+                    $item['availability'] = true;
+                    $item['type_de_prestation'] = '';
+                    $item['zone_intervention'] = '';
                 }
+
+                // On passe aussi les champs bruts si besoin de debug, mais les clés ci-dessus sont prioritaires
+                $item['exp_availability'] = $item['availability'];
 
                 // Statut formaté pour l'affichage
                 $item['status_label'] = self::get_status_label($item['status']);
@@ -825,6 +834,7 @@ class PCR_Experience_Manager
             case 'exp_lieux_horaires_depart':
             case 'exp_periodes_fermeture':
             case 'exp_types_de_tarifs':
+            case 'exp_faq':
                 // Pour les repeaters d'expérience, on utilise update_field directement
                 $result = update_field($field_name, $data, $post_id);
                 return $result !== false;

@@ -381,44 +381,118 @@
     }
 
     populateForm(experience) {
-      // === GÉNÉRAL ===
-      $("#exp_h1_custom").val(experience.h1_custom || "");
-      $("#exp_availability").prop("checked", experience.availability === "1");
+      console.log("🔍 Données pour peuplement :", experience);
 
-      // === DÉTAILS ===
-      $("#exp_duree").val(experience.duree || "");
-      $("#exp_capacite").val(experience.capacite || "");
-      $("#exp_age_minimum").val(experience.age_minimum || "");
+      // === 1. ONGLET SEO & LIAISONS ===
+      $("#exp_exclude_sitemap").prop(
+        "checked",
+        experience.exp_exclude_sitemap == 1,
+      );
+      $("#exp_http_410").prop("checked", experience.exp_http_410 == 1);
+      $("#exp_meta_titre").val(experience.exp_meta_titre || "");
+      $("#exp_meta_description").val(experience.exp_meta_description || "");
+      $("#exp_meta_canonical").val(experience.exp_meta_canonical || "");
+      $("#exp_meta_robots").val(experience.exp_meta_robots || "index,follow");
 
-      // === CHECKBOXES (Arrays) ===
-      this.populateCheckboxArray("exp_accessibilite", experience.accessibilite);
-      this.populateCheckboxArray("exp_periode", experience.periode);
-      this.populateCheckboxArray("exp_jour", experience.jour);
+      // Liaisons (IDs séparés par virgule)
+      let logements = experience.exp_logements_recommandes || [];
+      if (Array.isArray(logements)) logements = logements.join(",");
+      $("#exp_logements_recommandes").val(logements);
 
-      // === INCLUSIONS ===
-      $("#exp_prix_comprend").val(experience.prix_comprend || "");
-      $("#exp_prix_ne_comprend_pas").val(experience.prix_ne_comprend_pas || "");
+      const isAvailable =
+        experience.exp_availability == 1 ||
+        experience.exp_availability === "true";
+      $("#exp_availability").prop("checked", isAvailable);
 
-      // === SERVICES ===
-      $("#exp_delai_de_reservation").val(experience.delai_de_reservation || "");
-      $("#exp_zone_intervention").val(experience.zone_intervention || "");
+      // === 2. ONGLET DÉTAILS PRINCIPAUX ===
+      $("#exp_h1_custom").val(experience.exp_h1_custom || "");
 
-      // === PAIEMENT ===
+      // Images Hero
+      this.populateImageField("exp_hero_desktop", experience.exp_hero_desktop);
+      this.populateImageField("exp_hero_mobile", experience.exp_hero_mobile);
+
+      // === 3. ONGLET DÉTAILS SORTIES ===
+      $("#exp_duree").val(experience.exp_duree || "");
+      $("#exp_capacite").val(experience.exp_capacite || "");
+      $("#exp_age_minimum").val(experience.exp_age_minimum || "");
+
+      // Checkboxes (Arrays)
+      this.populateCheckboxArray(
+        "exp_accessibilite",
+        experience.exp_accessibilite,
+      );
+      this.populateCheckboxArray("exp_periode", experience.exp_periode);
+      this.populateCheckboxArray("exp_jour", experience.exp_jour);
+
+      // Repeaters Sorties
+      this.renderFermetureRepeater(experience.exp_periodes_fermeture || []);
+      this.renderLieuxRepeater(experience.exp_lieux_horaires_depart || []);
+
+      // === 4. ONGLET INCLUSIONS ===
+      $("#exp_prix_comprend").val(experience.exp_prix_comprend || "");
+      $("#exp_prix_ne_comprend_pas").val(
+        experience.exp_prix_ne_comprend_pas || "",
+      );
+      this.populateCheckboxArray("exp_a_prevoir", experience.exp_a_prevoir);
+
+      // === 5. ONGLET SERVICES ===
+      this.populateCheckboxArray(
+        "exp_delai_de_reservation",
+        experience.exp_delai_de_reservation,
+      );
+      this.populateCheckboxArray(
+        "exp_zone_intervention",
+        experience.exp_zone_intervention,
+      );
+
+      $("#exp_type_de_prestation").val(experience.exp_type_de_prestation || "");
+      $("#exp_heure_limite_de_commande").val(
+        experience.exp_heure_limite_de_commande || "",
+      );
+
+      // Textareas Services (souvent oubliés)
+      $("#exp_le_service_comprend").val(
+        experience.exp_le_service_comprend || "",
+      );
+      $("#exp_service_a_prevoir").val(experience.exp_service_a_prevoir || "");
+
+      // === 6. ONGLET GALERIE (Correction IDs) ===
+      let galleryIds = "";
+      // Si on reçoit un tableau d'objets (format ACF standard pour galerie)
+      if (Array.isArray(experience.photos_experience)) {
+        galleryIds = experience.photos_experience
+          .map((photo) => photo.ID || photo.id || photo) // Récupère l'ID qu'il soit objet ou int
+          .filter((id) => id && typeof id !== "object") // Garde seulement les valeurs scalaires
+          .join(",");
+
+        // Petit feedback visuel
+        if (experience.photos_experience.length > 0) {
+          $("#photos-experience-preview .pc-gallery-placeholder").html(
+            `✅ <strong>${experience.photos_experience.length} images</strong> chargées (Sauvegardez pour voir les miniatures)`,
+          );
+        }
+      } else {
+        // Si c'est déjà une string (rare mais possible)
+        galleryIds = experience.photos_experience || "";
+      }
+      $("#photos_experience").val(galleryIds);
+
+      // === 7. ONGLET FAQ ===
+      this.renderFaqRepeater(experience.exp_faq || []);
+
+      // === 8. ONGLET TARIFS ===
+      this.renderTarifsRepeater(experience.exp_types_de_tarifs || []);
+
+      // === 9. ONGLET RÈGLES & PAIEMENT ===
       $("#taux_tva").val(experience.taux_tva || "");
       $("#pc_pay_mode").val(experience.pc_pay_mode || "acompte_plus_solde");
       $("#pc_deposit_type").val(experience.pc_deposit_type || "pourcentage");
       $("#pc_deposit_value").val(experience.pc_deposit_value || "");
+      $("#pc_balance_delay_days").val(experience.pc_balance_delay_days || "");
+      $("#pc_caution_amount").val(experience.pc_caution_amount || "");
+      $("#pc_caution_mode").val(experience.pc_caution_mode || "aucune");
 
-      // === IMAGES ===
-      this.populateImageField("exp_hero_desktop", experience.hero_desktop_url);
-      this.populateImageField("exp_hero_mobile", experience.hero_mobile_url);
-
-      // === REPEATERS ===
-      this.renderLieuxRepeater(experience.lieux_horaires_depart || []);
-      this.renderFermetureRepeater(experience.periodes_fermeture || []);
-      this.renderFaqRepeater(experience.faq || []);
-
-      // === RATE MANAGER ===
+      // === 10. RATE MANAGER ===
       if (this.rateManager) {
         this.rateManager.init(
           "pc-rates-calendar",
@@ -426,7 +500,7 @@
             seasons: experience.seasons_data || [],
             promos: experience.promos_data || [],
           },
-          experience.prix_base || 0,
+          0,
         );
       }
     }
@@ -502,58 +576,66 @@
         return;
       }
 
-      // Validation basique
       const title = $("#exp_h1_custom").val().trim();
-      if (!title) {
-        this.showError("Le titre de l'expérience est obligatoire.");
-        return;
-      }
+      // Note: On peut garder cette validation ou l'assouplir
+      // if (!title) { this.showError("..."); return; }
 
       const $btn = $("#pc-experience-save-btn");
       $btn.addClass("loading").prop("disabled", true);
 
       // Collecte des données
+      // CORRECTION CRITIQUE : Ajout des préfixes 'exp_' dans les clés 'acf_'
+      // Le PHP retire 'acf_', donc 'acf_exp_duree' devient 'exp_duree', ce qui matche la BDD.
       const formData = {
         action: "pc_experience_save",
         nonce: this.nonce,
         post_id: currentExperienceId,
 
+        // Champs de base WP (pas de changement)
+        title: $("#exp_h1_custom").val(), // On utilise le H1 comme titre du post par défaut
+
         // Général
-        acf_h1_custom: $("#exp_h1_custom").val(),
-        acf_availability: $("#exp_availability").is(":checked") ? "1" : "0",
+        acf_exp_h1_custom: $("#exp_h1_custom").val(),
+        acf_exp_availability: $("#exp_availability").is(":checked") ? "1" : "0",
 
         // Détails
-        acf_duree: $("#exp_duree").val(),
-        acf_capacite: $("#exp_capacite").val(),
-        acf_age_minimum: $("#exp_age_minimum").val(),
+        acf_exp_duree: $("#exp_duree").val(),
+        acf_exp_capacite: $("#exp_capacite").val(),
+        acf_exp_age_minimum: $("#exp_age_minimum").val(),
 
         // Checkboxes Arrays
-        acf_accessibilite: this.collectCheckboxArray("exp_accessibilite"),
-        acf_periode: this.collectCheckboxArray("exp_periode"),
-        acf_jour: this.collectCheckboxArray("exp_jour"),
+        acf_exp_accessibilite: this.collectCheckboxArray("exp_accessibilite"),
+        acf_exp_periode: this.collectCheckboxArray("exp_periode"),
+        acf_exp_jour: this.collectCheckboxArray("exp_jour"),
 
         // Inclusions
-        acf_prix_comprend: $("#exp_prix_comprend").val(),
-        acf_prix_ne_comprend_pas: $("#exp_prix_ne_comprend_pas").val(),
+        acf_exp_prix_comprend: $("#exp_prix_comprend").val(),
+        acf_exp_prix_ne_comprend_pas: $("#exp_prix_ne_comprend_pas").val(),
 
         // Services
-        acf_delai_de_reservation: $("#exp_delai_de_reservation").val(),
-        acf_zone_intervention: $("#exp_zone_intervention").val(),
+        acf_exp_delai_de_reservation: $("#exp_delai_de_reservation").val(),
+        acf_exp_zone_intervention: $("#exp_zone_intervention").val(),
+        acf_exp_type_de_prestation: $("#exp_type_de_prestation").val(),
+        acf_exp_heure_limite_de_commande: $(
+          "#exp_heure_limite_de_commande",
+        ).val(),
 
-        // Paiement
+        // Paiement (Pas de préfixe exp_ sur ces clés ID)
         acf_taux_tva: $("#taux_tva").val(),
         acf_pc_pay_mode: $("#pc_pay_mode").val(),
         acf_pc_deposit_type: $("#pc_deposit_type").val(),
         acf_pc_deposit_value: $("#pc_deposit_value").val(),
+        acf_pc_balance_delay_days: $("#pc_balance_delay_days").val(),
+        acf_pc_caution_amount: $("#pc_caution_amount").val(),
 
         // Images
-        acf_hero_desktop_url: $("#exp_hero_desktop").val(),
-        acf_hero_mobile_url: $("#exp_hero_mobile").val(),
+        acf_exp_hero_desktop: $("#exp_hero_desktop").val(),
+        acf_exp_hero_mobile: $("#exp_hero_mobile").val(),
 
-        // Repeaters
-        acf_lieux_horaires_depart: this.collectLieuxData(),
-        acf_periodes_fermeture: this.collectFermetureData(),
-        acf_faq: this.collectFaqData(),
+        // Repeaters (Attention au nom exact attendu par update_repeater_field en PHP)
+        acf_exp_lieux_horaires_depart: this.collectLieuxData(),
+        acf_exp_periodes_fermeture: this.collectFermetureData(),
+        acf_exp_faq: this.collectFaqData(), // Ajout FAQ
 
         // Rate Manager
         rate_manager_data: this.rateManager
@@ -570,8 +652,9 @@
 
           if (response.success) {
             this.showSuccess("Expérience sauvegardée avec succès!");
-            this.closeModal();
-            this.loadList(); // Recharger la liste
+            // Ne pas fermer immédiatement pour permettre de continuer l'édition si voulu
+            // this.closeModal();
+            this.loadList(currentPage); // Recharger la liste en arrière-plan
           } else {
             this.showError(
               "Erreur lors de la sauvegarde: " +
@@ -593,20 +676,42 @@
       $wrapper.empty();
 
       items.forEach((item, index) => {
+        // On sécurise les valeurs pour éviter les undefined
+        const lieu = this.escapeHtml(item.exp_lieu_depart || "");
+        const lat = item.lat_exp || "";
+        const lon = item.longitude || ""; // Attention: clé 'longitude' dans ton JSON
+        const dep = item.exp_heure_depart || "";
+        const ret = item.exp_heure_retour || "";
+
         const html = `
           <div class="pc-repeater-row" data-index="${index}">
             <div class="pc-form-grid">
-              <div class="pc-form-group">
+              <div class="pc-form-group pc-form-group--full">
                 <label>Lieu de départ</label>
-                <input type="text" class="pc-input lieu-depart" value="${this.escapeHtml(item.lieu_depart || "")}" placeholder="Ex: Marina de Pointe-à-Pitre">
+                <input type="text" class="pc-input lieu-depart" value="${lieu}" placeholder="Ex: Marina de Pointe-à-Pitre">
+              </div>
+              
+              <div class="pc-form-group">
+                <label>Latitude</label>
+                <input type="text" class="pc-input lat-exp" value="${lat}" placeholder="Ex: 16.24">
               </div>
               <div class="pc-form-group">
-                <label>Horaires</label>
-                <input type="text" class="pc-input horaires" value="${this.escapeHtml(item.horaires || "")}" placeholder="Ex: 9h00 - 17h00">
+                <label>Longitude</label>
+                <input type="text" class="pc-input longitude" value="${lon}" placeholder="Ex: -61.53">
+              </div>
+
+              <div class="pc-form-group">
+                <label>Heure Départ</label>
+                <input type="time" class="pc-input heure-depart" value="${dep}">
               </div>
               <div class="pc-form-group">
-                <button type="button" class="pc-btn pc-btn-danger remove-lieu-row">
-                  <span>🗑️</span> Supprimer
+                <label>Heure Retour</label>
+                <input type="time" class="pc-input heure-retour" value="${ret}">
+              </div>
+
+              <div class="pc-form-group">
+                <button type="button" class="pc-btn pc-btn-danger remove-lieu-row" style="margin-top: 25px;">
+                  <span>🗑️</span>
                 </button>
               </div>
             </div>
@@ -615,7 +720,6 @@
         $wrapper.append(html);
       });
 
-      // Bouton ajouter
       $wrapper.append(`
         <button type="button" class="pc-btn pc-btn-secondary add-lieu-row">
           <span>➕</span> Ajouter un lieu
@@ -666,20 +770,26 @@
       const $wrapper = $("#wrapper-exp_faq");
       $wrapper.empty();
 
+      if (!items) items = [];
+
       items.forEach((item, index) => {
+        // Supporte les clés avec ou sans préfixe
+        const quest = this.escapeHtml(item.exp_question || item.question || "");
+        const rep = this.escapeHtml(item.exp_reponse || item.reponse || "");
+
         const html = `
           <div class="pc-repeater-row" data-index="${index}">
             <div class="pc-form-grid">
               <div class="pc-form-group pc-form-group--full">
                 <label>Question</label>
-                <input type="text" class="pc-input question" value="${this.escapeHtml(item.question || "")}" placeholder="Entrez votre question">
+                <input type="text" class="pc-input question" value="${quest}" placeholder="Question posée">
               </div>
               <div class="pc-form-group pc-form-group--full">
                 <label>Réponse</label>
-                <textarea class="pc-textarea reponse" rows="3" placeholder="Entrez la réponse">${this.escapeHtml(item.reponse || "")}</textarea>
+                <textarea class="pc-textarea reponse" rows="2" placeholder="Réponse apportée">${rep}</textarea>
               </div>
               <div class="pc-form-group">
-                <button type="button" class="pc-btn pc-btn-danger remove-faq-row">
+                <button type="button" class="pc-btn pc-btn-danger remove-faq-row" style="margin-top:5px;">
                   <span>🗑️</span> Supprimer
                 </button>
               </div>
@@ -689,12 +799,126 @@
         $wrapper.append(html);
       });
 
-      // Bouton ajouter
       $wrapper.append(`
         <button type="button" class="pc-btn pc-btn-secondary add-faq-row">
-          <span>➕</span> Ajouter une FAQ
+          <span>➕</span> Ajouter une question
         </button>
       `);
+
+      // Réattacher l'événement d'ajout
+      $(".add-faq-row")
+        .off("click")
+        .on("click", () => {
+          const index = Date.now();
+          const html = `
+          <div class="pc-repeater-row" data-index="${index}">
+            <div class="pc-form-grid">
+              <div class="pc-form-group pc-form-group--full">
+                <label>Question</label>
+                <input type="text" class="pc-input question" placeholder="Question posée">
+              </div>
+              <div class="pc-form-group pc-form-group--full">
+                <label>Réponse</label>
+                <textarea class="pc-textarea reponse" rows="2" placeholder="Réponse apportée"></textarea>
+              </div>
+              <div class="pc-form-group">
+                <button type="button" class="pc-btn pc-btn-danger remove-faq-row"><span>🗑️</span> Supprimer</button>
+              </div>
+            </div>
+          </div>`;
+          $(".add-faq-row").before(html);
+        });
+
+      // Délégation pour suppression
+      $(document)
+        .off("click", ".remove-faq-row")
+        .on("click", ".remove-faq-row", function () {
+          $(this).closest(".pc-repeater-row").remove();
+        });
+    }
+
+    renderTarifsRepeater(items) {
+      const $wrapper = $("#wrapper-exp_types_de_tarifs");
+      $wrapper.empty();
+
+      if (!items) items = [];
+
+      items.forEach((item, index) => {
+        const type = item.exp_type || "unique";
+        const labelCustom = this.escapeHtml(item.exp_type_custom || "");
+
+        const html = `
+          <div class="pc-repeater-row" data-index="${index}" style="border:1px solid #e2e8f0; padding:15px; margin-bottom:15px; border-radius:8px; background:#fff;">
+            <div class="pc-form-grid">
+              <div class="pc-form-group">
+                <label>Type de tarif</label>
+                <select class="pc-select tarif-type">
+                    <option value="unique" ${type === "unique" ? "selected" : ""}>Unique / Forfaitaire</option>
+                    <option value="journee" ${type === "journee" ? "selected" : ""}>Journée</option>
+                    <option value="demi-journee" ${type === "demi-journee" ? "selected" : ""}>Demi-journée</option>
+                    <option value="sur-devis" ${type === "sur-devis" ? "selected" : ""}>Sur Devis</option>
+                    <option value="custom" ${type === "custom" ? "selected" : ""}>Personnalisé</option>
+                </select>
+              </div>
+              
+              <div class="pc-form-group">
+                 <label>Nom (si personnalisé)</label>
+                 <input type="text" class="pc-input tarif-custom" value="${labelCustom}" placeholder="Ex: Soirée VIP">
+              </div>
+
+              <div class="pc-form-group">
+                <button type="button" class="pc-btn pc-btn-danger remove-tarif-row" style="margin-top: 25px;">
+                  <span>🗑️</span> Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        $wrapper.append(html);
+      });
+
+      $wrapper.append(`
+        <button type="button" class="pc-btn pc-btn-secondary add-tarif-row">
+          <span>➕</span> Ajouter un type de tarif
+        </button>
+      `);
+
+      // Gestionnaire d'ajout
+      $(".add-tarif-row")
+        .off("click")
+        .on("click", () => {
+          const index = Date.now();
+          const html = `
+          <div class="pc-repeater-row" data-index="${index}" style="border:1px solid #e2e8f0; padding:15px; margin-bottom:15px; border-radius:8px; background:#fff;">
+            <div class="pc-form-grid">
+              <div class="pc-form-group">
+                <label>Type de tarif</label>
+                <select class="pc-select tarif-type">
+                    <option value="unique">Unique / Forfaitaire</option>
+                    <option value="journee">Journée</option>
+                    <option value="demi-journee">Demi-journée</option>
+                    <option value="sur-devis">Sur Devis</option>
+                    <option value="custom">Personnalisé</option>
+                </select>
+              </div>
+              <div class="pc-form-group">
+                 <label>Nom (si personnalisé)</label>
+                 <input type="text" class="pc-input tarif-custom" placeholder="Ex: Soirée VIP">
+              </div>
+              <div class="pc-form-group">
+                <button type="button" class="pc-btn pc-btn-danger remove-tarif-row" style="margin-top: 25px;"><span>🗑️</span> Supprimer</button>
+              </div>
+            </div>
+          </div>`;
+          $(".add-tarif-row").before(html);
+        });
+
+      // Gestionnaire de suppression
+      $(document)
+        .off("click", ".remove-tarif-row")
+        .on("click", ".remove-tarif-row", function () {
+          $(this).closest(".pc-repeater-row").remove();
+        });
     }
 
     // === HELPERS REPEATERS ===
@@ -780,11 +1004,19 @@
       $("#wrapper-exp_lieux_horaires_depart .pc-repeater-row").each(
         (index, row) => {
           const $row = $(row);
+
+          // On construit l'objet avec les clés exactes attendues par ACF (selon le JSON fourni)
           const item = {
-            lieu_depart: $row.find(".lieu-depart").val() || "",
-            horaires: $row.find(".horaires").val() || "",
+            exp_lieu_depart: $row.find(".lieu-depart").val() || "",
+            lat_exp: $row.find(".lat-exp").val() || "",
+            longitude: $row.find(".longitude").val() || "",
+            exp_heure_depart: $row.find(".heure-depart").val() || "",
+            exp_heure_retour: $row.find(".heure-retour").val() || "",
           };
-          if (item.lieu_depart || item.horaires) {
+
+          // On n'ajoute la ligne que si au moins un champ principal est rempli
+          // pour éviter d'enregistrer des lignes vides
+          if (item.exp_lieu_depart || item.lat_exp || item.longitude) {
             data.push(item);
           }
         },

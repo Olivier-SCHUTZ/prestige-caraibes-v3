@@ -119,16 +119,16 @@ function pc_shortcode_experience_dashboard($atts = [])
                     <span class="pc-modal-icon">🎯</span>
                     <span id="pc-experience-modal-title">Détails de l'expérience</span>
                 </h2>
-                <button class="pc-modal-close" onclick="closeExperienceModal()">×</button>
+                <button class="pc-modal-close">×</button>
             </div>
 
             <div class="pc-modal-content">
-                <div class="pc-housing-loading" id="pc-housing-modal-loading">
+                <div class="pc-experience-loading" id="pc-experience-modal-loading">
                     <div class="pc-spinner"></div>
                     <span>Chargement des détails...</span>
                 </div>
 
-                <div class="pc-housing-details" id="pc-housing-modal-details" style="display: none;">
+                <div class="pc-experience-details" id="pc-experience-modal-details" style="display: none;">
                     <!-- Navigation par onglets -->
                     <div class="pc-tabs-nav">
                         <button class="pc-tab-btn active" data-tab="seo-liaisons">
@@ -1379,17 +1379,17 @@ function pc_shortcode_experience_dashboard($atts = [])
 
             <div class="pc-modal-footer">
                 <div class="pc-modal-actions">
-                    <button type="button" class="pc-btn pc-btn-danger" id="pc-housing-delete-btn">
+                    <button type="button" class="pc-btn pc-btn-danger" id="pc-experience-delete-btn">
                         <span class="pc-btn-text">Supprimer</span>
                         <span class="pc-btn-spinner" style="display: none;">
                             <div class="pc-spinner-sm"></div>
                         </span>
                     </button>
                     <div class="pc-modal-actions-right">
-                        <button type="button" class="pc-btn pc-btn-secondary" onclick="closeHousingModal()">
+                        <button type="button" class="pc-btn pc-btn-secondary pc-modal-close">
                             Annuler
                         </button>
-                        <button type="button" class="pc-btn pc-btn-primary" id="pc-housing-save-btn">
+                        <button type="button" class="pc-btn pc-btn-primary" id="pc-experience-save-btn">
                             <span class="pc-btn-text">Enregistrer</span>
                             <span class="pc-btn-spinner" style="display: none;">
                                 <div class="pc-spinner-sm"></div>
