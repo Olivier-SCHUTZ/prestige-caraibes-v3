@@ -159,7 +159,7 @@ function pc_shortcode_experience_dashboard($atts = [])
                             <span class="pc-tab-icon">❓</span>
                             FAQ
                         </button>
-                        <button class="pc-tab-btn" data-tab="rates">
+                        <button class="pc-tab-btn" data-tab="exp-rates">
                             <span class="pc-tab-icon">💰</span>
                             Tarifs
                         </button>
@@ -486,14 +486,32 @@ function pc_shortcode_experience_dashboard($atts = [])
                         </div>
 
                         <!-- Onglet 8 : Tarifs -->
-                        <div class="pc-tab-content" id="tab-rates" style="display: none;">
+                        <div class="pc-tab-content" id="tab-exp-rates" style="display: none;">
                             <div class="pc-form-grid">
+                                <!-- Section Types de tarifs (Repeater ACF) -->
                                 <div class="pc-form-group pc-form-group--full">
                                     <label>Types de tarifs</label>
                                     <div id="wrapper-exp_types_de_tarifs">
-                                        <p class="pc-repeater-placeholder">Container Repeater Complexe pour Types de tarifs - À implémenter via JavaScript</p>
+                                        <!-- Container Repeater dynamique généré par JavaScript -->
                                     </div>
                                     <small class="pc-field-help">Définissez un ou plusieurs types de tarifs (ex: un tarif pour la journée, un autre pour la demi-journée).</small>
+                                </div>
+
+                                <!-- Champ Taux de TVA -->
+                                <div class="pc-form-group">
+                                    <label for="exp_taux_tva">Taux de TVA applicable (%)</label>
+                                    <input type="number" id="exp_taux_tva" class="pc-input" min="0" max="100" step="0.01" placeholder="20">
+                                    <small class="pc-field-help">Saisissez le pourcentage de TVA (ex: 20 pour 20%, 8.5 pour 8.5%). Laissez à 0 si non assujetti.</small>
+                                </div>
+
+                                <!-- Rate Manager (Calendrier) -->
+                                <div class="pc-form-group pc-form-group--full" style="margin-top: 2rem;">
+                                    <h3 style="font-size: 1.2rem; font-weight: 700; color: #1e293b; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.8rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(148, 163, 184, 0.3);">
+                                        📅 Calendrier des Tarifs & Disponibilités
+                                    </h3>
+                                    <div id="pc-experience-rates-calendar">
+                                        <!-- Calendrier Rate Manager injecté ici -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -502,8 +520,8 @@ function pc_shortcode_experience_dashboard($atts = [])
                         <div class="pc-tab-content" id="tab-rules" style="display: none;">
                             <div class="pc-form-grid">
                                 <div class="pc-form-group">
-                                    <label for="taux_tva">Taux de TVA applicable (%)</label>
-                                    <input type="number" id="taux_tva" class="pc-input" min="0" max="100" step="0.01" placeholder="20">
+                                    <label for="exp_rules_taux_tva">Taux de TVA applicable (%)</label>
+                                    <input type="number" id="exp_rules_taux_tva" class="pc-input" min="0" max="100" step="0.01" placeholder="20">
                                     <small class="pc-field-help">Saisissez le pourcentage de TVA (ex: 20 pour 20%, 8.5 pour 8.5%). Laissez à 0 si non assujetti.</small>
                                 </div>
 
@@ -512,8 +530,8 @@ function pc_shortcode_experience_dashboard($atts = [])
                                 </div>
 
                                 <div class="pc-form-group">
-                                    <label for="pc_pay_mode">Mode de paiement</label>
-                                    <select id="pc_pay_mode" class="pc-select">
+                                    <label for="exp_pay_mode">Mode de paiement</label>
+                                    <select id="exp_pay_mode" class="pc-select">
                                         <option value="acompte_plus_solde">Acompte plus solde</option>
                                         <option value="total_a_la_reservation">Total à la réservation</option>
                                         <option value="sur_place">Sur place</option>
@@ -522,33 +540,33 @@ function pc_shortcode_experience_dashboard($atts = [])
                                 </div>
 
                                 <div class="pc-form-group">
-                                    <label for="pc_deposit_type">Acompte</label>
-                                    <select id="pc_deposit_type" class="pc-select">
+                                    <label for="exp_deposit_type">Acompte</label>
+                                    <select id="exp_deposit_type" class="pc-select">
                                         <option value="pourcentage">Pourcentage</option>
                                         <option value="montant_fixe">Montant fixe</option>
                                     </select>
                                 </div>
 
                                 <div class="pc-form-group">
-                                    <label for="pc_deposit_value">Sommes ou %</label>
-                                    <input type="number" id="pc_deposit_value" class="pc-input" placeholder="30">
+                                    <label for="exp_deposit_value">Sommes ou %</label>
+                                    <input type="number" id="exp_deposit_value" class="pc-input" placeholder="30">
                                     <small class="pc-field-help">valeur numérique (ex : 30 ou 500)</small>
                                 </div>
 
                                 <div class="pc-form-group">
-                                    <label for="pc_balance_delay_days">Solde</label>
-                                    <input type="number" id="pc_balance_delay_days" class="pc-input" placeholder="30">
+                                    <label for="exp_balance_delay_days">Solde</label>
+                                    <input type="number" id="exp_balance_delay_days" class="pc-input" placeholder="30">
                                     <small class="pc-field-help">ex : 30 (= X jours avant arrivée / expérience)</small>
                                 </div>
 
                                 <div class="pc-form-group">
-                                    <label for="pc_caution_amount">Montant de la caution</label>
-                                    <input type="number" id="pc_caution_amount" class="pc-input" min="0" step="1" placeholder="0">
+                                    <label for="exp_caution_amount">Montant de la caution</label>
+                                    <input type="number" id="exp_caution_amount" class="pc-input" min="0" step="1" placeholder="0">
                                 </div>
 
                                 <div class="pc-form-group">
-                                    <label for="pc_caution_mode">Méthode de caution</label>
-                                    <select id="pc_caution_mode" class="pc-select">
+                                    <label for="exp_caution_mode">Méthode de caution</label>
+                                    <select id="exp_caution_mode" class="pc-select">
                                         <option value="aucune">Aucune caution</option>
                                         <option value="empreinte">Empreinte bancaire</option>
                                         <option value="encaissement">Caution encaisser</option>
@@ -1103,130 +1121,6 @@ function pc_shortcode_experience_dashboard($atts = [])
                             </div>
                         </div>
 
-                        <!-- Onglet Saisons & Promos -->
-                        <div class="pc-tab-content" id="tab-rates" style="display: none;">
-                            <div class="pc-rates-container">
-                                <div class="pc-rates-sidebar">
-                                    <h3>Gestion Saisons</h3>
-                                    <div class="pc-draggable-list" id="pc-rates-list">
-                                    </div>
-                                    <div class="pc-rates-actions">
-                                        <button type="button" class="pc-btn pc-btn-primary pc-btn-full" id="btn-add-season" style="margin-bottom:10px;">
-                                            <span style="color: #fff;">➕</span> Ajouter une saison
-                                        </button>
-                                        <button type="button" class="pc-btn pc-btn-secondary pc-btn-full" id="btn-add-promo">
-                                            <span>🏷️</span> Ajouter une promo
-                                        </button>
-                                    </div>
-                                    <p style="font-size:11px;color:#666;margin-top:15px;text-align:center;">
-                                        Glissez les éléments sur le calendrier pour créer des périodes.
-                                    </p>
-                                </div>
-
-                                <div class="pc-rates-calendar-wrapper">
-                                    <div id="pc-rates-calendar"></div>
-                                </div>
-                            </div>
-
-                            <div id="pc-rate-internal-modal" style="display:none;">
-                                <div class="pc-modal-content">
-                                    <h3 style="margin-top:0;">Éditer</h3>
-                                    <input type="hidden" id="pc-rate-modal-type">
-                                    <input type="hidden" id="pc-rate-modal-id">
-
-                                    <div class="pc-form-group">
-                                        <label>Nom</label>
-                                        <input type="text" id="pc-rate-name" class="pc-input">
-                                    </div>
-
-                                    <div id="pc-rate-season-fields">
-                                        <div class="pc-rate-form-grid">
-                                            <div class="pc-form-group">
-                                                <label>Prix (€)</label>
-                                                <input type="number" id="pc-rate-price" class="pc-input">
-                                            </div>
-                                            <div class="pc-form-group">
-                                                <label>Min. Nuits</label>
-                                                <input type="number" id="pc-rate-min-nights" class="pc-input">
-                                            </div>
-                                        </div>
-
-                                        <div class="pc-form-group">
-                                            <label>Note interne</label>
-                                            <input type="text" id="pc-rate-note" class="pc-input" placeholder="Note privée pour cette saison">
-                                        </div>
-
-                                        <div class="pc-rate-form-grid">
-                                            <div class="pc-form-group">
-                                                <label>Frais invités supp. (€)</label>
-                                                <input type="number" id="pc-rate-guest-fee" class="pc-input" step="0.01" min="0" placeholder="0.00">
-                                            </div>
-                                            <div class="pc-form-group">
-                                                <label>À partir de ... invités</label>
-                                                <input type="number" id="pc-rate-guest-from" class="pc-input" min="1" placeholder="0">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div id="pc-rate-promo-fields" style="display:none;">
-                                        <div class="pc-rate-form-grid">
-                                            <div class="pc-form-group">
-                                                <label>Type</label>
-                                                <select id="pc-rate-promo-type" class="pc-select">
-                                                    <option value="percent">%</option>
-                                                    <option value="fixed">€</option>
-                                                </select>
-                                            </div>
-                                            <div class="pc-form-group">
-                                                <label>Valeur</label>
-                                                <input type="number" id="pc-rate-promo-val" class="pc-input">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Section Périodes -->
-                                    <div class="pc-form-group pc-form-group--full" style="margin-top: 20px;">
-                                        <label>Période(s) d'application</label>
-
-                                        <!-- Message de feedback -->
-                                        <div id="pc-period-feedback" class="pc-period-feedback" style="display: none;">
-                                            <!-- Message de confirmation généré dynamiquement -->
-                                        </div>
-
-                                        <!-- Liste des périodes existantes -->
-                                        <ul id="pc-rate-periods-list" style="list-style: none; padding: 0; margin: 10px 0; max-height: 150px; overflow-y: auto;">
-                                            <!-- Périodes générées dynamiquement -->
-                                        </ul>
-
-                                        <!-- Zone d'ajout avec Flatpickr -->
-                                        <div class="pc-form-group" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #f8fafc;">
-                                            <label style="font-size: 13px; color: #64748b; margin-bottom: 8px; display: block;">Sélectionner une période :</label>
-
-                                            <div class="pc-flatpickr-container" style="margin-bottom: 15px;">
-                                                <input type="text" id="pc-rate-period-range" class="pc-input" placeholder="Sélectionnez une période..." readonly style="cursor: pointer; background: white;">
-                                            </div>
-
-                                            <button type="button" id="btn-add-period-range" class="pc-btn pc-btn-primary" style="width: 100%; font-size: 13px;">
-                                                <span>➕</span> Ajouter cette période
-                                            </button>
-
-                                            <p style="font-size: 11px; color: #64748b; margin: 8px 0 0 0; font-style: italic;">
-                                                * Cliquez sur le champ pour ouvrir le calendrier et sélectionner une plage de dates.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div style="display:flex; justify-content:space-between; margin-top:20px;">
-                                        <button type="button" class="pc-btn pc-btn-danger" id="btn-delete-rate-internal">Supprimer</button>
-                                        <div style="display:flex; gap:10px;">
-                                            <button type="button" class="pc-btn pc-btn-secondary" id="btn-cancel-rate-internal">Annuler</button>
-                                            <button type="button" class="pc-btn pc-btn-primary" id="btn-save-rate-internal">Valider</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
 
                         <!-- Onglet Configuration & SEO -->
                         <div class="pc-tab-content" id="tab-advanced" style="display: none;">

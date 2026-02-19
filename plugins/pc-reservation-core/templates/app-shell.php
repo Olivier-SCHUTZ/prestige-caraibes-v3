@@ -577,6 +577,11 @@ do_action('pc_resa_app_enqueue_assets');
                 document.querySelectorAll('.pc-view-section').forEach(el => el.classList.remove('active'));
                 document.getElementById('view-' + tabId).classList.add('active');
 
+                // 🔥 TRIGGER POUR L'ISOLATION DES MODULES
+                if (typeof jQuery !== 'undefined') {
+                    jQuery(window).trigger('pc-tab-switch', [tabId]);
+                }
+
                 // Close sidebar on mobile
                 document.getElementById('pcSidebar').classList.remove('open');
 

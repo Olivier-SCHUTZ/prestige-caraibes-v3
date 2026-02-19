@@ -44,6 +44,13 @@
 
     init() {
       this.bindEvents();
+
+      // 🔥 GUARD CLAUSE : Ne charger QUE si l'onglet Experience est visible
+      if (!$("#view-experience").hasClass("active")) {
+        console.log("🚫 Onglet Experience caché - Chargement différé");
+        return;
+      }
+
       this.loadList();
     }
 
@@ -153,6 +160,91 @@
       // FAQ - Supprimer
       $(document).on("click", ".remove-faq-row", (e) => {
         $(e.currentTarget).closest(".pc-repeater-row").remove();
+      });
+
+      // === GESTION DES ONGLETS ===
+      $(document).on("click", ".pc-tab-btn", (e) => {
+        e.preventDefault();
+        const $btn = $(e.currentTarget);
+        const tabId = $btn.data("tab");
+
+        console.log(`🔄 Clic sur onglet: ${tabId}`);
+
+        // Activer le bon onglet
+        $(".pc-tab-btn").removeClass("active");
+        $btn.addClass("active");
+
+        // Afficher le bon contenu
+        $(".pc-tab-content").removeClass("active").hide();
+        const $targetTab = $(`#tab-${tabId}`);
+
+        if ($targetTab.length === 0) {
+          console.error(`❌ Onglet #tab-${tabId} introuvable dans le DOM`);
+          return;
+        }
+
+        $targetTab.addClass("active").show();
+
+        // FORCE BRUTALE CSS pour l'onglet tarifs Experience
+        if (tabId === "exp-rates") {
+          $targetTab.css({
+            display: "block !important",
+            visibility: "visible !important",
+            opacity: "1 !important",
+          });
+          console.log("🔧 CSS FORCE appliqué à #tab-exp-rates");
+        }
+
+        console.log(
+          `✅ Onglet ${tabId} activé - Visible: ${$targetTab.is(":visible")}`,
+        );
+
+        // Si c'est l'onglet tarifs Experience, forcer le rendu du contenu
+        if (tabId === "exp-rates") {
+          console.log("🎯 Onglet Tarifs Experience activé - Force rendu");
+
+          // Force immédiate de la visibilité CSS
+          $targetTab.css({
+            display: "block !important",
+            visibility: "visible !important",
+            opacity: "1 !important",
+          });
+
+          setTimeout(() => {
+            const $wrapper = $("#wrapper-exp_types_de_tarifs");
+            console.log("🔍 Wrapper tarifs trouvé:", $wrapper.length);
+
+            // Force la visibilité du wrapper
+            $wrapper.css({
+              display: "block !important",
+              visibility: "visible !important",
+              opacity: "1 !important",
+            });
+
+            if ($wrapper.children().length === 0) {
+              console.warn("⚠️ Contenu tarifs vide, rendu par défaut...");
+              // Instance directe au lieu de window reference
+              this.renderTarifsRepeater([
+                {
+                  exp_type: "unique",
+                  exp_type_custom: "",
+                  exp_tarifs_lignes: [],
+                  exp_options_tarifaires: [],
+                  "exp-frais-fixes": [],
+                },
+              ]);
+
+              // Initialiser les événements tarifs
+              this.bindTarifsEvents();
+            } else {
+              console.log(
+                "✅ Contenu tarifs déjà présent:",
+                $wrapper.children().length,
+                "éléments",
+              );
+            }
+          }, 100);
+        }
       });
 
       // === GESTION IMAGES ===
@@ -341,7 +433,7 @@
         $("#pc-experience-modal-details").show();
       } else {
         // Mode édition : charger les détails
-        $("#pc-experience-modal-title").text("Édition expérience");
+        $("#pc-experience-modal-title").text("Chargement...");
         $("#pc-experience-modal-loading").show();
         $("#pc-experience-modal-details").hide();
         this.loadDetails(id);
@@ -382,6 +474,14 @@
 
     populateForm(experience) {
       console.log("🔍 Données pour peuplement :", experience);
+
+      // 🔧 MISE À JOUR DU TITRE DE LA MODALE
+      const experienceTitle =
+        experience.title ||
+        experience.post_title ||
+        experience.exp_h1_custom ||
+        "Expérience";
+      $("#pc-experience-modal-title").text(experienceTitle);
 
       // === 1. ONGLET SEO & LIAISONS ===
       $("#exp_exclude_sitemap").prop(
@@ -456,53 +556,49 @@
       );
       $("#exp_service_a_prevoir").val(experience.exp_service_a_prevoir || "");
 
-      // === 6. ONGLET GALERIE (Correction IDs) ===
-      let galleryIds = "";
-      // Si on reçoit un tableau d'objets (format ACF standard pour galerie)
-      if (Array.isArray(experience.photos_experience)) {
-        galleryIds = experience.photos_experience
-          .map((photo) => photo.ID || photo.id || photo) // Récupère l'ID qu'il soit objet ou int
-          .filter((id) => id && typeof id !== "object") // Garde seulement les valeurs scalaires
-          .join(",");
-
-        // Petit feedback visuel
-        if (experience.photos_experience.length > 0) {
-          $("#photos-experience-preview .pc-gallery-placeholder").html(
-            `✅ <strong>${experience.photos_experience.length} images</strong> chargées (Sauvegardez pour voir les miniatures)`,
-          );
-        }
-      } else {
-        // Si c'est déjà une string (rare mais possible)
-        galleryIds = experience.photos_experience || "";
-      }
-      $("#photos_experience").val(galleryIds);
+      // === 6. ONGLET GALERIE (Affichage des miniatures) ===
+      this.renderGalleryPreview(experience.photos_experience || []);
 
       // === 7. ONGLET FAQ ===
       this.renderFaqRepeater(experience.exp_faq || []);
 
-      // === 8. ONGLET TARIFS ===
-      this.renderTarifsRepeater(experience.exp_types_de_tarifs || []);
+      // === 8. 🛡️ ONGLET TARIFS (BLOC SÉCURISÉ) ===
+      try {
+        // 🔧 SÉCURITÉ ANTI-CRASH : Force les données à être des tableaux
+        const tarifsData = experience.exp_types_de_tarifs || [];
+        console.log("🔍 Rendu Tarifs avec", tarifsData.length, "éléments");
 
-      // === 9. ONGLET RÈGLES & PAIEMENT ===
-      $("#taux_tva").val(experience.taux_tva || "");
-      $("#pc_pay_mode").val(experience.pc_pay_mode || "acompte_plus_solde");
-      $("#pc_deposit_type").val(experience.pc_deposit_type || "pourcentage");
-      $("#pc_deposit_value").val(experience.pc_deposit_value || "");
-      $("#pc_balance_delay_days").val(experience.pc_balance_delay_days || "");
-      $("#pc_caution_amount").val(experience.pc_caution_amount || "");
-      $("#pc_caution_mode").val(experience.pc_caution_mode || "aucune");
+        this.renderTarifsRepeater(tarifsData);
 
-      // === 10. RATE MANAGER ===
-      if (this.rateManager) {
-        this.rateManager.init(
-          "pc-rates-calendar",
-          {
-            seasons: experience.seasons_data || [],
-            promos: experience.promos_data || [],
-          },
-          0,
+        // 🔧 Champ TVA (hérité du JSON ACF)
+        $("#exp_taux_tva").val(experience.taux_tva || "");
+
+        // 🔧 Initialisation Rate Manager (Calendrier)
+        if (this.rateManager) {
+          this.rateManager.init(
+            "pc-experience-rates-calendar",
+            {
+              seasons: experience.seasons_data || [],
+              promos: experience.promos_data || [],
+            },
+            0,
+          );
+        }
+      } catch (error) {
+        console.error("❌ Erreur onglet Tarifs:", error);
+        // Fallback : Interface minimale
+        $("#wrapper-exp_types_de_tarifs").html(
+          '<p class="pc-error">Erreur lors du chargement des tarifs. Veuillez recharger la page.</p>',
         );
       }
+
+      // === 9. ONGLET RÈGLES & PAIEMENT ===
+      $("#exp_pay_mode").val(experience.pc_pay_mode || "acompte_plus_solde");
+      $("#exp_deposit_type").val(experience.pc_deposit_type || "pourcentage");
+      $("#exp_deposit_value").val(experience.pc_deposit_value || "");
+      $("#exp_balance_delay_days").val(experience.pc_balance_delay_days || "");
+      $("#exp_caution_amount").val(experience.pc_caution_amount || "");
+      $("#exp_caution_mode").val(experience.pc_caution_mode || "aucune");
     }
 
     resetForm() {
@@ -514,9 +610,9 @@
       // Reset checkboxes
       $("#experience-modal input[type='checkbox']").prop("checked", false);
 
-      // Reset selects aux valeurs par défaut
-      $("#pc_pay_mode").val("acompte_plus_solde");
-      $("#pc_deposit_type").val("pourcentage");
+      // Reset selects aux valeurs par défaut (nouveaux IDs)
+      $("#exp_pay_mode").val("acompte_plus_solde");
+      $("#exp_deposit_type").val("pourcentage");
 
       // Reset images
       this.resetImageField("exp_hero_desktop");
@@ -620,13 +716,13 @@
           "#exp_heure_limite_de_commande",
         ).val(),
 
-        // Paiement (Pas de préfixe exp_ sur ces clés ID)
-        acf_taux_tva: $("#taux_tva").val(),
-        acf_pc_pay_mode: $("#pc_pay_mode").val(),
-        acf_pc_deposit_type: $("#pc_deposit_type").val(),
-        acf_pc_deposit_value: $("#pc_deposit_value").val(),
-        acf_pc_balance_delay_days: $("#pc_balance_delay_days").val(),
-        acf_pc_caution_amount: $("#pc_caution_amount").val(),
+        // Paiement (Nouveaux IDs avec préfixe exp_)
+        acf_taux_tva: $("#exp_taux_tva").val(),
+        acf_pc_pay_mode: $("#exp_pay_mode").val(),
+        acf_pc_deposit_type: $("#exp_deposit_type").val(),
+        acf_pc_deposit_value: $("#exp_deposit_value").val(),
+        acf_pc_balance_delay_days: $("#exp_balance_delay_days").val(),
+        acf_pc_caution_amount: $("#exp_caution_amount").val(),
 
         // Images
         acf_exp_hero_desktop: $("#exp_hero_desktop").val(),
@@ -637,7 +733,10 @@
         acf_exp_periodes_fermeture: this.collectFermetureData(),
         acf_exp_faq: this.collectFaqData(), // Ajout FAQ
 
-        // Rate Manager
+        // 🔧 TARIFS CRITIQUES : Repeater exp_types_de_tarifs (Source de vérité du JSON ACF)
+        acf_exp_types_de_tarifs: this.collectTarifsData(),
+
+        // Rate Manager (Calendrier)
         rate_manager_data: this.rateManager
           ? JSON.stringify(this.rateManager.getData())
           : "{}",
@@ -838,20 +937,48 @@
     }
 
     renderTarifsRepeater(items) {
+      console.log("🔄 renderTarifsRepeater appelé avec:", items);
+
       const $wrapper = $("#wrapper-exp_types_de_tarifs");
+
+      // SÉCURITÉ : Vérifier que l'élément existe
+      if ($wrapper.length === 0) {
+        console.error("❌ Élément #wrapper-exp_types_de_tarifs introuvable");
+        return;
+      }
+
       $wrapper.empty();
 
-      if (!items) items = [];
+      // Initialiser les items si undefined
+      if (!items || !Array.isArray(items)) {
+        items = [];
+      }
+
+      // Si aucun item, ajouter un item par défaut
+      if (items.length === 0) {
+        items = [
+          {
+            exp_type: "unique",
+            exp_type_custom: "",
+            exp_options_tarifaires: [],
+            "exp-frais-fixes": [],
+            exp_tarifs_lignes: [],
+          },
+        ];
+      }
+
+      console.log(`📝 Rendu de ${items.length} tarifs`);
 
       items.forEach((item, index) => {
         const type = item.exp_type || "unique";
         const labelCustom = this.escapeHtml(item.exp_type_custom || "");
+        const showCustomField = type === "custom";
 
         const html = `
-          <div class="pc-repeater-row" data-index="${index}" style="border:1px solid #e2e8f0; padding:15px; margin-bottom:15px; border-radius:8px; background:#fff;">
+          <div class="pc-repeater-row" data-index="${index}" style="border:2px solid #e2e8f0; padding:20px; margin-bottom:20px; border-radius:12px; background:#fff;">
             <div class="pc-form-grid">
               <div class="pc-form-group">
-                <label>Type de tarif</label>
+                <label><strong>Type de tarif</strong></label>
                 <select class="pc-select tarif-type">
                     <option value="unique" ${type === "unique" ? "selected" : ""}>Unique / Forfaitaire</option>
                     <option value="journee" ${type === "journee" ? "selected" : ""}>Journée</option>
@@ -861,64 +988,71 @@
                 </select>
               </div>
               
-              <div class="pc-form-group">
-                 <label>Nom (si personnalisé)</label>
-                 <input type="text" class="pc-input tarif-custom" value="${labelCustom}" placeholder="Ex: Soirée VIP">
+              <div class="pc-form-group tarif-custom-field" style="display: ${showCustomField ? "block" : "none"};">
+                 <label><strong>Nom personnalisé</strong></label>
+                 <input type="text" class="pc-input tarif-custom" value="${labelCustom}" placeholder="Ex: Soirée VIP" maxlength="60">
               </div>
 
-              <div class="pc-form-group">
-                <button type="button" class="pc-btn pc-btn-danger remove-tarif-row" style="margin-top: 25px;">
-                  <span>🗑️</span> Supprimer
+              <!-- Lignes de tarifs selon le JSON ACF -->
+              <div class="pc-form-group pc-form-group--full" style="margin-top: 20px;">
+                <label><strong>💰 Lignes de tarifs</strong></label>
+                <div class="tarifs-lignes-container" data-tarif-index="${index}">
+                  <!-- Généré dynamiquement -->
+                </div>
+                <button type="button" class="pc-btn pc-btn-sm pc-btn-secondary add-ligne-tarif" data-tarif-index="${index}">
+                  <span>➕</span> Ajouter une ligne de tarif
+                </button>
+              </div>
+
+              <!-- Options tarifaires selon le JSON ACF -->
+              <div class="pc-form-group pc-form-group--full" style="margin-top: 20px;">
+                <label><strong>⭐ Options tarifaires</strong></label>
+                <div class="options-tarifaires-container" data-tarif-index="${index}">
+                  <!-- Généré dynamiquement -->
+                </div>
+                <button type="button" class="pc-btn pc-btn-sm pc-btn-secondary add-option-tarifaire" data-tarif-index="${index}">
+                  <span>➕</span> Ajouter une option
+                </button>
+              </div>
+
+              <!-- Frais fixes selon le JSON ACF -->
+              <div class="pc-form-group pc-form-group--full" style="margin-top: 20px;">
+                <label><strong>🏷️ Frais fixes</strong></label>
+                <div class="frais-fixes-container" data-tarif-index="${index}">
+                  <!-- Généré dynamiquement -->
+                </div>
+                <button type="button" class="pc-btn pc-btn-sm pc-btn-secondary add-frais-fixe" data-tarif-index="${index}">
+                  <span>➕</span> Ajouter un frais fixe
+                </button>
+              </div>
+
+              <div class="pc-form-group" style="text-align: right; margin-top: 20px;">
+                <button type="button" class="pc-btn pc-btn-danger remove-tarif-row">
+                  <span>🗑️</span> Supprimer ce type de tarif
                 </button>
               </div>
             </div>
           </div>
         `;
         $wrapper.append(html);
+
+        // Remplir les sous-repeaters
+        this.renderLignesTarifs(index, item.exp_tarifs_lignes || []);
+        this.renderOptionsTarifaires(index, item.exp_options_tarifaires || []);
+        this.renderFraisFixes(index, item["exp-frais-fixes"] || []);
       });
 
+      // Bouton d'ajout général
       $wrapper.append(`
-        <button type="button" class="pc-btn pc-btn-secondary add-tarif-row">
+        <button type="button" class="pc-btn pc-btn-primary add-tarif-row">
           <span>➕</span> Ajouter un type de tarif
         </button>
       `);
 
-      // Gestionnaire d'ajout
-      $(".add-tarif-row")
-        .off("click")
-        .on("click", () => {
-          const index = Date.now();
-          const html = `
-          <div class="pc-repeater-row" data-index="${index}" style="border:1px solid #e2e8f0; padding:15px; margin-bottom:15px; border-radius:8px; background:#fff;">
-            <div class="pc-form-grid">
-              <div class="pc-form-group">
-                <label>Type de tarif</label>
-                <select class="pc-select tarif-type">
-                    <option value="unique">Unique / Forfaitaire</option>
-                    <option value="journee">Journée</option>
-                    <option value="demi-journee">Demi-journée</option>
-                    <option value="sur-devis">Sur Devis</option>
-                    <option value="custom">Personnalisé</option>
-                </select>
-              </div>
-              <div class="pc-form-group">
-                 <label>Nom (si personnalisé)</label>
-                 <input type="text" class="pc-input tarif-custom" placeholder="Ex: Soirée VIP">
-              </div>
-              <div class="pc-form-group">
-                <button type="button" class="pc-btn pc-btn-danger remove-tarif-row" style="margin-top: 25px;"><span>🗑️</span> Supprimer</button>
-              </div>
-            </div>
-          </div>`;
-          $(".add-tarif-row").before(html);
-        });
+      // Attacher les gestionnaires d'événements
+      this.bindTarifsEvents();
 
-      // Gestionnaire de suppression
-      $(document)
-        .off("click", ".remove-tarif-row")
-        .on("click", ".remove-tarif-row", function () {
-          $(this).closest(".pc-repeater-row").remove();
-        });
+      console.log("✅ renderTarifsRepeater terminé avec succès");
     }
 
     // === HELPERS REPEATERS ===
@@ -1057,6 +1191,180 @@
       return data;
     }
 
+    // === 🔧 FONCTION CRITIQUE : COLLECTE DES TARIFS ===
+    collectTarifsData() {
+      const data = [];
+      $("#wrapper-exp_types_de_tarifs .pc-repeater-row").each((index, row) => {
+        const $row = $(row);
+        const tarifIndex = $row.data("index");
+
+        // 🔧 Clés exactes du JSON ACF avec TOUS les sous-repeaters
+        const item = {
+          exp_type: $row.find(".tarif-type").val() || "unique",
+          exp_type_custom: $row.find(".tarif-custom").val() || "",
+          // Collecte des sous-repeaters
+          exp_tarifs_lignes: this.collectLignesTarifs(tarifIndex),
+          exp_options_tarifaires: this.collectOptionsTarifaires(tarifIndex),
+          "exp-frais-fixes": this.collectFraisFixes(tarifIndex),
+        };
+
+        // On ajoute toujours l'item (même vide) pour maintenir la structure ACF
+        data.push(item);
+      });
+
+      console.log("🔍 Collecte Tarifs complète:", data);
+      return data;
+    }
+
+    // === 🔧 COLLECTE DES SOUS-REPEATERS TARIFS ===
+
+    /**
+     * Collecte les lignes de tarifs pour un type de tarif donné
+     */
+    collectLignesTarifs(tarifIndex) {
+      const data = [];
+      $(
+        `.tarifs-lignes-container[data-tarif-index="${tarifIndex}"] .ligne-tarif-row`,
+      ).each((index, row) => {
+        const $row = $(row);
+        const item = {
+          type_ligne: $row.find(".ligne-type").val() || "personnalise",
+          tarif_valeur: parseFloat($row.find(".ligne-tarif-valeur").val()) || 0,
+          tarif_enable_qty: $row.find(".ligne-enable-qty").is(":checked"),
+          tarif_nom_perso: $row.find(".ligne-nom-precision").val() || "",
+          tarif_observation: $row.find(".ligne-observation").val() || "",
+        };
+
+        // Ajouter seulement si au moins un champ est rempli
+        if (item.type_ligne || item.tarif_valeur || item.tarif_nom_perso) {
+          data.push(item);
+        }
+      });
+      return data;
+    }
+
+    /**
+     * Collecte les options tarifaires pour un type de tarif donné
+     */
+    collectOptionsTarifaires(tarifIndex) {
+      const data = [];
+      $(
+        `.options-tarifaires-container[data-tarif-index="${tarifIndex}"] .option-tarifaire-row`,
+      ).each((index, row) => {
+        const $row = $(row);
+        const item = {
+          exp_description_option: $row.find(".option-description").val() || "",
+          exp_tarif_option: parseFloat($row.find(".option-tarif").val()) || 0,
+          option_enable_qty: $row.find(".option-enable-qty").is(":checked"),
+        };
+
+        // Ajouter seulement si au moins un champ est rempli
+        if (item.exp_description_option || item.exp_tarif_option) {
+          data.push(item);
+        }
+      });
+      return data;
+    }
+
+    /**
+     * Collecte les frais fixes pour un type de tarif donné
+     */
+    collectFraisFixes(tarifIndex) {
+      const data = [];
+      $(
+        `.frais-fixes-container[data-tarif-index="${tarifIndex}"] .frais-fixe-row`,
+      ).each((index, row) => {
+        const $row = $(row);
+        const item = {
+          exp_description_frais_fixe:
+            $row.find(".frais-description").val() || "",
+          exp_tarif_frais_fixe:
+            parseFloat($row.find(".frais-tarif").val()) || 0,
+        };
+
+        // Ajouter seulement si au moins un champ est rempli
+        if (item.exp_description_frais_fixe || item.exp_tarif_frais_fixe) {
+          data.push(item);
+        }
+      });
+      return data;
+    }
+
+    /**
+     * Ajoute un nouveau type de tarif
+     */
+    addTarifType() {
+      const $wrapper = $("#wrapper-exp_types_de_tarifs");
+      const newIndex = Date.now();
+
+      const html = `
+        <div class="pc-repeater-row" data-index="${newIndex}" style="border:2px solid #e2e8f0; padding:20px; margin-bottom:20px; border-radius:12px; background:#fff;">
+          <div class="pc-form-grid">
+            <div class="pc-form-group">
+              <label><strong>Type de tarif</strong></label>
+              <select class="pc-select tarif-type">
+                  <option value="unique" selected>Unique / Forfaitaire</option>
+                  <option value="journee">Journée</option>
+                  <option value="demi-journee">Demi-journée</option>
+                  <option value="sur-devis">Sur Devis</option>
+                  <option value="custom">Personnalisé</option>
+              </select>
+            </div>
+            
+            <div class="pc-form-group tarif-custom-field" style="display: none;">
+               <label><strong>Nom personnalisé</strong></label>
+               <input type="text" class="pc-input tarif-custom" placeholder="Ex: Soirée VIP" maxlength="60">
+            </div>
+
+            <!-- Lignes de tarifs selon le JSON ACF -->
+            <div class="pc-form-group pc-form-group--full" style="margin-top: 20px;">
+              <label><strong>💰 Lignes de tarifs</strong></label>
+              <div class="tarifs-lignes-container" data-tarif-index="${newIndex}">
+                <!-- Généré dynamiquement -->
+              </div>
+              <button type="button" class="pc-btn pc-btn-sm pc-btn-secondary add-ligne-tarif" data-tarif-index="${newIndex}">
+                <span>➕</span> Ajouter une ligne de tarif
+              </button>
+            </div>
+
+            <!-- Options tarifaires selon le JSON ACF -->
+            <div class="pc-form-group pc-form-group--full" style="margin-top: 20px;">
+              <label><strong>⭐ Options tarifaires</strong></label>
+              <div class="options-tarifaires-container" data-tarif-index="${newIndex}">
+                <!-- Généré dynamiquement -->
+              </div>
+              <button type="button" class="pc-btn pc-btn-sm pc-btn-secondary add-option-tarifaire" data-tarif-index="${newIndex}">
+                <span>➕</span> Ajouter une option
+              </button>
+            </div>
+
+            <!-- Frais fixes selon le JSON ACF -->
+            <div class="pc-form-group pc-form-group--full" style="margin-top: 20px;">
+              <label><strong>🏷️ Frais fixes</strong></label>
+              <div class="frais-fixes-container" data-tarif-index="${newIndex}">
+                <!-- Généré dynamiquement -->
+              </div>
+              <button type="button" class="pc-btn pc-btn-sm pc-btn-secondary add-frais-fixe" data-tarif-index="${newIndex}">
+                <span>➕</span> Ajouter un frais fixe
+              </button>
+            </div>
+
+            <div class="pc-form-group" style="text-align: right; margin-top: 20px;">
+              <button type="button" class="pc-btn pc-btn-danger remove-tarif-row">
+                <span>🗑️</span> Supprimer ce type de tarif
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Insérer avant le bouton d'ajout général
+      $(".add-tarif-row").last().before(html);
+
+      // Re-attacher les événements pour le nouveau row
+      this.bindTarifsEvents();
+    }
+
     // === GESTION DES CHECKBOXES ARRAY ===
     populateCheckboxArray(name, values) {
       // Décocher toutes les checkboxes d'abord
@@ -1083,13 +1391,127 @@
       return values;
     }
 
+    // === 🔧 NOUVELLE FONCTION : GALERIE D'IMAGES ===
+    /**
+     * Affiche les miniatures de la galerie dans l'interface
+     * @param {Array} galleryImages - Tableau d'objets images {id, url, thumbnail}
+     */
+    renderGalleryPreview(galleryImages) {
+      const $preview = $("#photos-experience-preview");
+      const $input = $("#photos_experience");
+
+      console.log("🖼️ renderGalleryPreview appelé avec:", galleryImages);
+
+      if (
+        !galleryImages ||
+        !Array.isArray(galleryImages) ||
+        galleryImages.length === 0
+      ) {
+        // Aucune image : afficher le placeholder
+        $preview.html(`
+          <div class="pc-gallery-placeholder">
+            📷 Aucune photo sélectionnée - Ajoutez jusqu'à 5 photos
+          </div>
+        `);
+        $input.val("");
+        return;
+      }
+
+      // Construire le HTML des miniatures
+      let galleryHtml = '<div class="pc-gallery-grid">';
+      const imageIds = [];
+
+      galleryImages.forEach((image, index) => {
+        const imageId = image.id;
+        const imageUrl = image.url || image.thumbnail || "";
+        const thumbnailUrl = image.thumbnail || image.url || "";
+
+        if (imageId) {
+          imageIds.push(imageId);
+        }
+
+        galleryHtml += `
+          <div class="pc-gallery-item" data-image-id="${imageId || ""}">
+            <div class="pc-gallery-thumb">
+              <img src="${thumbnailUrl}" alt="Photo ${index + 1}" 
+                   style="width: 100%; height: 80px; object-fit: cover; border-radius: 4px;"
+                   onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNSAyNUg1NUM0OC4zNzMzIDQxLjY2NjcgMzcuNjI2NyA0MS42NjY3IDMwIDQxLjY2NjdWNTVIMjVWMjVaIiBmaWxsPSIjOTRBM0I4Ii8+Cjwvc3ZnPgo='">
+            </div>
+            <div class="pc-gallery-info">
+              <small>Photo ${index + 1}</small>
+              ${imageId ? `<small>ID: ${imageId}</small>` : ""}
+            </div>
+          </div>
+        `;
+      });
+
+      galleryHtml += "</div>";
+
+      // Ajouter le message de statut
+      galleryHtml += `
+        <div class="pc-gallery-status">
+          ✅ <strong>${galleryImages.length} image${galleryImages.length > 1 ? "s" : ""}</strong> dans la galerie
+          ${galleryImages.length >= 5 ? " (Maximum atteint)" : ""}
+        </div>
+      `;
+
+      // Injecter dans le DOM
+      $preview.html(galleryHtml);
+
+      // Stocker les IDs dans l'input caché pour la sauvegarde
+      $input.val(imageIds.join(","));
+
+      console.log(
+        "✅ Galerie rendue avec",
+        galleryImages.length,
+        "images, IDs:",
+        imageIds.join(","),
+      );
+    }
+
     // === GESTION DES IMAGES ===
     populateImageField(target, value) {
       if (!value) return;
 
-      const $preview = $(`#preview-${target}`);
+      // 🔧 FIX : Conversion des underscores en tirets pour les IDs HTML
+      const targetForHtml = target.replace(/_/g, "-");
+      const $preview = $(`#preview-${targetForHtml}`);
       const $input = $(`#${target}`);
-      const $removeBtn = $(`.pc-btn-remove-image[data-target="${target}"]`);
+      const $removeBtn = $(
+        `.pc-btn-remove-image[data-target="${targetForHtml}"]`,
+      );
+
+      console.log(`🖼️ populateImageField pour ${target}:`, value);
+
+      // 🔧 NOUVEAU : Gestion des objets {id, url, type} retournés par le PHP
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
+        const imageId = value.id;
+        const imageUrl = value.url;
+
+        // Stocker l'ID dans l'input caché (priorité à l'ID si disponible)
+        if (imageId) {
+          $input.val(imageId);
+        } else if (imageUrl) {
+          $input.val(imageUrl);
+        }
+
+        // Afficher l'aperçu avec l'URL
+        if (imageUrl) {
+          $preview.html(
+            `<img src="${imageUrl}" alt="Image" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">`,
+          );
+          $removeBtn.show();
+        } else {
+          $preview.html(
+            `<div class="pc-image-placeholder">📷 Image #${imageId} (URL non disponible)</div>`,
+          );
+        }
+        return;
+      }
 
       // Si c'est un ID numérique, récupérer l'URL via WordPress
       if (/^\d+$/.test(value.toString().trim())) {
@@ -1130,9 +1552,13 @@
     }
 
     resetImageField(target) {
-      const $preview = $(`#preview-${target}`);
+      // 🔧 FIX : Même logique de conversion que dans populateImageField
+      const targetForHtml = target.replace(/_/g, "-");
+      const $preview = $(`#preview-${targetForHtml}`);
       const $input = $(`#${target}`);
-      const $removeBtn = $(`.pc-btn-remove-image[data-target="${target}"]`);
+      const $removeBtn = $(
+        `.pc-btn-remove-image[data-target="${targetForHtml}"]`,
+      );
 
       const defaultText = target.includes("mobile")
         ? "📱 Aucune image sélectionnée"
@@ -1239,6 +1665,356 @@
         "'": "&#039;",
       };
       return text.toString().replace(/[&<>"']/g, (m) => map[m]);
+    }
+
+    // === 🔧 FONCTIONS TARIFS - SOUS-REPEATERS SELON JSON ACF ===
+
+    /**
+     * Rend les lignes de tarifs pour un type de tarif donné
+     * Basé sur le sous-repeater exp_tarifs_lignes du JSON ACF
+     */
+    renderLignesTarifs(tarifIndex, lignes) {
+      const $container = $(
+        `.tarifs-lignes-container[data-tarif-index="${tarifIndex}"]`,
+      );
+      $container.empty();
+
+      if (!lignes || !Array.isArray(lignes)) lignes = [];
+
+      lignes.forEach((ligne, index) => {
+        const typeLigne = ligne.type_ligne || "personnalise";
+        const tarifValeur = ligne.tarif_valeur || "";
+        const enableQty = ligne.tarif_enable_qty || false;
+        const precisionAge =
+          ligne.precision_age_enfant || ligne.precision_age_bebe || "";
+        const nomPerso = ligne.tarif_nom_perso || "";
+        const observation = ligne.tarif_observation || "";
+
+        const html = `
+          <div class="ligne-tarif-row" data-ligne-index="${index}" style="border:1px solid #cbd5e0; padding:10px; margin-bottom:10px; border-radius:6px; background:#f8fafc;">
+            <div class="pc-form-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; gap:10px;">
+              <div class="pc-form-group">
+                <label>Type</label>
+                <select class="pc-select ligne-type">
+                  <option value="adulte" ${typeLigne === "adulte" ? "selected" : ""}>Adulte</option>
+                  <option value="enfant" ${typeLigne === "enfant" ? "selected" : ""}>Enfant</option>
+                  <option value="bebe" ${typeLigne === "bebe" ? "selected" : ""}>Bébé</option>
+                  <option value="personnalise" ${typeLigne === "personnalise" ? "selected" : ""}>Personnalisé</option>
+                </select>
+              </div>
+              
+              <div class="pc-form-group">
+                <label>Tarif (€)</label>
+                <input type="number" class="pc-input ligne-tarif-valeur" value="${tarifValeur}" min="0" step="0.01" placeholder="0.00">
+              </div>
+              
+              <div class="pc-form-group">
+                <label>
+                  <input type="checkbox" class="ligne-enable-qty" ${enableQty ? "checked" : ""}> 
+                  Quantité?
+                </label>
+              </div>
+              
+              <div class="pc-form-group">
+                <button type="button" class="pc-btn pc-btn-sm pc-btn-danger remove-ligne-tarif">
+                  <span>🗑️</span>
+                </button>
+              </div>
+              
+              <div class="pc-form-group pc-form-group--full">
+                <label>Nom/Précision</label>
+                <input type="text" class="pc-input ligne-nom-precision" value="${this.escapeHtml(nomPerso || precisionAge)}" placeholder="Ex: 3-12 ans, Privatisation, etc.">
+              </div>
+              
+              <div class="pc-form-group pc-form-group--full">
+                <label>Observation</label>
+                <input type="text" class="pc-input ligne-observation" value="${this.escapeHtml(observation)}" placeholder="Ex: jusqu'à 12 pers">
+              </div>
+            </div>
+          </div>
+        `;
+        $container.append(html);
+      });
+    }
+
+    /**
+     * Rend les options tarifaires pour un type de tarif donné
+     * Basé sur le sous-repeater exp_options_tarifaires du JSON ACF
+     */
+    renderOptionsTarifaires(tarifIndex, options) {
+      const $container = $(
+        `.options-tarifaires-container[data-tarif-index="${tarifIndex}"]`,
+      );
+      $container.empty();
+
+      if (!options || !Array.isArray(options)) options = [];
+
+      options.forEach((option, index) => {
+        const description = option.exp_description_option || "";
+        const tarif = option.exp_tarif_option || "";
+        const enableQty = option.option_enable_qty || false;
+
+        const html = `
+          <div class="option-tarifaire-row" data-option-index="${index}" style="border:1px solid #cbd5e0; padding:10px; margin-bottom:10px; border-radius:6px; background:#fffbeb;">
+            <div class="pc-form-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr; gap:10px;">
+              <div class="pc-form-group">
+                <label>Description</label>
+                <input type="text" class="pc-input option-description" value="${this.escapeHtml(description)}" placeholder="Ex: Skipper professionnel">
+              </div>
+              
+              <div class="pc-form-group">
+                <label>Tarif (€)</label>
+                <input type="number" class="pc-input option-tarif" value="${tarif}" min="0" step="0.01" placeholder="0.00">
+              </div>
+              
+              <div class="pc-form-group">
+                <label>
+                  <input type="checkbox" class="option-enable-qty" ${enableQty ? "checked" : ""}> 
+                  Quantité?
+                </label>
+              </div>
+              
+              <div class="pc-form-group">
+                <button type="button" class="pc-btn pc-btn-sm pc-btn-danger remove-option-tarifaire">
+                  <span>🗑️</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        $container.append(html);
+      });
+    }
+
+    /**
+     * Rend les frais fixes pour un type de tarif donné
+     * Basé sur le sous-repeater exp-frais-fixes du JSON ACF
+     */
+    renderFraisFixes(tarifIndex, fraisFixes) {
+      const $container = $(
+        `.frais-fixes-container[data-tarif-index="${tarifIndex}"]`,
+      );
+      $container.empty();
+
+      if (!fraisFixes || !Array.isArray(fraisFixes)) fraisFixes = [];
+
+      fraisFixes.forEach((frais, index) => {
+        const description = frais.exp_description_frais_fixe || "";
+        const tarif = frais.exp_tarif_frais_fixe || "";
+
+        const html = `
+          <div class="frais-fixe-row" data-frais-index="${index}" style="border:1px solid #cbd5e0; padding:10px; margin-bottom:10px; border-radius:6px; background:#f0f9ff;">
+            <div class="pc-form-grid" style="grid-template-columns: 2fr 1fr 1fr; gap:10px;">
+              <div class="pc-form-group">
+                <label>Description</label>
+                <input type="text" class="pc-input frais-description" value="${this.escapeHtml(description)}" placeholder="Ex: Déplacement">
+              </div>
+              
+              <div class="pc-form-group">
+                <label>Montant (€)</label>
+                <input type="number" class="pc-input frais-tarif" value="${tarif}" min="0" step="0.01" placeholder="0.00">
+              </div>
+              
+              <div class="pc-form-group">
+                <button type="button" class="pc-btn pc-btn-sm pc-btn-danger remove-frais-fixe">
+                  <span>🗑️</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        $container.append(html);
+      });
+    }
+
+    /**
+     * Attache tous les gestionnaires d'événements pour les tarifs
+     */
+    bindTarifsEvents() {
+      // Affichage conditionnel du champ personnalisé
+      $(document)
+        .off("change", ".tarif-type")
+        .on("change", ".tarif-type", function () {
+          const $row = $(this).closest(".pc-repeater-row");
+          const showCustom = $(this).val() === "custom";
+          $row.find(".tarif-custom-field").toggle(showCustom);
+        });
+
+      // Ajouter/supprimer type de tarif principal
+      $(document)
+        .off("click", ".add-tarif-row")
+        .on("click", ".add-tarif-row", () => {
+          this.addTarifType();
+        });
+
+      $(document)
+        .off("click", ".remove-tarif-row")
+        .on("click", ".remove-tarif-row", function () {
+          $(this).closest(".pc-repeater-row").remove();
+        });
+
+      // Ajouter ligne de tarif
+      $(document)
+        .off("click", ".add-ligne-tarif")
+        .on("click", ".add-ligne-tarif", (e) => {
+          const tarifIndex = $(e.currentTarget).data("tarif-index");
+          this.addLigneTarif(tarifIndex);
+        });
+
+      // Supprimer ligne de tarif
+      $(document)
+        .off("click", ".remove-ligne-tarif")
+        .on("click", ".remove-ligne-tarif", function () {
+          $(this).closest(".ligne-tarif-row").remove();
+        });
+
+      // Ajouter option tarifaire
+      $(document)
+        .off("click", ".add-option-tarifaire")
+        .on("click", ".add-option-tarifaire", (e) => {
+          const tarifIndex = $(e.currentTarget).data("tarif-index");
+          this.addOptionTarifaire(tarifIndex);
+        });
+
+      // Supprimer option tarifaire
+      $(document)
+        .off("click", ".remove-option-tarifaire")
+        .on("click", ".remove-option-tarifaire", function () {
+          $(this).closest(".option-tarifaire-row").remove();
+        });
+
+      // Ajouter frais fixe
+      $(document)
+        .off("click", ".add-frais-fixe")
+        .on("click", ".add-frais-fixe", (e) => {
+          const tarifIndex = $(e.currentTarget).data("tarif-index");
+          this.addFraisFixe(tarifIndex);
+        });
+
+      // Supprimer frais fixe
+      $(document)
+        .off("click", ".remove-frais-fixe")
+        .on("click", ".remove-frais-fixe", function () {
+          $(this).closest(".frais-fixe-row").remove();
+        });
+    }
+
+    /**
+     * Ajoute une nouvelle ligne de tarif
+     */
+    addLigneTarif(tarifIndex) {
+      const $container = $(
+        `.tarifs-lignes-container[data-tarif-index="${tarifIndex}"]`,
+      );
+      const newIndex = Date.now();
+
+      const html = `
+        <div class="ligne-tarif-row" data-ligne-index="${newIndex}" style="border:1px solid #cbd5e0; padding:10px; margin-bottom:10px; border-radius:6px; background:#f8fafc;">
+          <div class="pc-form-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; gap:10px;">
+            <div class="pc-form-group">
+              <label>Type</label>
+              <select class="pc-select ligne-type">
+                <option value="adulte">Adulte</option>
+                <option value="enfant">Enfant</option>
+                <option value="bebe">Bébé</option>
+                <option value="personnalise" selected>Personnalisé</option>
+              </select>
+            </div>
+            <div class="pc-form-group">
+              <label>Tarif (€)</label>
+              <input type="number" class="pc-input ligne-tarif-valeur" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="pc-form-group">
+              <label>
+                <input type="checkbox" class="ligne-enable-qty"> 
+                Quantité?
+              </label>
+            </div>
+            <div class="pc-form-group">
+              <button type="button" class="pc-btn pc-btn-sm pc-btn-danger remove-ligne-tarif">
+                <span>🗑️</span>
+              </button>
+            </div>
+            <div class="pc-form-group pc-form-group--full">
+              <label>Nom/Précision</label>
+              <input type="text" class="pc-input ligne-nom-precision" placeholder="Ex: 3-12 ans, Privatisation, etc.">
+            </div>
+            <div class="pc-form-group pc-form-group--full">
+              <label>Observation</label>
+              <input type="text" class="pc-input ligne-observation" placeholder="Ex: jusqu'à 12 pers">
+            </div>
+          </div>
+        </div>
+      `;
+      $container.append(html);
+    }
+
+    /**
+     * Ajoute une nouvelle option tarifaire
+     */
+    addOptionTarifaire(tarifIndex) {
+      const $container = $(
+        `.options-tarifaires-container[data-tarif-index="${tarifIndex}"]`,
+      );
+      const newIndex = Date.now();
+
+      const html = `
+        <div class="option-tarifaire-row" data-option-index="${newIndex}" style="border:1px solid #cbd5e0; padding:10px; margin-bottom:10px; border-radius:6px; background:#fffbeb;">
+          <div class="pc-form-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr; gap:10px;">
+            <div class="pc-form-group">
+              <label>Description</label>
+              <input type="text" class="pc-input option-description" placeholder="Ex: Skipper professionnel">
+            </div>
+            <div class="pc-form-group">
+              <label>Tarif (€)</label>
+              <input type="number" class="pc-input option-tarif" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="pc-form-group">
+              <label>
+                <input type="checkbox" class="option-enable-qty"> 
+                Quantité?
+              </label>
+            </div>
+            <div class="pc-form-group">
+              <button type="button" class="pc-btn pc-btn-sm pc-btn-danger remove-option-tarifaire">
+                <span>🗑️</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      $container.append(html);
+    }
+
+    /**
+     * Ajoute un nouveau frais fixe
+     */
+    addFraisFixe(tarifIndex) {
+      const $container = $(
+        `.frais-fixes-container[data-tarif-index="${tarifIndex}"]`,
+      );
+      const newIndex = Date.now();
+
+      const html = `
+        <div class="frais-fixe-row" data-frais-index="${newIndex}" style="border:1px solid #cbd5e0; padding:10px; margin-bottom:10px; border-radius:6px; background:#f0f9ff;">
+          <div class="pc-form-grid" style="grid-template-columns: 2fr 1fr 1fr; gap:10px;">
+            <div class="pc-form-group">
+              <label>Description</label>
+              <input type="text" class="pc-input frais-description" placeholder="Ex: Déplacement">
+            </div>
+            <div class="pc-form-group">
+              <label>Montant (€)</label>
+              <input type="number" class="pc-input frais-tarif" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="pc-form-group">
+              <button type="button" class="pc-btn pc-btn-sm pc-btn-danger remove-frais-fixe">
+                <span>🗑️</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      $container.append(html);
     }
   }
 

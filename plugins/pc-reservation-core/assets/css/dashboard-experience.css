@@ -405,13 +405,13 @@
 }
 
 /* === PAGINATION === */
-.pc-pagination-wrapper {
+.pc-experience-manager .pc-pagination-wrapper {
   display: flex;
   justify-content: center;
   padding: 1rem 0;
 }
 
-.pc-pagination {
+.pc-experience-manager .pc-pagination {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -423,7 +423,7 @@
   box-shadow: var(--pc-experience-shadow);
 }
 
-.pc-pagination button {
+.pc-experience-manager .pc-pagination button {
   padding: 0.5rem 0.8rem;
   border: 1px solid var(--pc-experience-border);
   border-radius: 8px;
@@ -435,24 +435,24 @@
   min-width: 40px;
 }
 
-.pc-pagination button:hover {
+.pc-experience-manager .pc-pagination button:hover {
   background: var(--pc-experience-primary);
   color: white;
   border-color: var(--pc-experience-primary);
 }
 
-.pc-pagination button.active {
+.pc-experience-manager .pc-pagination button.active {
   background: var(--pc-experience-primary);
   color: white;
   border-color: var(--pc-experience-primary);
 }
 
-.pc-pagination button:disabled {
+.pc-experience-manager .pc-pagination button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.pc-pagination button:disabled:hover {
+.pc-experience-manager .pc-pagination button:disabled:hover {
   background: rgba(255, 255, 255, 0.8);
   color: #64748b;
   border-color: var(--pc-experience-border);
@@ -548,13 +548,108 @@
 .pc-modal-footer {
   padding: 1.5rem 2rem;
   border-top: 1px solid var(--pc-experience-border);
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   display: flex;
   justify-content: flex-end;
 }
 
+/* === ALIGNEMENT DU FOOTER EXPERIENCE SUR HOUSING === */
+.pc-experience-manager .pc-modal-footer {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--pc-experience-border);
+}
+
+.pc-experience-manager .pc-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.pc-experience-manager .pc-modal-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* === STYLES DES BOUTONS FOOTER === */
+.pc-experience-manager .pc-modal-footer .pc-btn {
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: var(--pc-experience-transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.pc-experience-manager .pc-modal-footer .pc-btn-danger {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.pc-experience-manager .pc-modal-footer .pc-btn-danger:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.pc-experience-manager .pc-modal-footer .pc-btn-secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+
+.pc-experience-manager .pc-modal-footer .pc-btn-secondary:hover {
+  background: rgba(248, 250, 252, 0.95);
+  color: #475569;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.1);
+}
+
+.pc-experience-manager .pc-modal-footer .pc-btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--pc-experience-primary) 0%,
+    var(--pc-experience-secondary) 100%
+  );
+  color: white;
+  border-color: var(--pc-experience-primary);
+}
+
+.pc-experience-manager .pc-modal-footer .pc-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* Spinners des boutons */
+.pc-experience-manager .pc-modal-footer .pc-btn.loading .pc-btn-text {
+  opacity: 0;
+}
+
+.pc-experience-manager .pc-modal-footer .pc-btn.loading .pc-btn-spinner {
+  display: flex !important;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.pc-experience-manager .pc-modal-footer .pc-btn {
+  position: relative;
+  overflow: hidden;
+}
+
 /* === NAVIGATION ONGLETS === */
-.pc-tabs-nav {
+.pc-experience-manager .pc-tabs-nav {
   display: flex;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 0.5rem 2rem;
@@ -568,26 +663,26 @@
 }
 
 /* Masquer la scrollbar pour webkit */
-.pc-tabs-nav::-webkit-scrollbar {
+.pc-experience-manager .pc-tabs-nav::-webkit-scrollbar {
   height: 6px;
 }
 
-.pc-tabs-nav::-webkit-scrollbar-track {
+.pc-experience-manager .pc-tabs-nav::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 
-.pc-tabs-nav::-webkit-scrollbar-thumb {
+.pc-experience-manager .pc-tabs-nav::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 3px;
   transition: background 0.3s ease;
 }
 
-.pc-tabs-nav::-webkit-scrollbar-thumb:hover {
+.pc-experience-manager .pc-tabs-nav::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
 
-.pc-tab-btn {
+.pc-experience-manager .pc-tab-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -610,7 +705,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.pc-tab-btn:hover {
+.pc-experience-manager .pc-tab-btn:hover {
   background: rgba(255, 255, 255, 0.4);
   color: #ffffff;
   transform: translateY(-2px);
@@ -618,7 +713,7 @@
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-.pc-tab-btn.active {
+.pc-experience-manager .pc-tab-btn.active {
   background: rgba(255, 255, 255, 0.95);
   color: var(--pc-experience-primary);
   border-color: rgba(255, 255, 255, 0.3);
@@ -627,34 +722,49 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-.pc-tab-icon {
+.pc-experience-manager .pc-tab-icon {
   font-size: 1.1rem;
 }
 
 /* === CONTENU ONGLETS === */
-.pc-tabs-content {
+.pc-experience-manager .pc-tabs-content {
   padding: 2.5rem;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   min-height: 400px;
 }
 
-.pc-tab-pane {
+.pc-experience-manager .pc-tab-pane {
   display: none;
 }
 
-.pc-tab-pane.active {
+.pc-experience-manager .pc-tab-pane.active {
   display: block;
   animation: fadeInUp 0.3s ease;
 }
 
 /* Nouvelles classes pour la structure actuelle */
-.pc-tab-content {
-  display: none;
+.pc-experience-manager .pc-tab-content {
+  display: none !important;
 }
 
-.pc-tab-content.active {
-  display: block;
+.pc-experience-manager .pc-tab-content.active {
+  display: block !important;
   animation: fadeInUp 0.3s ease;
+}
+
+/* FIX CRITIQUE : Force l'affichage de l'onglet Tarifs actif avec préfixe Experience */
+.pc-experience-manager #exp-tab-rates.active {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+}
+
+/* Assure que le wrapper tarifs Experience est visible */
+.pc-experience-manager #wrapper-exp_types_de_tarifs {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 @keyframes fadeInUp {
@@ -669,22 +779,22 @@
 }
 
 /* === FORMULAIRE === */
-.pc-form-grid {
+.pc-experience-manager .pc-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
 }
 
-.pc-form-group {
+.pc-experience-manager .pc-form-group {
   display: flex;
   flex-direction: column;
 }
 
-.pc-form-group--full {
+.pc-experience-manager .pc-form-group--full {
   grid-column: 1 / -1;
 }
 
-.pc-form-group label {
+.pc-experience-manager .pc-form-group label {
   margin-bottom: 0.75rem;
   font-weight: 700;
   color: #1e293b;
@@ -696,8 +806,8 @@
   gap: 0.5rem;
 }
 
-.pc-form-group .pc-input,
-.pc-form-group .pc-textarea {
+.pc-experience-manager .pc-form-group .pc-input,
+.pc-experience-manager .pc-form-group .pc-textarea {
   padding: 1rem 1.2rem;
   border: 2px solid transparent;
   border-radius: 12px;
@@ -712,7 +822,7 @@
 }
 
 /* Selects SANS backdrop-filter pour éviter les bugs de rendu */
-.pc-form-group .pc-select {
+.pc-experience-manager .pc-form-group .pc-select {
   padding: 1rem 1.2rem;
   border: 2px solid transparent;
   border-radius: 12px;
@@ -726,9 +836,9 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-.pc-form-group .pc-input:focus,
-.pc-form-group .pc-select:focus,
-.pc-form-group .pc-textarea:focus {
+.pc-experience-manager .pc-form-group .pc-input:focus,
+.pc-experience-manager .pc-form-group .pc-select:focus,
+.pc-experience-manager .pc-form-group .pc-textarea:focus {
   border-color: var(--pc-experience-primary);
   background: #ffffff;
   outline: none;
@@ -738,16 +848,16 @@
   transform: translateY(-1px);
 }
 
-.pc-form-group .pc-input:hover,
-.pc-form-group .pc-select:hover,
-.pc-form-group .pc-textarea:hover {
+.pc-experience-manager .pc-form-group .pc-input:hover,
+.pc-experience-manager .pc-form-group .pc-select:hover,
+.pc-experience-manager .pc-form-group .pc-textarea:hover {
   box-shadow:
     0 6px 15px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transform: translateY(-0.5px);
 }
 
-.pc-textarea {
+.pc-experience-manager .pc-textarea {
   resize: vertical;
   min-height: 120px;
   font-family: inherit;
@@ -881,6 +991,373 @@
   background: white;
   border-radius: 16px;
   /* Le style interne est géré par dashboard-rates.css */
+}
+
+/* =========================================
+   ONGLET TARIFS - STYLES SPÉCIFIQUES
+   ========================================= */
+
+/* --- WRAPPER PRINCIPAL TYPES DE TARIFS --- */
+#wrapper-exp_types_de_tarifs {
+  margin-top: 1.5rem;
+}
+
+#wrapper-exp_types_de_tarifs .pc-repeater-row {
+  border: 1px solid #e2e8f0;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+#wrapper-exp_types_de_tarifs .pc-repeater-row:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+}
+
+/* --- CHAMPS SPÉCIFIQUES TARIFS --- */
+.tarif-type,
+.tarif-custom {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: var(--pc-experience-transition);
+}
+
+.tarif-type:focus,
+.tarif-custom:focus {
+  border-color: var(--pc-experience-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* --- CHAMP TVA --- */
+#taux_tva {
+  padding: 1rem 1.2rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  transition: var(--pc-experience-transition);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+  color: #059669;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+#taux_tva:focus {
+  border-color: #059669;
+  background: #ffffff;
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(5, 150, 105, 0.15),
+    0 8px 25px rgba(5, 150, 105, 0.2);
+  transform: translateY(-1px);
+}
+
+/* --- BOUTONS TARIFS --- */
+.add-tarif-row {
+  background: linear-gradient(
+    135deg,
+    var(--pc-experience-primary) 0%,
+    var(--pc-experience-secondary) 100%
+  );
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--pc-experience-transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+  margin-top: 1rem;
+}
+
+.add-tarif-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+}
+
+.remove-tarif-row {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.remove-tarif-row:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+/* Icônes blanches pour tous les boutons de suppression */
+.remove-tarif-row span,
+.remove-ligne-tarif span,
+.remove-option-tarifaire span,
+.remove-frais-fixe span,
+.pc-btn-remove-item span,
+.remove-lieu-row span,
+.remove-fermeture-row span,
+.remove-faq-row span {
+  color: white !important;
+  font-size: 14px;
+  filter: brightness(0) invert(1);
+}
+
+/* --- MESSAGES D'ERREUR --- */
+.pc-error {
+  padding: 1rem 1.5rem;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pc-error::before {
+  content: "⚠️";
+  font-size: 1.2rem;
+}
+
+/* --- SOUS-REPEATERS TARIFS --- */
+
+/* Champ personnalisé conditionnel */
+.tarif-custom-field {
+  transition: var(--pc-experience-transition);
+  overflow: hidden;
+}
+
+/* Conteneurs des sous-repeaters */
+.tarifs-lignes-container,
+.options-tarifaires-container,
+.frais-fixes-container {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Lignes de tarifs */
+.ligne-tarif-row {
+  background: rgba(248, 250, 252, 0.8) !important;
+  border: 1px solid #cbd5e0 !important;
+  border-radius: 6px !important;
+  padding: 10px !important;
+  margin-bottom: 10px !important;
+  transition: var(--pc-experience-transition);
+}
+
+.ligne-tarif-row:hover {
+  background: rgba(241, 245, 249, 0.9) !important;
+  border-color: #94a3b8 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Options tarifaires */
+.option-tarifaire-row {
+  background: rgba(255, 251, 235, 0.8) !important;
+  border: 1px solid #cbd5e0 !important;
+  border-radius: 6px !important;
+  padding: 10px !important;
+  margin-bottom: 10px !important;
+  transition: var(--pc-experience-transition);
+}
+
+.option-tarifaire-row:hover {
+  background: rgba(254, 243, 199, 0.9) !important;
+  border-color: #fbbf24 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.1);
+}
+
+/* Frais fixes */
+.frais-fixe-row {
+  background: rgba(240, 249, 255, 0.8) !important;
+  border: 1px solid #cbd5e0 !important;
+  border-radius: 6px !important;
+  padding: 10px !important;
+  margin-bottom: 10px !important;
+  transition: var(--pc-experience-transition);
+}
+
+.frais-fixe-row:hover {
+  background: rgba(224, 242, 254, 0.9) !important;
+  border-color: #60a5fa !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(96, 165, 250, 0.1);
+}
+
+/* Boutons spécifiques aux sous-repeaters */
+.add-ligne-tarif,
+.add-option-tarifaire,
+.add-frais-fixe {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--pc-experience-transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.add-ligne-tarif:hover,
+.add-option-tarifaire:hover,
+.add-frais-fixe:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.remove-ligne-tarif,
+.remove-option-tarifaire,
+.remove-frais-fixe {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 36px;
+  height: 36px;
+  justify-content: center;
+}
+
+.remove-ligne-tarif:hover,
+.remove-option-tarifaire:hover,
+.remove-frais-fixe:hover {
+  background: #dc2626;
+  transform: scale(1.05);
+}
+
+/* Champs des sous-repeaters */
+.ligne-type,
+.ligne-tarif-valeur,
+.ligne-nom-precision,
+.ligne-observation,
+.option-description,
+.option-tarif,
+.frais-description,
+.frais-tarif {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: var(--pc-experience-transition);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ligne-type:focus,
+.ligne-tarif-valeur:focus,
+.ligne-nom-precision:focus,
+.ligne-observation:focus,
+.option-description:focus,
+.option-tarif:focus,
+.frais-description:focus,
+.frais-tarif:focus {
+  border-color: var(--pc-experience-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+/* Checkboxes des sous-repeaters */
+.ligne-enable-qty,
+.option-enable-qty {
+  width: auto !important;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+/* Labels des sous-repeaters */
+.ligne-tarif-row label,
+.option-tarifaire-row label,
+.frais-fixe-row label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* --- SECTION TVA & RATE MANAGER --- */
+.pc-tarifs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.pc-tva-section {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.1);
+}
+
+.pc-tva-section h4 {
+  margin: 0 0 1rem 0;
+  color: #059669;
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pc-rate-manager-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.pc-rate-manager-section h4 {
+  margin: 0 0 1rem 0;
+  color: var(--pc-experience-primary);
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* =========================================

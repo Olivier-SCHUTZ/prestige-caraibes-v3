@@ -386,22 +386,19 @@ class PCR_Experience_Manager
 
     /**
      * Retourne les détails complets d'une expérience avec tous les champs mappés.
-     * 
-     * @param int $post_id ID du post
+     * Version CORRIGÉE pour Rate Manager et Repeaters.
+     * * @param int $post_id ID du post
      * @return array|false
      */
     public static function get_experience_details($post_id)
     {
         $post_id = (int) $post_id;
-        if ($post_id <= 0) {
-            return false;
-        }
+        if ($post_id <= 0) return false;
 
         $post = get_post($post_id);
-        if (!$post || $post->post_type !== 'experience') {
-            return false;
-        }
+        if (!$post || $post->post_type !== 'experience') return false;
 
+        // 1. Données de base WP
         $details = [
             'id' => $post_id,
             'title' => $post->post_title,
@@ -414,27 +411,119 @@ class PCR_Experience_Manager
             'date_modified' => $post->post_modified,
         ];
 
-        // Chargement de tous les champs ACF mappés
+        // 2. Chargement via Mapping ACF (Code existant amélioré)
         if (function_exists('get_field')) {
             $mapped_fields = self::get_mapped_fields();
 
             foreach ($mapped_fields as $normalized_key => $meta_key) {
                 $value = get_field($meta_key, $post_id);
-
-                // Traitement spécifique selon le type de champ
+                // On utilise ta fonction de process interne
                 $details[$normalized_key] = self::process_field_value($normalized_key, $value);
             }
         } else {
-            // Fallback sans ACF : on charge ce qu'on peut via get_post_meta
-            error_log('[PCR Experience Manager] ACF non disponible, fallback vers get_post_meta');
+            // Fallback (rare)
             $mapped_fields = self::get_mapped_fields();
-
             foreach ($mapped_fields as $normalized_key => $meta_key) {
                 $details[$normalized_key] = get_post_meta($post_id, $meta_key, true);
             }
         }
 
-        // Image à la une
+        // =========================================================
+        // 3. 🔧 TRAITEMENT SPÉCIALISÉ DES IMAGES POUR L'AFFICHAGE
+        // =========================================================
+
+        // A. Images Hero : s'assurer qu'on a à la fois l'ID et l'URL
+        $exp_hero_desktop = get_field('exp_hero_desktop', $post_id);
+        $exp_hero_mobile = get_field('exp_hero_mobile', $post_id);
+
+        $details['exp_hero_desktop'] = self::process_image_for_display($exp_hero_desktop);
+        $details['exp_hero_mobile'] = self::process_image_for_display($exp_hero_mobile);
+
+        // B. Galerie : traitement spécialisé pour l'affichage
+        $photos_experience = get_field('photos_experience', $post_id);
+        $details['photos_experience'] = self::process_gallery_for_display($photos_experience);
+
+        // =========================================================
+        // 4. 🔧 SÉCURITÉ ANTI-CRASH : PROTECTION TARIFS & RATE MANAGER
+        // =========================================================
+
+        // A. RATE MANAGER (Calendrier) - OBLIGATOIRE pour éviter le crash JS
+        // Ces champs stockent le JSON des saisons et promos du calendrier
+        $seasons_data = get_field('seasons_data', $post_id);
+        $promos_data = get_field('promos_data', $post_id);
+
+        // 🛡️ SÉCURITÉ : Force les données à être des tableaux (jamais null/false)
+        $details['seasons_data'] = (is_array($seasons_data)) ? $seasons_data : [];
+        $details['promos_data'] = (is_array($promos_data)) ? $promos_data : [];
+
+        // B. TARIFS & TVA - CHAMPS CRITIQUES (Hérités du JSON ACF)
+        // 🛡️ Force taux_tva à être défini (requis pour l'onglet Tarifs)
+        $taux_tva_raw = get_field('taux_tva', $post_id);
+        $details['taux_tva'] = ($taux_tva_raw !== false && $taux_tva_raw !== null) ? $taux_tva_raw : '';
+
+        // 🛡️ CHAMP CRITIQUE : exp_types_de_tarifs (Source de vérité du JSON)
+        $exp_types_de_tarifs_raw = get_field('exp_types_de_tarifs', $post_id);
+
+        // 🔧 FIX CRITIQUE : Si le repeater est vide (à cause de min=1), créer une ligne par défaut
+        if (!is_array($exp_types_de_tarifs_raw) || empty($exp_types_de_tarifs_raw)) {
+            error_log("🔧 [PCR Experience Manager] Création ligne de tarif par défaut pour expérience #{$post_id}");
+            $details['exp_types_de_tarifs'] = [
+                [
+                    'exp_type' => 'unique',
+                    'exp_type_custom' => '',
+                    // Structure complète pour éviter les erreurs JS
+                    'exp_options_tarifaires' => [],
+                    'exp-frais-fixes' => [],
+                    'exp_tarifs_lignes' => []
+                ]
+            ];
+
+            // 🔧 BONUS : Sauvegarder automatiquement cette ligne par défaut pour corriger définitivement le problème
+            if (function_exists('update_field')) {
+                $success = update_field('exp_types_de_tarifs', $details['exp_types_de_tarifs'], $post_id);
+                if ($success) {
+                    error_log("✅ [PCR Experience Manager] Ligne de tarif par défaut sauvegardée pour expérience #{$post_id}");
+                }
+            }
+        } else {
+            $details['exp_types_de_tarifs'] = $exp_types_de_tarifs_raw;
+        }
+
+        // C. RÈGLES DE PAIEMENT (Compatibilité avec Housing Manager)
+        $details['pc_pay_mode'] = get_field('pc_pay_mode', $post_id) ?: 'acompte_plus_solde';
+        $details['pc_deposit_type'] = get_field('pc_deposit_type', $post_id) ?: 'pourcentage';
+        $details['pc_deposit_value'] = get_field('pc_deposit_value', $post_id) ?: '';
+        $details['pc_balance_delay_days'] = get_field('pc_balance_delay_days', $post_id) ?: '';
+        $details['pc_caution_amount'] = get_field('pc_caution_amount', $post_id) ?: '';
+        $details['pc_caution_mode'] = get_field('pc_caution_mode', $post_id) ?: 'aucune';
+
+        // D. 🛡️ SÉCURISATION COMPLÈTE DES REPEATERS
+        // Liste exhaustive des champs qui doivent être des tableaux pour éviter les crashes JS
+        $repeaters_to_secure = [
+            'exp_lieux_horaires_depart',
+            'exp_periodes_fermeture',
+            'exp_faq',
+            'exp_types_de_tarifs', // DÉJÀ traité ci-dessus mais on double-check
+            'exp_accessibilite',
+            'exp_periode',
+            'exp_jour',
+            'photos_experience', // Galerie
+            'exp_a_prevoir', // Checkbox field
+            'exp_delai_de_reservation', // Checkbox field
+            'exp_zone_intervention', // Checkbox field
+            'seasons_data', // DÉJÀ traité ci-dessus mais on double-check
+            'promos_data'  // DÉJÀ traité ci-dessus mais on double-check
+        ];
+
+        foreach ($repeaters_to_secure as $field_key) {
+            if (empty($details[$field_key]) || !is_array($details[$field_key])) {
+                $details[$field_key] = [];
+            }
+        }
+
+        // =========================================================
+
+        // 4. Image à la une (Code existant)
         $thumbnail_id = get_post_thumbnail_id($post_id);
         $details['featured_image'] = [
             'id' => $thumbnail_id,
@@ -442,7 +531,7 @@ class PCR_Experience_Manager
             'sizes' => $thumbnail_id ? wp_get_attachment_metadata($thumbnail_id)['sizes'] ?? [] : [],
         ];
 
-        // Taxonomies
+        // 5. Taxonomies (Code existant)
         $details['taxonomies'] = [];
         $taxonomies = get_object_taxonomies($post->post_type, 'objects');
         foreach ($taxonomies as $taxonomy) {
@@ -901,6 +990,117 @@ class PCR_Experience_Manager
         }
 
         return $value;
+    }
+
+    /**
+     * 🔧 NOUVELLE MÉTHODE : Traite une image pour l'affichage dans le dashboard.
+     * Retourne un objet avec à la fois l'ID et l'URL pour compatibilité maximale.
+     * 
+     * @param mixed $image_value Valeur retournée par ACF (URL ou ID selon config)
+     * @return array|string Structure {id, url} ou string si URL directe
+     */
+    private static function process_image_for_display($image_value)
+    {
+        if (empty($image_value)) {
+            return null;
+        }
+
+        // Si c'est déjà une URL (return_format: url dans ACF)
+        if (is_string($image_value) && (strpos($image_value, 'http') === 0 || strpos($image_value, '/wp-content/uploads') !== false)) {
+            // Essayer de retrouver l'ID correspondant
+            $attachment_id = attachment_url_to_postid($image_value);
+
+            return [
+                'id' => $attachment_id > 0 ? $attachment_id : null,
+                'url' => $image_value,
+                'type' => 'url'
+            ];
+        }
+
+        // Si c'est un ID numérique
+        if (is_numeric($image_value)) {
+            $attachment_id = (int) $image_value;
+            if ($attachment_id > 0 && get_post($attachment_id) && get_post_type($attachment_id) === 'attachment') {
+                $url = wp_get_attachment_url($attachment_id);
+                return [
+                    'id' => $attachment_id,
+                    'url' => $url ?: '',
+                    'type' => 'id'
+                ];
+            }
+        }
+
+        // Si c'est un objet ACF complet (array)
+        if (is_array($image_value) && isset($image_value['id'])) {
+            return [
+                'id' => (int) $image_value['id'],
+                'url' => $image_value['url'] ?: wp_get_attachment_url($image_value['id']) ?: '',
+                'type' => 'array'
+            ];
+        }
+
+        // Fallback : retourner tel quel
+        return $image_value;
+    }
+
+    /**
+     * 🔧 NOUVELLE MÉTHODE : Traite la galerie pour l'affichage dans le dashboard.
+     * Normalise le format pour que JavaScript puisse afficher les miniatures.
+     * 
+     * @param mixed $gallery_value Valeur retournée par ACF Gallery
+     * @return array Tableau d'objets {id, url, thumbnail}
+     */
+    private static function process_gallery_for_display($gallery_value)
+    {
+        if (empty($gallery_value) || !is_array($gallery_value)) {
+            return [];
+        }
+
+        $processed_gallery = [];
+
+        foreach ($gallery_value as $image) {
+            $processed_image = null;
+
+            if (is_array($image)) {
+                // Format objet ACF standard : {ID, url, sizes, etc.}
+                $image_id = isset($image['ID']) ? (int) $image['ID'] : (isset($image['id']) ? (int) $image['id'] : null);
+
+                if ($image_id) {
+                    $processed_image = [
+                        'id' => $image_id,
+                        'url' => $image['url'] ?? wp_get_attachment_url($image_id) ?? '',
+                        'thumbnail' => wp_get_attachment_image_src($image_id, 'thumbnail')[0] ?? '',
+                        'sizes' => $image['sizes'] ?? []
+                    ];
+                }
+            } elseif (is_numeric($image)) {
+                // Format ID simple
+                $image_id = (int) $image;
+                if ($image_id > 0 && get_post($image_id) && get_post_type($image_id) === 'attachment') {
+                    $processed_image = [
+                        'id' => $image_id,
+                        'url' => wp_get_attachment_url($image_id) ?: '',
+                        'thumbnail' => wp_get_attachment_image_src($image_id, 'thumbnail')[0] ?? '',
+                        'sizes' => []
+                    ];
+                }
+            } elseif (is_string($image)) {
+                // Format URL directe (rare pour galerie mais possible)
+                $image_id = attachment_url_to_postid($image);
+                $processed_image = [
+                    'id' => $image_id > 0 ? $image_id : null,
+                    'url' => $image,
+                    'thumbnail' => $image_id > 0 ? (wp_get_attachment_image_src($image_id, 'thumbnail')[0] ?? '') : $image,
+                    'sizes' => []
+                ];
+            }
+
+            if ($processed_image) {
+                $processed_gallery[] = $processed_image;
+            }
+        }
+
+        return $processed_gallery;
     }
 
     /**
