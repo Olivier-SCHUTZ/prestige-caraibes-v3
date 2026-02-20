@@ -96,10 +96,12 @@
         this.openModal(experienceId);
       });
 
-      $(document).on("click", ".pc-action-delete", (e) => {
+      // Action de suppression depuis la modale
+      $(document).on("click", "#pc-experience-delete-btn", (e) => {
         e.preventDefault();
-        const experienceId = $(e.currentTarget).data("experience-id");
-        this.handleDelete(experienceId);
+        if (currentExperienceId) {
+          this.handleDelete(currentExperienceId);
+        }
       });
 
       // Événement personnalisé pour le switch d'onglet
@@ -113,7 +115,7 @@
       // Fermer la modale
       $(document).on(
         "click",
-        "#experience-modal .pc-modal-overlay, #experience-modal .pc-modal-close",
+        "#experience-modal .pc-modal-overlay, #experience-modal .pc-modal-close, #pc-experience-cancel-btn",
         () => {
           this.closeModal();
         },
@@ -337,10 +339,10 @@
       // Données formatées
       const duree = item.duree ? `${item.duree}h` : "Non définie";
       const capacite = item.capacite ? `${item.capacite} pers` : "Non définie";
-      const price =
-        item.prix_base > 0
-          ? `${parseFloat(item.prix_base).toFixed(0)}€`
-          : "Non défini";
+      const lieuDepart = item.lieu_depart
+        ? this.escapeHtml(item.lieu_depart)
+        : "Non défini";
+      const tva = item.taux_tva !== "" ? `${item.taux_tva}%` : "Non définie";
 
       // Badge de statut
       const statusBadge = `<span class="pc-status-badge ${item.status_class || "pc-status-draft"}">${item.status_label || "Brouillon"}</span>`;
@@ -359,8 +361,11 @@
           <td class="pc-col-capacity">
             <span class="pc-experience-capacity">${capacite}</span>
           </td>
-          <td class="pc-col-price">
-            <span class="pc-experience-price">${price}</span>
+          <td class="pc-col-location">
+            <span class="pc-experience-location" style="font-size:0.9rem;">${lieuDepart}</span>
+          </td>
+          <td class="pc-col-tva" style="text-align:center; font-weight:600; color:#475569;">
+            ${tva}
           </td>
           <td class="pc-col-status">
             ${statusBadge}
@@ -369,10 +374,6 @@
             <button class="pc-btn pc-btn-sm pc-action-edit" data-experience-id="${item.id}">
               <span>✏️</span>
               Éditer
-            </button>
-            <button class="pc-btn pc-btn-sm pc-btn-danger pc-action-delete" data-experience-id="${item.id}">
-              <span>🗑️</span>
-              Supprimer
             </button>
           </td>
         </tr>
@@ -429,11 +430,13 @@
         // Mode création : réinitialiser le formulaire
         $("#pc-experience-modal-title").text("Nouvelle expérience");
         this.resetForm();
+        $("#pc-experience-delete-btn").addClass("hidden"); // Cacher le bouton supprimer
         $("#pc-experience-modal-loading").hide();
         $("#pc-experience-modal-details").show();
       } else {
         // Mode édition : charger les détails
         $("#pc-experience-modal-title").text("Chargement...");
+        $("#pc-experience-delete-btn").removeClass("hidden"); // Afficher le bouton supprimer
         $("#pc-experience-modal-loading").show();
         $("#pc-experience-modal-details").hide();
         this.loadDetails(id);

@@ -85,7 +85,8 @@ function pc_shortcode_experience_dashboard($atts = [])
                         <th class="pc-col-name">Nom de l'expérience</th>
                         <th class="pc-col-duration">Durée</th>
                         <th class="pc-col-capacity">Capacité</th>
-                        <th class="pc-col-price">Prix à partir de</th>
+                        <th class="pc-col-location">Lieu de départ</th>
+                        <th class="pc-col-tva">TVA (%)</th>
                         <th class="pc-col-status">Statut</th>
                         <th class="pc-col-actions">Actions</th>
                     </tr>
@@ -1272,20 +1273,21 @@ function pc_shortcode_experience_dashboard($atts = [])
             </div>
 
             <div class="pc-modal-footer">
-                <div class="pc-modal-actions">
-                    <button type="button" class="pc-btn pc-btn-danger" id="pc-experience-delete-btn">
-                        <span class="pc-btn-text">Supprimer</span>
-                        <span class="pc-btn-spinner" style="display: none;">
+                <div class="pc-experience-modal-actions">
+                    <button type="button" class="pc-btn pc-btn-danger hidden" id="pc-experience-delete-btn">
+                        <span class="pc-exp-btn-text">🗑️ Supprimer</span>
+                        <span class="pc-exp-btn-spinner" style="display: none;">
                             <div class="pc-spinner-sm"></div>
                         </span>
                     </button>
+
                     <div class="pc-modal-actions-right">
-                        <button type="button" class="pc-btn pc-btn-secondary pc-modal-close">
-                            Annuler
+                        <button type="button" class="pc-btn pc-exp-btn-secondary" id="pc-experience-cancel-btn">
+                            <span class="pc-exp-btn-text">Annuler</span>
                         </button>
                         <button type="button" class="pc-btn pc-btn-primary" id="pc-experience-save-btn">
-                            <span class="pc-btn-text">Enregistrer</span>
-                            <span class="pc-btn-spinner" style="display: none;">
+                            <span class="pc-exp-btn-text">💾 Enregistrer l'expérience</span>
+                            <span class="pc-exp-btn-spinner" style="display: none;">
                                 <div class="pc-spinner-sm"></div>
                             </span>
                         </button>

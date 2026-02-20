@@ -556,63 +556,63 @@
 
 /* === ALIGNEMENT DU FOOTER EXPERIENCE SUR HOUSING === */
 .pc-experience-manager .pc-modal-footer {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
+  background: var(--pc-experience-surface);
+  backdrop-filter: blur(15px);
   border-top: 1px solid var(--pc-experience-border);
+  padding: 1.5rem 2rem;
 }
 
-.pc-experience-manager .pc-modal-actions {
+.pc-experience-modal-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
 }
 
-.pc-experience-manager .pc-modal-actions-right {
+.pc-modal-actions-right {
   display: flex;
   align-items: center;
   gap: 1rem;
+  margin-left: auto;
 }
 
 /* === STYLES DES BOUTONS FOOTER === */
 .pc-experience-manager .pc-modal-footer .pc-btn {
-  padding: 0.8rem 1.5rem;
-  border-radius: 8px;
+  height: 46px;
+  padding: 0 1.5rem;
+  border-radius: 12px;
   font-weight: 600;
   font-size: 0.9rem;
-  transition: var(--pc-experience-transition);
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  transition: var(--pc-experience-transition);
   cursor: pointer;
-  border: 2px solid transparent;
+  border: none;
 }
 
 .pc-experience-manager .pc-modal-footer .pc-btn-danger {
   background: #ef4444;
   color: white;
-  border-color: #ef4444;
 }
 
 .pc-experience-manager .pc-modal-footer .pc-btn-danger:hover {
   background: #dc2626;
-  border-color: #dc2626;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-.pc-experience-manager .pc-modal-footer .pc-btn-secondary {
-  background: rgba(255, 255, 255, 0.9);
-  color: #64748b;
-  border-color: #e2e8f0;
+.pc-experience-manager .pc-modal-footer .pc-exp-btn-secondary {
+  background: rgba(203, 213, 225, 0.3);
+  color: #475569;
+  border: 1px solid rgba(203, 213, 225, 0.4);
 }
 
-.pc-experience-manager .pc-modal-footer .pc-btn-secondary:hover {
-  background: rgba(248, 250, 252, 0.95);
-  color: #475569;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.1);
+.pc-experience-manager .pc-modal-footer .pc-exp-btn-secondary:hover {
+  background: rgba(203, 213, 225, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.1);
 }
 
 .pc-experience-manager .pc-modal-footer .pc-btn-primary {
@@ -631,11 +631,11 @@
 }
 
 /* Spinners des boutons */
-.pc-experience-manager .pc-modal-footer .pc-btn.loading .pc-btn-text {
+.pc-experience-manager .pc-modal-footer .pc-btn.loading .pc-exp-btn-text {
   opacity: 0;
 }
 
-.pc-experience-manager .pc-modal-footer .pc-btn.loading .pc-btn-spinner {
+.pc-experience-manager .pc-modal-footer .pc-btn.loading .pc-exp-btn-spinner {
   display: flex !important;
   position: absolute;
   left: 50%;
@@ -1467,8 +1467,13 @@
     font-weight: bold;
     color: #64748b;
   }
-  .pc-experience-table td.pc-col-price::before {
-    content: "Prix";
+  .pc-experience-table td.pc-col-location::before {
+    content: "Lieu de départ";
+    font-weight: bold;
+    color: #64748b;
+  }
+  .pc-experience-table td.pc-col-tva::before {
+    content: "TVA (%)";
     font-weight: bold;
     color: #64748b;
   }
