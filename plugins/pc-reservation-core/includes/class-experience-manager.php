@@ -91,27 +91,72 @@ class PCR_Experience_Manager
     }
 
     /**
+     * Traite la valeur d'un champ selon son type (Lecture depuis la BDD vers l'Affichage).
+     * * @param string $field_key Clé du champ
+     * @param mixed $value Valeur brute
+     * @return mixed Valeur traitée
+     */
+    private static function process_field_value($field_key, $value)
+    {
+        switch ($field_key) {
+            case 'exp_duree':
+            case 'exp_capacite':
+            case 'exp_age_minimum':
+            case 'taux_tva':
+            case 'pc_deposit_value':
+            case 'pc_balance_delay_days':
+            case 'pc_caution_amount':
+            case 'exp_heure_limite_de_commande':
+                return is_numeric($value) ? (float) $value : 0;
+
+            case 'exp_exclude_sitemap':
+            case 'exp_http_410':
+            case 'exp_availability':
+                if ($value === "1" || $value === 1 || $value === true || $value === 'true') return true;
+                if ($value === "0" || $value === 0 || $value === false || $value === 'false' || $value === '') return false;
+                return (bool) $value;
+
+            case 'exp_accessibilite':
+            case 'exp_periode':
+            case 'exp_jour':
+            case 'exp_a_prevoir':
+            case 'exp_delai_de_reservation':
+            case 'exp_zone_intervention':
+            case 'exp_logements_recommandes':
+            case 'exp_lieux_horaires_depart':
+            case 'exp_periodes_fermeture':
+            case 'exp_types_de_tarifs':
+            case 'exp_faq':
+            case 'photos_experience':
+                return is_array($value) ? $value : [];
+
+            default:
+                if (is_string($value)) {
+                    return trim($value);
+                }
+                return $value;
+        }
+    }
+
+    /**
      * Sanitise la valeur d'un champ avant sauvegarde.
-     * 
-     * @param string $field_key Clé du champ
+     * * @param string $field_key Clé du champ
      * @param mixed $value Valeur à sanitiser
      * @return mixed Valeur sanitisée
      */
     private static function sanitize_field_value($field_key, $value)
     {
-        // Traitement spécifique selon le champ d'expérience
         switch ($field_key) {
             case 'exp_prix_comprend':
             case 'exp_prix_ne_comprend_pas':
-            case 'exp_a_prevoir':
-                // Champs HTML longs
+            case 'exp_le_service_comprend':
+            case 'exp_service_a_prevoir':
+                // Champs HTML longs / WYSIWYG
                 return wp_kses_post($value);
 
             case 'exp_h1_custom':
             case 'exp_meta_titre':
             case 'exp_meta_description':
-            case 'exp_delai_de_reservation':
-            case 'exp_zone_intervention':
             case 'exp_type_de_prestation':
             case 'exp_heure_limite_de_commande':
                 // Champs texte standards
@@ -131,48 +176,41 @@ class PCR_Experience_Manager
             case 'exp_http_410':
             case 'exp_availability':
                 // Champs booléens
-                if ($value === "1" || $value === 1 || $value === true || $value === 'true') {
-                    return true;
-                }
-                if ($value === "0" || $value === 0 || $value === false || $value === 'false' || $value === '') {
-                    return false;
-                }
+                if ($value === "1" || $value === 1 || $value === true || $value === 'true') return true;
+                if ($value === "0" || $value === 0 || $value === false || $value === 'false' || $value === '') return false;
                 return (bool) $value;
 
             case 'exp_meta_canonical':
-                // URLs
                 return esc_url_raw($value);
 
             case 'exp_logements_recommandes':
-                // Champ relationship
-                if (is_array($value)) {
-                    return array_map('intval', array_filter($value));
-                }
+                if (is_array($value)) return array_map('intval', array_filter($value));
                 return [];
 
             case 'exp_accessibilite':
             case 'exp_periode':
             case 'exp_jour':
-                // Champs checkbox/select multiple
-                if (is_array($value)) {
-                    return array_map('sanitize_text_field', $value);
-                }
-                return [];
+            case 'exp_a_prevoir':
+            case 'exp_delai_de_reservation':
+            case 'exp_zone_intervention':
+                // Champs array (checkboxes) ou fallback texte
+                if (is_array($value)) return array_map('sanitize_text_field', $value);
+                return sanitize_text_field($value);
 
             case 'exp_lieux_horaires_depart':
             case 'exp_periodes_fermeture':
             case 'exp_types_de_tarifs':
+            case 'exp_faq':
                 // Champs complexes (Repeaters) : laisser ACF gérer la sanitisation
                 return $value;
 
             case 'exp_hero_desktop':
             case 'exp_hero_mobile':
             case 'photos_experience':
-                // Champs images : traitement spécial si nécessaire
+                // Champs images
                 return $value;
 
             default:
-                // Champs texte par défaut
                 return sanitize_text_field($value);
         }
     }
@@ -226,6 +264,8 @@ class PCR_Experience_Manager
             'exp_zone_intervention' => 'exp_zone_intervention',
             'exp_type_de_prestation' => 'exp_type_de_prestation',
             'exp_heure_limite_de_commande' => 'exp_heure_limite_de_commande',
+            'exp_le_service_comprend' => 'exp_le_service_comprend',
+            'exp_service_a_prevoir' => 'exp_service_a_prevoir',
 
             // === IMAGES & MÉDIAS ===
             'exp_hero_desktop' => 'exp_hero_desktop',
@@ -242,6 +282,7 @@ class PCR_Experience_Manager
             'pc_deposit_value' => 'pc_deposit_value',
             'pc_balance_delay_days' => 'pc_balance_delay_days',
             'pc_caution_amount' => 'pc_caution_amount',
+            'pc_caution_mode' => 'pc_caution_mode',
 
             'exp_faq' => 'exp_faq',
         ];
@@ -685,13 +726,6 @@ class PCR_Experience_Manager
                     }
 
                     // Gestion spéciale des champs Repeater
-                    if (in_array($normalized_key, ['acf_exp_lieux_horaires_depart', 'acf_exp_periodes_fermeture', 'acf_exp_types_de_tarifs'])) {
-                        $clean_key = str_replace('acf_', '', $normalized_key);
-                        $success = self::update_repeater_field($post_id, $clean_key, $value);
-                        if ($success) $updated_fields++;
-                        continue;
-                    }
-
                     // Éliminer le préfixe 'acf_' pour trouver la clé normalisée
                     $clean_key = str_replace('acf_', '', $normalized_key);
 
@@ -808,67 +842,6 @@ class PCR_Experience_Manager
                 'success' => false,
                 'message' => 'Erreur lors de la suppression : ' . $e->getMessage(),
             ];
-        }
-    }
-
-    /**
-     * Traite la valeur d'un champ selon son type.
-     * 
-     * @param string $field_key Clé du champ
-     * @param mixed $value Valeur brute
-     * @return mixed Valeur traitée
-     */
-    private static function process_field_value($field_key, $value)
-    {
-        // Traitement spécifique selon le champ d'expérience
-        switch ($field_key) {
-            case 'exp_lieux_horaires_depart':
-            case 'exp_periodes_fermeture':
-            case 'exp_types_de_tarifs':
-                // Champs complexes (repeater) : garder tel quel
-                return $value;
-
-            case 'exp_accessibilite':
-            case 'exp_periode':
-            case 'exp_jour':
-                // Champs checkbox : s'assurer que c'est un array
-                return is_array($value) ? $value : [];
-
-            case 'exp_duree':
-            case 'exp_capacite':
-            case 'exp_age_minimum':
-            case 'taux_tva':
-            case 'pc_deposit_value':
-            case 'pc_balance_delay_days':
-            case 'pc_caution_amount':
-                // Champs numériques standards
-                return is_numeric($value) ? (float) $value : 0;
-
-            case 'exp_exclude_sitemap':
-            case 'exp_http_410':
-            case 'exp_availability':
-                // Champs booléens
-                if ($value === "1" || $value === 1 || $value === true || $value === 'true') {
-                    return true;
-                }
-                if ($value === "0" || $value === 0 || $value === false || $value === 'false' || $value === '') {
-                    return false;
-                }
-                return (bool) $value;
-
-            case 'exp_logements_recommandes':
-                // Champ relationship : s'assurer que c'est un array d'IDs
-                if (is_array($value)) {
-                    return array_map('intval', $value);
-                }
-                return [];
-
-            default:
-                // Champs texte : sanitisation de base
-                if (is_string($value)) {
-                    return trim($value);
-                }
-                return $value;
         }
     }
 

@@ -121,10 +121,12 @@
         },
       );
 
-      // Sauvegarder
-      $(document).on("click", "#pc-experience-save-btn", () => {
-        this.handleSave();
-      });
+      // Sauvegarder (Utilisation de .off() pour éviter le double déclenchement)
+      $(document)
+        .off("click", "#pc-experience-save-btn")
+        .on("click", "#pc-experience-save-btn", () => {
+          this.handleSave();
+        });
 
       // Empêcher la fermeture accidentelle
       $(document).on("keydown", (e) => {
@@ -676,70 +678,77 @@
       }
 
       const title = $("#exp_h1_custom").val().trim();
-      // Note: On peut garder cette validation ou l'assouplir
-      // if (!title) { this.showError("..."); return; }
-
       const $btn = $("#pc-experience-save-btn");
       $btn.addClass("loading").prop("disabled", true);
 
       // Collecte des données
-      // CORRECTION CRITIQUE : Ajout des préfixes 'exp_' dans les clés 'acf_'
-      // Le PHP retire 'acf_', donc 'acf_exp_duree' devient 'exp_duree', ce qui matche la BDD.
       const formData = {
         action: "pc_experience_save",
         nonce: this.nonce,
         post_id: currentExperienceId,
 
-        // Champs de base WP (pas de changement)
-        title: $("#exp_h1_custom").val(), // On utilise le H1 comme titre du post par défaut
-
-        // Général
+        title: $("#exp_h1_custom").val(),
         acf_exp_h1_custom: $("#exp_h1_custom").val(),
         acf_exp_availability: $("#exp_availability").is(":checked") ? "1" : "0",
 
-        // Détails
+        // Champs SEO & Général manquants
+        acf_exp_exclude_sitemap: $("#exp_exclude_sitemap").is(":checked")
+          ? "1"
+          : "0",
+        acf_exp_http_410: $("#exp_http_410").is(":checked") ? "1" : "0",
+        acf_exp_meta_titre: $("#exp_meta_titre").val(),
+        acf_exp_meta_description: $("#exp_meta_description").val(),
+        acf_exp_meta_canonical: $("#exp_meta_canonical").val(),
+        acf_exp_meta_robots: $("#exp_meta_robots").val(),
+        acf_exp_logements_recommandes: $("#exp_logements_recommandes").val()
+          ? $("#exp_logements_recommandes")
+              .val()
+              .split(",")
+              .map((s) => s.trim())
+          : [],
+
         acf_exp_duree: $("#exp_duree").val(),
         acf_exp_capacite: $("#exp_capacite").val(),
         acf_exp_age_minimum: $("#exp_age_minimum").val(),
 
-        // Checkboxes Arrays
         acf_exp_accessibilite: this.collectCheckboxArray("exp_accessibilite"),
         acf_exp_periode: this.collectCheckboxArray("exp_periode"),
         acf_exp_jour: this.collectCheckboxArray("exp_jour"),
 
-        // Inclusions
         acf_exp_prix_comprend: $("#exp_prix_comprend").val(),
         acf_exp_prix_ne_comprend_pas: $("#exp_prix_ne_comprend_pas").val(),
+        acf_exp_a_prevoir: this.collectCheckboxArray("exp_a_prevoir"),
 
-        // Services
-        acf_exp_delai_de_reservation: $("#exp_delai_de_reservation").val(),
-        acf_exp_zone_intervention: $("#exp_zone_intervention").val(),
+        acf_exp_delai_de_reservation: this.collectCheckboxArray(
+          "exp_delai_de_reservation",
+        ),
+        acf_exp_zone_intervention: this.collectCheckboxArray(
+          "exp_zone_intervention",
+        ),
         acf_exp_type_de_prestation: $("#exp_type_de_prestation").val(),
         acf_exp_heure_limite_de_commande: $(
           "#exp_heure_limite_de_commande",
         ).val(),
+        acf_exp_le_service_comprend: $("#exp_le_service_comprend").val(),
+        acf_exp_service_a_prevoir: $("#exp_service_a_prevoir").val(),
 
-        // Paiement (Nouveaux IDs avec préfixe exp_)
         acf_taux_tva: $("#exp_taux_tva").val(),
         acf_pc_pay_mode: $("#exp_pay_mode").val(),
         acf_pc_deposit_type: $("#exp_deposit_type").val(),
         acf_pc_deposit_value: $("#exp_deposit_value").val(),
         acf_pc_balance_delay_days: $("#exp_balance_delay_days").val(),
         acf_pc_caution_amount: $("#exp_caution_amount").val(),
+        acf_pc_caution_mode: $("#exp_caution_mode").val(),
 
-        // Images
         acf_exp_hero_desktop: $("#exp_hero_desktop").val(),
         acf_exp_hero_mobile: $("#exp_hero_mobile").val(),
+        acf_photos_experience: $("#photos_experience").val(),
 
-        // Repeaters (Attention au nom exact attendu par update_repeater_field en PHP)
         acf_exp_lieux_horaires_depart: this.collectLieuxData(),
         acf_exp_periodes_fermeture: this.collectFermetureData(),
-        acf_exp_faq: this.collectFaqData(), // Ajout FAQ
-
-        // 🔧 TARIFS CRITIQUES : Repeater exp_types_de_tarifs (Source de vérité du JSON ACF)
+        acf_exp_faq: this.collectFaqData(),
         acf_exp_types_de_tarifs: this.collectTarifsData(),
 
-        // Rate Manager (Calendrier)
         rate_manager_data: this.rateManager
           ? JSON.stringify(this.rateManager.getData())
           : "{}",
@@ -754,9 +763,8 @@
 
           if (response.success) {
             this.showSuccess("Expérience sauvegardée avec succès!");
-            // Ne pas fermer immédiatement pour permettre de continuer l'édition si voulu
-            // this.closeModal();
-            this.loadList(currentPage); // Recharger la liste en arrière-plan
+            this.closeModal(); // Fermeture de la modale automatique
+            this.loadList(currentPage); // Rechargement propre du tableau
           } else {
             this.showError(
               "Erreur lors de la sauvegarde: " +
@@ -1167,11 +1175,10 @@
         (index, row) => {
           const $row = $(row);
           const item = {
-            date_debut: $row.find(".date-debut").val() || "",
-            date_fin: $row.find(".date-fin").val() || "",
-            raison: $row.find(".raison").val() || "",
+            debut_fermeture: $row.find(".date-debut").val() || "",
+            fin_fermeture: $row.find(".date-fin").val() || "",
           };
-          if (item.date_debut || item.date_fin || item.raison) {
+          if (item.debut_fermeture || item.fin_fermeture) {
             data.push(item);
           }
         },
@@ -1184,10 +1191,10 @@
       $("#wrapper-exp_faq .pc-repeater-row").each((index, row) => {
         const $row = $(row);
         const item = {
-          question: $row.find(".question").val() || "",
-          reponse: $row.find(".reponse").val() || "",
+          exp_question: $row.find(".question").val() || "",
+          exp_reponse: $row.find(".reponse").val() || "",
         };
-        if (item.question || item.reponse) {
+        if (item.exp_question || item.exp_reponse) {
           data.push(item);
         }
       });
