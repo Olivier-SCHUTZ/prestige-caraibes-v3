@@ -249,30 +249,38 @@
       });
 
       // === GESTION IMAGES ===
-      $(document).on("click", ".pc-btn-select-image", (e) => {
-        e.preventDefault();
-        const target = $(e.currentTarget).data("target");
-        this.openMediaUploader(target);
-      });
+      $(document)
+        .off("click", ".pc-btn-select-image")
+        .on("click", ".pc-btn-select-image", (e) => {
+          e.preventDefault();
+          const target = $(e.currentTarget).data("target");
+          this.openMediaUploader(target);
+        });
 
-      $(document).on("click", ".pc-btn-remove-image", (e) => {
-        e.preventDefault();
-        const target = $(e.currentTarget).data("target");
-        this.resetImageField(target);
-      });
+      $(document)
+        .off("click", ".pc-btn-remove-image")
+        .on("click", ".pc-btn-remove-image", (e) => {
+          e.preventDefault();
+          const target = $(e.currentTarget).data("target");
+          this.resetImageField(target);
+        });
 
       // === GESTION GALERIE ===
-      $(document).on("click", "#btn-select-gallery-photos", (e) => {
-        e.preventDefault();
-        this.openGalleryUploader();
-      });
+      $(document)
+        .off("click", "#btn-select-gallery-photos")
+        .on("click", "#btn-select-gallery-photos", (e) => {
+          e.preventDefault();
+          this.openGalleryUploader();
+        });
 
-      $(document).on("click", "#btn-clear-gallery-photos", (e) => {
-        e.preventDefault();
-        if (confirm("Voulez-vous vraiment vider la galerie ?")) {
-          this.renderGalleryPreview([]);
-        }
-      });
+      $(document)
+        .off("click", "#btn-clear-gallery-photos")
+        .on("click", "#btn-clear-gallery-photos", (e) => {
+          e.preventDefault();
+          if (confirm("Voulez-vous vraiment vider la galerie ?")) {
+            this.renderGalleryPreview([]);
+          }
+        });
 
       // Suppression d'une seule image de la galerie
       $(document).on("click", ".pc-btn-remove-gallery-item", (e) => {
@@ -1603,40 +1611,41 @@
         return;
       }
 
-      // Initialiser un cache pour les modales uniques si non existant
-      if (!this.mediaFrames) this.mediaFrames = {};
+      // 🛡️ FIX ULTIME : Instanciation unique pour éviter la superposition de modales invisibles
+      if (!this.mediaFrame) {
+        this.mediaFrame = wp.media({
+          title: "Sélectionner une image",
+          button: { text: "Utiliser cette image" },
+          multiple: false,
+          library: { type: "image" },
+        });
 
-      // 🛡️ SÉCURITÉ ANTI-FREEZE
-      if (this.mediaFrames[target]) {
-        this.mediaFrames[target].open();
-        return;
+        this.mediaFrame.on("select", () => {
+          const attachment = this.mediaFrame
+            .state()
+            .get("selection")
+            .first()
+            .toJSON();
+
+          // 1. FORCER LA FERMETURE IMMÉDIATE (Avant toute manipulation du DOM)
+          this.mediaFrame.close();
+
+          // 2. Mise à jour de l'UI en différé
+          setTimeout(() => {
+            if (this.currentMediaTarget) {
+              this.setImageFromUploader(this.currentMediaTarget, attachment);
+            }
+          }, 100);
+        });
       }
 
-      this.mediaFrames[target] = wp.media({
-        title: "Sélectionner une image",
-        button: { text: "Utiliser cette image" },
-        multiple: false,
-        library: { type: "image" },
-      });
-
-      this.mediaFrames[target].on("select", () => {
-        const attachment = this.mediaFrames[target]
-          .state()
-          .get("selection")
-          .first()
-          .toJSON();
-        this.setImageFromUploader(target, attachment);
-
-        // 🛡️ FORCER LA FERMETURE DE LA MODALE
-        this.mediaFrames[target].close();
-      });
-
-      this.mediaFrames[target].open();
+      // Mémoriser la cible actuelle et ouvrir la modale existante
+      this.currentMediaTarget = target;
+      this.mediaFrame.open();
     }
 
     setImageFromUploader(target, attachment) {
       // 🔧 FIX CRITIQUE : Convertir les tirets en underscores pour cibler l'ID du input caché !
-      // ex: 'exp-hero-desktop' (target) -> 'exp_hero_desktop' (input ID)
       const inputId = target.replace(/-/g, "_");
 
       const $preview = $(`#preview-${target}`);
@@ -1663,63 +1672,64 @@
         return;
       }
 
-      // 🛡️ SÉCURITÉ ANTI-FREEZE : On réutilise l'instance si elle existe déjà
-      if (this.galleryFrame) {
-        this.galleryFrame.open();
-        return;
-      }
+      // 🛡️ FIX ULTIME : Instanciation unique
+      if (!this.galleryFrame) {
+        this.galleryFrame = wp.media({
+          title: "Sélectionner des photos pour la galerie",
+          button: { text: "Ajouter à la galerie" },
+          multiple: true,
+          library: { type: "image" },
+        });
 
-      this.galleryFrame = wp.media({
-        title: "Sélectionner des photos pour la galerie",
-        button: { text: "Ajouter à la galerie" },
-        multiple: true,
-        library: { type: "image" },
-      });
-
-      this.galleryFrame.on("select", () => {
-        try {
+        this.galleryFrame.on("select", () => {
           const selection = this.galleryFrame.state().get("selection");
-
-          // ✨ UX : Récupérer les images déjà présentes dans l'interface
-          const currentImages = [];
-          $("#photos-experience-preview .pc-gallery-item").each(function () {
-            const id = $(this).data("image-id");
-            const url = $(this).find("img").attr("src");
-            if (id) {
-              currentImages.push({
-                id: parseInt(id),
-                url: url,
-                thumbnail: url,
-              });
-            }
-          });
-
-          // Parcourir la sélection WP Media de manière sécurisée (Backbone Models)
+          const newAttachments = [];
           selection.models.forEach((model) => {
-            const att = model.toJSON();
-
-            // Éviter d'ajouter une image qui est déjà dans la galerie
-            if (!currentImages.find((img) => img.id === att.id)) {
-              currentImages.push({
-                id: att.id,
-                url: att.url,
-                thumbnail:
-                  att.sizes && att.sizes.thumbnail
-                    ? att.sizes.thumbnail.url
-                    : att.url,
-              });
-            }
+            newAttachments.push(model.toJSON());
           });
 
-          // Envoyer les images (anciennes + nouvelles) au rendu
-          this.renderGalleryPreview(currentImages);
-
-          // 🛡️ CORRECTION DU BUG : Forcer la fermeture de la modale WP Media
+          // 1. FORCER LA FERMETURE IMMÉDIATE (Avant le traitement lourd)
           this.galleryFrame.close();
-        } catch (error) {
-          console.error("Erreur lors du traitement de la galerie :", error);
-        }
-      });
+
+          // 2. Traitement différé pour éviter les freezes
+          setTimeout(() => {
+            try {
+              const currentImages = [];
+
+              $("#photos-experience-preview .pc-gallery-item").each(
+                function () {
+                  const id = $(this).data("image-id");
+                  const url = $(this).find("img").attr("src");
+                  if (id) {
+                    currentImages.push({
+                      id: parseInt(id),
+                      url: url,
+                      thumbnail: url,
+                    });
+                  }
+                },
+              );
+
+              newAttachments.forEach((att) => {
+                if (!currentImages.find((img) => img.id === att.id)) {
+                  currentImages.push({
+                    id: att.id,
+                    url: att.url,
+                    thumbnail:
+                      att.sizes && att.sizes.thumbnail
+                        ? att.sizes.thumbnail.url
+                        : att.url,
+                  });
+                }
+              });
+
+              this.renderGalleryPreview(currentImages);
+            } catch (error) {
+              console.error("Erreur lors du traitement de la galerie :", error);
+            }
+          }, 100);
+        });
+      }
 
       this.galleryFrame.open();
     }
@@ -2140,14 +2150,18 @@
       return;
     }
 
-    // Initialiser le gestionnaire
-    window.pcExperienceDashboard = new PCExperienceDashboard();
+    // 🛡️ FIX : Empêcher la double initialisation si le script est chargé deux fois
+    if (!window.pcExperienceDashboard) {
+      window.pcExperienceDashboard = new PCExperienceDashboard();
+    }
 
     // Hook personnalisé pour l'integration avec app-shell.php
-    $(window).on("pc-tab-switch", function (e, tabId) {
-      if (tabId === "experience" && window.pcExperienceDashboard) {
-        window.pcExperienceDashboard.loadList();
-      }
-    });
+    $(window)
+      .off("pc-tab-switch")
+      .on("pc-tab-switch", function (e, tabId) {
+        if (tabId === "experience" && window.pcExperienceDashboard) {
+          window.pcExperienceDashboard.loadList();
+        }
+      });
   });
 })(jQuery);
