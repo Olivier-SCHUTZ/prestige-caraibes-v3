@@ -206,9 +206,15 @@ class PCR_Experience_Manager
 
             case 'exp_hero_desktop':
             case 'exp_hero_mobile':
+                // Champs images (Le JS envoie directement l'ID de l'image)
+                return is_numeric($value) ? (int) $value : 0;
+
             case 'photos_experience':
-                // Champs images
-                return $value;
+                // Galerie (Le JS envoie une chaîne "id1,id2,id3", ACF exige un Array d'IDs)
+                if (is_string($value) && !empty($value)) {
+                    return array_map('intval', explode(',', $value));
+                }
+                return is_array($value) ? array_map('intval', $value) : [];
 
             default:
                 return sanitize_text_field($value);
@@ -729,15 +735,10 @@ class PCR_Experience_Manager
                     // Éliminer le préfixe 'acf_' pour trouver la clé normalisée
                     $clean_key = str_replace('acf_', '', $normalized_key);
 
-                    // Utiliser get_field_config_by_slug() pour trouver la bonne clé
+                    // Utiliser get_field_config_by_slug() pour trouver la VRAIE clé ACF (field_XXXXX)
                     $field_config = self::get_field_config_by_slug($clean_key);
                     if (!$field_config) {
                         continue;
-                    }
-
-                    // Traitement spécial pour les champs Images (Hero)
-                    if (in_array($clean_key, ['exp_hero_desktop', 'exp_hero_mobile'])) {
-                        $value = self::process_image_field($value);
                     }
 
                     // Sanitisation selon le type de champ

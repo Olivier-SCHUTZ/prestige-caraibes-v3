@@ -260,6 +260,43 @@
         const target = $(e.currentTarget).data("target");
         this.resetImageField(target);
       });
+
+      // === GESTION GALERIE ===
+      $(document).on("click", "#btn-select-gallery-photos", (e) => {
+        e.preventDefault();
+        this.openGalleryUploader();
+      });
+
+      $(document).on("click", "#btn-clear-gallery-photos", (e) => {
+        e.preventDefault();
+        if (confirm("Voulez-vous vraiment vider la galerie ?")) {
+          this.renderGalleryPreview([]);
+        }
+      });
+
+      // Suppression d'une seule image de la galerie
+      $(document).on("click", ".pc-btn-remove-gallery-item", (e) => {
+        e.preventDefault();
+        $(e.currentTarget).closest(".pc-gallery-item").remove();
+
+        // Re-collecter les IDs restants et mettre à jour le champ caché
+        const imageIds = [];
+        $("#photos-experience-preview .pc-gallery-item").each(function () {
+          const id = $(this).data("image-id");
+          if (id) imageIds.push(id);
+        });
+
+        // Si on a tout supprimé un par un, on relance le rendu vide pour faire réapparaître le placeholder
+        if (imageIds.length === 0) {
+          this.renderGalleryPreview([]);
+        } else {
+          $("#photos_experience").val(imageIds.join(","));
+          // Met à jour le compteur visuel
+          $("#photos-experience-preview .pc-gallery-status strong").text(
+            `${imageIds.length} image${imageIds.length > 1 ? "s" : ""}`,
+          );
+        }
+      });
     }
 
     // === CHARGEMENT DE LA LISTE ===
@@ -1382,7 +1419,6 @@
       return values;
     }
 
-    // === 🔧 NOUVELLE FONCTION : GALERIE D'IMAGES ===
     /**
      * Affiche les miniatures de la galerie dans l'interface
      * @param {Array} galleryImages - Tableau d'objets images {id, url, thumbnail}
@@ -1390,6 +1426,7 @@
     renderGalleryPreview(galleryImages) {
       const $preview = $("#photos-experience-preview");
       const $input = $("#photos_experience");
+      const $clearBtn = $("#btn-clear-gallery-photos");
 
       console.log("🖼️ renderGalleryPreview appelé avec:", galleryImages);
 
@@ -1405,11 +1442,13 @@
           </div>
         `);
         $input.val("");
+        $clearBtn.hide(); // Cacher le bouton Vider
         return;
       }
 
       // Construire le HTML des miniatures
-      let galleryHtml = '<div class="pc-gallery-grid">';
+      let galleryHtml =
+        '<div class="pc-gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-bottom: 15px;">';
       const imageIds = [];
 
       galleryImages.forEach((image, index) => {
@@ -1422,16 +1461,13 @@
         }
 
         galleryHtml += `
-          <div class="pc-gallery-item" data-image-id="${imageId || ""}">
+          <div class="pc-gallery-item" data-image-id="${imageId || ""}" style="position: relative;">
             <div class="pc-gallery-thumb">
               <img src="${thumbnailUrl}" alt="Photo ${index + 1}" 
                    style="width: 100%; height: 80px; object-fit: cover; border-radius: 4px;"
                    onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNSAyNUg1NUM0OC4zNzMzIDQxLjY2NjcgMzcuNjI2NyA0MS42NjY3IDMwIDQxLjY2NjdWNTVIMjVWMjVaIiBmaWxsPSIjOTRBM0I4Ii8+Cjwvc3ZnPgo='">
             </div>
-            <div class="pc-gallery-info">
-              <small>Photo ${index + 1}</small>
-              ${imageId ? `<small>ID: ${imageId}</small>` : ""}
-            </div>
+            <button type="button" class="pc-btn-remove-gallery-item" title="Retirer cette image" style="position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.95); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s;">✕</button>
           </div>
         `;
       });
@@ -1440,17 +1476,18 @@
 
       // Ajouter le message de statut
       galleryHtml += `
-        <div class="pc-gallery-status">
+        <div class="pc-gallery-status" style="font-size: 0.9rem; color: #475569;">
           ✅ <strong>${galleryImages.length} image${galleryImages.length > 1 ? "s" : ""}</strong> dans la galerie
-          ${galleryImages.length >= 5 ? " (Maximum atteint)" : ""}
+          ${galleryImages.length >= 5 ? " (Maximum recommandé atteint)" : ""}
         </div>
       `;
 
       // Injecter dans le DOM
       $preview.html(galleryHtml);
 
-      // Stocker les IDs dans l'input caché pour la sauvegarde
+      // Stocker les IDs dans l'input caché pour la sauvegarde (ACF gère ça comme une string d'IDs séparés par des virgules)
       $input.val(imageIds.join(","));
+      $clearBtn.show(); // Afficher le bouton Vider
 
       console.log(
         "✅ Galerie rendue avec",
@@ -1566,32 +1603,44 @@
         return;
       }
 
-      const mediaUploader = wp.media({
+      // Initialiser un cache pour les modales uniques si non existant
+      if (!this.mediaFrames) this.mediaFrames = {};
+
+      // 🛡️ SÉCURITÉ ANTI-FREEZE
+      if (this.mediaFrames[target]) {
+        this.mediaFrames[target].open();
+        return;
+      }
+
+      this.mediaFrames[target] = wp.media({
         title: "Sélectionner une image",
-        button: {
-          text: "Utiliser cette image",
-        },
+        button: { text: "Utiliser cette image" },
         multiple: false,
-        library: {
-          type: "image",
-        },
+        library: { type: "image" },
       });
 
-      mediaUploader.on("select", () => {
-        const attachment = mediaUploader
+      this.mediaFrames[target].on("select", () => {
+        const attachment = this.mediaFrames[target]
           .state()
           .get("selection")
           .first()
           .toJSON();
         this.setImageFromUploader(target, attachment);
+
+        // 🛡️ FORCER LA FERMETURE DE LA MODALE
+        this.mediaFrames[target].close();
       });
 
-      mediaUploader.open();
+      this.mediaFrames[target].open();
     }
 
     setImageFromUploader(target, attachment) {
+      // 🔧 FIX CRITIQUE : Convertir les tirets en underscores pour cibler l'ID du input caché !
+      // ex: 'exp-hero-desktop' (target) -> 'exp_hero_desktop' (input ID)
+      const inputId = target.replace(/-/g, "_");
+
       const $preview = $(`#preview-${target}`);
-      const $input = $(`#${target}`);
+      const $input = $(`#${inputId}`);
       const $removeBtn = $(`.pc-btn-remove-image[data-target="${target}"]`);
 
       // Mettre à jour l'aperçu
@@ -1599,12 +1648,80 @@
         `<img src="${attachment.url}" alt="${attachment.alt || "Image"}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">`,
       );
 
-      // Stocker l'ID de l'attachment (pas l'URL)
+      // Stocker l'ID de l'attachment dans le BON input caché
       $input.val(attachment.id);
-      $input.data("image-url", attachment.url); // Garder l'URL pour référence
+      $input.data("image-url", attachment.url);
 
       // Afficher le bouton de suppression
       $removeBtn.show();
+    }
+
+    // === NOUVEAU : UPLOADER MULTIPLE POUR LA GALERIE ===
+    openGalleryUploader() {
+      if (typeof wp === "undefined" || !wp.media) {
+        this.showError("WordPress Media Library n'est pas disponible.");
+        return;
+      }
+
+      // 🛡️ SÉCURITÉ ANTI-FREEZE : On réutilise l'instance si elle existe déjà
+      if (this.galleryFrame) {
+        this.galleryFrame.open();
+        return;
+      }
+
+      this.galleryFrame = wp.media({
+        title: "Sélectionner des photos pour la galerie",
+        button: { text: "Ajouter à la galerie" },
+        multiple: true,
+        library: { type: "image" },
+      });
+
+      this.galleryFrame.on("select", () => {
+        try {
+          const selection = this.galleryFrame.state().get("selection");
+
+          // ✨ UX : Récupérer les images déjà présentes dans l'interface
+          const currentImages = [];
+          $("#photos-experience-preview .pc-gallery-item").each(function () {
+            const id = $(this).data("image-id");
+            const url = $(this).find("img").attr("src");
+            if (id) {
+              currentImages.push({
+                id: parseInt(id),
+                url: url,
+                thumbnail: url,
+              });
+            }
+          });
+
+          // Parcourir la sélection WP Media de manière sécurisée (Backbone Models)
+          selection.models.forEach((model) => {
+            const att = model.toJSON();
+
+            // Éviter d'ajouter une image qui est déjà dans la galerie
+            if (!currentImages.find((img) => img.id === att.id)) {
+              currentImages.push({
+                id: att.id,
+                url: att.url,
+                thumbnail:
+                  att.sizes && att.sizes.thumbnail
+                    ? att.sizes.thumbnail.url
+                    : att.url,
+              });
+            }
+          });
+
+          // Envoyer les images (anciennes + nouvelles) au rendu
+          this.renderGalleryPreview(currentImages);
+
+          // 🛡️ CORRECTION DU BUG : Forcer la fermeture de la modale WP Media
+          this.galleryFrame.close();
+        } catch (error) {
+          console.error("Erreur lors du traitement de la galerie :", error);
+        }
+      });
+
+      this.galleryFrame.open();
     }
 
     // === UTILITAIRES ===
@@ -1841,7 +1958,13 @@
       $(document)
         .off("click", ".remove-tarif-row")
         .on("click", ".remove-tarif-row", function () {
-          $(this).closest(".pc-repeater-row").remove();
+          if (
+            confirm(
+              "Êtes-vous sûr de vouloir supprimer ce type de tarif ? Toutes les lignes et options associées seront définitivement perdues.",
+            )
+          ) {
+            $(this).closest(".pc-repeater-row").remove();
+          }
         });
 
       // Ajouter ligne de tarif
