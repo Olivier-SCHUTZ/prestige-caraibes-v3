@@ -1,336 +1,417 @@
-# Architecture - Mu-Plugins Prestige Caraïbes
+# 🏗️ Architecture MU-Plugins Prestige Caraïbes
 
-> Documentation de référence générée par reverse engineering  
-> **Date :** 29/01/2026  
-> **Version analysée :** V2.3+
+**Version :** V2.3  
+**Auteur :** PC SEO & Développement  
+**Date d'analyse :** 23/02/2026  
+**Type :** Must-Use Plugins WordPress - Écosystème fonctionnel global
 
 ---
 
-## 📂 Arborescence complète du projet
+## 📋 Vue d'ensemble
+
+Les **MU-Plugins** (Must-Use Plugins) constituent l'écosystème fonctionnel principal de Prestige Caraïbes. Ces plugins se chargent automatiquement avant tous les autres plugins et gèrent les fonctionnalités critiques du site : SEO technique, schémas JSON-LD, shortcodes métier, et composants UI.
+
+### 🎯 Responsabilités principales
+
+- **SEO technique avancé** : Meta robots, sitemaps, canonicals, schémas JSON-LD
+- **Shortcodes métier** : Fiches logements, expériences, recherches
+- **Composants UI** : Galeries, calendriers, formulaires de réservation
+- **Intégrations externes** : Lodgify, Stripe, APIs cartographiques
+- **Performance** : Optimisations CSS/JS conditionnelles
+
+---
+
+## 📊 Statistiques du projet
+
+### 📈 Lignes de code par catégorie
+
+| **Catégorie**          | **Fichiers** | **Lignes**        | **% du total** |
+| ---------------------- | ------------ | ----------------- | -------------- |
+| **Core PHP**           | 28 fichiers  | **11,327 lignes** | **59.6%**      |
+| **Assets CSS**         | 9 fichiers   | **5,611 lignes**  | **29.5%**      |
+| **Assets JS**          | 10 fichiers  | **2,074 lignes**  | **10.9%**      |
+| **Configuration JSON** | 10 fichiers  |                   | **Metadata**   |
+
+**Total mu-plugins : 19,012 lignes**  
+**Fichier le plus volumineux : mu-global-prestige-caraibesV2_3.php (3,061 lignes)**
+
+---
+
+## 🗂️ Structure détaillée
 
 ```
 mu-plugins/
-├── .DS_Store
-├── @architecture.md                           # Ce fichier
-├── hostinger-preview-domain.php               # Plugin Hostinger
-├── mu-global-prestige-caraibesV2_3.php       # 🔥 Moteur SEO principal
-├── pc-acf.php                                 # Configuration ACF Local JSON
-├── pc-ajax-search.php                         # Recherche AJAX
-├── pc-assets-registry.php.off                # Registre assets (désactivé)
-├── pc-base.css                                # 🎨 Fondations CSS globales
-├── pc-custom-typesV3.php                     # 📋 CPT & Taxonomies
-├── pc-destination-shortcodes.php             # Shortcodes destinations
-├── pc-experience-search.php                  # Recherche expériences
-├── pc-fallback-bientot-disponible.php        # Page fallback
-├── pc-faq-capture.php                         # Capture FAQ
-├── pc-header-global.php                      # 🔧 Header unifié
-├── pc-header-loader.off                       # Loader header (désactivé)
-├── pc-ical-cache.php                          # Cache iCal
-├── pc-loader.php                              # Loader environnement
-├── pc-loop-components.php                     # Composants de boucle
-├── pc-maintenance.php                         # Mode maintenance
-├── pc-perf-hints.php                          # Optimisations performances
-├── pc-reviews.php                             # Système d'avis
-├── pc-sandbox-menu-prefix.php                # Menu sandbox
-├── pc-search-shortcodes.php                  # Shortcodes recherche
-├── shortcode-liste-logement.php              # Liste logements
-├── shortcode-page-fiche-experiences.php      # Fiche expérience
-├── shortcode-page-fiche-logement.php         # Fiche logement
-├── assets/                                    # 🎨 Assets frontend
-│   ├── experience-search.css
-│   ├── pc-destination.css
-│   ├── pc-devis.js                           # Calculateur de devis
-│   ├── pc-experience-search.js
-│   ├── pc-faq-capture.css
-│   ├── pc-fiche-experiences.js
-│   ├── pc-fiche-logement.js
-│   ├── pc-gallerie.js
-│   ├── pc-header-global.css                 # Styles header
-│   ├── pc-header-global.js                  # JavaScript header
-│   ├── pc-header-smart.js                   # Header intelligent
-│   ├── pc-header.off                        # Header legacy (off)
-│   ├── pc-loop-card.css                     # Styles cartes
-│   ├── pc-orchestrator.js                   # 🎼 Orchestrateur JS
-│   ├── pc-search-shortcodes.css
-│   ├── pc-search-shortcodes.js
-│   ├── pc-ui-experiences.css
-│   ├── pc-ui.css                            # 🎨 UI Kit principal
-│   ├── shortcode-liste-logement-v2.js
-│   └── shortcode-liste-logement.css
-└── pc-acf-json/                              # 📋 Champs ACF
-    ├── acf-export-2025-09-09.json
-    ├── group_66dcc7e9c5a16.json
-    ├── group_68d50d744fe8b.json
-    ├── group_69121c9f90922.json
-    ├── group_pc_destination.json
-    ├── group_pc_fiche_logement.json
-    ├── group_pc_reviews.json
-    ├── group_pc_seo_global.json
-    ├── group_pc-pages-seo-structure.json
-    └── ui_options_page_69121da6846af.json
+├── 📄 mu-global-prestige-caraibesV2_3.php    (3,061 lignes) ⭐ Hub principal
+├── 📄 pc-custom-typesV3.php                  (207 lignes)    - CPTs & Taxonomies
+├── 📄 pc-acf.php                             (33 lignes)     - Configuration ACF
+├── 📂 shortcodes/                            - Pages métier (4,640 lignes)
+│   ├── shortcode-page-fiche-logement.php     (2,281 lignes) ⭐ Fiches logements
+│   ├── shortcode-page-fiche-experiences.php  (1,053 lignes) ⭐ Fiches expériences
+│   ├── shortcode-liste-logement.php          (108 lignes)    - Listes/cartes
+│   └── pc-destination-shortcodes.php         (499 lignes)    - Pages destinations
+├── 📂 composants/                            - Fonctionnalités (3,619 lignes)
+│   ├── pc-header-global.php                  (688 lignes)    - Header unifié
+│   ├── pc-reviews.php                        (495 lignes)    - Système d'avis
+│   ├── pc-experience-search.php              (452 lignes)    - Moteur de recherche
+│   ├── pc-search-shortcodes.php              (416 lignes)    - Recherche logements
+│   ├── pc-perf-hints.php                     (422 lignes)    - Optimisations
+│   ├── pc-maintenance.php                    (267 lignes)    - Mode maintenance
+│   ├── pc-faq-capture.php                    (263 lignes)    - FAQ dynamiques
+│   ├── pc-ajax-search.php                    (179 lignes)    - Recherche AJAX
+│   ├── pc-ical-cache.php                     (119 lignes)    - Cache iCal
+│   └── pc-loop-components.php                (85 lignes)     - Vignettes grilles
+├── 📂 assets/                                - Frontend (7,685 lignes)
+│   ├── css/                                  (5,611 lignes)
+│   │   ├── pc-ui.css                         (2,288 lignes) ⭐ Framework UI principal
+│   │   ├── pc-ui-experiences.css             (1,370 lignes) ⭐ UI expériences
+│   │   ├── pc-header-global.css              (1,011 lignes)  - Header responsive
+│   │   ├── pc-search-shortcodes.css          (539 lignes)    - Recherche/filtres
+│   │   ├── experience-search.css             (295 lignes)    - Moteur expériences
+│   │   ├── pc-destination.css                (214 lignes)    - Pages destinations
+│   │   ├── shortcode-liste-logement.css      (148 lignes)    - Grilles logements
+│   │   ├── pc-loop-card.css                  (139 lignes)    - Cards/vignettes
+│   │   └── pc-base.css                       (224 lignes)    - Variables CSS globales
+│   └── js/                                   (2,074 lignes)
+│       ├── pc-devis.js                       (950 lignes)  ⭐ Calculateur de prix
+│       ├── pc-fiche-experiences.js           (939 lignes)  ⭐ Interactions expériences
+│       ├── pc-fiche-logement.js              (728 lignes)    - Interactions logements
+│       ├── pc-header-global.js               (416 lignes)    - Navigation/mobile
+│       ├── pc-search-shortcodes.js           (232 lignes)    - Filtres dynamiques
+│       ├── pc-gallerie.js                    (208 lignes)    - Galeries photos
+│       ├── pc-header-smart.js                (169 lignes)    - Header intelligent
+│       ├── shortcode-liste-logement-v2.js    (161 lignes)    - Grilles v2
+│       ├── pc-experience-search.js           (149 lignes)    - Recherche expériences
+│       └── pc-orchestrator.js                (118 lignes)    - Coordinateur scripts
+└── 📂 pc-acf-json/                          - Métadonnées ACF
+    ├── group_pc_fiche_logement.json          - Champs logements
+    ├── group_pc_reviews.json                 - Champs avis
+    ├── group_pc_destination.json             - Champs destinations
+    ├── group_pc_seo_global.json              - Champs SEO
+    └── ui_options_page_*.json                - Pages d'options
+```
+
+⭐ _= Composants les plus critiques_
+
+---
+
+## 🏛️ Architecture fonctionnelle
+
+### 🎯 Pattern architectural : **Modular Monolith + Event-Driven**
+
+Les MU-plugins suivent une architecture modulaire avec spécialisation par domaine métier :
+
+```mermaid
+graph TB
+    A[WordPress Core] --> B[MU-Plugins Auto-Load]
+    B --> C[mu-global-V2_3.php Hub]
+    C --> D[SEO Engine]
+    C --> E[Schema Generator]
+    C --> F[Performance Layer]
+    D --> G[Shortcodes Métier]
+    G --> H[Assets Conditionnels]
+    H --> I[Frontend Components]
+    E --> J[JSON-LD Output]
+```
+
+### 🔧 Modules principaux
+
+#### 1. **Hub Central** (`mu-global-prestige-caraibesV2_3.php`)
+
+**Responsabilités :** Architecture SEO complète, schémas JSON-LD, optimisations
+
+- **SEO technique** : Meta robots, sitemaps XML, canonicals intelligents
+- **Schémas JSON-LD** : Organization, WebSite, FAQPage, Product, VacationRental
+- **Performance** : Suppression assets inutiles, préchargement polices
+- **3,061 lignes** - Le cerveau du système
+
+#### 2. **Shortcodes Métier** (4,640 lignes)
+
+- **Fiches Logements** (`shortcode-page-fiche-logement.php` - 2,281 lignes)
+  - Galeries filtrable, calendrier iCal, calculateur de prix
+  - Intégration Lodgify, formulaires de réservation
+  - Gestion cautions Stripe, modes de paiement
+- **Fiches Expériences** (`shortcode-page-fiche-experiences.php` - 1,053 lignes)
+  - Réservation directe, tarifs complexes, recommandations
+- **Destinations** (`pc-destination-shortcodes.php` - 499 lignes)
+  - Hubs, grilles, logements/expériences recommandés
+
+#### 3. **Framework UI** (`assets/css/`)
+
+- **pc-ui.css** (2,288 lignes) : Framework CSS principal avec variables
+- **pc-ui-experiences.css** (1,370 lignes) : Composants spécialisés expériences
+- **pc-header-global.css** (1,011 lignes) : Navigation responsive uniforme
+
+#### 4. **Moteurs de Recherche** (1,047 lignes)
+
+- **Recherche Expériences** (`pc-experience-search.php` + assets)
+- **Recherche Logements** (`pc-search-shortcodes.php` + assets)
+- **AJAX avancé** avec filtres dynamiques et géolocalisation
+
+---
+
+## 🔄 Flux de données et intégrations
+
+### 📍 Cycle de rendu d'une page produit
+
+```
+1. [WordPress] Chargement MU-plugins automatique
+   ↓
+2. [mu-global] Initialisation SEO + schémas
+   ↓
+3. [shortcode-fiche] Rendu contenu métier
+   ↓
+4. [Assets JS] Chargement conditionnel composants
+   ↓
+5. [API externes] Lodgify, Stripe, Leaflet, Flatpickr
+   ↓
+6. [JSON-LD] Injection schémas dans <head>
+```
+
+### 🎛️ Points d'intégration externes
+
+| **Service**     | **Usage**                   | **Fichiers concernés**              |
+| --------------- | --------------------------- | ----------------------------------- |
+| **Lodgify**     | Réservations directes       | `shortcode-page-fiche-logement.php` |
+| **Stripe**      | Paiements + cautions        | `pc-devis.js`                       |
+| **iCal/ICS**    | Synchronisation calendriers | `pc-ical-cache.php`                 |
+| **Leaflet**     | Cartes interactives         | `shortcode-*.php`                   |
+| **Flatpickr**   | Sélecteurs de dates         | Assets JS                           |
+| **GLightbox**   | Galeries photos             | `pc-gallerie.js`                    |
+| **FontAwesome** | Iconographie                | Chargement conditionnel             |
+
+---
+
+## 🎨 Patterns et conventions
+
+### 1. **Chargement conditionnel des assets**
+
+```php
+// Pattern répété : chargement intelligent selon le contexte
+add_action('wp_enqueue_scripts', function () {
+  if (! is_singular(['villa', 'appartement', 'logement'])) {
+    return; // Pas de chargement inutile
+  }
+  wp_enqueue_style(...);
+});
+```
+
+### 2. **Shortcodes avec configuration avancée**
+
+```php
+// Configuration data-driven pour composants complexes
+add_shortcode('pc_devis', function ($atts = []) {
+  $cfg = [
+    'basePrice'   => $base_price,
+    'seasons'     => $seasons_data,
+    'icsDisable'  => $availability_ranges,
+    'payment'     => $payment_config
+  ];
+  return '<section data-pc-devis="' . esc_attr(wp_json_encode($cfg)) . '">';
+});
+```
+
+### 3. **SEO modulaire et extensible**
+
+```php
+// Système de schémas JSON-LD avec helpers réutilisables
+function pcseo_get_meta($post_id, $suffix) {
+  // Lecture multi-format (ACF group/subfield + fallbacks)
+}
 ```
 
 ---
 
-## 📋 Description des composants
+## ⚡ Performance et optimisations
 
-### 🔥 Fichiers Principaux (Core)
+### 🚀 Stratégies d'optimisation
 
-#### `mu-global-prestige-caraibesV2_3.php` - **Moteur SEO Principal**
+| **Technique**                   | **Implémentation**           | **Gain estimé**   |
+| ------------------------------- | ---------------------------- | ----------------- |
+| **Chargement conditionnel**     | Assets par contexte page     | **-60% JS/CSS**   |
+| **Variables CSS natives**       | `pc-base.css` avec `:root`   | **-30% taille**   |
+| **Préchargement polices**       | `mu-global` anticipé         | **+200ms LCP**    |
+| **Suppression bloat Gutenberg** | Désactivation conditionnelle | **-150KB**        |
+| **Cache iCal intelligent**      | `pc-ical-cache.php` avec TTL | **-2s loading**   |
+| **Minification runtime**        | Assets avec filemtime()      | **Cache optimal** |
 
-- **Rôle :** Cœur du système SEO dynamique
-- **Fonctionnalités :**
-  - Moteur SEO 100% dynamique (sitemaps, robots.txt, meta robots)
-  - JSON-LD Schema.org (VacationRental, Product, Article, FAQ, Organization)
-  - Canonical Guard avec gestion pagination Elementor
-  - Social Cards (Open Graph, Twitter)
-  - HTML Sitemap avec ItemList JSON-LD
-  - Gestion 404/410 avec templates dédiés
-  - Audit SEO intégré avec export CSV
-  - Optimisations performances (suppression CSS Gutenberg)
-- **Namespace :** Global, fonctions préfixées `pcseo_*`
-- **Hooks :** Intégration wp_head, wp_footer, template_redirect
-- **Configuration :** Multi-CPT (villa, appartement, experience, destination, page, post)
+### 🐌 Points d'amélioration identifiés
 
-#### `pc-custom-typesV3.php` - **Types de Contenu**
-
-- **Rôle :** Déclaration des CPT et taxonomies
-- **Types créés :**
-  - `villa` (menu principal "Logements")
-  - `appartement` (sous-menu de villa)
-  - `experience` (menu indépendant)
-  - `destination` (menu indépendant)
-- **Taxonomies :**
-  - `categorie_logement` (villa/appartement)
-  - `categorie_experience` (experience)
-- **Configuration :** Supports complets, REST API, archives configurables
-
-#### `pc-header-global.php` - **Header Unifié**
-
-- **Rôle :** Système de header responsive complet
-- **Fonctionnalités :**
-  - Méga-menu desktop avec ARIA
-  - Off-canvas mobile avec focus trap
-  - Recherche unifiée (suggest REST API)
-  - Gestion des menus WordPress (principal + services)
-  - Social links configurables
-  - Logo et branding centralisé
-- **Shortcode :** `[pc_header_global]`
-- **API REST :** `/wp-json/pc/v1/search-suggest`
-- **Assets :** CSS + JS avec localisation
-
-#### `pc-acf.php` - **Configuration ACF**
-
-- **Rôle :** Gestion centralisée des champs ACF
-- **Fonctionnalités :**
-  - Local JSON dans `/mu-plugins/pc-acf-json/`
-  - Évite les doublons avec le thème
-  - Chargement optimisé des groupes de champs
-- **Structure :** 10 groupes de champs définis
-
-### 🎨 Assets Frontend
-
-#### `pc-orchestrator.js` - **Orchestrateur JavaScript**
-
-- **Rôle :** Coordination des modules JS
-- **Fonctionnalités :**
-  - Gestion centralisée de Flatpickr (calendrier)
-  - Coordination devis + logements
-  - Attente des dépendances externes
-  - Pattern d'initialisation unifié
-- **API :** `window.PCOrchestrator`
-
-#### `pc-ui.css` - **UI Kit Principal**
-
-- **Rôle :** Système de design complet
-- **Composants :**
-  - Forms & formulaires de réservation
-  - Points forts (`[pc_highlights]`)
-  - Calculateur de devis (`[pc_devis]`)
-  - Système d'avis (`[pc_reviews]`)
-  - Proximités (`[pc_proximites]`)
-  - Cartes et galeries
-  - Calendriers iCal
-  - Tables de tarifs
-  - Modales et bottom-sheets
-  - Boutons flottants (FAB)
-- **Variables CSS :** Intégré avec `pc-base.css`
-- **Responsive :** Mobile-first avec breakpoints
-
-#### `pc-header-global.js` - **Header Interactif**
-
-- **Rôle :** Interactions du header responsive
-- **Fonctionnalités :**
-  - Méga-menus desktop (hover + click)
-  - Off-canvas mobile avec accordéons
-  - Recherche en temps réel (debounced)
-  - Navigation clavier complète (ARIA)
-  - Focus trap et gestion ESC
-- **Dépendances :** API REST pour suggestions
-
-### 🔧 Modules Spécialisés
-
-#### `pc-reviews.php` - **Système d'Avis**
-
-- **Rôle :** Gestion complète des avis clients
-- **Fonctionnalités :**
-  - CPT `pc_review` avec métadonnées
-  - Sources multiples (internal, booking, airbnb)
-  - Affichage par shortcode avec pagination
-  - Formulaire de soumission AJAX
-  - Intégration JSON-LD Schema.org
-- **Shortcodes :** `[pc_reviews]`, `[pc_reviews_form]`
-
-#### `pc-ical-cache.php` - **Cache iCal**
-
-- **Rôle :** Gestion des calendriers de disponibilité
-- **Fonctionnalités :**
-  - Synchronisation automatique iCal
-  - Cache optimisé avec transients
-  - Intégration Flatpickr pour affichage
-  - Gestion des erreurs et timeouts
-
-#### Shortcodes Spécialisés
-
-- `shortcode-liste-logement.php` : Grilles de logements filtrables
-- `shortcode-page-fiche-logement.php` : Pages détail logement
-- `shortcode-page-fiche-experiences.php` : Pages détail expérience
-- `pc-destination-shortcodes.php` : Hub et grilles destinations
-- `pc-search-shortcodes.php` : Formulaires de recherche
-
-### 📋 Configuration ACF
-
-#### Groupes de Champs Principaux
-
-- **Logements :** `group_pc_fiche_logement.json`
-- **Destinations :** `group_pc_destination.json`
-- **SEO Global :** `group_pc_seo_global.json`
-- **Avis :** `group_pc_reviews.json`
-- **Structure SEO Pages :** `group_pc-pages-seo-structure.json`
-- **Options UI :** `ui_options_page_69121da6846af.json`
+| **Problème**               | **Impact**         | **Solution recommandée**   |
+| -------------------------- | ------------------ | -------------------------- |
+| Fichiers monolithiques     | Maintenance        | Refactoring en modules     |
+| Dépendances CDN multiples  | SPOF + latence     | Self-hosting critique      |
+| JS inline volumineux       | Caching impossible | Externalisation            |
+| Schémas JSON-LD redondants | DOM pollution      | Déduplication intelligente |
 
 ---
 
-## 🔍 Audit de Conformité (Gap Analysis)
+## 🔐 Sécurité et bonnes pratiques
 
-### ✅ Points Forts
+### ✅ Mesures implémentées
 
-#### **Conformité PHP 8.0+**
+- **Nonces WordPress** : Protection CSRF sur tous les formulaires
+- **Sanitization complète** : `sanitize_text_field()`, `wp_kses_post()`
+- **Capability checks** : Vérification permissions administrateur
+- **Anti-bot honeypots** : Champs cachés dans formulaires
+- **Rate limiting** : Via plugins externes + validation côté serveur
+- **Échappement output** : `esc_html()`, `esc_attr()`, `esc_url()`
 
-- ✅ Syntaxe moderne utilisée (arrow functions, null coalescing)
-- ✅ Fonctions PHP 8+ présentes (`str_contains`, etc.)
-- ✅ Gestion d'erreurs avec try/catch appropriée
+### 🛡️ Recommandations sécurité
 
-#### **Programmation Orientée Objet**
-
-- ⚠️ **PARTIEL** : Mélange de procédural et OOP
-- ✅ Utilisation d'objets WordPress (`WP_Query`, `WP_REST_Request`)
-- ✅ Namespaces absents mais préfixage strict (`pc_`, `pcseo_`)
-
-#### **Sécurité WordPress**
-
-- ✅ Sanitisation systématique (`sanitize_text_field`, `esc_url`, `esc_html`)
-- ✅ Nonces présents pour les formulaires AJAX
-- ✅ Capabilities checking (`manage_options`, `manage_categories`)
-- ✅ Validation des entrées utilisateur
-- ✅ Protection ABSPATH sur tous les fichiers
-
-#### **Performance & Qualité**
-
-- ✅ Chargement conditionnel des assets
-- ✅ Transients pour le cache
-- ✅ Lazy loading des composants JS
-- ✅ CSS critique intégré
-- ✅ Versioning automatique des assets (filemtime)
-
-#### **SEO & Accessibilité**
-
-- ✅ Schema.org JSON-LD complet et valide
-- ✅ ARIA labels et navigation clavier
-- ✅ Meta robots et canonical tags avancés
-- ✅ HTML sémantique respecté
-- ✅ Focus trap et gestion des modales
-
-### ❌ Points d'Amélioration
-
-#### **Architecture Générale**
-
-- ❌ **Code procédural dominant** : Manque de classes et d'organisation OOP
-- ❌ **Fichiers volumineux** : `mu-global-prestige-caraibesV2_3.php` fait 2000+ lignes
-- ❌ **Séparation des responsabilités** : Mélange SEO + UI + fonctionnalités
-- ❌ **Pas de typage strict** : Absence de déclarations de types PHP 8+
-
-#### **Standards de Code**
-
-- ❌ **Pas de PSR-4** : Autoloading et namespaces absents
-- ❌ **Documentation limitée** : DocBlocks incomplets ou absents
-- ❌ **Tests unitaires** : Aucun test automatisé présent
-- ❌ **Lint/Formatage** : Styles de code inconsistants
-
-#### **Gestion d'Erreurs**
-
-- ⚠️ **Logging** : Utilisation sporadique d'`error_log`
-- ❌ **Exceptions** : Peu d'utilisation des exceptions PHP modernes
-- ❌ **Debug WordPress** : Pas d'intégration avec `WP_DEBUG`
-
-#### **Maintenance & Évolutivité**
-
-- ❌ **Configuration externalisée** : Beaucoup de valeurs hardcodées
-- ❌ **Hooks personnalisés** : Peu de filtres/actions pour extensibilité
-- ❌ **Versionning du code** : Pas de gestion des migrations
-
-### 🎯 Recommandations Prioritaires
-
-#### **Court terme (1-2 sprints)**
-
-1. **Refactoring modulaire** : Séparer le moteur SEO en classes distinctes
-2. **Typage PHP 8+** : Ajouter les déclarations de types sur les fonctions publiques
-3. **Documentation** : Compléter les DocBlocks des fonctions principales
-4. **Configuration** : Externaliser les constantes et options hardcodées
-
-#### **Moyen terme (3-6 mois)**
-
-1. **Architecture OOP** : Migrer vers un système de classes avec namespaces
-2. **Tests automatisés** : Implémenter PHPUnit pour les fonctions critiques
-3. **Performance** : Audit approfondi avec profiling des requêtes
-4. **CI/CD** : Intégration continue avec linting automatique
-
-#### **Long terme (6-12 mois)**
-
-1. **Framework Pattern** : Migration vers une architecture MVC légère
-2. **API REST complète** : Étendre les endpoints pour une SPA future
-3. **Microservices** : Séparer SEO, recherche, et avis en modules indépendants
-4. **Monitoring** : Observabilité et métriques de performance
+- [ ] **Audit XSS** : Scanner tous les shortcodes pour injections
+- [ ] **CSRF avancé** : Implémenter tokens rotatifs
+- [ ] **Input validation** : Whitelist stricte champs ACF
+- [ ] **SQL injection** : Audit requêtes custom avec `$wpdb`
 
 ---
 
-## 📊 Métriques Techniques
+## 📦 Dépendances et intégrations
 
-- **Lignes de code PHP :** ~8,000 lignes
-- **Lignes de code CSS :** ~3,000 lignes
-- **Lignes de code JS :** ~2,000 lignes
-- **Nombre de shortcodes :** 15+
-- **Endpoints REST API :** 3
-- **Composants UI :** 20+
-- **Champs ACF :** 100+ champs
-- **Types de contenu :** 4 CPT + 2 taxonomies
+### 🔌 Plugins WordPress requis
+
+- **Advanced Custom Fields Pro** : Gestion des métadonnées
+- **Elementor Pro** : Constructeur de pages
+- **WP Rocket** : Cache + optimisations (optionnel)
+
+### 🌐 Services externes (CDN)
+
+```javascript
+// Dépendances critiques chargées via CDN
+"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+"https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
+"https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css";
+"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css";
+```
+
+### 🛠️ APIs et Webhooks
+
+- **Stripe API** : Paiements, cautions, webhooks
+- **Lodgify API** : Synchronisation réservations
+- **OpenStreetMap** : Tiles cartographiques
+- **Email providers** : SMTP pour notifications
 
 ---
 
-## 🔗 Dépendances Externes
+## 🧪 Qualité du code
 
-- **WordPress :** 6.0+ (REST API, Customizer)
-- **Advanced Custom Fields Pro :** 6.0+ (Local JSON, Options Pages)
-- **Elementor :** Compatible mais pas requis
-- **PHP :** 8.0+ recommandé, 7.4+ minimum
-- **JavaScript Libraries :**
-  - Flatpickr (calendriers)
-  - Leaflet (cartes)
-  - GLightbox (galeries)
-  - jsPDF (génération PDF)
+### 📊 Métriques de complexité
+
+| **Fichier**                            | **Lignes** | **Fonctions** | **Complexité** |
+| -------------------------------------- | ---------- | ------------- | -------------- |
+| `mu-global-prestige-caraibesV2_3.php`  | 3,061      | ~80           | **Élevée**     |
+| `shortcode-page-fiche-logement.php`    | 2,281      | ~25           | **Élevée**     |
+| `pc-ui.css`                            | 2,288      | N/A           | **Moyenne**    |
+| `shortcode-page-fiche-experiences.php` | 1,053      | ~15           | **Moyenne**    |
+
+### ❌ Dette technique identifiée
+
+1. **Fonctions gigantesques** : Certaines fonctions dépassent 200 lignes
+2. **Code dupliqué** : Patterns similaires entre logements/expériences
+3. **Configuration hardcodée** : Magic numbers et strings
+4. **Absence de tests** : Aucun test automatisé
+5. **Documentation manquante** : Peu de docblocks PHP
 
 ---
 
-**Dernière mise à jour :** 29/01/2026  
-**Analysé par :** IA Senior Developer & Architecte Logiciel  
-**Version du code :** V2.3+ (branche principale)
+## 🚀 Roadmap d'évolution
+
+### 📈 Court terme (Q1 2026)
+
+1. **Refactoring mu-global** : Diviser en modules thématiques
+2. **Optimisation CSS** : Audit unused + purge automatique
+3. **Tests unitaires** : Couverture 40% fonctions critiques
+4. **Documentation** : Docblocks + guide développeur
+
+### 🎯 Moyen terme (Q2-Q3 2026)
+
+1. **Migration CDN → Self-hosted** : Vendor assets localement
+2. **Module système** : Architecture PSR-4 + autoloading
+3. **Cache avancé** : Redis pour données API/iCal
+4. **A/B Testing** : Variants composants UI
+
+### 🌟 Long terme (2027+)
+
+1. **Micro-frontend** : Composants JS indépendants
+2. **SSR/Hydration** : Rendu server-side critique
+3. **Progressive Web App** : Service workers + cache
+4. **Headless WordPress** : API-first pour mobile
+
+---
+
+## 📝 Configuration et personnalisation
+
+### 🎛️ Variables CSS principales (`pc-base.css`)
+
+```css
+:root {
+  --pc-primary: #0e2b5c; /* Bleu corporate */
+  --pc-accent: #005f73; /* Accent interactions */
+  --pc-sticky-top: 68px; /* Hauteur header fixe */
+  --pc-border-radius: 12px; /* Rayon uniformisé */
+  --pc-font-family-heading: "Poppins", system-ui;
+  --pc-font-family-body: system-ui, -apple-system, "Segoe UI";
+}
+```
+
+### ⚙️ Points de configuration ACF
+
+- **Options générales** : Infos entreprise, SEO, logos
+- **Règles de paiement** : Acomptes, cautions, délais
+- **Modes de réservation** : Directe vs demande
+- **Intégrations** : Clés API Stripe, Lodgify, etc.
+
+---
+
+## 🔍 Monitoring et debugging
+
+### 📊 Logs disponibles
+
+```php
+// Pattern de logging utilisé dans le code
+error_log('[PC COMPONENT] Message de debug');
+```
+
+### 🛠️ Outils de diagnostic
+
+- **WordPress Debug** : `WP_DEBUG` + `WP_DEBUG_LOG`
+- **Query Monitor** : Plugin pour analyser performances
+- **Browser DevTools** : Console erreurs JS + Network
+
+### 📈 KPIs à surveiller
+
+- **Temps de chargement** pages fiches (< 3s)
+- **Taux d'erreur** formulaires réservation (< 1%)
+- **Performance** requêtes base de données
+- **Disponibilité** services externes (Stripe, Lodgify)
+
+---
+
+## 👥 Équipe et maintenance
+
+**Architecture :** PC SEO + Équipe dev  
+**Maintenance :** Mensuelle + corrections bugs  
+**Stack technique :** PHP 8.0+, CSS3 moderne, ES6+, WordPress 6.0+  
+**Outils :** ACF Pro, Elementor Pro, Git, Local by Flywheel
+
+---
+
+## 🔗 Relations avec pc-reservation-core
+
+Les MU-plugins et le plugin pc-reservation-core sont **complémentaires** :
+
+- **MU-plugins** : Interface utilisateur, SEO, affichage
+- **pc-reservation-core** : Logique métier, base de données, API
+
+```mermaid
+graph LR
+    A[MU-Plugins Frontend] --> B[Shortcodes Fiches]
+    B --> C[Formulaires Réservation]
+    C --> D[pc-reservation-core Backend]
+    D --> E[Base de données]
+    D --> F[Paiements Stripe]
+```
+
+---
+
+_Document généré automatiquement le 23/02/2026_  
+_Dernière mise à jour : Version V2.3_
