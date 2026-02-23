@@ -504,28 +504,12 @@ function pc_shortcode_experience_dashboard($atts = [])
                                     <input type="number" id="exp_taux_tva" class="pc-input" min="0" max="100" step="0.01" placeholder="20">
                                     <small class="pc-field-help">Saisissez le pourcentage de TVA (ex: 20 pour 20%, 8.5 pour 8.5%). Laissez à 0 si non assujetti.</small>
                                 </div>
-
-                                <!-- Rate Manager (Calendrier) -->
-                                <div class="pc-form-group pc-form-group--full" style="margin-top: 2rem;">
-                                    <h3 style="font-size: 1.2rem; font-weight: 700; color: #1e293b; margin: 0 0 1.5rem 0; display: flex; align-items: center; gap: 0.8rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(148, 163, 184, 0.3);">
-                                        📅 Calendrier des Tarifs & Disponibilités
-                                    </h3>
-                                    <div id="pc-experience-rates-calendar">
-                                        <!-- Calendrier Rate Manager injecté ici -->
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
                         <!-- Onglet 9 : Règles Channel Manager -->
                         <div class="pc-tab-content" id="tab-rules" style="display: none;">
                             <div class="pc-form-grid">
-                                <div class="pc-form-group">
-                                    <label for="exp_rules_taux_tva">Taux de TVA applicable (%)</label>
-                                    <input type="number" id="exp_rules_taux_tva" class="pc-input" min="0" max="100" step="0.01" placeholder="20">
-                                    <small class="pc-field-help">Saisissez le pourcentage de TVA (ex: 20 pour 20%, 8.5 pour 8.5%). Laissez à 0 si non assujetti.</small>
-                                </div>
-
                                 <div class="pc-form-group pc-form-group--full">
                                     <label>Règles de paiement</label>
                                 </div>

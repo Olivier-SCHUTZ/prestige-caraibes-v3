@@ -1961,13 +1961,6 @@ class PCR_Dashboard_Ajax
             wp_send_json_error(['message' => 'Expérience introuvable ou erreur de chargement.']);
         }
 
-        // ✨ Injection des données Rate Manager via la nouvelle classe (les expériences ont aussi des tarifs saisonniers)
-        if (class_exists('PCR_Rate_Manager')) {
-            $rates_data = PCR_Rate_Manager::get_rates_data($post_id);
-            $result['data']['seasons_data'] = $rates_data['seasons'];
-            $result['data']['promos_data'] = $rates_data['promos'];
-        }
-
         wp_send_json_success([
             'experience' => $result['data'],
             'post_id' => $post_id,
@@ -2047,11 +2040,6 @@ class PCR_Dashboard_Ajax
 
         if (!$result['success']) {
             wp_send_json_error(['message' => $result['message']]);
-        }
-
-        // ✨ Sauvegarde Rate Manager via la nouvelle classe (les expériences ont aussi des tarifs saisonniers)
-        if (class_exists('PCR_Rate_Manager') && isset($_POST['rate_manager_data'])) {
-            PCR_Rate_Manager::save_rates_data($post_id, $_POST['rate_manager_data']);
         }
 
         wp_send_json_success([

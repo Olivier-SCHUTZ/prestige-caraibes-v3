@@ -36,9 +36,6 @@
         newBtn: "#pc-new-experience-btn",
       };
 
-      // Initialiser le Rate Manager pour la suite
-      this.rateManager = new PCRateManager();
-
       this.init();
     }
 
@@ -577,18 +574,6 @@
 
         // 🔧 Champ TVA (hérité du JSON ACF)
         $("#exp_taux_tva").val(experience.taux_tva || "");
-
-        // 🔧 Initialisation Rate Manager (Calendrier)
-        if (this.rateManager) {
-          this.rateManager.init(
-            "pc-experience-rates-calendar",
-            {
-              seasons: experience.seasons_data || [],
-              promos: experience.promos_data || [],
-            },
-            0,
-          );
-        }
       } catch (error) {
         console.error("❌ Erreur onglet Tarifs:", error);
         // Fallback : Interface minimale
@@ -748,10 +733,6 @@
         acf_exp_periodes_fermeture: this.collectFermetureData(),
         acf_exp_faq: this.collectFaqData(),
         acf_exp_types_de_tarifs: this.collectTarifsData(),
-
-        rate_manager_data: this.rateManager
-          ? JSON.stringify(this.rateManager.getData())
-          : "{}",
       };
 
       $.ajax({
