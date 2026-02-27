@@ -1,0 +1,107 @@
+/**
+ * Fichier : mu-plugins/assets/css/components/pc-highlights.css
+ * Rôle : Styles du composant Points Forts (Pastilles)
+ */
+
+/* ============================================================
+   CONTENEUR PRINCIPAL
+   ============================================================ */
+.pc-hl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Variante compacte optionnelle */
+.pc-hl--tight {
+  gap: 0.5rem;
+}
+
+/* ============================================================
+   PASTILLES (ITEMS)
+   ============================================================ */
+.pc-hl__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: transparent;
+  border: 1.5px solid var(--pc-color-text);
+  border-radius: 9999px; /* Forme "Pill" parfaite */
+  padding: 0.6rem 1.1rem;
+  font-family: var(--pc-font-body);
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  color: var(--pc-color-text);
+  white-space: nowrap;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* Hover/focus : accent brand (sans remplir la pastille pour rester sobre) */
+.pc-hl__item:hover,
+.pc-hl__item:focus-visible {
+  border-color: var(--pc-color-primary);
+  color: var(--pc-color-primary);
+  box-shadow: var(--pc-shadow-soft, 0 4px 12px rgba(0, 0, 0, 0.06));
+  outline: none;
+}
+
+/* Variante : Pastille compacte */
+.pc-hl__item--sm {
+  font-size: 0.95rem;
+  padding: 0.45rem 0.9rem;
+}
+
+/* Variante : Pastille pleine (si utilisée pour des tags actifs par exemple) */
+.pc-hl--filled .pc-hl__item {
+  background: color-mix(in oklab, var(--pc-color-primary) 10%, white);
+  border-color: color-mix(
+    in oklab,
+    var(--pc-color-primary) 40%,
+    var(--pc-color-text)
+  );
+}
+
+/* ============================================================
+   ICÔNES
+   ============================================================ */
+.pc-hl__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.25rem;
+  color: currentColor;
+}
+
+.pc-hl__icon i {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.pc-hl__icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: block;
+  fill: currentColor;
+}
+
+/* ============================================================
+   RESPONSIVE (MOBILE)
+   ============================================================ */
+@media (max-width: 480px) {
+  .pc-hl {
+    gap: 0.6rem;
+  }
+
+  .pc-hl__item {
+    padding: 0.5rem 0.9rem;
+    font-size: 1rem;
+  }
+}

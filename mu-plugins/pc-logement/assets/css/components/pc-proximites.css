@@ -1,0 +1,110 @@
+/**
+ * Fichier : mu-plugins/assets/css/components/pc-proximites.css
+ * Rôle : Styles du composant Proximités ([pc_proximites])
+ */
+
+/* ============================================================
+   GRILLE PRINCIPALE
+   ============================================================ */
+/* 2 colonnes par défaut */
+.pc-prox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+
+/* Tablet/Desktop : on garde 2 colonnes pour matcher le design de la carte */
+@media (min-width: 1025px) {
+  .pc-prox-grid {
+    gap: 28px;
+  }
+}
+
+/* Très petits écrans : sécuriser les colonnes (toujours 2) */
+@media (max-width: 359.98px) {
+  .pc-prox-grid {
+    gap: 18px;
+  }
+}
+
+/* ============================================================
+   CARTES (ITEMS)
+   ============================================================ */
+.pc-prox {
+  background: #fff;
+  border-radius: var(--pc-radius);
+  box-shadow: var(--pc-shadow-soft, 0 8px 22px rgba(0, 0, 0, 0.06));
+  padding: 26px 20px;
+  text-align: center;
+  color: var(--pc-color-text);
+  font-family: var(--pc-font-body);
+}
+
+@media (max-width: 359.98px) {
+  .pc-prox {
+    padding: 20px 16px;
+  }
+}
+
+/* ============================================================
+   ICÔNES
+   ============================================================ */
+.pc-prox-ico {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  color: color-mix(in oklab, var(--pc-color-text) 70%, white);
+  margin-bottom: 10px;
+}
+
+.pc-prox-ico svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+@media (max-width: 359.98px) {
+  .pc-prox-ico {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* ============================================================
+   TEXTES (VALEUR & LIBELLÉ)
+   ============================================================ */
+.pc-prox-val {
+  display: block;
+  font-family: var(--pc-font-body);
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.pc-prox-lab {
+  display: block;
+  font-family: var(--pc-font-body);
+  font-weight: 400;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+/* ============================================================
+   SÉCURITÉS ELEMENTOR
+   ============================================================ */
+.elementor .elementor-widget-shortcode .pc-prox,
+.elementor .elementor-widget-container .pc-prox {
+  font-family: var(--pc-font-body) !important;
+}
+
+.elementor .elementor-widget-shortcode .pc-prox-val {
+  font-size: 1.125rem !important;
+}
+
+.elementor .elementor-widget-shortcode .pc-prox-lab {
+  font-size: 0.95rem !important;
+}

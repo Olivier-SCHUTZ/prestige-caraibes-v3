@@ -1,0 +1,284 @@
+/**
+ * Fichier : mu-plugins/pc-logement/assets/css/components/pc-devis.css
+ * Rôle : Styles du calculateur de devis et formulaires ([pc_devis])
+ */
+
+/* ============================================================
+   CONTENEUR GLOBAL & LAYOUT
+   ============================================================ */
+.pc-devis-section {
+  padding: 2rem 0;
+}
+
+.pc-quote,
+.exp-devis-wrap {
+  background: var(--pc-bg-page);
+  border: 1px solid #e0e0e0;
+  border-radius: var(--pc-radius);
+  padding: 2rem;
+  font-family: var(--pc-font-body);
+}
+
+.exp-devis-title {
+  margin: 0 0 1.5rem 0;
+  font-family: var(--pc-font-title);
+  text-align: left;
+  color: var(--pc-color-heading);
+}
+
+/* Grilles du formulaire */
+.pcq-grid {
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: 1fr 140px 140px 1fr; /* dates | adultes | enfants | msg */
+  align-items: end;
+  margin: 0.25rem 0 1rem;
+}
+
+.exp-devis-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Force les blocs de résultat et d'actions à prendre toute la largeur */
+.exp-devis-form > .exp-devis-result,
+.exp-devis-form > .exp-devis-actions,
+.exp-devis-form > .pcq-msg,
+.exp-devis-form > .exp-devis-error {
+  grid-column: 1 / -1;
+}
+
+/* ============================================================
+   CHAMPS DE FORMULAIRE (Inputs, Selects, Labels)
+   ============================================================ */
+.pcq-field,
+.exp-devis-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pcq-label,
+.exp-devis-field label {
+  font-family: var(--pc-font-title);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+  color: var(--pc-color-heading);
+}
+
+.pcq-input {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+  font-family: var(--pc-font-body);
+  font-size: 1rem;
+  line-height: 1.2;
+  background: #fff;
+  color: var(--pc-color-text);
+}
+
+/* Restaure l'apparence native du sélecteur (Chrome & Safari) */
+.exp-devis-form select[name="devis_type"] {
+  appearance: revert;
+  -webkit-appearance: revert;
+  -moz-appearance: revert;
+  background: revert;
+  border: revert;
+  border-radius: revert;
+  padding: revert;
+  color: revert;
+  font: revert;
+}
+
+/* ============================================================
+   STEPPER (+ / - pour les invités)
+   ============================================================ */
+.exp-stepper {
+  display: flex;
+}
+
+.exp-stepper .pcq-input {
+  text-align: center;
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+}
+
+/* Masquer les flèches natives des inputs number */
+.exp-stepper input[type="number"]::-webkit-outer-spin-button,
+.exp-stepper input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.exp-stepper input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.exp-stepper-btn {
+  background: #fff;
+  border: 1px solid #ccc;
+  color: var(--pc-color-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 44px;
+  height: auto;
+  transition: background-color 0.15s ease;
+}
+
+.exp-stepper-btn:hover {
+  background-color: #f7f7f7;
+}
+
+.exp-stepper-btn[data-step="minus"] {
+  border-radius: 8px 0 0 8px;
+}
+.exp-stepper-btn[data-step="plus"] {
+  border-radius: 0 8px 8px 0;
+}
+
+/* ============================================================
+   RÉSULTATS DU DEVIS & RÉCAPITULATIF
+   ============================================================ */
+.pcq-result,
+.exp-devis-result {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.exp-result-title {
+  margin: 0 0 1rem 0;
+  font-family: var(--pc-font-title);
+  font-weight: 600;
+  color: var(--pc-color-heading);
+}
+
+.pcq-lines,
+.exp-devis-result ul {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+}
+
+.pcq-line,
+.exp-devis-result li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.pcq-total,
+.exp-devis-result .exp-result-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 2px solid var(--pc-color-heading);
+  padding-top: 1rem;
+  margin-top: 1rem;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--pc-color-heading);
+}
+
+/* ============================================================
+   MESSAGES & ERREURS
+   ============================================================ */
+.pcq-msg {
+  font-size: 0.9375rem;
+  color: #b05400;
+  min-height: 1.2em;
+  margin-bottom: 1.5rem;
+}
+
+.exp-devis-error {
+  color: #c0392b;
+  font-weight: 500;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e74c3c;
+  border-radius: 8px;
+  background: #fdecea;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+}
+
+.exp-devis-error.is-visible {
+  max-height: 100px;
+  opacity: 1;
+}
+
+/* ============================================================
+   ACTIONS (Boutons)
+   ============================================================ */
+.exp-devis-actions {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+/* ============================================================
+   CALENDRIER FLATPICKR DU DEVIS (Overlay body)
+   ============================================================ */
+/* Ces !important sont requis pour forcer le comportement sur les éléments inline de Flatpickr */
+.pcq-cal,
+.pcq-cal * {
+  pointer-events: auto !important;
+}
+
+.pcq-cal .flatpickr-day.flatpickr-disabled,
+.pcq-cal .flatpickr-day.flatpickr-disabled:hover {
+  pointer-events: none !important;
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  color: #9a9a9a !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.pcq-cal {
+  z-index: 100000 !important;
+}
+
+/* ============================================================
+   RESPONSIVE (MOBILE)
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .pcq-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .pcq-msg {
+    grid-column: 1 / -1;
+  }
+
+  /* Flexibilité du résumé sur mobile pour éviter la casse */
+  .exp-devis-result li,
+  .exp-devis-result .exp-result-total {
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  .exp-devis-result li > span:first-child {
+    flex-grow: 1;
+    word-break: break-word;
+  }
+  .exp-devis-result li > span:last-child,
+  .exp-devis-result .exp-result-total strong {
+    flex-shrink: 0;
+    white-space: nowrap;
+    text-align: right;
+  }
+}

@@ -1,0 +1,173 @@
+/**
+ * Fichier : mu-plugins/assets/css/components/pc-gallery.css
+ * Rôle : Styles du composant Galerie ([pc_gallery])
+ */
+
+/* ============================================================
+   CONTENEUR ET GRILLE (Sécurisé pour Elementor)
+   ============================================================ */
+.elementor .elementor-widget-shortcode .pc-gallery,
+.pc-gallery {
+  display: block;
+}
+
+.elementor .elementor-widget-shortcode .pc-gallery > .pc-grid,
+.pc-gallery > .pc-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .elementor .elementor-widget-shortcode .pc-gallery > .pc-grid,
+  .pc-gallery > .pc-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .elementor .elementor-widget-shortcode .pc-gallery > .pc-grid,
+  .pc-gallery > .pc-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem; /* Correction : issu du petit complément en fin de fichier */
+  }
+}
+
+/* ============================================================
+   VIGNETTES (ITEMS & LIENS)
+   ============================================================ */
+.pc-gallery .pc-grid .pc-item {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: 0;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--pc-radius);
+}
+
+.pc-gallery .pc-item a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--pc-radius);
+  overflow: hidden;
+  box-shadow: var(--pc-shadow-soft, 0 6px 18px rgba(0, 0, 0, 0.06));
+}
+
+.pc-gallery .pc-item > img,
+.pc-gallery .pc-item a img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* Fallback anciens Safari */
+@supports not (aspect-ratio: 16 / 9) {
+  .pc-gallery .pc-grid .pc-item::before {
+    content: "";
+    display: block;
+    padding-top: 56.25%; /* 16:9 */
+  }
+  .pc-gallery .pc-grid .pc-item > img,
+  .pc-gallery .pc-grid .pc-item > a {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+/* ============================================================
+   TOOLBAR ET FILTRES
+   ============================================================ */
+.pc-gallery-toolbar,
+.pc-gallery .pc-gallery-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.pc-gallery-label,
+.pc-gallery .pc-gallery-label {
+  font-size: 0.95rem;
+  opacity: 0.85;
+  font-family: var(--pc-font-body);
+}
+
+.pc-gallery-select,
+.pc-gallery .pc-gallery-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--pc-radius);
+  background: #fff;
+  line-height: 1.2;
+  font-size: 0.95rem;
+  font-family: var(--pc-font-body);
+  cursor: pointer;
+  color: var(--pc-color-text);
+}
+
+.pc-gallery-select:focus,
+.pc-gallery .pc-gallery-select:focus {
+  outline: 2px solid var(--pc-color-primary);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   BOUTON "VOIR PLUS" (Sécurisé pour Elementor)
+   ============================================================ */
+.elementor .elementor-widget-shortcode .pc-gallery > .pc-morewrap,
+.pc-gallery > .pc-morewrap {
+  display: block !important;
+  width: 100% !important;
+  margin-top: 14px;
+  clear: both;
+  text-align: left;
+}
+
+.pc-gallery .pc-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--pc-btn-pt) var(--pc-btn-pr) var(--pc-btn-pb) var(--pc-btn-pl);
+  border-radius: var(--pc-radius);
+  border: 1px solid transparent;
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-btn-text-size);
+  font-weight: var(--pc-btn-text-weight);
+  line-height: var(--pc-btn-text-lh);
+  background: var(--pc-color-primary);
+  color: var(--pc-color-btn-text);
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.2s ease,
+    transform 0.08s ease;
+}
+
+.pc-gallery .pc-more:hover {
+  background: var(--pc-color-primary-hover);
+  color: var(--pc-color-btn-text);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.pc-gallery .pc-more:active {
+  transform: translateY(1px);
+}
+
+/* Message vide */
+.pc-gallery .pc-empty {
+  margin: 0.5rem 0 0;
+  opacity: 0.8;
+  font-family: var(--pc-font-body);
+}

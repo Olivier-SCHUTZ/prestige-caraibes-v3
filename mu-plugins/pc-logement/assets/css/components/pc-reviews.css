@@ -1,0 +1,132 @@
+/**
+ * Fichier : mu-plugins/pc-logement/assets/css/components/pc-reviews.css
+ * Rôle : Styles du composant Avis Clients ([pc_reviews])
+ */
+
+/* ============================================================
+   CONTENEUR GLOBAL & EN-TÊTE
+   ============================================================ */
+.pc-reviews {
+  font-family: var(--pc-font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.pc-reviews .pc-reviews-head h3 {
+  font-family: var(--pc-font-title);
+  font-weight: 600;
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  margin: 0;
+}
+
+/* ============================================================
+   CARTE D'AVIS & ÉTOILES
+   ============================================================ */
+.pc-review-card {
+  padding: 16px; /* Récupéré du PHP */
+  font-family: var(--pc-font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.pc-review-card h3 {
+  font-family: var(--pc-font-title);
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin: 0.35rem 0 0;
+}
+
+.pc-review-card > div:last-child {
+  font-size: 0.9375rem; /* Méta (date/source) */
+}
+
+.pc-reviews .pc-stars svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================================================
+   BOUTONS (Compromis : Forçage uniquement sur les couleurs)
+   ============================================================ */
+body .pc-reviews .pc-rev-toggle-form {
+  margin-left: auto;
+}
+
+/* Bouton Principal (CTA) */
+body .pc-reviews .pc-rev-toggle-form,
+body .pc-reviews #pc-review-form button[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--pc-btn-pt) var(--pc-btn-pr) var(--pc-btn-pb) var(--pc-btn-pl);
+  border-radius: var(--pc-radius);
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-btn-text-size);
+  font-weight: var(--pc-btn-text-weight);
+  line-height: var(--pc-btn-text-lh);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  /* Forçage strict face aux styles inline de l'extension */
+  border: 1px solid var(--pc-color-primary) !important;
+  background: var(--pc-color-primary) !important;
+  color: var(--pc-color-btn-text) !important;
+}
+
+body .pc-reviews .pc-rev-toggle-form:hover,
+body .pc-reviews #pc-review-form button[type="submit"]:hover {
+  background: var(--pc-color-primary-active) !important;
+  border-color: var(--pc-color-primary-active) !important;
+  color: var(--pc-color-btn-text) !important;
+}
+
+/* Bouton Secondaire (Ghost) */
+body .pc-reviews .pc-rev-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--pc-btn-pt) var(--pc-btn-pr) var(--pc-btn-pb) var(--pc-btn-pl);
+  border-radius: var(--pc-radius);
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-btn-text-size);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  /* Forçage strict face aux styles inline de l'extension */
+  border: 1px solid var(--pc-color-primary) !important;
+  background: transparent !important;
+  color: var(--pc-color-primary) !important;
+}
+
+body .pc-reviews .pc-rev-more:hover {
+  background: var(--pc-color-primary-active) !important;
+  border-color: var(--pc-color-primary-active) !important;
+  color: var(--pc-color-btn-text) !important;
+}
+
+/* ============================================================
+   RESPONSIVE (MOBILE)
+   ============================================================ */
+@media (max-width: 640px) {
+  .pc-reviews .pc-reviews-head {
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .pc-reviews .pc-rev-toggle-form {
+    width: 100%;
+    text-align: center;
+    margin-left: 0;
+  }
+  .pc-reviews .pc-review-card {
+    padding: 14px;
+  }
+  .pc-reviews .pc-stars svg {
+    width: 16px;
+    height: 16px;
+  }
+  .pc-reviews .pc-rev-more {
+    width: 100%;
+  }
+}

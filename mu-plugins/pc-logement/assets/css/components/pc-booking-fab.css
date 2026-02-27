@@ -1,0 +1,83 @@
+/**
+ * Fichier : mu-plugins/pc-logement/assets/css/components/pc-booking-fab.css
+ * Rôle : Styles du bouton d'action flottant (FAB - Floating Action Button)
+ */
+
+/* ============================================================
+   BOUTON PILULE FLOTTANT (FAB)
+   ============================================================ */
+.exp-booking-fab {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.56rem;
+  /* Gestion de l'encoche/barre de navigation sur les iPhone récents */
+  padding-bottom: calc(0.9rem + env(safe-area-inset-bottom));
+
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  user-select: none;
+
+  background: var(--pc-color-primary);
+  color: var(--pc-color-btn-text);
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-btn-text-size);
+  font-weight: var(--pc-btn-text-weight);
+  line-height: var(--pc-btn-text-lh);
+  text-decoration: none;
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.2s ease,
+    transform 0.3s ease-in-out,
+    opacity 0.3s ease-in-out;
+
+  /* État caché par défaut (sera géré par le JS) */
+  opacity: 0;
+  transform: translateX(-50%) translateY(150%);
+  pointer-events: none;
+}
+
+.exp-booking-fab:hover {
+  background: var(--pc-color-primary-hover);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* État visible (Classe ajoutée par le JS au scroll) */
+.exp-booking-fab.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* ============================================================
+   RESPONSIVE (MOBILE / DESKTOP)
+   ============================================================ */
+@media (max-width: 767.98px) {
+  .exp-booking-fab {
+    font-size: var(--pc-btn-text-size);
+    padding: 0.8rem 1.25rem;
+    padding-bottom: calc(0.8rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Position du FAB sur Desktop (Basculé en bas à gauche plutôt qu'au centre) */
+@media (min-width: 1024px) {
+  .exp-booking-fab {
+    left: 2rem;
+    bottom: 2rem;
+    padding-bottom: 0.9rem;
+    transform: translateX(0) translateY(150%);
+  }
+  .exp-booking-fab.is-visible {
+    transform: translateX(0) translateY(0);
+  }
+}

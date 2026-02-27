@@ -1,0 +1,105 @@
+/**
+ * Fichier : mu-plugins/pc-logement/assets/css/components/pc-seo-readmore.css
+ * Rôle : Styles du composant texte déroulant SEO ([pc_seo_readmore])
+ */
+
+/* ============================================================
+   CONTENEUR PRINCIPAL (Avec variables locales)
+   ============================================================ */
+.pc-seo-box {
+  /* Valeurs par défaut (écrasables via style="" du wrapper) */
+  --pc-seo-max: 220px; /* hauteur de l'extrait avant ouverture */
+  --pc-seo-bg: #fff; /* fond derrière le fondu */
+  --pc-seo-fsize: 1.125rem; /* taille du corps */
+  --pc-seo-lh: 1.6em; /* interligne du corps */
+  --pc-seo-btn-h: 40px; /* hauteur mini du bouton */
+  --pc-seo-btn-gap: 12px; /* espace entre le texte et le bouton */
+
+  position: relative;
+  font-family: var(--pc-font-body);
+  color: var(--pc-color-text);
+}
+
+/* ============================================================
+   CONTENU (HTML ACF)
+   ============================================================ */
+.pc-seo__content {
+  max-height: var(--pc-seo-max);
+  overflow: hidden;
+  font: 400 var(--pc-seo-fsize) / var(--pc-seo-lh) var(--pc-font-body);
+}
+
+.pc-seo__content p {
+  margin: 0 0 1em;
+}
+
+.pc-seo__content h2,
+.pc-seo__content h3 {
+  margin: 1.2em 0 0.6em;
+  font-family: var(--pc-font-title);
+  font-weight: 700;
+  color: var(--pc-color-heading);
+}
+
+/* ============================================================
+   EFFET DE FONDU (FADE)
+   ============================================================ */
+.pc-seo__fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--pc-seo-btn-h) + var(--pc-seo-btn-gap));
+  height: 72px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0) 0%,
+    var(--pc-seo-bg) 95%
+  );
+  pointer-events: none;
+}
+
+/* ============================================================
+   BOUTON "VOIR PLUS / VOIR MOINS"
+   ============================================================ */
+.pc-seo__toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--pc-seo-btn-h);
+  margin-top: var(--pc-seo-btn-gap);
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--pc-color-primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+}
+
+.pc-seo__toggle:hover {
+  color: var(--pc-color-primary-hover);
+}
+
+/* ============================================================
+   ÉTATS ACTIFS (IS-OPEN)
+   ============================================================ */
+.pc-seo-box.is-open .pc-seo__content {
+  max-height: none;
+}
+
+.pc-seo-box.is-open .pc-seo__fade {
+  display: none;
+}
+
+.pc-seo-box.is-open .pc-seo__toggle {
+  text-decoration: none;
+}
+
+/* ============================================================
+   SÉCURITÉS ELEMENTOR
+   ============================================================ */
+.elementor .elementor-widget-shortcode .pc-seo-box,
+.elementor .elementor-widget-shortcode .pc-seo-box * {
+  font-family: var(--pc-font-body);
+}

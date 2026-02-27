@@ -1,0 +1,130 @@
+/**
+ * Fichier : mu-plugins/pc-logement/assets/css/components/pc-anchor-menu.css
+ * Rôle : Styles du menu de navigation interne (ancres sticky)
+ */
+
+/* ============================================================
+   CONTENEUR PRINCIPAL (Sticky)
+   ============================================================ */
+.pc-tabs-wrap,
+.exp-anchor-menu {
+  position: sticky;
+  top: var(--pc-sticky-top, 68px); /* Géré dynamiquement par ton thème */
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--pc-bg-page);
+  border-bottom: 1px solid #eaeaea;
+  padding: 4px 8px;
+}
+
+/* ============================================================
+   FLÈCHES DE NAVIGATION (Mobile/Débordement)
+   ============================================================ */
+.pc-tabs-arrow,
+.exp-anchor-arrow {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 0;
+  color: var(--pc-color-heading);
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.pc-tabs-arrow:hover,
+.exp-anchor-arrow:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.pc-tabs-arrow[disabled],
+.exp-anchor-arrow[disabled] {
+  opacity: 0.3;
+  cursor: default;
+  background: transparent;
+}
+
+@media (min-width: 1024px) {
+  .pc-tabs-arrow,
+  .exp-anchor-arrow {
+    display: none; /* Inutile sur grand écran si ça rentre */
+  }
+}
+
+/* ============================================================
+   ZONE DE DÉFILEMENT (Scroller)
+   ============================================================ */
+.pc-tabs-scroller,
+.exp-anchor-scroller {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Masque la scrollbar sur Firefox */
+  scroll-snap-type: x proximity;
+}
+
+/* Masque la scrollbar sur Chrome/Safari */
+.pc-tabs-scroller::-webkit-scrollbar,
+.exp-anchor-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
+   LIENS (Ancres)
+   ============================================================ */
+.pc-tabs-nav,
+.exp-anchor-nav {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.5rem 0.25rem;
+  white-space: nowrap;
+}
+
+.pc-tabs-nav a,
+.exp-anchor-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--pc-color-heading);
+  font-family: var(--pc-font-title);
+  font-size: 1rem;
+  font-weight: 500;
+  scroll-snap-align: start;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.pc-tabs-nav a:hover,
+.exp-anchor-nav a:hover {
+  background: rgba(0, 0, 0, 0.06);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* État Actif */
+.pc-tabs-nav a.is-active,
+.exp-anchor-nav a.is-active {
+  background: var(--pc-color-heading);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Responsive petits écrans */
+@media (max-width: 480px) {
+  .pc-tabs-nav a,
+  .exp-anchor-nav a {
+    padding: 9px 12px;
+    font-size: 0.95rem;
+  }
+}

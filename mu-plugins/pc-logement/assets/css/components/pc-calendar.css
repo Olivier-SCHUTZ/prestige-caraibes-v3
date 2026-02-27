@@ -1,0 +1,265 @@
+/**
+ * Fichier : mu-plugins/pc-logement/assets/css/components/pc-calendar.css
+ * Rôle : Styles du composant Calendrier iCal / Disponibilités ([pc_ical_calendar])
+ */
+
+/* ============================================================
+   CONTENEUR DE BASE
+   ============================================================ */
+.pc-ical {
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.pc-cal {
+  font-family: var(--pc-font-body);
+}
+
+.pc-cal-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.pc-cal .pc-cal-input {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+}
+
+/* ============================================================
+   ÉTATS VIDES / ERREURS
+   ============================================================ */
+.pc-cal-missing {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  background: #f9f9f9;
+  border: 1px dashed #e0e0e0;
+  border-radius: 12px;
+  font-family: var(--pc-font-body);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--pc-color-text);
+}
+
+/* ============================================================
+   SURCHARGE FLATPICKR (UI globale)
+   ============================================================ */
+.flatpickr-calendar {
+  font-size: 14px;
+}
+
+.pc-cal .flatpickr-calendar.inline.pc-cal-ui {
+  width: auto !important;
+  margin: 0 !important;
+  border: 1px solid #eaeaea !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+/* ============================================================
+   EN-TÊTE DU CALENDRIER (Mois / Année / Flèches)
+   ============================================================ */
+.pc-cal .flatpickr-months {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px 48px !important;
+  margin: 0 0 12px !important;
+  border-bottom: 1px solid #eaeaea !important;
+  background: #f9f9f9 !important;
+  height: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.pc-cal .flatpickr-months .flatpickr-month {
+  flex: 1 1 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  gap: 8px !important;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+  box-sizing: border-box !important;
+}
+
+.pc-cal .flatpickr-months .flatpickr-month:first-child {
+  padding-left: 0 !important;
+}
+
+.pc-cal .flatpickr-months .flatpickr-month:last-child {
+  padding-right: 0 !important;
+}
+
+/* Titre (mois + année) */
+.pc-cal .flatpickr-current-month {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  white-space: nowrap !important;
+  color: var(--pc-color-heading) !important;
+}
+
+.pc-cal .flatpickr-current-month .cur-month,
+.pc-cal .flatpickr-current-month .numInputWrapper input.cur-year {
+  font-family: var(--pc-font-title) !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  line-height: 1.2 !important;
+  color: var(--pc-color-heading) !important;
+}
+
+/* Année sans spinners */
+.pc-cal .numInputWrapper {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.pc-cal .numInputWrapper input.cur-year {
+  width: 5ch !important;
+  min-width: 5ch !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.pc-cal .numInputWrapper .arrowUp,
+.pc-cal .numInputWrapper .arrowDown {
+  display: none !important;
+}
+
+/* Flèches */
+.pc-cal .flatpickr-prev-month,
+.pc-cal .flatpickr-next-month {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+  font-size: 26px !important;
+  color: var(--pc-color-primary) !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.pc-cal .flatpickr-prev-month {
+  left: 6px !important;
+}
+
+.pc-cal .flatpickr-next-month {
+  right: 6px !important;
+}
+
+.pc-cal .flatpickr-prev-month:hover,
+.pc-cal .flatpickr-next-month:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+.pc-cal .flatpickr-prev-month[aria-disabled="true"],
+.pc-cal .flatpickr-next-month[aria-disabled="true"] {
+  opacity: 0.35 !important;
+}
+
+/* ============================================================
+   GRILLE DES JOURS ET SEMAINES
+   ============================================================ */
+.pc-cal .flatpickr-innerContainer {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 12px !important;
+}
+
+.pc-cal .flatpickr-rContainer {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  box-sizing: border-box !important;
+}
+
+.pc-cal .flatpickr-weekdays {
+  margin-top: 6px !important;
+}
+
+.pc-cal .flatpickr-weekday {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: var(--pc-color-muted, #5b6b7b) !important;
+}
+
+.pc-cal .flatpickr-days {
+  margin-top: 6px !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.pc-cal .dayContainer {
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+  box-sizing: border-box !important;
+}
+
+.pc-cal .dayContainer:first-child {
+  padding-left: 0 !important;
+}
+
+.pc-cal .dayContainer:last-child {
+  padding-right: 0 !important;
+}
+
+.pc-cal .dayContainer + .dayContainer {
+  box-shadow: inset 1px 0 0 #eaeaea !important;
+}
+
+/* ============================================================
+   STYLE DES JOURS (Disponibles / Indisponibles)
+   ============================================================ */
+.pc-cal .flatpickr-day {
+  font-size: 0.95rem !important;
+  line-height: 1.95rem !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  pointer-events: none !important; /* Lecture seule */
+}
+
+.pc-cal .flatpickr-day.today {
+  border-color: var(--pc-color-primary) !important;
+}
+
+/* Jours indisponibles (grisés) */
+.pc-cal .flatpickr-day.flatpickr-disabled,
+.pc-cal .flatpickr-day.flatpickr-disabled:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #a9b3bd !important;
+  opacity: 1 !important;
+}
+
+/* Jours des mois précédent/suivant (discrets) */
+.pc-cal .flatpickr-day.prevMonthDay,
+.pc-cal .flatpickr-day.nextMonthDay {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #c5ccd3 !important;
+}

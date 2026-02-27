@@ -1,0 +1,52 @@
+/**
+ * Fichier : mu-plugins/pc-logement/assets/css/components/pc-map.css
+ * Rôle : Styles du composant Carte de localisation ([pc_location_map])
+ */
+
+/* ============================================================
+   CONTENEUR DE LA CARTE
+   ============================================================ */
+.pc-map-wrap,
+.pc-location-map {
+  border-radius: var(--pc-radius);
+  overflow: hidden;
+  box-shadow: var(--pc-shadow-soft, 0 8px 24px rgba(0, 0, 0, 0.06));
+
+  /* Crée un contexte d'empilement FAIBLE pour enfermer les z-index 
+     internes de Leaflet et éviter qu'ils passent sur le menu */
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   SURFACE DE LA CARTE (Hauteur fluide)
+   ============================================================ */
+.pc-map,
+#pc-location-map {
+  width: 100%;
+  /* Utilisation de la hauteur fluide récupérée de ton code inline */
+  height: clamp(260px, 38vw, 460px);
+  display: block;
+}
+
+@media (max-width: 767px) {
+  .pc-map,
+  #pc-location-map {
+    height: 360px;
+  }
+}
+
+/* ============================================================
+   CORRECTIFS LEAFLET (z-index)
+   ============================================================ */
+/* Normalisation z-index des contrôles Leaflet pour ne pas dépasser le header */
+.pc-map .leaflet-pane,
+.pc-map .leaflet-top,
+.pc-map .leaflet-bottom,
+.pc-map .leaflet-control-container,
+#pc-location-map .leaflet-pane,
+#pc-location-map .leaflet-top,
+#pc-location-map .leaflet-bottom,
+#pc-location-map .leaflet-control-container {
+  z-index: 1 !important;
+}
