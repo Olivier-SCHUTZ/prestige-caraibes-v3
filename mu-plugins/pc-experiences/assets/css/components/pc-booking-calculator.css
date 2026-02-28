@@ -1,0 +1,315 @@
+/* ============================================================
+   Composant : Booking Calculator (Calculateur de devis)
+   ============================================================ */
+
+.exp-devis-section {
+  padding: 2rem 0;
+}
+
+/* On nettoie le wrapper pour l'intégration modale */
+.exp-devis-wrap {
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
+/* 1. Bloc Type (Header) */
+.exp-devis-section-type {
+  background: #f8f9fa;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  margin: -1.5rem -1.5rem 1.5rem -1.5rem; /* Colle aux bords de la modale */
+  border-radius: 10px 10px 0 0; /* Arrondi haut si pas en modale */
+}
+/* En modale, on annule l'arrondi haut pour coller au header */
+.exp-devis-sheet__body .exp-devis-section-type {
+  border-radius: 0;
+}
+
+.exp-devis-section-type label {
+  display: block;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.exp-select-wrapper select {
+  /* 1. Reset total de l'apparence native */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* 2. Dimensions robustes */
+  width: 100%;
+  height: auto;
+  min-height: 54px;
+  box-sizing: border-box;
+
+  /* 3. Espacement et Texte */
+  padding: 0 15px;
+  line-height: 54px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #333;
+
+  /* 4. Bordures et Fond */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  cursor: pointer;
+
+  /* 5. Icône flèche */
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 0.65rem auto;
+}
+
+/* Fix Apparence du Sélecteur (Chrome & Safari) */
+.exp-devis-form select[name="devis_type"] {
+  -webkit-appearance: revert;
+  -moz-appearance: revert;
+  appearance: revert;
+  background: revert;
+  border: revert;
+  border-radius: revert;
+  padding: revert;
+  color: revert;
+  font: revert;
+}
+
+/* 2. Liste Unifiée (Lignes) */
+.exp-list-container,
+.exp-options-container {
+  margin-bottom: 2rem;
+}
+
+.exp-list-title {
+  font-family: var(--pc-font-title);
+  font-size: 1.1rem;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--pc-color-primary);
+  display: inline-block;
+  color: var(--pc-color-heading);
+}
+
+/* LA LIGNE (Row) : Grid System 2/3 - 1/3 */
+.exp-list-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.exp-list-item:last-child {
+  border-bottom: none;
+}
+
+/* Colonne GAUCHE (Info) */
+.exp-item-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 1. LE NOM (Adulte, Enfant...) */
+#exp-devis-sheet .exp-devis-wrap .exp-item-name {
+  display: block;
+  font-family: var(--pc-font-title, sans-serif);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--pc-color-heading, #1b3b5f);
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+/* --- TYPOGRAPHIE OPTIONS (Skipper, etc.) --- */
+.exp-item-label {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--pc-color-heading, #333);
+  cursor: pointer;
+  margin-bottom: 0.25rem;
+}
+
+/* 2. LE PRIX */
+#exp-devis-sheet .exp-devis-wrap .exp-item-price {
+  display: block;
+  font-family: var(--pc-font-title, sans-serif);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--pc-color-primary, #007a92);
+  margin-bottom: 0.25rem;
+}
+
+/* 3. L'OBSERVATION (Femme enceinte, âge...) */
+#exp-devis-sheet .exp-devis-wrap .exp-item-obs {
+  display: block;
+  width: 100%;
+  font-family: var(--pc-font-body, serif);
+  font-size: 0.9rem;
+  color: var(--pc-color-text, #3a3a3a);
+  font-style: italic;
+  opacity: 0.85;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.exp-item-precision {
+  font-weight: 400;
+  color: #666;
+  font-size: 0.9em;
+}
+
+/* Colonne DROITE (Action / Stepper) */
+.exp-item-action {
+  display: flex;
+  justify-content: flex-end;
+  min-width: 120px;
+}
+
+/* 3. Le Stepper (+ 1 -) */
+.exp-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.exp-stepper-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #333;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding-bottom: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.exp-stepper-btn:hover:not([disabled]) {
+  border-color: var(--pc-color-primary);
+  color: var(--pc-color-primary);
+}
+.exp-stepper-btn[disabled] {
+  opacity: 0.3;
+  cursor: default;
+  border-color: #eee;
+  background: #f9f9f9;
+}
+.exp-stepper input {
+  width: 40px;
+  text-align: center;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: transparent;
+  padding: 0;
+  -moz-appearance: textfield;
+}
+.exp-stepper input::-webkit-outer-spin-button,
+.exp-stepper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Case Checkbox Simple */
+.exp-checkbox-wrapper input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  transform: scale(1.3);
+  transform-origin: center;
+  accent-color: var(--pc-color-primary);
+  cursor: pointer;
+  margin: 0;
+}
+
+/* 4. Résultat */
+.exp-devis-result {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+}
+.exp-devis-result .exp-result-title {
+  margin: 0 0 1rem 0;
+  font-family: var(--pc-font-title);
+  font-weight: 600;
+}
+.exp-devis-result ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.exp-devis-result li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.exp-devis-result li.separator {
+  font-weight: bold;
+  margin-top: 0.5rem;
+}
+.exp-devis-result .exp-result-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1.2rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--pc-color-heading);
+  color: var(--pc-color-heading);
+}
+
+/* Boutons d'action */
+.exp-devis-actions {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+.exp-devis-actions .pc-btn i {
+  margin-right: 0.5rem;
+}
+
+/* Style pour un bouton secondaire (contour) */
+.pc-btn.pc-btn--secondary {
+  background: transparent;
+  color: var(--pc-color-primary);
+  border-color: var(--pc-color-primary);
+}
+.pc-btn.pc-btn--secondary:hover {
+  background: var(--pc-color-primary-hover, #005f73);
+  color: #fff;
+  border-color: var(--pc-color-primary-hover, #005f73);
+}
+
+/* Message d'erreur pour le devis vide */
+.exp-devis-error {
+  color: #c0392b;
+  font-weight: 500;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e74c3c;
+  border-radius: 8px;
+  background: #fdecea;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
+}
+.exp-devis-error.is-visible {
+  max-height: 100px;
+  opacity: 1;
+}

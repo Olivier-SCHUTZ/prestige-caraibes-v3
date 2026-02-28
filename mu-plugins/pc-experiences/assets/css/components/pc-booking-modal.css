@@ -1,0 +1,335 @@
+/* ============================================================
+   Composant : Booking Modal (Fenêtre Modale de Réservation)
+   Design unifié avec le module Logement
+   ============================================================ */
+
+/* ============================================================
+   STRUCTURE MODALE & OVERLAY
+   ============================================================ */
+.exp-booking-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+
+.exp-booking-modal.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.exp-booking-modal__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+
+.exp-booking-modal__content {
+  position: relative;
+  background: #fff;
+  border-radius: var(--pc-radius);
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 1;
+}
+
+/* Bouton de fermeture */
+.exp-booking-modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #888;
+}
+
+.exp-booking-modal__close:hover {
+  color: #333;
+}
+
+/* ============================================================
+   TYPOGRAPHIE & TITRES
+   ============================================================ */
+.exp-booking-modal__title {
+  font-family: var(--pc-font-title);
+  margin: 0 0 1.5rem 0;
+}
+
+.exp-booking-fieldset-title {
+  margin: 0 0 1rem 0;
+  padding: 0;
+  font-family: var(--pc-font-title);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--pc-color-heading);
+}
+
+.exp-booking-fieldset {
+  padding: 1.5rem !important;
+}
+
+.exp-booking-fieldset legend.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap; /* Empêche le texte de se casser à la verticale */
+  border: 0;
+}
+
+/* ============================================================
+   FORMULAIRE (Champs, Grille)
+   ============================================================ */
+.exp-booking-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.exp-booking-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.exp-booking-field label {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.exp-booking-field input,
+.exp-booking-field textarea {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: var(--pc-font-body);
+}
+
+/* CORRECTIF MOBILE : Empêcher le zoom forcé sur iOS */
+.exp-booking-modal .exp-booking-field input,
+.exp-booking-modal .exp-booking-field textarea {
+  font-size: 16px;
+}
+
+.exp-booking-radio-group {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.exp-booking-radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ============================================================
+   FACTURE / RÉSUMÉ DU DEVIS
+   ============================================================ */
+.pc-invoice-lines {
+  font-family: var(--pc-font-body);
+  color: var(--pc-color-text);
+  margin-bottom: 1.5rem;
+}
+
+.pc-invoice-row,
+#modal-quote-summary-logement li,
+#modal-quote-summary li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 1rem;
+}
+
+#modal-quote-summary-logement ul,
+#modal-quote-summary ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pc-invoice-row .pc-lbl,
+#modal-quote-summary-logement li > span:first-child {
+  flex-grow: 1;
+  padding-right: 1rem;
+  line-height: 1.4;
+}
+
+.pc-invoice-row .pc-val,
+#modal-quote-summary-logement li > span:last-child {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 1.1em;
+  color: var(--pc-color-heading);
+  white-space: nowrap;
+}
+
+/* Ligne TOTAL */
+.pc-invoice-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.8rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--pc-color-heading);
+  color: var(--pc-color-heading);
+  font-family: var(--pc-font-title);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+/* ============================================================
+   ÉCHÉANCIER DE PAIEMENT
+   ============================================================ */
+.pc-payment-schedule {
+  margin-top: 1.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pc-schedule-header {
+  background: #f1f5f9;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-schedule-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.pc-schedule-row:last-child {
+  border-bottom: none;
+}
+
+/* Mise en avant de la ligne "Aujourd'hui" */
+.pc-schedule-row.is-now {
+  background: #fff;
+  border-left: 4px solid var(--pc-color-primary);
+}
+
+.pc-col-date strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--pc-color-heading);
+  margin-bottom: 2px;
+}
+
+.pc-col-amount {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--pc-color-heading);
+}
+
+.pc-tag-now {
+  display: inline-block;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+.pc-text-muted {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* ============================================================
+   ACTIONS (Bouton Submit & Disclaimer)
+   ============================================================ */
+.exp-booking-modal__actions {
+  margin-top: 1.5rem;
+}
+
+.exp-booking-disclaimer {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+
+.exp-booking-modal__actions .pc-btn {
+  width: 100%;
+}
+
+/* Force la couleur primaire sur le bouton d'envoi */
+.exp-booking-modal__actions button[type="submit"].pc-btn--primary {
+  background-color: var(--pc-color-primary);
+  border-color: var(--pc-color-primary);
+  color: var(--pc-color-btn-text);
+}
+
+.exp-booking-modal__actions button[type="submit"].pc-btn--primary:hover {
+  background-color: var(--pc-color-primary-hover);
+  border-color: var(--pc-color-primary-hover);
+}
+
+/* ============================================================
+   FORÇAGE DU TOTAL (Résumé Modale)
+   ============================================================ */
+#modal-quote-summary-logement .exp-result-total,
+#modal-quote-summary .exp-result-total,
+#modal-quote-summary-logement > div:last-child,
+#modal-quote-summary > div:last-child {
+  display: block !important;
+  text-align: right !important;
+  margin-top: 1rem !important;
+  padding-top: 1rem !important;
+  border-top: 2px solid var(--pc-color-heading) !important;
+  font-family: var(--pc-font-title) !important;
+  font-weight: 700 !important;
+  font-size: 1.3rem !important; /* On grossit bien l'écriture */
+  color: var(--pc-color-heading) !important;
+}
+
+/* ============================================================
+   RESPONSIVE (MOBILE)
+   ============================================================ */
+@media (max-width: 767px) {
+  .exp-booking-modal__content {
+    padding: 1.5rem;
+  }
+  .exp-booking-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

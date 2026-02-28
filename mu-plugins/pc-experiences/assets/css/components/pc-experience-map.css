@@ -1,0 +1,24 @@
+/* ============================================================
+   Composant : Experience Map
+   Shortcode : [experience_map]
+   ============================================================ */
+
+.exp-map-wrap {
+  border-radius: var(--pc-radius, 10px);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 1; /* Assure le bon empilement (z-index) par rapport au reste */
+}
+
+.exp-map {
+  width: 100%;
+  height: 450px; /* Hauteur par défaut, ajustable */
+  background-color: #f0f0f0;
+}
+
+@media (max-width: 767px) {
+  .exp-map {
+    height: 350px;
+  }
+}

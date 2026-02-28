@@ -37,6 +37,7 @@ class PC_Logement_Core
     {
         $this->define_constants();
         $this->init_autoloader();
+        $this->load_dependencies();
 
         // Initialisation du système au moment opportun
         add_action('plugins_loaded', [$this, 'init_system']);
@@ -53,6 +54,18 @@ class PC_Logement_Core
         // Calcul de l'URL dynamique (pratique pour les mu-plugins)
         $mu_plugin_dir = basename(WPMU_PLUGIN_DIR);
         define('PC_LOGEMENT_URL', trailingslashit(content_url($mu_plugin_dir . '/pc-logement')));
+    }
+
+    /**
+     * --- NOUVELLE MÉTHODE : Charge les dépendances qui ne passent pas par l'autoloader ---
+     */
+    private function load_dependencies()
+    {
+        // COMPOSANT PARTAGÉ : Module Avis Clients
+        $reviews_path = WP_CONTENT_DIR . '/mu-plugins/pc-reviews/pc-reviews.php';
+        if (file_exists($reviews_path)) {
+            require_once $reviews_path;
+        }
     }
 
     /**

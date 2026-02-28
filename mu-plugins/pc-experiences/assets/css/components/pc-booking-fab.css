@@ -1,0 +1,88 @@
+/* ============================================================
+   Composant : Bouton Flottant (FAB)
+   ============================================================ */
+.exp-booking-fab {
+  position: fixed;
+  /* Centré en bas de l'écran */
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+
+  /* Apparence "Pilule" */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.56rem;
+  /* Ajout de la zone de sécurité iOS */
+  padding-bottom: calc(0.9rem + env(safe-area-inset-bottom));
+
+  border: none;
+  border-radius: 50px; /* Bords très arrondis */
+  cursor: pointer;
+  user-select: none;
+
+  /* Couleurs et typo (basées sur .pc-btn--primary) */
+  background: var(--pc-color-primary, #007a92);
+  color: var(--pc-color-btn-text, #ffffff);
+  font-family: var(--pc-font-body);
+  font-size: var(--pc-btn-text-size, 1.125rem);
+  font-weight: var(--pc-btn-text-weight, 600);
+  line-height: var(--pc-btn-text-lh, 1.3);
+  text-decoration: none;
+
+  /* Ombre et transitions */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.2s ease,
+    transform 0.3s ease-in-out,
+    opacity 0.3s ease-in-out;
+
+  /* État caché par défaut */
+  opacity: 0;
+  transform: translateX(-50%) translateY(150%); /* Caché en bas */
+  pointer-events: none;
+}
+
+.exp-booking-fab:hover {
+  background: var(--pc-color-primary-hover, #005f73);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* État visible (contrôlé par JS) */
+.exp-booking-fab.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* Version mobile plus compacte */
+@media (max-width: 767.98px) {
+  .exp-booking-fab {
+    font-size: var(--pc-btn-text-size, 1rem);
+    padding: 0.8rem 1.25rem;
+    padding-bottom: calc(0.8rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* ============================================================
+   AJUSTEMENT : Position du FAB sur Desktop
+   ============================================================ */
+@media (min-width: 1024px) {
+  /* 1. On définit la position de base sur desktop (quand il est caché) */
+  .exp-booking-fab {
+    left: 2rem;
+    bottom: 2rem;
+    padding-bottom: 0.9rem;
+
+    /* Annule le centrage (X) mais garde le masquage (Y) */
+    transform: translateX(0) translateY(150%);
+  }
+
+  /* 2. On définit la position VISIBLE avec la bonne spécificité */
+  .exp-booking-fab.is-visible {
+    /* Annule le centrage (X) ET le masquage (Y) */
+    transform: translateX(0) translateY(0);
+  }
+}

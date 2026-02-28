@@ -1,0 +1,177 @@
+/* ============================================================
+   Composant : Bottom-Sheet / Modale (Calculateur Devis)
+   ============================================================ */
+
+/* Conteneur principal (overlay + panneau) */
+.exp-devis-sheet {
+  position: fixed;
+  inset: 0; /* Équivaut à top/left/right/bottom: 0 */
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Caché par défaut */
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+
+/* Fond grisé (overlay) */
+.exp-devis-sheet__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+
+/* Panneau de contenu (la sheet elle-même) */
+.exp-devis-sheet__content {
+  position: relative;
+  z-index: 1;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+
+  /* --- Style MOBILE (Bottom-Sheet par défaut) --- */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-height: 85vh; /* 85% de la hauteur de l'écran */
+  border-radius: var(--pc-radius, 10px) var(--pc-radius, 10px) 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* Pour les coins arrondis */
+
+  /* Animation (caché en bas par défaut) */
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* En-tête de la sheet */
+.exp-devis-sheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0; /* Empêche l'en-tête de rétrécir */
+}
+
+.exp-devis-sheet__title {
+  font-family: var(--pc-font-title);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--pc-color-heading);
+  margin: 0;
+}
+
+.exp-devis-sheet__close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #888;
+  padding: 0.25rem;
+}
+.exp-devis-sheet__close:hover {
+  color: #333;
+}
+
+/* Corps de la sheet (avec scroll) */
+.exp-devis-sheet__body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1.5rem;
+}
+
+/* --- État Ouvert --- */
+.exp-devis-sheet.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.exp-devis-sheet.is-open .exp-devis-sheet__content {
+  transform: translateY(0);
+}
+
+/* --- Style DESKTOP (Modale centrée > 1024px) --- */
+@media (min-width: 1024px) {
+  .exp-devis-sheet__content {
+    /* Annule le style "bottom-sheet" */
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: translateY(0);
+
+    /* Style "modale" */
+    width: 90%;
+    max-width: 600px; /* Identique à la modale de contact */
+    max-height: 90vh;
+    border-radius: var(--pc-radius, 10px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .exp-devis-sheet__body {
+    padding: 2rem;
+  }
+
+  /* Animation de la modale desktop (fondu + léger zoom) */
+  .exp-devis-sheet__content {
+    transform: scale(0.95);
+    opacity: 0;
+    transition:
+      transform 0.2s ease,
+      opacity 0.2s ease;
+  }
+  .exp-devis-sheet.is-open .exp-devis-sheet__content {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   AJUSTEMENTS : Formulaire de devis (dans la sheet)
+   ============================================================ */
+
+/* On annule les styles du conteneur .exp-devis-wrap 
+car la sheet .exp-devis-sheet__content gère maintenant 
+l'arrière-plan, les bordures et le padding.
+*/
+.exp-devis-sheet__body .exp-devis-wrap {
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 0;
+}
+
+/* S'assurer que le titre est masqué (géré par l'en-tête de la sheet) */
+.exp-devis-sheet__body .exp-devis-title {
+  display: none;
+}
+
+/* Optimisation de la grille pour les petits écrans */
+@media (max-width: 480px) {
+  .exp-devis-sheet__body .exp-devis-form {
+    grid-template-columns: 1fr 1fr; /* 2 colonnes sur petit mobile */
+    gap: 1rem;
+  }
+  .exp-devis-sheet__body .exp-devis-form .exp-devis-field:first-child {
+    grid-column: 1 / -1; /* Le sélecteur prend toute la largeur */
+  }
+
+  .exp-devis-sheet__body {
+    padding: 1rem;
+  }
+
+  .exp-devis-sheet__header {
+    padding: 1rem;
+  }
+
+  .exp-devis-sheet__title {
+    font-size: 1.1rem;
+  }
+}

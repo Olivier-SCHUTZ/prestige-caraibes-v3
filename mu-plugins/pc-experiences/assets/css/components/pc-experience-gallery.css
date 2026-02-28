@@ -1,0 +1,53 @@
+/* ============================================================
+   Composant : Experience Gallery
+   Shortcode : [experience_gallery]
+   Dépendance : pc-base.css
+   ============================================================ */
+
+.exp-gallery-grid {
+  display: grid;
+  gap: 1rem;
+  /* Grille explicite : 3 colonnes sur desktop */
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* Sur tablette, on passe à 2 colonnes */
+@media (max-width: 1024px) {
+  .exp-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Sur mobile, on passe à 1 colonne */
+@media (max-width: 640px) {
+  .exp-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.exp-gallery-item {
+  margin: 0;
+  /* Utilisation des variables globales pour l'uniformité du design */
+  border-radius: var(--pc-radius);
+  box-shadow: var(--pc-shadow-soft);
+  overflow: hidden;
+  aspect-ratio: 16/10;
+}
+
+.exp-gallery-item a {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.exp-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.exp-gallery-item a:hover img {
+  transform: scale(1.05);
+}

@@ -1,0 +1,82 @@
+/* ============================================================
+   Composant : Experience Description
+   Shortcode : [experience_description]
+   ============================================================ */
+
+.exp-desc-box {
+  /* Variables par défaut, peuvent être surchargées par le shortcode */
+  --exp-desc-max: 250px;
+  --exp-desc-bg: #f9f9f9; /* Couleur de fond de la page/section */
+  --exp-desc-fsize: 1.125rem;
+  --exp-desc-lh: 1.6em;
+  --exp-desc-btn-h: 40px;
+  --exp-desc-btn-gap: 12px;
+
+  position: relative;
+  font-family: var(--pc-font-body);
+  color: var(--pc-color-text);
+}
+
+/* Le conteneur du contenu */
+.exp-desc__content {
+  max-height: var(--exp-desc-max);
+  overflow: hidden;
+  font-size: var(--exp-desc-fsize);
+  line-height: var(--exp-desc-lh);
+  transition: max-height 0.4s ease-in-out;
+}
+
+.exp-desc__content > *:first-child {
+  margin-top: 0;
+}
+
+/* Le dégradé pour l'effet de fondu */
+.exp-desc__fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--exp-desc-btn-h) + var(--exp-desc-btn-gap));
+  height: 72px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--exp-desc-bg) 95%
+  );
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+/* Le bouton "Voir plus / Voir moins" */
+.exp-desc__toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--exp-desc-btn-h);
+  margin-top: var(--exp-desc-btn-gap);
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-weight: 700;
+  font-family: var(--pc-font-title);
+  color: var(--pc-color-primary, #007a92);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+}
+
+.exp-desc__toggle:hover {
+  color: var(--pc-color-primary-hover, #005f73);
+}
+
+/* Styles quand le bloc est ouvert */
+.exp-desc-box.is-open .exp-desc__content {
+  max-height: 10000px; /* Valeur suffisamment grande pour tout afficher */
+}
+
+.exp-desc-box.is-open .exp-desc__fade {
+  opacity: 0;
+}
+
+.exp-desc-box.is-open .exp-desc__toggle {
+  text-decoration: none;
+}

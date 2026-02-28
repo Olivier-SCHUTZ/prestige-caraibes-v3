@@ -1,0 +1,257 @@
+/* ============================================================
+   Composant : Avis Clients ([pc_reviews])
+   Module Autonome partagé (Logements / Expériences)
+   ============================================================ */
+
+.pc-reviews {
+  font-family: var(--pc-font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* En-tête */
+.pc-reviews-head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.pc-reviews .pc-reviews-head h3 {
+  font-family: var(--pc-font-title);
+  font-weight: 600;
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  margin: 0;
+  color: var(--pc-color-heading);
+}
+
+.pc-reviews-stats {
+  display: flex;
+  align-items: center;
+  color: var(--pc-color-primary);
+}
+.pc-reviews-stats strong {
+  margin-right: 0.35rem;
+}
+.pc-reviews-stats span {
+  opacity: 0.8;
+  margin-left: 0.25rem;
+  color: var(--pc-color-text);
+}
+
+/* ============================================================
+   CARTE D'AVIS
+   ============================================================ */
+.pc-review-card {
+  background: #fff;
+  border: 1px solid #e7e7e7;
+  border-radius: var(--pc-radius, 16px);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  font-family: var(--pc-font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: box-shadow 0.2s ease;
+}
+.pc-review-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.pc-review-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.pc-review-card-author {
+  font-weight: 700;
+  color: var(--pc-color-heading);
+}
+.pc-review-card-author span {
+  opacity: 0.7;
+  font-weight: 400;
+  font-size: 0.9em;
+}
+.pc-review-card-stars {
+  display: flex;
+  align-items: center;
+  color: var(--pc-color-primary);
+}
+
+.pc-review-card h3 {
+  font-family: var(--pc-font-title);
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin: 0.5rem 0 0;
+  color: var(--pc-color-heading);
+}
+
+.pc-review-card-body {
+  margin: 0.5rem 0 0;
+  color: var(--pc-color-text);
+}
+.pc-review-card-meta {
+  opacity: 0.6;
+  margin-top: 10px;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.pc-reviews .pc-stars svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================================================
+   FORMULAIRE D'AVIS (Design Amélioré)
+   ============================================================ */
+.pc-review-form-wrapper {
+  margin-top: 1.5rem;
+  background: #f8f9fa; /* Fond léger pour détacher le formulaire */
+  border: 1px solid #e0e0e0;
+  border-radius: var(--pc-radius, 16px);
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.pc-review-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.pc-rev-field {
+  display: flex;
+  flex-direction: column;
+}
+.pc-rev-field.full {
+  grid-column: 1 / -1;
+}
+
+.pc-rev-field label {
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--pc-color-heading);
+}
+
+.pc-rev-field input,
+.pc-rev-field select,
+.pc-rev-field textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  font-family: var(--pc-font-body);
+  font-size: 1rem;
+  color: var(--pc-color-text);
+  background: #fff;
+  transition: all 0.2s ease;
+}
+
+/* Effet au clic (Focus) aux couleurs de la charte */
+.pc-rev-field input:focus,
+.pc-rev-field select:focus,
+.pc-rev-field textarea:focus {
+  outline: none;
+  border-color: var(--pc-color-primary);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--pc-color-primary) 20%, transparent);
+}
+
+/* Fix mobile zoom iOS */
+@media screen and (max-width: 767px) {
+  .pc-rev-field input,
+  .pc-rev-field select,
+  .pc-rev-field textarea {
+    font-size: 16px;
+  }
+}
+
+/* ============================================================
+   BOUTONS (Correction du sélecteur)
+   ============================================================ */
+.pc-reviews .pc-rev-toggle-form {
+  margin-left: auto;
+}
+
+/* On cible #pc-review-form DIRECTEMENT (il n'est plus dans .pc-reviews) */
+.pc-reviews .pc-rev-toggle-form,
+#pc-review-form button[type="submit"],
+.pc-reviews .pc-rev-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--pc-btn-pt, 0.9rem) var(--pc-btn-pr, 1.56rem)
+    var(--pc-btn-pb, 0.9rem) var(--pc-btn-pl, 1.56rem);
+  border-radius: var(--pc-radius, 8px);
+  font-family: var(--pc-font-title, sans-serif);
+  font-size: var(--pc-btn-text-size, 1.125rem);
+  font-weight: var(--pc-btn-text-weight, 600);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Boutons Primaires pleins (Laisser un avis & Envoyer mon avis) */
+.pc-reviews .pc-rev-toggle-form,
+#pc-review-form button[type="submit"] {
+  border: 1px solid var(--pc-color-primary) !important;
+  background: var(--pc-color-primary) !important;
+  color: var(--pc-color-btn-text, #fff) !important;
+}
+
+.pc-reviews .pc-rev-toggle-form:hover,
+#pc-review-form button[type="submit"]:hover {
+  background: var(--pc-color-primary-hover, #005f73) !important;
+  border-color: var(--pc-color-primary-hover, #005f73) !important;
+  transform: translateY(-1px);
+}
+
+/* Bouton Secondaire fantôme (Voir plus) */
+.pc-reviews .pc-rev-more {
+  border: 1px solid var(--pc-color-primary) !important;
+  background: transparent !important;
+  color: var(--pc-color-primary) !important;
+}
+
+.pc-reviews .pc-rev-more:hover {
+  background: var(--pc-color-primary) !important;
+  color: var(--pc-color-btn-text, #fff) !important;
+}
+
+/* ============================================================
+   RESPONSIVE (MOBILE)
+   ============================================================ */
+@media (max-width: 640px) {
+  .pc-reviews-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .pc-reviews .pc-rev-toggle-form {
+    width: 100%;
+    text-align: center;
+    margin-left: 0;
+  }
+  .pc-review-card {
+    padding: 1rem;
+  }
+  .pc-reviews .pc-stars svg {
+    width: 16px;
+    height: 16px;
+  }
+  .pc-reviews .pc-rev-more {
+    width: 100%;
+  }
+
+  .pc-review-form-wrapper {
+    padding: 1.25rem;
+  }
+  .pc-review-form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}

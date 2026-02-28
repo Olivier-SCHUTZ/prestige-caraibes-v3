@@ -1,0 +1,158 @@
+/* ============================================================
+   Composant : Experience Pricing (Cartes "Ticket")
+   Shortcode : [experience_pricing]
+   ============================================================ */
+
+.exp-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.exp-pricing-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--pc-radius, 10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.exp-pricing-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--pc-shadow-soft, 0 10px 25px rgba(0, 0, 0, 0.1));
+}
+
+/* --- EN-TÊTE --- */
+.exp-pricing-title {
+  font-family: var(--pc-font-title, sans-serif); /* Poppins */
+  background: #fff;
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--pc-color-heading, #1b3b5f); /* Couleur Titre */
+  text-align: center;
+}
+
+/* --- CORPS --- */
+.exp-pricing-body {
+  padding: 1.5rem;
+  flex-grow: 1;
+}
+
+/* --- Wrapper (Ligne + Obs) --- */
+.exp-pricing-wrapper {
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px dashed #e0e0e0; /* Ligne pointillée style ticket */
+}
+.exp-pricing-wrapper:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+/* La ligne Label/Prix */
+.exp-pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+/* On enlève la bordure de la ligne car elle est sur le wrapper */
+.exp-pricing-body .exp-pricing-row {
+  border-bottom: none;
+  padding: 0;
+  margin-bottom: 2px;
+}
+
+/* Typo Label (Adulte, Enfant...) */
+.exp-pricing-row .exp-pricing-label {
+  font-family: var(--pc-font-title, sans-serif); /* Poppins pour la cohérence */
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(
+    --pc-color-heading,
+    #1b3b5f
+  ); /* Correction : utilise la variable */
+  flex: 1;
+}
+
+/* Typo Prix */
+.exp-pricing-row .exp-pricing-price {
+  font-family: var(--pc-font-title, sans-serif);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(
+    --pc-color-primary,
+    #007a92
+  ); /* Correction : utilise la variable */
+  white-space: nowrap;
+}
+
+/* Notes (observation, âge...) */
+.exp-pricing-note {
+  font-family: var(--pc-font-body, serif); /* Lora */
+  font-size: 0.85rem;
+  color: var(
+    --pc-color-muted,
+    #6f6f6f
+  ); /* Correction : utilise la variable muted */
+  font-style: italic;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* --- LE BLOC OPTIONS (Zone Grisée) --- */
+.exp-pricing-options {
+  background-color: #f8f9fa;
+  margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.exp-pricing-options-title {
+  margin: 0 0 0.75rem 0;
+  font-family: var(--pc-font-body, serif);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--pc-color-muted, #999); /* Correction */
+}
+
+/* Lignes Options */
+.exp-pricing-row.option {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+.exp-pricing-row.option:last-child {
+  border-bottom: none;
+}
+.exp-pricing-row.option .exp-pricing-label {
+  font-size: 0.95rem;
+  color: var(--pc-color-text, #333); /* Correction */
+  font-weight: 400;
+}
+.exp-pricing-row.option .exp-pricing-price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(
+    --pc-color-muted,
+    #666
+  ); /* Un peu plus gris pour distinguer du prix principal */
+}
+
+/* Sur devis */
+.exp-pricing-row.on-demand {
+  justify-content: center;
+  font-style: italic;
+  font-family: var(--pc-font-body, serif);
+  font-size: 1.1rem;
+  padding: 1rem 0;
+  color: var(--pc-color-muted, #888);
+}

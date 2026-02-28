@@ -75,12 +75,6 @@ class PC_Asset_Manager
             wp_enqueue_style('pc-calendar', PC_LOGEMENT_URL . 'assets/css/components/pc-calendar.css', [], filemtime($calendar_css_path));
         }
 
-        // Composant : Avis Clients
-        $reviews_css_path = PC_LOGEMENT_PATH . 'assets/css/components/pc-reviews.css';
-        if (file_exists($reviews_css_path)) {
-            wp_enqueue_style('pc-reviews', PC_LOGEMENT_URL . 'assets/css/components/pc-reviews.css', [], filemtime($reviews_css_path));
-        }
-
         // Composant : Calculateur de Devis
         $devis_css_path = PC_LOGEMENT_PATH . 'assets/css/components/pc-devis.css';
         if (file_exists($devis_css_path)) {

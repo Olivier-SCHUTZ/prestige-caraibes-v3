@@ -1,0 +1,88 @@
+/* ==========================================================
+   Composant : Menu d'ancres sticky
+   ========================================================== */
+
+/* Conteneur principal */
+.exp-anchor-menu {
+  position: sticky;
+  top: 68px; /* Ajuste cette valeur si besoin (hauteur de ton header) */
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #eaeaea;
+  padding: 4px 8px;
+}
+
+/* Flèches de navigation */
+.exp-anchor-arrow {
+  flex-shrink: 0;
+  background: transparent;
+  border: 0;
+  color: #0e2b5c;
+  /* La taille des icônes est maintenant relative pour une meilleure cohérence */
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.exp-anchor-arrow:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+.exp-anchor-arrow[disabled] {
+  opacity: 0.3;
+  cursor: default;
+  background: transparent;
+}
+
+/* Zone de défilement */
+.exp-anchor-scroller {
+  flex-grow: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.exp-anchor-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* Liste des liens */
+.exp-anchor-nav {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.5rem 0.25rem;
+  white-space: nowrap;
+}
+.exp-anchor-nav a {
+  display: inline-flex;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #0e2b5c;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  /* === MODIFICATIONS CLÉS === */
+  /* On utilise tes variables globales pour la police et la taille */
+  font-family: var(--pc-font-title);
+  font-size: var(--pc-btn-text-size);
+  font-weight: 500; /* On garde un poids medium pour la lisibilité */
+}
+.exp-anchor-nav a:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+.exp-anchor-nav a.is-active {
+  background: #0e2b5c;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* État "sur devis" */
+.exp-price--pending {
+  font-style: italic;
+  opacity: 0.85;
+}
