@@ -1,0 +1,103 @@
+/* ==========================================================================
+   Destination — Recommandations (Logements & Expériences)
+   (Grille responsive 1 / 2 / 3 colonnes)
+   ========================================================================== */
+
+.dest-reco-section {
+  padding: 2rem 0;
+}
+
+/* Titre de section */
+.dest-reco-title {
+  font-family: var(--pc-font-title, inherit);
+  font-size: clamp(1.6rem, 1.2rem + 1vw, 2rem);
+  text-align: left;
+  margin: 0 0 2rem 0;
+  color: var(--pc-color-heading, #111);
+}
+
+/* Grille responsive */
+.dest-reco-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Mobile par défaut */
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .dest-reco-grid {
+    grid-template-columns: repeat(2, 1fr); /* Tablette */
+  }
+}
+
+@media (min-width: 1024px) {
+  .dest-reco-grid {
+    grid-template-columns: repeat(3, 1fr); /* Desktop */
+  }
+}
+
+/* Carte blanche avec relief doux */
+.dest-reco-card {
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+  will-change: transform;
+  height: 100%; /* S'assure que les cartes ont la même hauteur dans la grille */
+}
+
+/* Effet "remonter" au survol — uniquement sur pointeur fin (souris) */
+@media (hover: hover) and (pointer: fine) {
+  .dest-reco-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.14);
+  }
+}
+
+/* Lien cliquable intégral */
+.dest-reco-card-link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Image : ratio stable + recadrage */
+.dest-reco-card-image {
+  aspect-ratio: 16/10;
+  background: #f6f7f9;
+}
+
+.dest-reco-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Corps de carte */
+.dest-reco-card-content {
+  padding: 1.25rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.dest-reco-card-title {
+  font-family: var(--pc-font-title, inherit);
+  color: var(--pc-color-heading, #111);
+  font-size: clamp(1.15rem, 1rem + 0.6vw, 1.5rem);
+  line-height: 1.25;
+  margin: 0 0 0.5rem 0;
+}
+
+.dest-reco-card-price {
+  margin-top: auto; /* Pousse le prix vers le bas si le titre est court */
+  font-size: 1rem;
+  color: var(--pc-color-primary, #0056b3);
+  font-weight: 600;
+  opacity: 0.92;
+}

@@ -1,9 +1,9 @@
 # 🏗️ Architecture MU-Plugins Prestige Caraïbes
 
-**Version :** V2.3  
+**Version :** V2.4 - Architecture Modulaire  
 **Auteur :** PC SEO & Développement  
-**Date d'analyse :** 23/02/2026  
-**Type :** Must-Use Plugins WordPress - Écosystème fonctionnel global
+**Date d'analyse :** 28/02/2026  
+**Type :** Must-Use Plugins WordPress - Écosystème modulaire refactorisé
 
 ---
 
@@ -37,22 +37,63 @@ Les **MU-Plugins** (Must-Use Plugins) constituent l'écosystème fonctionnel pri
 
 ---
 
-## 🗂️ Structure détaillée
+## 🗂️ Structure détaillée (Architecture Modulaire V2.4)
 
 ```
 mu-plugins/
-├── 📄 mu-global-prestige-caraibesV2_3.php    (3,061 lignes) ⭐ Hub principal
+├── 📄 mu-global-prestige-caraibesV2_3.php    (73 lignes)    ⭐ Hub orchestrateur V3.0 (Refactorisé!)
 ├── 📄 pc-custom-typesV3.php                  (207 lignes)    - CPTs & Taxonomies
 ├── 📄 pc-acf.php                             (33 lignes)     - Configuration ACF
-├── 📂 shortcodes/                            - Pages métier (4,640 lignes)
-│   ├── shortcode-page-fiche-logement.php     (2,281 lignes) ⭐ Fiches logements
-│   ├── shortcode-page-fiche-experiences.php  (1,053 lignes) ⭐ Fiches expériences
-│   ├── shortcode-liste-logement.php          (108 lignes)    - Listes/cartes
-│   └── pc-destination-shortcodes.php         (499 lignes)    - Pages destinations
-├── 📂 composants/                            - Fonctionnalités (3,619 lignes)
+├── 📄 pc-logement-loader.php                 (3 lignes)      - Point d'entrée logements
+├── 📄 pc-experiences-loader.php              (15 lignes)     - Point d'entrée expériences
+├── 📂 pc-logement/                           ⭐ Module Logements (Architecture refactorisée)
+│   ├── pc-logement-core.php                  (162 lignes)    - Core avec autoloading
+│   ├── 📂 assets/
+│   │   ├── class-pc-asset-manager.php        - Gestionnaire assets
+│   │   ├── 📂 css/components/                 - Composants CSS spécialisés
+│   │   │   ├── pc-gallery.css                - Galeries photos
+│   │   │   ├── pc-booking-*.css              - Composants réservation
+│   │   │   ├── pc-calendar.css               - Calendrier
+│   │   │   ├── pc-devis.css                  - Calculateur prix
+│   │   │   └── 12 autres fichiers CSS...
+│   │   └── 📂 js/
+│   │       ├── pc-logement-core.js           - Orchestrateur principal
+│   │       ├── 📂 components/                - Composants JS modulaires
+│   │       ├── 📂 modules/                   - Modules métier
+│   │       └── 📂 utils/                     - Utilitaires
+│   ├── 📂 shortcodes/                        - Classes shortcodes spécialisées
+│   │   ├── class-pc-shortcode-base.php       - Classe de base
+│   │   ├── class-pc-gallery-shortcode.php    - Galeries
+│   │   ├── class-pc-devis-shortcode.php      - Calculateur
+│   │   └── 8 autres classes shortcodes...
+│   ├── 📂 booking/                           - Logique réservation
+│   └── 📂 helpers/                           - Classes utilitaires
+├── 📂 pc-experiences/                        ⭐ Module Expériences (Architecture refactorisée)
+│   ├── pc-experiences-core.php               (116 lignes)    - Core avec classes
+│   ├── 📂 assets/
+│   │   ├── class-pc-asset-manager-exp.php    - Gestionnaire assets spécialisé
+│   │   ├── 📂 css/components/                - 15+ composants CSS
+│   │   │   ├── pc-experience-*.css           - Composants expériences
+│   │   │   ├── pc-booking-*.css              - Réservation expériences
+│   │   │   └── pc-anchor-menu.css            - Navigation
+│   │   └── 📂 js/
+│   │       ├── 📂 components/                - Composants JS expériences
+│   │       └── 📂 modules/                   - Modules spécialisés
+│   ├── 📂 shortcodes/                        - 9 classes shortcodes spécialisées
+│   │   ├── class-pc-experience-shortcode-base.php - Classe de base
+│   │   ├── class-pc-booking-shortcode.php    - Réservation
+│   │   ├── class-pc-gallery-shortcode.php    - Galeries
+│   │   └── 6 autres classes...
+│   ├── 📂 booking/                           - Handler réservation expériences
+│   └── 📂 helpers/                           - Helpers métier spécialisés
+├── 📂 pc-reviews/                            ⭐ Module Avis (Refactorisé)
+│   ├── pc-reviews.php                        (406 lignes)    - Core fonctions
+│   └── 📂 assets/
+│       ├── css/pc-reviews.css                - Styles avis
+│       └── js/pc-reviews.js                  - Interactions AJAX
+├── 📂 composants/ (Legacy)                   - Composants non-refactorisés
 │   ├── pc-header-global.php                  (688 lignes)    - Header unifié
-│   ├── pc-reviews.php                        (495 lignes)    - Système d'avis
-│   ├── pc-experience-search.php              (452 lignes)    - Moteur de recherche
+│   ├── pc-experience-search.php              (452 lignes)    - Moteur recherche
 │   ├── pc-search-shortcodes.php              (416 lignes)    - Recherche logements
 │   ├── pc-perf-hints.php                     (422 lignes)    - Optimisations
 │   ├── pc-maintenance.php                    (267 lignes)    - Mode maintenance
@@ -60,34 +101,19 @@ mu-plugins/
 │   ├── pc-ajax-search.php                    (179 lignes)    - Recherche AJAX
 │   ├── pc-ical-cache.php                     (119 lignes)    - Cache iCal
 │   └── pc-loop-components.php                (85 lignes)     - Vignettes grilles
-├── 📂 assets/                                - Frontend (7,685 lignes)
-│   ├── css/                                  (5,611 lignes)
-│   │   ├── pc-ui.css                         (2,288 lignes) ⭐ Framework UI principal
-│   │   ├── pc-ui-experiences.css             (1,370 lignes) ⭐ UI expériences
-│   │   ├── pc-header-global.css              (1,011 lignes)  - Header responsive
-│   │   ├── pc-search-shortcodes.css          (539 lignes)    - Recherche/filtres
-│   │   ├── experience-search.css             (295 lignes)    - Moteur expériences
-│   │   ├── pc-destination.css                (214 lignes)    - Pages destinations
-│   │   ├── shortcode-liste-logement.css      (148 lignes)    - Grilles logements
-│   │   ├── pc-loop-card.css                  (139 lignes)    - Cards/vignettes
-│   │   └── pc-base.css                       (224 lignes)    - Variables CSS globales
-│   └── js/                                   (2,074 lignes)
-│       ├── pc-devis.js                       (950 lignes)  ⭐ Calculateur de prix
-│       ├── pc-fiche-experiences.js           (939 lignes)  ⭐ Interactions expériences
-│       ├── pc-fiche-logement.js              (728 lignes)    - Interactions logements
-│       ├── pc-header-global.js               (416 lignes)    - Navigation/mobile
-│       ├── pc-search-shortcodes.js           (232 lignes)    - Filtres dynamiques
-│       ├── pc-gallerie.js                    (208 lignes)    - Galeries photos
-│       ├── pc-header-smart.js                (169 lignes)    - Header intelligent
-│       ├── shortcode-liste-logement-v2.js    (161 lignes)    - Grilles v2
-│       ├── pc-experience-search.js           (149 lignes)    - Recherche expériences
-│       └── pc-orchestrator.js                (118 lignes)    - Coordinateur scripts
-└── 📂 pc-acf-json/                          - Métadonnées ACF
+├── 📂 assets/ (Globaux)                      - Assets partagés
+│   ├── pc-orchestrator.js                    (118 lignes)    - Coordinateur global
+│   ├── pc-base.css                           (224 lignes)    - Variables CSS
+│   └── Autres assets legacy...
+├── 📂 core-modules/                          - Modules système
+│   ├── class-pc-social-manager.php           - Gestion réseaux sociaux
+│   ├── class-pc-seo-manager.php              - SEO avancé
+│   ├── class-pc-performance.php              - Optimisations
+│   └── Autres classes système...
+└── 📂 pc-acf-json/                          - Configuration ACF
     ├── group_pc_fiche_logement.json          - Champs logements
     ├── group_pc_reviews.json                 - Champs avis
-    ├── group_pc_destination.json             - Champs destinations
-    ├── group_pc_seo_global.json              - Champs SEO
-    └── ui_options_page_*.json                - Pages d'options
+    └── Autres groupes ACF...
 ```
 
 ⭐ _= Composants les plus critiques_
@@ -115,25 +141,50 @@ graph TB
 
 ### 🔧 Modules principaux
 
-#### 1. **Hub Central** (`mu-global-prestige-caraibesV2_3.php`)
+#### 1. **Hub Central** (`mu-global-prestige-caraibesV2_3.php` - V3.0 Refactorisé !)
 
-**Responsabilités :** Architecture SEO complète, schémas JSON-LD, optimisations
+**Transformation majeure : 3,061 lignes → 73 lignes !**
 
-- **SEO technique** : Meta robots, sitemaps XML, canonicals intelligents
-- **Schémas JSON-LD** : Organization, WebSite, FAQPage, Product, VacationRental
-- **Performance** : Suppression assets inutiles, préchargement polices
-- **3,061 lignes** - Le cerveau du système
+**Nouvelle Architecture V3.0 - Orchestrateur Ultra-Léger :**
 
-#### 2. **Shortcodes Métier** (4,640 lignes)
+- **Chargement CSS global de base** : pc-base.css avec variables
+- **Auto-loading des core-modules/** : 6 modules système spécialisés
+- **Initialisation Singletons** : Performance, SEO, JSON-LD, Social managers
+- **73 lignes** - Orchestrateur pur, plus de monolithe !
 
-- **Fiches Logements** (`shortcode-page-fiche-logement.php` - 2,281 lignes)
-  - Galeries filtrable, calendrier iCal, calculateur de prix
-  - Intégration Lodgify, formulaires de réservation
-  - Gestion cautions Stripe, modes de paiement
-- **Fiches Expériences** (`shortcode-page-fiche-experiences.php` - 1,053 lignes)
-  - Réservation directe, tarifs complexes, recommandations
+**Logique extraite vers `core-modules/` :**
+
+- `class-pc-assets.php` - Gestionnaire assets
+- `class-pc-performance.php` - Optimisations
+- `class-pc-seo-helpers.php` - Helpers SEO
+- `class-pc-seo-manager.php` - SEO technique avancé
+- `class-pc-jsonld-manager.php` - Schémas JSON-LD
+- `class-pc-social-manager.php` - Réseaux sociaux
+
+#### 2. **Modules Refactorisés** ⭐ Nouvelle Architecture Modulaire
+
+- **Module Logements** (`pc-logement/` - Refactorisé V2.4)
+  - **Core** : `pc-logement-core.php` (162 lignes) avec autoloading et pattern Singleton
+  - **Shortcodes** : Classes spécialisées (Gallery, Devis, Tarifs, etc.)
+  - **Assets** : Gestionnaire dédié + composants CSS/JS modulaires
+  - **Booking** : Logic métier séparée pour réservations
+  - Remplace l'ancien `shortcode-page-fiche-logement.php` monolithique
+
+- **Module Expériences** (`pc-experiences/` - Refactorisé V2.4)
+  - **Core** : `pc-experiences-core.php` (116 lignes) avec initialisation modulaire
+  - **Shortcodes** : 9 classes spécialisées héritant de `PC_Experience_Shortcode_Base`
+  - **Assets** : Gestionnaire expériences + 15+ composants CSS
+  - **Booking** : Handler réservation expériences dédié
+  - Remplace l'ancien `shortcode-page-fiche-experiences.php` monolithique
+
+- **Module Reviews** (`pc-reviews/` - Refactorisé V2.4)
+  - **Core** : `pc-reviews.php` (406 lignes) optimisé
+  - **Assets** : CSS/JS dédiés pour interactions AJAX
+  - Structure propre et maintenable
+
 - **Destinations** (`pc-destination-shortcodes.php` - 499 lignes)
   - Hubs, grilles, logements/expériences recommandés
+  - **À refactoriser** : Prochain sur la roadmap
 
 #### 3. **Framework UI** (`assets/css/`)
 
@@ -236,12 +287,27 @@ function pcseo_get_meta($post_id, $suffix) {
 
 ### 🐌 Points d'amélioration identifiés
 
-| **Problème**               | **Impact**         | **Solution recommandée**   |
-| -------------------------- | ------------------ | -------------------------- |
-| Fichiers monolithiques     | Maintenance        | Refactoring en modules     |
-| Dépendances CDN multiples  | SPOF + latence     | Self-hosting critique      |
-| JS inline volumineux       | Caching impossible | Externalisation            |
-| Schémas JSON-LD redondants | DOM pollution      | Déduplication intelligente |
+| **Problème**               | **Impact**         | **Solution/État**                         |
+| -------------------------- | ------------------ | ----------------------------------------- |
+| ~~Fichiers monolithiques~~ | ~~Maintenance~~    | ✅ **Résolu V2.4** - Modules refactorisés |
+| Dépendances CDN multiples  | SPOF + latence     | Self-hosting critique                     |
+| JS inline volumineux       | Caching impossible | Externalisation                           |
+| Schémas JSON-LD redondants | DOM pollution      | Déduplication intelligente                |
+
+### 🎉 **Améliorations V2.4 - Architecture Modulaire**
+
+| **Amélioration**              | **Avant (V2.3)**                      | **Après (V2.4)**                             |
+| ----------------------------- | ------------------------------------- | -------------------------------------------- |
+| **Hub central mu-global**     | 1 fichier monolithique (3,061 lignes) | ⭐ **Orchestrateur ultra-léger (73 lignes)** |
+| **Structure logements**       | 1 fichier monolithique (2,281 lignes) | Module avec 10+ classes spécialisées         |
+| **Structure expériences**     | 1 fichier monolithique (1,053 lignes) | Module avec 9+ classes + assets modulaires   |
+| **Structure reviews**         | Code mélangé dans mu-global           | Module dédié avec assets propres             |
+| **Gestion assets**            | Chargement global                     | Asset managers dédiés par module             |
+| **Modules système**           | Code mélangé dans mu-global           | 6 classes dans `core-modules/`               |
+| **Maintenabilité**            | Difficile (code mélangé)              | Excellente (séparation claire)               |
+| **Réutilisabilité**           | Limitée                               | Classes de base héritables                   |
+| **Testabilité**               | Impossible                            | Classes isolées testables                    |
+| **Performance développement** | Lente (fichiers énormes)              | Rapide (fichiers ciblés)                     |
 
 ---
 
@@ -413,5 +479,5 @@ graph LR
 
 ---
 
-_Document généré automatiquement le 23/02/2026_  
-_Dernière mise à jour : Version V2.3_
+_Document généré automatiquement le 28/02/2026_  
+_Dernière mise à jour : Version V2.4 - Architecture Modulaire_

@@ -1,0 +1,105 @@
+/* ==========================================================================
+   Destination — Global & Base UI
+   ========================================================================== */
+
+/* Structure de grille basique */
+.pc-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.pc-grid--cards {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+/* Cartes standards */
+.pc-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.pc-card__img {
+  width: 100%;
+  height: auto;
+  display: block;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+}
+
+.pc-card__body {
+  padding: 14px;
+}
+
+.pc-card__title {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  line-height: 1.3;
+}
+
+/* Éléments d'interface génériques */
+.pc-btn {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.pc-btn:hover {
+  background-color: #f9fafb;
+}
+
+.pc-empty {
+  opacity: 0.7;
+}
+
+/* Hero Section */
+.pc-dest-hero {
+  position: relative;
+}
+
+.pc-dest-hero picture img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.pc-dest-hero__inner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 24px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Utilitaires de Layout */
+.pc-container {
+  width: min(1100px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.pc-section {
+  padding: 32px 0;
+}
+
+.pc-center {
+  text-align: center;
+}
+
+.pc-faq__item {
+  border-bottom: 1px solid #eee;
+  padding: 10px 0;
+}
+
+.pc-info {
+  margin-bottom: 16px;
+}

@@ -1,0 +1,82 @@
+/* ==========================================================================
+   Destination — Informations Pratiques
+   (Grille de cartes blanches avec icônes)
+   ========================================================================== */
+
+.dest-infos-section {
+  padding: 2rem 0;
+}
+
+.dest-infos-title {
+  font-family: var(--pc-font-title, inherit);
+  font-size: clamp(1.6rem, 1.2rem + 1vw, 2rem);
+  text-align: left;
+  margin: 0 0 1.5rem 0;
+  color: var(--pc-color-heading, #111);
+}
+
+/* Grille CSS : Mobile First (1 colonne) */
+.dest-infos-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr;
+}
+
+/* Tablette (2 colonnes) */
+@media (min-width: 768px) {
+  .dest-infos-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop (3 colonnes) */
+@media (min-width: 1024px) {
+  .dest-infos-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Carte d'information */
+.dest-infos-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  padding: 1.25rem 1.25rem 1.35rem;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+  will-change: transform;
+}
+
+/* Effet de survol */
+@media (hover: hover) and (pointer: fine) {
+  .dest-infos-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.14);
+  }
+}
+
+/* Style de l'icône */
+.dest-infos-icon i {
+  display: inline-block;
+  font-size: 26px;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+  color: var(--pc-color-primary, #0056b3);
+}
+
+/* Titre de la carte */
+.dest-infos-card-title {
+  font-family: var(--pc-font-title, inherit);
+  color: var(--pc-color-heading, #111);
+  font-size: 1.15rem;
+  line-height: 1.25;
+  margin: 0 0 0.5rem 0;
+}
+
+/* Contenu texte de la carte */
+.dest-infos-card-content {
+  color: var(--pc-color-text, #333);
+  font-size: 1rem;
+  line-height: 1.6;
+}
