@@ -1,0 +1,60 @@
+/* ==========================================================================
+   COMPOSANT : Carte Interactive (Map)
+   ========================================================================== */
+
+#pc-map-container {
+  width: 100%;
+  background: #f8fafc;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  z-index: 1; /* Par défaut, bas */
+}
+
+/* Desktop: plein écran (colonne sticky) */
+@media (min-width: 1024px) {
+  .pc-map-sticky {
+    position: sticky;
+    top: 100px;
+  }
+  #pc-map-container {
+    height: calc(100vh - 160px);
+    min-height: 520px;
+  }
+}
+
+/* Tablette/Mobile: hauteur fixe */
+@media (max-width: 1023px) {
+  #pc-map-container {
+    height: 380px;
+  }
+}
+
+/* ===========================================================
+   CORRECTIFS ELEMENTOR (Z-Index et Marges)
+   Les !important sont conservés car Elementor génère des styles
+   inline dynamiques impossibles à surcharger autrement.
+   =========================================================== */
+
+/* On force la priorité du footer à être la plus haute */
+footer.elementor-location-footer {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* On force notre colonne personnalisée épinglée à avoir une priorité plus basse */
+.elementor-column.map-column-wrapper.elementor-sticky {
+  z-index: 5 !important;
+}
+
+/* Ajustement des marges internes pour la carte dans la colonne */
+body .map-column-wrapper #pc-map-container {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+@media (max-width: 767px) {
+  body .map-column-wrapper #pc-map-container {
+    margin-left: 2px;
+    margin-right: 2px;
+  }
+}

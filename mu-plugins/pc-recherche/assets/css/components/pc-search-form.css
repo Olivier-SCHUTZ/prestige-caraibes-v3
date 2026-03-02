@@ -1,0 +1,232 @@
+/* ==========================================================================
+   COMPOSANT : Formulaire de Recherche Principal (Logements & Expériences)
+   ========================================================================== */
+
+/* --- 1. Conteneur Global --- */
+.pc-search-shell {
+  background: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  padding: 8px;
+  width: 100%;
+}
+
+/* --- 2. Grille Principale (Mobile First + Progressive Enhancement) --- */
+.pc-search-form {
+  display: grid;
+  gap: 8px;
+  align-items: stretch;
+  /* Mobile par défaut (<768px) */
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "loc loc"
+    "arr dep"
+    "gst gst"
+    "btn btn";
+}
+
+.pc-area-loc {
+  grid-area: loc;
+}
+.pc-area-arr {
+  grid-area: arr;
+}
+.pc-area-dep {
+  grid-area: dep;
+}
+.pc-area-gst {
+  grid-area: gst;
+}
+.pc-area-btn {
+  grid-area: btn;
+}
+
+/* Tablette (768px - 1023px) */
+@media (min-width: 768px) {
+  .pc-search-form {
+    grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+    grid-template-areas:
+      "loc loc arr dep"
+      "gst btn btn btn";
+  }
+}
+
+/* Desktop (>= 1024px) */
+@media (min-width: 1024px) {
+  .pc-search-form {
+    grid-template-columns: 1.6fr 1fr 1fr 1.2fr auto;
+    grid-template-areas: "loc arr dep gst btn";
+  }
+}
+
+/* --- 2B. Grille Spécifique (Expériences) --- */
+.pc-exp-search-form {
+  display: grid;
+  gap: 8px;
+  align-items: stretch;
+  /* Mobile par défaut (<768px) : 1 seule colonne */
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "cat"
+    "loc"
+    "key"
+    "btn";
+}
+
+.pc-exp-area-cat {
+  grid-area: cat;
+}
+.pc-exp-area-loc {
+  grid-area: loc;
+}
+.pc-exp-area-key {
+  grid-area: key;
+}
+.pc-exp-area-btn {
+  grid-area: btn;
+}
+
+/* Tablette (768px - 1023px) : 2 colonnes / 2 lignes */
+@media (min-width: 768px) {
+  .pc-exp-search-form {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "cat loc"
+      "key btn";
+  }
+}
+
+/* Desktop (>= 1024px) : 4 colonnes sur 1 ligne */
+@media (min-width: 1024px) {
+  .pc-exp-search-form {
+    /* Le mot clé (1.5fr) prend un peu plus de place, le bouton s'adapte (auto) */
+    grid-template-columns: 1fr 1fr 1.5fr auto;
+    grid-template-areas: "cat loc key btn";
+  }
+}
+
+/* --- 3. Champs de saisie --- */
+/* Spécificité accrue (.pc-search-wrapper .pc-input) pour contourner les thèmes sans !important */
+.pc-search-wrapper .pc-input,
+.pc-exp-search-wrapper .pc-input {
+  width: 100%;
+  height: 52px;
+  padding: 0 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  font-size: 16px;
+  line-height: 1;
+  color: #111827;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.pc-search-wrapper .pc-input::placeholder,
+.pc-exp-search-wrapper .pc-input::placeholder {
+  color: #9ca3af;
+}
+
+.pc-search-wrapper .pc-input:focus,
+.pc-exp-search-wrapper .pc-input:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+.pc-search-wrapper select.pc-input,
+.pc-exp-search-wrapper select.pc-input {
+  appearance: none;
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+}
+
+/* --- 4. Bouton de soumission --- */
+/* Spécificité forte pour remplacer les anciens correctifs v2 et v3 */
+.pc-search-wrapper .pc-search-form .pc-search-submit.pc-btn--primary,
+.pc-exp-search-wrapper
+  .pc-exp-search-form
+  .pc-exp-search-submit.pc-btn--primary {
+  height: 52px;
+  padding: 0 20px;
+  border-radius: 12px;
+  white-space: nowrap;
+  background: #007a92;
+  color: #ffffff;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.pc-search-wrapper .pc-search-form .pc-search-submit.pc-btn--primary:hover,
+.pc-exp-search-wrapper
+  .pc-exp-search-form
+  .pc-exp-search-submit.pc-btn--primary:hover {
+  background: #005f73;
+  color: #ffffff;
+}
+
+/* --- 5. Popover Invités --- */
+.pc-guests-popover {
+  position: absolute;
+  top: 56px;
+  right: 0;
+  z-index: 30;
+  width: 300px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.pc-guests-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.pc-search-wrapper .guest-stepper {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pc-search-wrapper .guest-stepper:active {
+  transform: translateY(1px);
+}
+
+/* --- 6. Utilitaires --- */
+.pc-search-wrapper .sr-only,
+.pc-exp-search-wrapper .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pc-search-wrapper .muted {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.pc-search-wrapper [hidden],
+.pc-exp-search-wrapper [hidden] {
+  display: none;
+}

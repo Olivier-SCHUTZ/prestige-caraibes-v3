@@ -57,26 +57,26 @@ class PC_Experience_Search_Shortcode extends PC_Search_Shortcode_Base
         ob_start();
 ?>
         <div class="pc-exp-search-wrapper" role="search" aria-label="Recherche d'expériences">
-            <div class="pc-exp-search-shell">
-                <form id="pc-exp-filters-form" class="pc-exp-search-form" action="#" method="post" autocomplete="off">
-                    <div class="pc-exp-search-field">
+            <form id="pc-exp-filters-form" class="pc-exp-search-shell" action="#" method="post" autocomplete="off">
+                <div class="pc-exp-search-form">
+                    <div class="pc-exp-search-field pc-exp-area-cat">
                         <label for="filter-exp-category" class="sr-only">Catégorie</label>
                         <select id="filter-exp-category" name="exp_category" class="pc-input">
                             <option value="">Toutes les catégories</option><?php echo $options_categories; ?>
                         </select>
                     </div>
-                    <div class="pc-exp-search-field">
+                    <div class="pc-exp-search-field pc-exp-area-loc">
                         <label for="filter-exp-ville" class="sr-only">Destination</label>
                         <select id="filter-exp-ville" name="exp_ville" class="pc-input">
                             <option value="">Toute la Guadeloupe</option><?php echo $options_villes; ?>
                         </select>
                     </div>
-                    <div class="pc-exp-search-field pc-exp-search-field--keyword">
+                    <div class="pc-exp-search-field pc-exp-search-field--keyword pc-exp-area-key">
                         <label for="filter-exp-keyword" class="sr-only">Mot-clé</label>
                         <input type="text" id="filter-exp-keyword" name="exp_keyword" class="pc-input" placeholder="Ex: kayak, randonnée...">
                     </div>
-                    <button class="pc-exp-search-submit pc-btn pc-btn--primary" type="submit">Rechercher</button>
-                </form>
+                    <button class="pc-exp-search-submit pc-btn pc-btn--primary pc-exp-area-btn" type="submit">Rechercher</button>
+                </div>
                 <div class="pc-exp-row-adv-toggle">
                     <button type="button" class="pc-exp-adv-toggle pc-btn pc-btn--line" aria-controls="pc-exp-advanced" aria-expanded="false">Plus de filtres</button>
                 </div>
@@ -92,6 +92,10 @@ class PC_Experience_Search_Shortcode extends PC_Search_Shortcode_Base
                         </div>
                         <div class="pc-exp-adv-field">
                             <div class="pc-exp-adv-label">Prix (€ / personne)</div>
+                            <div class="pc-price-range" data-min="0" data-max="500" data-step="10">
+                                <input type="range" id="filter-exp-prix-min-range" min="0" max="500" step="10" value="0">
+                                <input type="range" id="filter-exp-prix-max-range" min="0" max="500" step="10" value="500">
+                            </div>
                             <div class="pc-price-values">
                                 <input type="number" id="filter-exp-prix-min" name="exp_prix_min" class="pc-input" placeholder="Min" min="0" step="10">
                                 <input type="number" id="filter-exp-prix-max" name="exp_prix_max" class="pc-input" placeholder="Max" min="0" step="10">
@@ -99,7 +103,7 @@ class PC_Experience_Search_Shortcode extends PC_Search_Shortcode_Base
                         </div>
                     </div>
                 </div>
-            </div>
+            </form>
 
             <div id="pc-exp-results-container" class="flow" style="margin-top:2rem;">
                 <?php echo $initial_vignettes_html; ?>

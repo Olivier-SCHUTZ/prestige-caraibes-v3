@@ -1,0 +1,221 @@
+/* ==========================================================================
+   COMPOSANT : Filtres Avancés (Panneau, Chips, Sliders de prix)
+   ========================================================================== */
+
+/* --- 1. Boutons Toggle (Plus de filtres / Réinitialiser) --- */
+.pc-row-adv-toggle,
+.pc-exp-row-adv-toggle {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.pc-adv-toggle,
+.pc-adv-reset,
+.pc-exp-adv-toggle {
+  height: 48px;
+  border-radius: 10px;
+  padding: 0 14px;
+}
+
+.pc-adv-reset {
+  border-color: #fee2e2;
+  background: #ffffff;
+}
+
+.pc-adv-reset:hover {
+  background: #fef2f2;
+}
+
+/* --- 2. Le Panneau Avancé --- */
+.pc-advanced,
+.pc-exp-advanced {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.pc-advanced__grid,
+.pc-exp-advanced__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pc-adv-field .pc-adv-label,
+.pc-exp-adv-field .pc-exp-adv-label {
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+/* --- 3. Équipements (Chips) --- */
+.pc-adv-group {
+  margin-top: 10px;
+}
+.pc-adv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+.pc-chip input {
+  display: none;
+}
+.pc-chip input:checked + span {
+  font-weight: 600;
+}
+.pc-chip:hover {
+  background-color: #f3f4f6;
+}
+
+/* --- 4. Sliders de Prix --- */
+.pc-price-range {
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pc-price-range input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: auto;
+}
+.pc-price-values {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.pc-price-values .pc-input {
+  height: 44px;
+  flex: 1; /* Force les cases à prendre toute la largeur dispo */
+  min-width: 0; /* Empêche Flexbox d'écraser la case */
+  padding: 0 8px;
+  text-align: center; /* Plus esthétique pour des prix */
+}
+
+/* Cache les petites flèches internes des navigateurs pour gagner de la place */
+.pc-price-values input[type="number"]::-webkit-inner-spin-button,
+.pc-price-values input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.pc-price-values input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Personnalisation du curseur de range */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #007a92;
+  cursor: pointer;
+  border: none;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #007a92;
+  cursor: pointer;
+  border: none;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 999px;
+}
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 999px;
+}
+
+/* --- 5. Steppers Numériques (Chambres/SDB) --- */
+.pc-num-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.pc-search-wrapper .pc-num-step .num-stepper,
+.pc-exp-search-wrapper .pc-num-step .num-stepper {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pc-search-wrapper .pc-num-step .num-stepper:active,
+.pc-exp-search-wrapper .pc-num-step .num-stepper:active {
+  transform: translateY(1px);
+}
+.pc-search-wrapper .pc-num-input,
+.pc-exp-search-wrapper .pc-num-input {
+  width: 72px;
+  height: 44px;
+  text-align: center;
+  padding: 0 10px;
+}
+
+/* --- 6. Actions et Responsive --- */
+.pc-adv-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+@media (max-width: 1023px) {
+  .pc-advanced__grid,
+  .pc-exp-advanced__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .pc-advanced__grid,
+  .pc-exp-advanced__grid {
+    grid-template-columns: 1fr;
+  }
+  .pc-adv-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pc-row-adv-toggle,
+  .pc-exp-row-adv-toggle {
+    justify-content: stretch;
+  }
+  .pc-adv-toggle,
+  .pc-exp-adv-toggle {
+    width: 100%;
+  }
+}

@@ -1,0 +1,128 @@
+/* ==========================================================================
+   COMPOSANT : Grille de Résultats et Vignettes
+   ========================================================================== */
+
+/* --- 1. Grille Responsive --- */
+.pc-results-grid,
+.pc-exp-results-grid {
+  display: grid;
+  gap: 2rem;
+  /* Automatique : colonnes de 300px min, remplit l'espace */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+/* Forçage spécifique si besoin pour les grands écrans */
+@media (min-width: 992px) {
+  .pc-results-grid,
+  .pc-exp-results-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 600px) and (max-width: 991px) {
+  .pc-results-grid,
+  .pc-exp-results-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* --- 2. La Vignette --- */
+.pc-vignette {
+  background: #ffffff;
+  border-radius: 15px; /* Utilisation d'un arrondi cohérent */
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.pc-vignette:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* --- 3. Image & Optimisation CLS --- */
+.pc-vignette__image {
+  aspect-ratio: 376 / 230;
+  background-color: #f0f0f0;
+  position: relative;
+}
+
+.pc-vignette__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* --- 4. Contenu de la Vignette --- */
+.pc-vignette__content {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* Fusion avec le correctif V2 */
+}
+
+.pc-vignette__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #111827;
+  margin: 0;
+}
+
+.pc-vignette__location {
+  font-size: 1rem;
+  color: #374151;
+}
+
+.pc-vignette__price {
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 700;
+}
+
+/* --- 5. Étoiles & Avis --- */
+.pc-vignette__rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  color: #374151;
+}
+
+.pc-vignette__rating .star {
+  color: #e5e7eb;
+}
+
+.pc-vignette__rating .star.filled {
+  color: #fbbf24;
+}
+
+.pc-vignette__rating svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 0;
+  fill: currentColor;
+}
+
+/* --- 6. États divers (Chargement & Aucun résultat) --- */
+.is-loading {
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.pc-no-results {
+  text-align: center;
+  padding: 3rem 1rem;
+  width: 100%;
+}
+
+.pc-no-results h3 {
+  color: #111827;
+  margin-bottom: 0.5rem;
+}

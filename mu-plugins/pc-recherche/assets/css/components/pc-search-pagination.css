@@ -1,0 +1,48 @@
+/* ==========================================================================
+   COMPOSANT : Pagination
+   ========================================================================== */
+
+.pc-pagination {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  width: 100%;
+}
+
+.pc-pagination a,
+.pc-pagination span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 0.5rem;
+  border-radius: 50px; /* Bordures arrondies dynamiques */
+  text-decoration: none;
+  font-weight: 600;
+  color: #111827;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  transition: all 0.2s ease;
+}
+
+.pc-pagination a:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.pc-pagination span.current {
+  background-color: #007a92; /* Votre couleur principale */
+  color: #ffffff;
+  border-color: #007a92;
+}
+
+/* Espace au-dessus de la pagination si elle suit la grille */
+.pc-results-grid + .pc-pagination,
+.pc-exp-results-grid + .pc-pagination {
+  margin-top: 2rem;
+}
