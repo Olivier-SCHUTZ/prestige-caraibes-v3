@@ -1,0 +1,12 @@
+/*
+ * Prestige Caraïbes - Header Global
+ * Fichier principal orchestrant les composants CSS
+ */
+
+/* 1. Nos nouveaux composants propres */
+@import url("components/header-base.css");
+@import url("components/header-navigation.css");
+@import url("components/header-search.css");
+@import url("components/header-mega-menu.css");
+@import url("components/header-offcanvas.css");
+@import url("components/header-smart.css");

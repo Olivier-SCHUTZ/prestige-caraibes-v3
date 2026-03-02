@@ -1,0 +1,306 @@
+/* ==========================================
+   Composant : Off-canvas (Menu Mobile)
+   Panneau latéral, overlay, navigation accordéon
+   ========================================== */
+
+/* --- CONTENEUR GLOBAL & OVERLAY --- */
+.pc-offcanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.pc-offcanvas__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 20, 30, 0.55);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* --- PANNEAU LATÉRAL --- */
+.pc-offcanvas__panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(460px, 92vw);
+  background: #ffffff;
+  transform: translateX(16px);
+  opacity: 0;
+  transition:
+    transform 0.22s ease,
+    opacity 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: -18px 0 40px rgba(0, 0, 0, 0.18);
+}
+
+/* --- EN-TÊTE DU MENU (TOP) --- */
+.pc-offcanvas__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.pc-offcanvas__logo {
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--pc-color-heading);
+}
+
+.pc-offcanvas__meta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pc-offcanvas__tel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--pc-color-heading);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1;
+  opacity: 0.92;
+  transition: opacity 0.18s ease;
+}
+
+.pc-offcanvas__tel-txt {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pc-offcanvas__tel:hover {
+  opacity: 1;
+}
+
+.pc-offcanvas__tel-ico svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pc-offcanvas__social {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-offcanvas__social-link {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+  color: var(--pc-color-heading);
+  text-decoration: none;
+  opacity: 0.9;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.pc-offcanvas__social-link:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.pc-offcanvas__social-link svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pc-offcanvas__close {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.pc-offcanvas__close svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* --- NAVIGATION & ACCORDÉONS --- */
+.pc-oc-nav {
+  padding: 14px 16px 22px;
+}
+
+.pc-oc-nav__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pc-oc-nav__btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--pc-color-heading);
+}
+
+.pc-oc-nav__btn:active {
+  transform: scale(0.99);
+}
+
+.pc-oc-nav__btn svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.18s ease;
+}
+
+.pc-oc-nav__btn[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.pc-oc-nav__panel {
+  padding: 10px 16px 16px;
+}
+
+.pc-oc-nav__group {
+  background: #ffffff;
+  border: 1px solid rgba(12, 35, 64, 0.12);
+  border-radius: 16px;
+  padding: 14px 14px 10px;
+  margin: 12px 0;
+  box-shadow: 0 6px 18px rgba(12, 35, 64, 0.06);
+}
+
+.pc-oc-nav__group:first-child {
+  margin-top: 6px;
+}
+.pc-oc-nav__group:last-child {
+  margin-bottom: 6px;
+}
+
+.pc-oc-nav__group-title {
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 0 0 10px;
+  color: #0c2340;
+}
+
+.pc-oc-nav__sublinks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pc-oc-nav__sublinks li + li {
+  border-top: 1px solid rgba(12, 35, 64, 0.08);
+}
+
+.pc-oc-nav__link {
+  display: block;
+  padding: 10px 2px;
+  text-decoration: none;
+  border-radius: 12px;
+  color: var(--pc-color-heading);
+  font-family: var(--pc-font-body);
+  font-size: 1.02rem;
+  line-height: 1.25;
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.pc-oc-nav__link--parent {
+  display: inline-block;
+  margin: 8px 0 10px;
+  font-weight: 800;
+  color: var(--pc-color-heading);
+}
+
+/* --- DESIGN RELIEF MOBILE (NOS SERVICES) --- */
+#pc-header .pc-oc-nav__panel--relief {
+  background: rgba(0, 0, 0, 0.03);
+  padding: 12px 16px;
+  border-radius: 0 0 16px 16px;
+}
+
+#pc-header .pc-oc-nav__card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 10px 16px;
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.05),
+    0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+#pc-header .pc-oc-nav__card .pc-oc-nav__link {
+  padding: 12px 0;
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+#pc-header .pc-oc-nav__card .pc-oc-nav__link:last-child {
+  border-bottom: none;
+}
+
+/* --- ÉTATS D'OUVERTURE --- */
+body.pc-oc-open .pc-offcanvas {
+  pointer-events: auto;
+}
+body.pc-oc-open .pc-offcanvas__overlay {
+  opacity: 1;
+}
+body.pc-oc-open .pc-offcanvas__panel {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* --- FIX iOS / HAUTEUR RESPONSIVE --- */
+@media (max-width: 767.98px) {
+  .pc-offcanvas,
+  .pc-offcanvas__panel {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+  .pc-oc-nav {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

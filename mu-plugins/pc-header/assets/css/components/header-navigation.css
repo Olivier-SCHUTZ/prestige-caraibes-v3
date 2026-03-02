@@ -1,0 +1,119 @@
+/* ==========================================
+   Composant : Navigation Desktop & Boutons
+   Menu principal, Bouton Burger, CTA
+   ========================================== */
+
+/* --- MENU DESKTOP --- */
+.pc-nav {
+  flex: 1;
+}
+
+.pc-nav__list {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+}
+
+.pc-nav__link,
+.pc-nav__btn {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--pc-color-heading);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 10px 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pc-nav__btn svg,
+.pc-nav__trigger svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pc-nav__trigger {
+  border: 0;
+  background: none;
+  padding: 10px 4px;
+  cursor: pointer;
+  color: var(--pc-color-heading);
+}
+
+/* --- BOUTON BURGER (Mobile/Tablette) --- */
+.pc-hg__burger {
+  display: none;
+  border: 0;
+  background: none;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.pc-hg__burger-ico svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Bascule Desktop / Mobile */
+@media (max-width: 1024px) {
+  .pc-nav {
+    display: none;
+  }
+  .pc-hg__burger {
+    display: inline-flex;
+  }
+}
+
+/* --- CTA RECHERCHER (Bouton principal) --- */
+.pc-hg .pc-hg__search {
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--pc-color-primary);
+  color: #ffffff; /* Fini le !important, la spécificité fait le travail */
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease,
+    box-shadow 160ms ease;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+.pc-hg .pc-hg__search:visited {
+  color: #ffffff;
+}
+
+.pc-hg .pc-hg__search:hover {
+  background: var(--pc-color-primary);
+  color: #ffffff;
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
+}
+
+.pc-hg .pc-hg__search:focus-visible {
+  outline: none;
+  color: #ffffff;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.35),
+    0 12px 26px rgba(0, 0, 0, 0.18);
+}
+
+@media (max-width: 767.98px) {
+  .pc-hg .pc-hg__search {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+}

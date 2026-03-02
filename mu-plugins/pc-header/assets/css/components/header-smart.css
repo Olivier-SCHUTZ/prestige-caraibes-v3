@@ -1,0 +1,41 @@
+/* ==========================================
+   Composant : Smart Header
+   Comportement sticky, apparition/disparition au scroll
+   Cible : .pc-hg-smart (ajouté via JS)
+   ========================================== */
+
+.pc-hg-smart {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  transition: none;
+  will-change: transform;
+}
+
+#pc-header.pc-hg-smart.pc-hg-ready {
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+
+/* État initial (haut de page) : fond blanc semi-transparent + texte bleu */
+.pc-hg-smart {
+  background: rgba(255, 255, 255, 0.7);
+  color: #1b3b5f;
+  box-shadow: none;
+  backdrop-filter: saturate(140%) blur(8px);
+}
+
+/* État "solide" (quand on scrolle) */
+.pc-hg-smart.pc-solid {
+  background: #ffffff;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* État "caché" (scroll down / inactivité) */
+.pc-hg-smart.pc-hidden {
+  transform: translateY(-100%);
+}
