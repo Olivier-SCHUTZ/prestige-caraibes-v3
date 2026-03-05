@@ -1,0 +1,133 @@
+/* ==========================================================================
+   Module FAQ - Design Premium (Prestige Caraïbes)
+   ========================================================================== */
+
+.pc-faq-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Espace propre entre chaque question */
+  margin: 2rem 0;
+  font-family: var(--pc-font-family-body, system-ui, -apple-system, sans-serif);
+}
+
+.pc-faq-title {
+  color: var(--pc-primary, #0e2b5c);
+  font-size: clamp(1.25rem, 2vw + 1rem, 1.75rem);
+  font-family: var(--pc-font-family-heading, "Poppins", sans-serif);
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+/* --- Container de la question (Le volet) --- */
+.pc-faq-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--pc-border-radius, 12px);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.pc-faq-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.pc-faq-item[open] {
+  border-color: var(--pc-accent, #005f73);
+  box-shadow: 0 8px 24px rgba(0, 95, 115, 0.08);
+}
+
+/* --- La Question (Summary) --- */
+.pc-faq-q {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: var(--pc-primary, #0e2b5c);
+  cursor: pointer;
+  list-style: none; /* Supprime le triangle natif firefox/IE */
+  user-select: none;
+  transition:
+    color 0.3s ease,
+    background-color 0.3s ease;
+}
+
+/* Supprime le triangle natif Chrome/Safari */
+.pc-faq-q::-webkit-details-marker {
+  display: none !important;
+}
+
+/* L'icône "+" (SVG dynamique) */
+.pc-faq-q::after {
+  content: "";
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-left: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%230e2b5c' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 4v16m8-8H4'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* État ouvert : La question change de couleur et bordure interne */
+.pc-faq-item[open] .pc-faq-q {
+  color: var(--pc-accent, #005f73);
+  background-color: #f8fafc; /* Fond très léger */
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* État ouvert : L'icône "+" tourne à 180° et devient "-" */
+.pc-faq-item[open] .pc-faq-q::after {
+  transform: rotate(180deg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23005f73' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M20 12H4'/%3E%3C/svg%3E");
+}
+
+/* --- La Réponse --- */
+.pc-faq-a {
+  padding: 20px 24px;
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* Nettoyage de l'espacement des paragraphes WordPress */
+.pc-faq-a p {
+  margin-bottom: 1rem;
+}
+
+.pc-faq-a p:last-child {
+  margin-bottom: 0;
+}
+
+.pc-faq-a a {
+  color: var(--pc-accent, #005f73);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pc-faq-a a:hover {
+  color: var(--pc-primary, #0e2b5c);
+}
+
+/* --- Adaptabilité Mobile --- */
+@media (max-width: 768px) {
+  .pc-faq-title {
+    margin-bottom: 1rem;
+  }
+
+  .pc-faq-q {
+    font-size: 1.05rem;
+    padding: 16px;
+  }
+
+  .pc-faq-a {
+    padding: 16px;
+    font-size: 0.95rem;
+  }
+}

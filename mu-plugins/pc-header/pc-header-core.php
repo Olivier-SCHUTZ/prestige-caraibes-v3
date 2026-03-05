@@ -108,6 +108,10 @@ class PC_Header_Core
         if (class_exists('PC_Header_Shortcode')) {
             (new PC_Header_Shortcode())->register();
         }
+        // NOUVEAU : On active le composant Dropdown des logements
+        if (class_exists('PC_Header_Dropdown_Shortcode')) {
+            (new PC_Header_Dropdown_Shortcode())->register();
+        }
     }
 }
 

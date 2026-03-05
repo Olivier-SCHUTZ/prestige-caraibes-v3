@@ -31,26 +31,32 @@ class PC_Header_Asset_Manager
 
         // 1. Définition des chemins
         $css_path          = PC_HEADER_PATH . 'assets/css/header-main.css';
+        $dropdown_css_path = PC_HEADER_PATH . 'assets/css/components/header-dropdown.css'; // NOUVEAU
         $nav_js_path       = PC_HEADER_PATH . 'assets/js/components/header-navigation.js';
         $search_js_path    = PC_HEADER_PATH . 'assets/js/components/header-search.js';
         $offcanvas_js_path = PC_HEADER_PATH . 'assets/js/components/header-offcanvas.js';
         $smart_js_path     = PC_HEADER_PATH . 'assets/js/components/header-smart.js';
+        $dropdown_js_path  = PC_HEADER_PATH . 'assets/js/components/header-dropdown.js'; // NOUVEAU
         $main_js_path      = PC_HEADER_PATH . 'assets/js/header-main.js';
 
         // 2. URLs correspondantes
         $css_url          = PC_HEADER_URL . 'assets/css/header-main.css';
+        $dropdown_css_url = PC_HEADER_URL . 'assets/css/components/header-dropdown.css'; // NOUVEAU
         $nav_js_url       = PC_HEADER_URL . 'assets/js/components/header-navigation.js';
         $search_js_url    = PC_HEADER_URL . 'assets/js/components/header-search.js';
         $offcanvas_js_url = PC_HEADER_URL . 'assets/js/components/header-offcanvas.js';
         $smart_js_url     = PC_HEADER_URL . 'assets/js/components/header-smart.js';
+        $dropdown_js_url  = PC_HEADER_URL . 'assets/js/components/header-dropdown.js'; // NOUVEAU
         $main_js_url      = PC_HEADER_URL . 'assets/js/header-main.js';
 
         // 3. Versions (cache busting)
         $css_ver          = file_exists($css_path) ? filemtime($css_path) : PC_HEADER_VERSION;
+        $dropdown_css_ver = file_exists($dropdown_css_path) ? filemtime($dropdown_css_path) : PC_HEADER_VERSION; // NOUVEAU
         $nav_js_ver       = file_exists($nav_js_path) ? filemtime($nav_js_path) : PC_HEADER_VERSION;
         $search_js_ver    = file_exists($search_js_path) ? filemtime($search_js_path) : PC_HEADER_VERSION;
         $offcanvas_js_ver = file_exists($offcanvas_js_path) ? filemtime($offcanvas_js_path) : PC_HEADER_VERSION;
         $smart_js_ver     = file_exists($smart_js_path) ? filemtime($smart_js_path) : PC_HEADER_VERSION;
+        $dropdown_js_ver  = file_exists($dropdown_js_path) ? filemtime($dropdown_js_path) : PC_HEADER_VERSION; // NOUVEAU
         $main_js_ver      = file_exists($main_js_path) ? filemtime($main_js_path) : PC_HEADER_VERSION;
 
         // --- ENQUEUE CSS ---
@@ -60,6 +66,11 @@ class PC_Header_Asset_Manager
 
         if (file_exists($css_path)) {
             wp_enqueue_style('pc-header-main', $css_url, $style_deps, $css_ver);
+        }
+
+        // NOUVEAU : Chargement du style du Dropdown
+        if (file_exists($dropdown_css_path)) {
+            wp_enqueue_style('pc-header-dropdown', $dropdown_css_url, [], $dropdown_css_ver);
         }
 
         // --- ENQUEUE JS MODULAIRE ---
@@ -79,8 +90,14 @@ class PC_Header_Asset_Manager
             wp_enqueue_script('pc-header-smart-js', $smart_js_url, [], $smart_js_ver, true);
         }
 
+        // NOUVEAU : Chargement du JS du Dropdown
+        if (file_exists($dropdown_js_path)) {
+            wp_enqueue_script('pc-header-dropdown-js', $dropdown_js_url, [], $dropdown_js_ver, true);
+        }
+
         if (file_exists($main_js_path)) {
-            $js_deps = ['pc-header-nav-js', 'pc-header-search-js', 'pc-header-offcanvas-js', 'pc-header-smart-js'];
+            // Ajout du dropdown JS dans les dépendances de main-js
+            $js_deps = ['pc-header-nav-js', 'pc-header-search-js', 'pc-header-offcanvas-js', 'pc-header-smart-js', 'pc-header-dropdown-js'];
             wp_enqueue_script('pc-header-main-js', $main_js_url, $js_deps, $main_js_ver, true);
             wp_script_add_data('pc-header-main-js', 'defer', true);
 

@@ -1,57 +1,68 @@
 /* ===========================================================
-   STYLE DE LA VIGNETTE DE LOGEMENT POUR GRILLE DE BOUCLE ELEMENTOR
-   (Version 2.2 - Ruban promotionnel diagonal et plus visible)
+   PC UI COMPONENTS - STYLES VIGNETTE LOGEMENT / GRILLES
+   Module: pc-ui-components
+   Version: 2.6.2 - Design Prestige (Structure stricte Elementor)
    =========================================================== */
+
 .pc-vignette {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
-  overflow: hidden; /* INDISPENSABLE pour couper le ruban qui dépasse */
+  /* Ombre Prestige : beaucoup plus douce, remplace l'ancienne ombre dure */
+  box-shadow: 0 4px 20px rgba(14, 43, 92, 0.08);
+  overflow: hidden;
   text-decoration: none;
   display: flex;
   flex-direction: column;
   height: 100%;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* Transition fluide pour l'élévation */
+  transition:
+    transform 0.4s ease,
+    box-shadow 0.4s ease;
   position: relative;
 }
 
-/* --- NOUVEAU : Style du ruban promotionnel en travers --- */
+.pc-vignette:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(14, 43, 92, 0.15);
+}
+
+/* --- Badge Promo Premium (en haut à droite) --- */
 .pc-vignette__promo-ribbon {
   position: absolute;
   z-index: 2;
-  width: 160px; /* Largeur du ruban */
-  top: 22px; /* Distance du haut */
-  left: -42px; /* Distance de la gauche (négative pour le décalage) */
-
-  /* La magie de la rotation */
-  transform: rotate(-45deg);
-
-  /* Style visuel */
-  background-color: #dc143c; /* Un rouge "Crimson" bien visible */
+  top: 1rem;
+  right: 1rem;
+  background-color: var(--pc-primary, #0e2b5c);
   color: #fff;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-
-  /* Texte */
-  text-align: center;
-  font-family: var(--pc-font-title);
-  font-size: 0.9rem; /* Légèrement plus grand */
-  font-weight: 700;
-  line-height: 1.3;
-  padding: 0.6rem 0; /* Plus d'espace vertical */
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-family: var(--pc-font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
-.pc-vignette:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px 0 rgba(0, 0, 0, 0.12);
+/* --- Conteneur Image avec Zoom premium --- */
+.pc-vignette__image {
+  overflow: hidden; /* Coupe le débordement pendant le zoom */
+  width: 100%;
 }
 
 .pc-vignette__image img {
   width: 100%;
-  height: 14.4rem;
+  height: 14.4rem; /* TAILLE D'ORIGINE STRICTE */
   object-fit: cover;
   display: block;
+  transition: transform 0.8s ease; /* Zoom lent et luxueux */
 }
 
+.pc-vignette:hover .pc-vignette__image img {
+  transform: scale(1.05); /* Effet zoom au survol */
+}
+
+/* --- Contenu : 100% d'origine --- */
 .pc-vignette__content {
   padding: 1rem 1.25rem;
   display: flex;
@@ -95,7 +106,7 @@
   color: #e5e7eb;
 }
 .pc-vignette__stars .star.filled {
-  color: #fbbf24;
+  color: #c5a059; /* Or "Champagne" pour le prestige */
 }
 
 .pc-vignette__price {
@@ -106,14 +117,14 @@
   margin-top: auto;
   padding-top: 0.5rem;
 }
+
 /* ================================
-   Ajustements mobile — vignettes
+   Ajustements mobile originaux (Intacts)
    ================================ */
 @media (max-width: 767.98px) {
-  /* 1) Empêcher tout chevauchement image / contenu */
   .pc-vignette__image img {
     width: 100%;
-    height: auto; /* annule la hauteur fixe */
+    height: auto;
     aspect-ratio: 4 / 3;
     object-fit: cover;
     display: block;
@@ -123,14 +134,11 @@
     background: #fff;
   }
 
-  /* 2) Sur mobile, la loop grid se comporte comme une liste verticale,
-       pleine largeur, avec une petite marge intérieure */
   .elementor-widget-loop-grid .elementor-loop-container {
     display: block !important;
     width: 100% !important;
   }
 
-  /* 3) Chaque carte : quasi pleine largeur + petite marge gauche/droite */
   .elementor-widget-loop-grid .pc-vignette {
     width: auto;
     margin: 0 1rem 1.5rem;
