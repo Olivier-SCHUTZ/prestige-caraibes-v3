@@ -15,90 +15,65 @@ class PC_Header_Asset_Manager
      */
     public function register()
     {
-        // Injection du CSS critique pour éviter le flash d'icônes
-        add_action('wp_head', [$this, 'inject_critical_css'], 1);
+        // On utilise désormais le hook standard global (plus de wp_head)
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_global_assets'], 20);
     }
 
     /**
      * Charge les scripts JS et le CSS principal.
-     * Cette méthode est appelée dynamiquement depuis le shortcode.
      */
-    public static function enqueue_assets()
+    public function enqueue_global_assets()
     {
-        static $done = false;
-        if ($done || is_admin()) return;
-        $done = true;
+        // Le Header est présent sur toutes les pages, aucune condition d'exclusion requise.
 
-        // 1. Définition des chemins
-        $css_path          = PC_HEADER_PATH . 'assets/css/header-main.css';
-        $dropdown_css_path = PC_HEADER_PATH . 'assets/css/components/header-dropdown.css'; // NOUVEAU
-        $nav_js_path       = PC_HEADER_PATH . 'assets/js/components/header-navigation.js';
-        $search_js_path    = PC_HEADER_PATH . 'assets/js/components/header-search.js';
-        $offcanvas_js_path = PC_HEADER_PATH . 'assets/js/components/header-offcanvas.js';
-        $smart_js_path     = PC_HEADER_PATH . 'assets/js/components/header-smart.js';
-        $dropdown_js_path  = PC_HEADER_PATH . 'assets/js/components/header-dropdown.js'; // NOUVEAU
-        $main_js_path      = PC_HEADER_PATH . 'assets/js/header-main.js';
+        // =========================================================================
+        // 1. COMPOSANTS CSS
+        // =========================================================================
 
-        // 2. URLs correspondantes
-        $css_url          = PC_HEADER_URL . 'assets/css/header-main.css';
-        $dropdown_css_url = PC_HEADER_URL . 'assets/css/components/header-dropdown.css'; // NOUVEAU
-        $nav_js_url       = PC_HEADER_URL . 'assets/js/components/header-navigation.js';
-        $search_js_url    = PC_HEADER_URL . 'assets/js/components/header-search.js';
-        $offcanvas_js_url = PC_HEADER_URL . 'assets/js/components/header-offcanvas.js';
-        $smart_js_url     = PC_HEADER_URL . 'assets/js/components/header-smart.js';
-        $dropdown_js_url  = PC_HEADER_URL . 'assets/js/components/header-dropdown.js'; // NOUVEAU
-        $main_js_url      = PC_HEADER_URL . 'assets/js/header-main.js';
+        $css_files = [
+            'pc-header-critical' => 'components/pc-header-critical.css', // Notre ancien CSS inline
+            'pc-header-main'     => 'header-main.css',
+            'pc-header-dropdown' => 'components/header-dropdown.css'
+        ];
 
-        // 3. Versions (cache busting)
-        $css_ver          = file_exists($css_path) ? filemtime($css_path) : PC_HEADER_VERSION;
-        $dropdown_css_ver = file_exists($dropdown_css_path) ? filemtime($dropdown_css_path) : PC_HEADER_VERSION; // NOUVEAU
-        $nav_js_ver       = file_exists($nav_js_path) ? filemtime($nav_js_path) : PC_HEADER_VERSION;
-        $search_js_ver    = file_exists($search_js_path) ? filemtime($search_js_path) : PC_HEADER_VERSION;
-        $offcanvas_js_ver = file_exists($offcanvas_js_path) ? filemtime($offcanvas_js_path) : PC_HEADER_VERSION;
-        $smart_js_ver     = file_exists($smart_js_path) ? filemtime($smart_js_path) : PC_HEADER_VERSION;
-        $dropdown_js_ver  = file_exists($dropdown_js_path) ? filemtime($dropdown_js_path) : PC_HEADER_VERSION; // NOUVEAU
-        $main_js_ver      = file_exists($main_js_path) ? filemtime($main_js_path) : PC_HEADER_VERSION;
-
-        // --- ENQUEUE CSS ---
-        $style_deps = [];
-        if (wp_style_is('pc-base', 'enqueued')) $style_deps[] = 'pc-base';
-        if (wp_style_is('pc-header', 'enqueued')) $style_deps[] = 'pc-header';
-
-        if (file_exists($css_path)) {
-            wp_enqueue_style('pc-header-main', $css_url, $style_deps, $css_ver);
+        foreach ($css_files as $handle => $filename) {
+            $css_path = PC_HEADER_PATH . 'assets/css/' . $filename;
+            if (file_exists($css_path)) {
+                wp_enqueue_style($handle, PC_HEADER_URL . 'assets/css/' . $filename, [], filemtime($css_path));
+            }
         }
 
-        // NOUVEAU : Chargement du style du Dropdown
-        if (file_exists($dropdown_css_path)) {
-            wp_enqueue_style('pc-header-dropdown', $dropdown_css_url, [], $dropdown_css_ver);
+        // =========================================================================
+        // 2. COMPOSANTS JS
+        // =========================================================================
+
+        $js_files = [
+            'pc-header-nav-js'       => 'components/header-navigation.js',
+            'pc-header-search-js'    => 'components/header-search.js',
+            'pc-header-offcanvas-js' => 'components/header-offcanvas.js',
+            'pc-header-smart-js'     => 'components/header-smart.js',
+            'pc-header-dropdown-js'  => 'components/header-dropdown.js'
+        ];
+
+        $main_js_deps = [];
+
+        foreach ($js_files as $handle => $filename) {
+            $js_path = PC_HEADER_PATH . 'assets/js/' . $filename;
+            if (file_exists($js_path)) {
+                wp_enqueue_script($handle, PC_HEADER_URL . 'assets/js/' . $filename, [], filemtime($js_path), true);
+                $main_js_deps[] = $handle; // On collecte les handles pour les dépendances du main.js
+            }
         }
 
-        // --- ENQUEUE JS MODULAIRE ---
-        if (file_exists($nav_js_path)) {
-            wp_enqueue_script('pc-header-nav-js', $nav_js_url, [], $nav_js_ver, true);
-        }
+        // =========================================================================
+        // 3. JS PRINCIPAL ET CONFIGURATION
+        // =========================================================================
 
-        if (file_exists($search_js_path)) {
-            wp_enqueue_script('pc-header-search-js', $search_js_url, [], $search_js_ver, true);
-        }
-
-        if (file_exists($offcanvas_js_path)) {
-            wp_enqueue_script('pc-header-offcanvas-js', $offcanvas_js_url, [], $offcanvas_js_ver, true);
-        }
-
-        if (file_exists($smart_js_path)) {
-            wp_enqueue_script('pc-header-smart-js', $smart_js_url, [], $smart_js_ver, true);
-        }
-
-        // NOUVEAU : Chargement du JS du Dropdown
-        if (file_exists($dropdown_js_path)) {
-            wp_enqueue_script('pc-header-dropdown-js', $dropdown_js_url, [], $dropdown_js_ver, true);
-        }
+        $main_js_path = PC_HEADER_PATH . 'assets/js/header-main.js';
 
         if (file_exists($main_js_path)) {
-            // Ajout du dropdown JS dans les dépendances de main-js
-            $js_deps = ['pc-header-nav-js', 'pc-header-search-js', 'pc-header-offcanvas-js', 'pc-header-smart-js', 'pc-header-dropdown-js'];
-            wp_enqueue_script('pc-header-main-js', $main_js_url, $js_deps, $main_js_ver, true);
+            // Le main.js attend que tous les composants soient chargés
+            wp_enqueue_script('pc-header-main-js', PC_HEADER_URL . 'assets/js/header-main.js', $main_js_deps, filemtime($main_js_path), true);
             wp_script_add_data('pc-header-main-js', 'defer', true);
 
             // Récupération de la configuration
@@ -114,45 +89,8 @@ class PC_Header_Asset_Manager
     }
 
     /**
-     * Injection de CSS critique pour éviter le flash d'icônes et de mise en page.
+     * Rétrocompatibilité : Méthode laissée vide intentionnellement.
+     * Si l'ancien shortcode du header l'appelle manuellement, cela ne créera pas d'erreur fatale.
      */
-    public function inject_critical_css()
-    {
-?>
-        <style id="pc-critical-header">
-            /* On cache le header par défaut pour éviter de voir les icônes géantes ou mal placées */
-            .pc-hg {
-                opacity: 0;
-                visibility: hidden;
-            }
-
-            /* On l'affiche dès que le JS dit qu'il est prêt */
-            .pc-hg.pc-hg-ready {
-                opacity: 1;
-                visibility: visible;
-                transition: opacity 0.3s ease;
-            }
-
-            /* Tailles de secours immédiates pour les éléments sensibles */
-            .pc-hg__social-ico svg {
-                width: 18px !important;
-                height: 18px !important;
-                display: block;
-            }
-
-            .pc-hg__logo img {
-                height: 44px !important;
-                width: auto !important;
-            }
-
-            .pc-hg__bar {
-                min-height: 57px;
-            }
-
-            .pc-hg__main {
-                min-height: 72px;
-            }
-        </style>
-<?php
-    }
+    public static function enqueue_assets() {}
 }

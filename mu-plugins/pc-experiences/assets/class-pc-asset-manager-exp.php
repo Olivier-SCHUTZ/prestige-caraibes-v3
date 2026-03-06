@@ -18,7 +18,6 @@ class PC_Asset_Manager_Exp
     public function register()
     {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_global_assets'], 20);
-        // add_action('wp_head', [$this, 'inject_global_css']); // Décommenter si besoin
     }
 
     /**
@@ -26,89 +25,54 @@ class PC_Asset_Manager_Exp
      */
     public function enqueue_global_assets()
     {
-        // On ne charge que sur la page de type 'experience'
+        // 🛡️ Condition stricte : On ne charge QUE sur la fiche 'experience'
         if (!is_singular('experience')) {
             return;
         }
 
         // =========================================================================
-        // 1. COMPOSANTS CSS
+        // 1. LIBRAIRIES EXTERNES (Spécifiques aux expériences)
         // =========================================================================
 
-        // Composant : Description (Voir plus)
-        $desc_css_path = PC_EXP_DIR . 'assets/css/components/pc-experience-description.css';
-        if (file_exists($desc_css_path)) {
-            wp_enqueue_style('pc-exp-description', PC_EXP_URL . 'assets/css/components/pc-experience-description.css', [], filemtime($desc_css_path));
-        }
+        // Leaflet (Carte de localisation)
+        wp_enqueue_style('leaflet-css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', [], '1.9.4');
+        wp_enqueue_script('leaflet-js', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', [], '1.9.4', true);
 
-        // Composant : Galerie
-        $gallery_css_path = PC_EXP_DIR . 'assets/css/components/pc-experience-gallery.css';
-        if (file_exists($gallery_css_path)) {
-            wp_enqueue_style('pc-exp-gallery', PC_EXP_URL . 'assets/css/components/pc-experience-gallery.css', [], filemtime($gallery_css_path));
-        }
+        // GLightbox (Galerie photos)
+        wp_enqueue_style('glightbox-css', 'https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css', [], '3.3.0');
+        wp_enqueue_script('glightbox-js', 'https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js', [], '3.3.0', true);
 
-        // Composant : Map
-        $map_css_path = PC_EXP_DIR . 'assets/css/components/pc-experience-map.css';
-        if (file_exists($map_css_path)) {
-            wp_enqueue_style('pc-exp-map', PC_EXP_URL . 'assets/css/components/pc-experience-map.css', [], filemtime($map_css_path));
-        }
+        // jsPDF (Génération PDF des devis - requis par pc-pdf-generator)
+        wp_enqueue_script('jspdf', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', [], '2.5.1', true);
 
-        // Composant : Summary (Résumé)
-        $summary_css_path = PC_EXP_DIR . 'assets/css/components/pc-experience-summary.css';
-        if (file_exists($summary_css_path)) {
-            wp_enqueue_style('pc-exp-summary', PC_EXP_URL . 'assets/css/components/pc-experience-summary.css', [], filemtime($summary_css_path));
-        }
+        // =========================================================================
+        // 2. COMPOSANTS CSS
+        // =========================================================================
 
-        // Composant : Pricing (Cartes "Ticket")
-        $pricing_css_path = PC_EXP_DIR . 'assets/css/components/pc-experience-pricing.css';
-        if (file_exists($pricing_css_path)) {
-            wp_enqueue_style('pc-exp-pricing', PC_EXP_URL . 'assets/css/components/pc-experience-pricing.css', [], filemtime($pricing_css_path));
-        }
+        $components_css = [
+            'pc-exp-description'     => 'pc-experience-description.css',
+            'pc-exp-gallery'         => 'pc-experience-gallery.css',
+            'pc-exp-map'             => 'pc-experience-map.css',
+            'pc-exp-summary'         => 'pc-experience-summary.css',
+            'pc-exp-pricing'         => 'pc-experience-pricing.css',
+            'pc-exp-calculator'      => 'pc-booking-calculator.css',
+            'pc-exp-inclusions'      => 'pc-experience-inclusions.css',
+            'pc-exp-recommendations' => 'pc-experience-recommendations.css',
+            'pc-exp-modal'           => 'pc-booking-modal.css',
+            'pc-exp-anchor-menu'     => 'pc-anchor-menu.css',
+            'pc-exp-booking-fab'     => 'pc-booking-fab.css',
+            'pc-exp-booking-sheet'   => 'pc-booking-sheet.css'
+        ];
 
-        // Composant : Calculateur de Devis
-        $devis_css_path = PC_EXP_DIR . 'assets/css/components/pc-booking-calculator.css';
-        if (file_exists($devis_css_path)) {
-            wp_enqueue_style('pc-exp-calculator', PC_EXP_URL . 'assets/css/components/pc-booking-calculator.css', [], filemtime($devis_css_path));
-        }
-
-        // Composant : Inclusions (Inclus / Non inclus)
-        $inclusions_css_path = PC_EXP_DIR . 'assets/css/components/pc-experience-inclusions.css';
-        if (file_exists($inclusions_css_path)) {
-            wp_enqueue_style('pc-exp-inclusions', PC_EXP_URL . 'assets/css/components/pc-experience-inclusions.css', [], filemtime($inclusions_css_path));
-        }
-
-        // Composant : Logements Recommandés
-        $reco_css_path = PC_EXP_DIR . 'assets/css/components/pc-experience-recommendations.css';
-        if (file_exists($reco_css_path)) {
-            wp_enqueue_style('pc-exp-recommendations', PC_EXP_URL . 'assets/css/components/pc-experience-recommendations.css', [], filemtime($reco_css_path));
-        }
-
-        // Composant : Modale de réservation
-        $modal_css_path = PC_EXP_DIR . 'assets/css/components/pc-booking-modal.css';
-        if (file_exists($modal_css_path)) {
-            wp_enqueue_style('pc-exp-modal', PC_EXP_URL . 'assets/css/components/pc-booking-modal.css', [], filemtime($modal_css_path));
-        }
-
-        // Composant : Menu Sticky (Ancres)
-        $anchor_css_path = PC_EXP_DIR . 'assets/css/components/pc-anchor-menu.css';
-        if (file_exists($anchor_css_path)) {
-            wp_enqueue_style('pc-exp-anchor-menu', PC_EXP_URL . 'assets/css/components/pc-anchor-menu.css', [], filemtime($anchor_css_path));
-        }
-
-        // Composant : Bouton Flottant (FAB)
-        $fab_css_path = PC_EXP_DIR . 'assets/css/components/pc-booking-fab.css';
-        if (file_exists($fab_css_path)) {
-            wp_enqueue_style('pc-exp-booking-fab', PC_EXP_URL . 'assets/css/components/pc-booking-fab.css', [], filemtime($fab_css_path));
-        }
-
-        // Composant : Bottom-Sheet Mobile
-        $sheet_css_path = PC_EXP_DIR . 'assets/css/components/pc-booking-sheet.css';
-        if (file_exists($sheet_css_path)) {
-            wp_enqueue_style('pc-exp-booking-sheet', PC_EXP_URL . 'assets/css/components/pc-booking-sheet.css', [], filemtime($sheet_css_path));
+        foreach ($components_css as $handle => $filename) {
+            $css_path = PC_EXP_DIR . 'assets/css/components/' . $filename;
+            if (file_exists($css_path)) {
+                wp_enqueue_style($handle, PC_EXP_URL . 'assets/css/components/' . $filename, [], filemtime($css_path));
+            }
         }
 
         // =========================================================================
-        // 2. COMPOSANTS JS
+        // 3. COMPOSANTS JS
         // =========================================================================
 
         // Module : Formateur de devises
@@ -117,16 +81,16 @@ class PC_Asset_Manager_Exp
             wp_enqueue_script('pc-exp-currency-formatter', PC_EXP_URL . 'assets/js/modules/pc-currency-formatter.js', [], filemtime($currency_js_path), true);
         }
 
-        // Module : Générateur PDF
+        // Module : Générateur PDF (Sécurisé avec jspdf et formateur de devises en dépendance)
         $pdf_js_path = PC_EXP_DIR . 'assets/js/modules/pc-pdf-generator.js';
         if (file_exists($pdf_js_path)) {
-            wp_enqueue_script('pc-exp-pdf-generator', PC_EXP_URL . 'assets/js/modules/pc-pdf-generator.js', [], filemtime($pdf_js_path), true);
+            wp_enqueue_script('pc-exp-pdf-generator', PC_EXP_URL . 'assets/js/modules/pc-pdf-generator.js', ['pc-exp-currency-formatter', 'jspdf'], filemtime($pdf_js_path), true);
         }
 
         // Composant : Calculateur de devis
         $calc_js_path = PC_EXP_DIR . 'assets/js/components/pc-booking-calculator.js';
         if (file_exists($calc_js_path)) {
-            wp_enqueue_script('pc-exp-calculator', PC_EXP_URL . 'assets/js/components/pc-booking-calculator.js', [], filemtime($calc_js_path), true);
+            wp_enqueue_script('pc-exp-calculator-js', PC_EXP_URL . 'assets/js/components/pc-booking-calculator.js', ['pc-exp-currency-formatter'], filemtime($calc_js_path), true);
         }
 
         // Composant : Bouton Flottant (FAB)

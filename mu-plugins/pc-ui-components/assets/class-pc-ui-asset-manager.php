@@ -29,19 +29,27 @@ class PC_UI_Asset_Manager
 
     public function enqueue_assets()
     {
-        // Chemins dynamiques pour les MU-Plugins
+        // 1. Définition des pages cibles exactes
+        $target_pages = [
+            'location-villa-en-guadeloupe',
+            'location-villa-de-luxe-en-guadeloupe',
+            'location-grande-villa-en-guadeloupe',
+            'location-appartement-en-guadeloupe',
+            'promotion-villa-en-guadeloupe',
+            'accueil'
+        ];
+
+        // 🛡️ Condition stricte : Uniquement sur ces pages ou la page d'accueil native
+        if (!is_page($target_pages) && !is_front_page()) {
+            return;
+        }
+
+        // 2. Chargement du CSS des cartes
         $css_path = WPMU_PLUGIN_DIR . '/pc-ui-components/assets/css/components/pc-card.css';
         $css_url  = WPMU_PLUGIN_URL . '/pc-ui-components/assets/css/components/pc-card.css';
 
-        // Cache busting intelligent basé sur la date de modification du fichier
-        $version = file_exists($css_path) ? filemtime($css_path) : '2.5.0';
-
-        // Chargement du style des cartes
-        wp_enqueue_style(
-            'pc-ui-card-style',
-            $css_url,
-            [],
-            $version
-        );
+        if (file_exists($css_path)) {
+            wp_enqueue_style('pc-ui-card-style', $css_url, [], filemtime($css_path));
+        }
     }
 }

@@ -1,0 +1,25 @@
+/* pc-header-critical.css - Styles critiques du Header (Anti-clignotement) */
+.pc-hg {
+  opacity: 0;
+  visibility: hidden;
+}
+.pc-hg.pc-hg-ready {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease;
+}
+.pc-hg__social-ico svg {
+  width: 18px !important;
+  height: 18px !important;
+  display: block;
+}
+.pc-hg__logo img {
+  height: 44px !important;
+  width: auto !important;
+}
+.pc-hg__bar {
+  min-height: 57px;
+}
+.pc-hg__main {
+  min-height: 72px;
+}

@@ -73,3 +73,9 @@ class PC_Cache_Core
         }
     }
 }
+
+// ==========================================
+// ALLUMAGE DU MODULE
+// ==========================================
+// Cette ligne réactive tes tâches de fond (CRON) et ta synchro iCal !
+PC_Cache_Core::get_instance();

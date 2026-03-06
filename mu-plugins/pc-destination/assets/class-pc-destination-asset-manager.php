@@ -23,7 +23,7 @@ class PC_Destination_Asset_Manager
      */
     public function enqueue_global_assets()
     {
-        // On ne charge que sur les pages de type 'destination'
+        // 🛡️ Condition stricte : On ne charge QUE sur la page de type 'destination'
         if (!is_singular('destination')) {
             return;
         }
@@ -32,28 +32,20 @@ class PC_Destination_Asset_Manager
         // 1. COMPOSANTS CSS
         // =========================================================================
 
-        // Composant : Global & Base Cards
-        $global_css_path = PC_DEST_DIR . 'assets/css/components/pc-destination-global.css';
-        if (file_exists($global_css_path)) {
-            wp_enqueue_style('pc-dest-global', PC_DEST_URL . 'assets/css/components/pc-destination-global.css', [], filemtime($global_css_path));
+        $components_css = [
+            'pc-dest-global'          => 'pc-destination-global.css',
+            'pc-dest-recommendations' => 'pc-destination-recommendations.css',
+            'pc-dest-infos'           => 'pc-destination-infos.css',
+            'pc-dest-anchor-menu'     => 'pc-destination-anchor-menu.css'
+        ];
+
+        foreach ($components_css as $handle => $filename) {
+            $css_path = PC_DEST_DIR . 'assets/css/components/' . $filename;
+            if (file_exists($css_path)) {
+                wp_enqueue_style($handle, PC_DEST_URL . 'assets/css/components/' . $filename, [], filemtime($css_path));
+            }
         }
 
-        // Composant : Recommandations (Logements & Expériences)
-        $reco_css_path = PC_DEST_DIR . 'assets/css/components/pc-destination-recommendations.css';
-        if (file_exists($reco_css_path)) {
-            wp_enqueue_style('pc-dest-recommendations', PC_DEST_URL . 'assets/css/components/pc-destination-recommendations.css', [], filemtime($reco_css_path));
-        }
-
-        // Composant : Informations Pratiques
-        $infos_css_path = PC_DEST_DIR . 'assets/css/components/pc-destination-infos.css';
-        if (file_exists($infos_css_path)) {
-            wp_enqueue_style('pc-dest-infos', PC_DEST_URL . 'assets/css/components/pc-destination-infos.css', [], filemtime($infos_css_path));
-        }
-
-        // Composant : Menu Sticky (Ancres)
-        $anchor_css_path = PC_DEST_DIR . 'assets/css/components/pc-destination-anchor-menu.css';
-        if (file_exists($anchor_css_path)) {
-            wp_enqueue_style('pc-dest-anchor-menu', PC_DEST_URL . 'assets/css/components/pc-destination-anchor-menu.css', [], filemtime($anchor_css_path));
-        }
+        // Aucun JS ou composant externe n'est requis pour les destinations !
     }
 }

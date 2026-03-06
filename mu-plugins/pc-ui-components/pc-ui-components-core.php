@@ -77,3 +77,9 @@ class PC_UI_Components_Core
         }
     }
 }
+
+// ==========================================
+// ALLUMAGE DU MODULE
+// ==========================================
+// Cette ligne est cruciale : elle lance la classe, qui lance l'autoloader, qui déclare les shortcodes !
+PC_UI_Components_Core::get_instance();

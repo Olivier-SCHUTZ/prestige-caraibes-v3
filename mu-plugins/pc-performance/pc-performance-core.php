@@ -93,3 +93,9 @@ class PC_Performance_Core
         }
     }
 }
+
+// ==========================================
+// ALLUMAGE DU MODULE
+// ==========================================
+// Cette ligne réactive tes optimisations de performance !
+PC_Performance_Core::get_instance();
