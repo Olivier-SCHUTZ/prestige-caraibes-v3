@@ -38,6 +38,8 @@ plugins/pc-reservation-core/vendor/
 # --- MU-PLUGINS ---
 # On s'assure que tout ce qui est dans mu-plugins remonte
 !mu-plugins/
+# Exception : On force Git à tracker pc-cache malgré la règle générique *-cache/
+!mu-plugins/pc-cache/
 
 # --- WP ROCKET ---
 # On ignore tout le dossier de config (tes fichiers .json et .html de la capture)
