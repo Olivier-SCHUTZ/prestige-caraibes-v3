@@ -19,6 +19,8 @@ updraft/
 ai1wm-backups/
 wflogs/
 *-cache/
+node_modules/
+dist/
 
 !plugins/pc-stripe-caution/languages/
 

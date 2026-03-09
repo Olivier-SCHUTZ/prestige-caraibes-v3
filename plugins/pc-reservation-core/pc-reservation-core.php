@@ -21,26 +21,70 @@ require_once PC_RES_CORE_PATH . 'db/schema.php';
 require_once PC_RES_CORE_PATH . 'includes/class-reservation.php';
 require_once PC_RES_CORE_PATH . 'includes/class-payment.php';
 require_once PC_RES_CORE_PATH . 'includes/class-booking-engine.php';
-require_once PC_RES_CORE_PATH . 'includes/class-dashboard-ajax.php';
+require_once PC_RES_CORE_PATH . 'includes/services/booking/class-booking-payload-normalizer.php';
+require_once PC_RES_CORE_PATH . 'includes/services/booking/class-booking-pricing-calculator.php';
+require_once PC_RES_CORE_PATH . 'includes/services/booking/class-booking-orchestrator.php';
 require_once PC_RES_CORE_PATH . 'includes/class-housing-manager.php';
+require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-config.php';
+require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-formatter.php';
+require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-repository.php';
+require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-service.php';
 require_once PC_RES_CORE_PATH . 'includes/class-rate-manager.php';
 require_once PC_RES_CORE_PATH . 'includes/acf-fields.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-calendar.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-dashboard.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-housing.php';
 
+// Nouveaux Contrôleurs AJAX (Refactoring v2)
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-base-ajax-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-ajax-router.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-calendar-ajax-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-reservation-ajax-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-messaging-ajax-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-document-ajax-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-housing-ajax-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-experience-ajax-controller.php';
+
+// Nouveaux Services Métier (Refactoring v2)
+require_once PC_RES_CORE_PATH . 'includes/services/reservation/class-reservation-repository.php';
+require_once PC_RES_CORE_PATH . 'includes/services/reservation/class-reservation-validator.php';
+require_once PC_RES_CORE_PATH . 'includes/services/reservation/class-reservation-service.php';
+require_once PC_RES_CORE_PATH . 'includes/services/payment/class-payment-repository.php';
+require_once PC_RES_CORE_PATH . 'includes/services/payment/class-payment-service.php';
+require_once PC_RES_CORE_PATH . 'includes/services/messaging/class-messaging-repository.php';
+require_once PC_RES_CORE_PATH . 'includes/services/messaging/class-notification-dispatcher.php';
+require_once PC_RES_CORE_PATH . 'includes/services/messaging/class-template-manager.php';
+require_once PC_RES_CORE_PATH . 'includes/services/messaging/class-messaging-service.php';
+
 // ============================================================
 // 🎯 MODULE EXPERIENCE : Chargement des classes PHP
 // ============================================================
 require_once PC_RES_CORE_PATH . 'includes/class-experience-manager.php';
+require_once PC_RES_CORE_PATH . 'includes/services/experience/class-experience-config.php';
+require_once PC_RES_CORE_PATH . 'includes/services/experience/class-experience-formatter.php';
+require_once PC_RES_CORE_PATH . 'includes/services/experience/class-experience-repository.php';
+require_once PC_RES_CORE_PATH . 'includes/services/experience/class-experience-service.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-experience.php';
 
 require_once PC_RES_CORE_PATH . 'includes/class-ical-export.php';
+require_once PC_RES_CORE_PATH . 'includes/services/calendar/class-ical-exporter.php';
 require_once PC_RES_CORE_PATH . 'includes/class-settings.php';
+require_once PC_RES_CORE_PATH . 'includes/services/settings/class-settings-config.php';
+require_once PC_RES_CORE_PATH . 'includes/services/settings/class-webhook-simulator.php';
+require_once PC_RES_CORE_PATH . 'includes/services/settings/class-settings-controller.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-manager.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-ajax.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-webhook.php';
 require_once PC_RES_CORE_PATH . 'includes/class-documents.php';
+require_once PC_RES_CORE_PATH . 'includes/services/document/class-document-repository.php';
+require_once PC_RES_CORE_PATH . 'includes/services/document/class-document-financial-calculator.php';
+require_once PC_RES_CORE_PATH . 'includes/services/document/renderers/class-base-renderer.php';
+require_once PC_RES_CORE_PATH . 'includes/services/document/renderers/class-invoice-renderer.php';
+require_once PC_RES_CORE_PATH . 'includes/services/document/renderers/class-deposit-renderer.php';
+require_once PC_RES_CORE_PATH . 'includes/services/document/renderers/class-contract-renderer.php';
+require_once PC_RES_CORE_PATH . 'includes/services/document/renderers/class-voucher-renderer.php';
+require_once PC_RES_CORE_PATH . 'includes/services/document/renderers/class-custom-renderer.php';
+require_once PC_RES_CORE_PATH . 'includes/services/document/class-document-service.php';
 require_once PC_RES_CORE_PATH . 'includes/api/class-rest-webhook.php';
 // controller-forms sera branché plus tard quand tu seras prêt
 if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
@@ -81,8 +125,9 @@ add_action('plugins_loaded', function () {
         PCR_FormController::init();
     }
 
-    if (class_exists('PCR_Dashboard_Ajax')) {
-        PCR_Dashboard_Ajax::init();
+    // Initialisation du nouveau Routeur AJAX (Refactoring v2)
+    if (class_exists('PCR_Ajax_Router')) {
+        PCR_Ajax_Router::get_instance()->init();
     }
 
     // Initialisation du Housing Manager
@@ -120,7 +165,10 @@ add_action('plugins_loaded', function () {
         require_once PC_RES_CORE_PATH . 'includes/class-messaging.php';
     }
     if (class_exists('PCR_Messaging')) {
-        PCR_Messaging::init();
+        PCR_Messaging::init(); // L'ancienne classe gère encore les hooks temporairement
+    }
+    if (class_exists('PCR_Template_Manager')) {
+        PCR_Template_Manager::get_instance()->init_hooks(); // Le nouveau Manager est branché !
     }
 
     // ✨ NOUVEAU : Initialisation des Webhooks REST API

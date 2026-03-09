@@ -1097,10 +1097,8 @@
 
       if (typeValue === "location") {
         enforceCapacity(counts);
-        if (
-          !logementQuote ||
-          typeof logementQuote.calculateQuote !== "function"
-        ) {
+        const engine = window.PCR && window.PCR.Pricing;
+        if (!engine || typeof engine.calculateLogementQuote !== "function") {
           summaryBody.innerHTML =
             '<p class="pc-resa-field-hint">Le moteur logement n’est pas chargé.</p>';
           summaryTotal.textContent = "—";
@@ -1131,7 +1129,7 @@
           summaryTotal.textContent = "—";
           return;
         }
-        const result = logementQuote.calculateQuote(config, {
+        const result = engine.calculateLogementQuote(config, {
           date_arrivee: arrivalValue,
           date_depart: departValue,
           adults: counts.adultes,
