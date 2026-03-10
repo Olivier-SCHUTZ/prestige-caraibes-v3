@@ -44,6 +44,9 @@ require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-messaging-ajax-
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-document-ajax-controller.php';
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-housing-ajax-controller.php';
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-experience-ajax-controller.php';
+// ✨ NOUVEAU : API Controller pour l'interface Vue.js (Dashboard)
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-dashboard-api-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-experience-bridge-controller.php';
 
 // Nouveaux Services Métier (Refactoring v2)
 require_once PC_RES_CORE_PATH . 'includes/services/reservation/class-reservation-repository.php';
@@ -55,6 +58,9 @@ require_once PC_RES_CORE_PATH . 'includes/services/messaging/class-messaging-rep
 require_once PC_RES_CORE_PATH . 'includes/services/messaging/class-notification-dispatcher.php';
 require_once PC_RES_CORE_PATH . 'includes/services/messaging/class-template-manager.php';
 require_once PC_RES_CORE_PATH . 'includes/services/messaging/class-messaging-service.php';
+
+// ✨ NOUVEAU : Chargement du Vite Loader pour l'architecture V2 Vue.js
+require_once PC_RES_CORE_PATH . 'includes/class-vite-loader.php';
 
 // ============================================================
 // 🎯 MODULE EXPERIENCE : Chargement des classes PHP
@@ -354,6 +360,14 @@ add_action('wp_enqueue_scripts', function () {
         ob_start();
         pc_resa_dashboard_shortcode([]);
         ob_end_clean();
+    }
+
+    // ✨ C. Chargement des assets VUE.JS V2 (Nouveau système - Pattern Strangler)
+    if (class_exists('PCR_Vite_Loader')) {
+        PCR_Vite_Loader::enqueue_entry('src/modules/dashboard/main.js');
+        // NOUVEAU : Module Expérience
+        PCR_Vite_Loader::enqueue_entry('src/modules/experience/main.js');
+        PCR_Vite_Loader::enqueue_entry('src/modules/housing/main.js');
     }
 }, 100);
 

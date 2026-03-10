@@ -31,7 +31,7 @@
 
       // Charger la liste si on est sur l'onglet housing
       if (window.location.hash === "#housing") {
-        this.loadHousingList();
+        // this.loadHousingList(); // Désactivé : La V2 (Vue.js) gère maintenant l'affichage de la liste
       }
     }
 

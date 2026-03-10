@@ -538,6 +538,8 @@ do_action('pc_resa_app_enqueue_assets');
 
             <main class="pc-app-main">
                 <div id="view-dashboard" class="pc-view-section active">
+                    <div id="pc-dashboard-v2-app"></div>
+
                     <?php echo do_shortcode('[pc_resa_dashboard]'); ?>
                 </div>
 
@@ -546,21 +548,41 @@ do_action('pc_resa_app_enqueue_assets');
                 </div>
 
                 <div id="view-housing" class="pc-view-section">
+                    <style>
+                        #view-housing #pc-housing-table,
+                        #view-housing .pc-housing-filters {
+                            display: none !important;
+                        }
+                    </style>
+                    <div id="pc-housing-v2-app"></div>
+
                     <?php
                     // Force le chargement des assets housing
                     if (function_exists('pc_housing_enqueue_assets')) {
                         pc_housing_enqueue_assets();
                     }
+                    // On garde l'ancien système en dessous (il sera masqué par la suite)
                     echo do_shortcode('[pc_housing_dashboard]');
                     ?>
                 </div>
 
                 <div id="view-experience" class="pc-view-section">
+                    <style>
+                        #view-experience #pc-experience-table,
+                        #view-experience .pc-experience-filters,
+                        #view-experience #pc-experience-pagination {
+                            display: none !important;
+                        }
+                    </style>
+
+                    <div id="pc-experience-v2-app"></div>
+
                     <?php
                     // Force le chargement des assets experience
                     if (function_exists('pcr_enqueue_experience_assets')) {
                         pcr_enqueue_experience_assets();
                     }
+                    // ANCIEN SYSTÈME : Toujours là (invisible) pour fournir la modale d'édition !
                     echo do_shortcode('[pc_experience_dashboard]');
                     ?>
                 </div>

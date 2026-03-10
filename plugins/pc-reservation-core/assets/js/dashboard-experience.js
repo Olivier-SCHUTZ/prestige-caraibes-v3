@@ -1,3 +1,5 @@
+// DEPRECATED: Remplacé par les composants Vue (V2). Ne plus modifier. Conservé pour Rollback.
+
 /**
  * PC Reservation Core - Experience Dashboard JavaScript
  * Gestionnaire des expériences avec interface Table + Modale
@@ -48,7 +50,7 @@
         return;
       }
 
-      this.loadList();
+      // this.loadList(); // Désactivé : La V2 (Vue.js) gère maintenant l'affichage de la liste
     }
 
     // === GESTION DES ÉVÉNEMENTS ===
