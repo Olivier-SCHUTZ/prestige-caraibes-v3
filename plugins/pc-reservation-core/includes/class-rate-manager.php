@@ -21,8 +21,9 @@ class PCR_Rate_Manager
         if (!$post_id) return ['seasons' => [], 'promos' => []];
 
         return [
-            'seasons' => self::format_seasons(get_field(self::KEY_SEASON_REPEATER, $post_id)),
-            'promos'  => self::format_promos(get_field(self::KEY_PROMO_REPEATER, $post_id)),
+            // Utilisation des noms de champs réels pour la lecture (recommandation ACF)
+            'seasons' => self::format_seasons(get_field('pc_season_blocks', $post_id)),
+            'promos'  => self::format_promos(get_field('pc_promo_blocks', $post_id)),
         ];
     }
 

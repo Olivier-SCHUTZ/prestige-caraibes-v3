@@ -125,8 +125,16 @@ export const useHousingModalStore = defineStore("housingModal", {
           // On supprime ces clés pour éviter que la boucle ci-dessous ne tente de les sauvegarder comme des champs ACF classiques
           delete fullData.rates;
         }
+
+        // Purge des données de tarifs formatées
         delete fullData.seasons_data;
         delete fullData.promos_data;
+
+        // Purge CRUCIALE des données brutes ACF (pour ne pas écraser les répéteurs)
+        delete fullData.pc_season_blocks;
+        delete fullData.pc_promo_blocks;
+        delete fullData.field_pc_season_blocks_20250826;
+        delete fullData.field_693425b17049d;
 
         for (const key in fullData) {
           if (fullData[key] !== undefined && fullData[key] !== null) {
@@ -159,17 +167,20 @@ export const useHousingModalStore = defineStore("housingModal", {
         const response = await axios.post(wpVars.ajax_url, params);
 
         if (response.data && response.data.success) {
-          this.formData = response.data.data.housing;
+          // 1. Si c'était une création, on récupère le nouvel ID généré
+          if (this.housingId === 0 && response.data.data.post_id) {
+            this.housingId = response.data.data.post_id;
+          }
 
-          // 🚀 FIX LECTURE : On récupère le prix de base pour le calendrier
-          this.basePrice = parseFloat(this.formData.base_price_from || 0);
-
-          // 🚀 FIX LECTURE : On lance la fonction qui traduit les données PHP pour le calendrier Vue 3
-          this.formatRatesData();
+          // 2. SUPPRESSION TOTALE des affectations manuelles !
+          // Le backend ne renvoie pas l'objet housing complet ici.
+          // On recharge donc proprement toutes les données via notre méthode dédiée.
+          // Cela va repeupler this.formData, this.basePrice, et relancer formatRatesData() sans erreur.
+          await this.fetchHousingDetails(this.housingId);
+          return true;
         } else {
           this.error =
-            response.data?.data?.message ||
-            "Erreur lors du chargement des détails.";
+            response.data?.data?.message || "Erreur lors de la sauvegarde.";
         }
       } catch (err) {
         console.error("Erreur AJAX saveHousing:", err);

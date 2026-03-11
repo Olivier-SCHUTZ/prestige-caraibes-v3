@@ -24,7 +24,7 @@
             ⚠️ {{ modalStore.error }}
           </div>
 
-          <div v-else>
+          <div v-else-if="modalStore.formData">
             <div class="v2-tabs-nav">
               <button
                 v-for="tab in tabs"
@@ -135,7 +135,8 @@ const tabs = [
 const modalTitle = computed(() => {
   if (modalStore.isLoading) return "Chargement...";
   if (modalStore.housingId === 0) return "Nouveau logement";
-  return modalStore.formData.title || "Édition du logement";
+  // Ajout du "?" (Optional Chaining) pour ne pas crasher si formData est momentanément vide
+  return modalStore.formData?.title || "Édition du logement";
 });
 
 const closeModal = () => {
