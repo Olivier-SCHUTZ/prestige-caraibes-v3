@@ -3,9 +3,9 @@
     <div
       v-if="modelValue"
       class="pc-rate-modal-overlay"
-      @click.stop.prevent="closeModal"
+      @click.stop="closeModal"
     >
-      <div class="pc-rate-modal-content" @click.stop.prevent>
+      <div class="pc-rate-modal-content" @click.stop="handleModalClick">
         <div class="pc-rate-modal-header">
           <h3>
             {{ isEditing ? "Modifier" : "Ajouter" }}
@@ -79,25 +79,22 @@
             <h4>Périodes d'application</h4>
 
             <div class="pc-add-period-box">
-              <div class="pc-date-inputs">
-                <div class="pc-form-group">
-                  <label>Début</label>
-                  <input type="date" v-model="newPeriod.start" />
-                </div>
-                <div class="pc-form-group">
-                  <label>Fin</label>
-                  <input
-                    type="date"
-                    v-model="newPeriod.end"
-                    :min="newPeriod.start"
-                  />
-                </div>
+              <div class="pc-form-group pc-flatpickr-container" style="flex: 1">
+                <label>Sélectionner une période</label>
+                <input
+                  type="text"
+                  ref="dateRangeInput"
+                  placeholder="Ex: Cliquez pour choisir du... au..."
+                  readonly
+                  style="cursor: pointer; background: white"
+                />
               </div>
               <button
                 class="pc-btn pc-btn-secondary"
-                @click.stop.prevent="addPeriod"
+                @click.stop="addPeriod"
+                style="margin-bottom: 2px"
               >
-                + Ajouter la période
+                + Ajouter
               </button>
             </div>
 
@@ -168,7 +165,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, nextTick } from "vue";
 
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
@@ -185,6 +182,8 @@ const tempPeriods = ref([]);
 
 // État pour la nouvelle période
 const newPeriod = ref({ start: "", end: "" });
+const dateRangeInput = ref(null); // Référence pour l'input HTML
+let fpInstance = null; // Instance de Flatpickr
 
 // États pour les feedbacks
 const feedbackMsg = ref("");
@@ -193,7 +192,7 @@ const feedbackType = ref("info");
 // Initialisation au montage/changement de la prop
 watch(
   () => props.modelValue,
-  (isOpen) => {
+  async (isOpen) => {
     if (isOpen) {
       if (props.editItem) {
         // Deep copy pour ne pas affecter le store avant de sauvegarder
@@ -217,12 +216,66 @@ watch(
       }
       newPeriod.value = { start: "", end: "" };
       feedbackMsg.value = "";
+
+      // Initialisation de Flatpickr juste après l'affichage de la modale
+      await nextTick();
+
+      // Sécurité : on récupère l'instance globale de flatpickr
+      const fp =
+        window.flatpickr ||
+        (typeof flatpickr !== "undefined" ? flatpickr : null);
+
+      if (dateRangeInput.value && fp) {
+        fpInstance = fp(dateRangeInput.value, {
+          mode: "range",
+          dateFormat: "Y-m-d",
+          locale: "fr",
+          minDate: "today",
+          showMonths: window.innerWidth > 768 ? 2 : 1, // 2 mois sur PC, 1 sur mobile
+
+          // FIX 1 : Forcer Flatpickr à s'afficher par-dessus notre modale (z-index: 150005)
+          onReady: function (selectedDates, dateStr, instance) {
+            if (instance.calendarContainer) {
+              instance.calendarContainer.style.zIndex = "150005";
+            }
+          },
+
+          onChange: (selectedDates) => {
+            if (selectedDates.length === 2) {
+              newPeriod.value.start = fp.formatDate(selectedDates[0], "Y-m-d");
+              newPeriod.value.end = fp.formatDate(selectedDates[1], "Y-m-d");
+            } else {
+              newPeriod.value.start = "";
+              newPeriod.value.end = "";
+            }
+          },
+        });
+      } else if (!fp) {
+        console.error("Flatpickr n'est pas chargé sur la page.");
+      }
+    } else {
+      // Si la modale se ferme, on détruit Flatpickr pour libérer la mémoire
+      if (fpInstance) {
+        fpInstance.destroy();
+        fpInstance = null;
+      }
     }
   },
 );
 
 const closeModal = () => {
   emit("update:modelValue", false);
+};
+
+// FIX 2 : Fermer Flatpickr manuellement si on clique ailleurs dans la modale
+const handleModalClick = (e) => {
+  if (
+    fpInstance &&
+    dateRangeInput.value &&
+    !dateRangeInput.value.contains(e.target)
+  ) {
+    fpInstance.close();
+  }
 };
 
 const showFeedback = (msg, type = "info") => {
@@ -262,6 +315,11 @@ const addPeriod = () => {
   tempPeriods.value.push({ ...newPeriod.value });
   showFeedback("Période ajoutée", "success");
   newPeriod.value = { start: "", end: "" };
+
+  // On vide visuellement le champ Flatpickr pour le prochain ajout
+  if (fpInstance) {
+    fpInstance.clear();
+  }
 };
 
 const removePeriod = (index) => {

@@ -136,8 +136,15 @@ onBeforeUnmount(() => {
   min-height: 600px; /* Aligné sur la hauteur du calendrier */
 }
 
+.pc-sidebar-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
 .pc-sidebar-header h4 {
-  margin: 0 0 15px 0;
+  margin: 0;
   color: #1e293b;
   font-size: 1.1rem;
 }
@@ -145,7 +152,6 @@ onBeforeUnmount(() => {
 .pc-sidebar-actions {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
 }
 
 .pc-btn-add {

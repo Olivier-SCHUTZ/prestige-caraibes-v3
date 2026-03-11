@@ -5,13 +5,20 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue";
-import { useHousingModalStore } from "@/stores/housing-modal-store"; // Adaptez le chemin '@'
+import { computed, ref, watch, onMounted } from "vue";
+import { useHousingModalStore } from "../../stores/housing-modal-store.js"; // Chemin corrigé
 import FullCalendar from "@fullcalendar/vue3";
 import multiMonthPlugin from "@fullcalendar/multimonth";
 import interactionPlugin from "@fullcalendar/interaction";
 
 const store = useHousingModalStore();
+
+// Hack Vue 3 : Forcer le calendrier à se redimensionner quand l'onglet s'affiche
+onMounted(() => {
+  setTimeout(() => {
+    window.dispatchEvent(new Event("resize"));
+  }, 150);
+});
 
 // Utilitaire pour ajouter des jours (FullCalendar a des dates de fin exclusives)
 const addDays = (dateStr, days) => {
@@ -79,6 +86,7 @@ const calendarEvents = computed(() => {
 const calendarOptions = computed(() => ({
   plugins: [multiMonthPlugin, interactionPlugin],
   initialView: "multiMonthYear",
+  height: 650, // FIX : Hauteur obligatoire pour la vue multiMonth
   multiMonthMaxColumns: 1, // Vue verticale type Airbnb
   locale: "fr",
   firstDay: 1,
