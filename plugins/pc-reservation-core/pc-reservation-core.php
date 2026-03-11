@@ -29,11 +29,11 @@ require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-config.
 require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-formatter.php';
 require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-repository.php';
 require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-service.php';
-require_once PC_RES_CORE_PATH . 'includes/class-rate-manager.php';
+// require_once PC_RES_CORE_PATH . 'includes/class-rate-manager.php';
 require_once PC_RES_CORE_PATH . 'includes/acf-fields.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-calendar.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-dashboard.php';
-require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-housing.php';
+// require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-housing.php';
 
 // Nouveaux Contrôleurs AJAX (Refactoring v2)
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-base-ajax-controller.php';
@@ -70,7 +70,7 @@ require_once PC_RES_CORE_PATH . 'includes/services/experience/class-experience-c
 require_once PC_RES_CORE_PATH . 'includes/services/experience/class-experience-formatter.php';
 require_once PC_RES_CORE_PATH . 'includes/services/experience/class-experience-repository.php';
 require_once PC_RES_CORE_PATH . 'includes/services/experience/class-experience-service.php';
-require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-experience.php';
+// require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-experience.php';
 
 require_once PC_RES_CORE_PATH . 'includes/class-ical-export.php';
 require_once PC_RES_CORE_PATH . 'includes/services/calendar/class-ical-exporter.php';
@@ -227,17 +227,18 @@ function pcr_enqueue_experience_assets()
     }
     $assets_loaded = true;
 
-    // CSS
+    /*
+    // On déconnecte le CSS
     wp_enqueue_style(
         'pcr-experience-dashboard-css',
         PC_RES_CORE_URL . 'assets/css/dashboard-experience.css',
         array(),
         PC_RES_CORE_VERSION
     );
+    */
 
-    // JavaScript - Ordre de chargement respecté selon les dépendances
-
-    // 1. UI Manager (pas de dépendances)
+    /*
+    // On déconnecte le JS
     wp_enqueue_script(
         'pcr-exp-core',
         PC_RES_CORE_URL . 'assets/js/dashboard-experience.js',
@@ -245,6 +246,18 @@ function pcr_enqueue_experience_assets()
         PC_RES_CORE_VERSION,
         true
     );
+    */
+
+    // ✨ NOUVEAU : Le "pont" pour envoyer les variables à Vue 3 sans charger l'ancien JS
+    wp_register_script('pc-vue-bridge', false); // On crée un faux script vide
+    wp_enqueue_script('pc-vue-bridge'); // On dit à WP de le charger
+
+    // On attache tes variables cruciales à ce faux script !
+    wp_localize_script('pc-vue-bridge', 'pcReservationVars', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('pc_resa_manual_create')
+    ));
+
 
     wp_localize_script('pcr-exp-core', 'pcReservationVars', array(
         'ajax_url' => admin_url('admin-ajax.php'),

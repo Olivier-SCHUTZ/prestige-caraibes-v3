@@ -12,7 +12,9 @@ pc-reservation-core/
 ├── package.json                      # Dépendances Node.js
 ├── package-lock.json                 # Verrouillage npm
 ├── vite.config.js                    # Configuration Vite
-└── @architecture*.md                 # Documentation architecture
+├── @architecture*.md                 # Documentation architecture
+├── vendor/                          # Dépendances Composer
+└── node_modules/                    # Dépendances npm
 ```
 
 ## 📁 Base de Données
@@ -190,6 +192,9 @@ src/components/
 │   ├── ExperienceTabSorties.vue    # Onglet Sorties
 │   └── ExperienceTabTarifs.vue     # Onglet Tarifs
 └── Housing/                         # Composants logements
+    ├── RateCalendarArea.vue        # Zone calendrier des tarifs
+    ├── RateEditModal.vue           # Modale d'édition des tarifs
+    ├── RateSidebar.vue            # Barre latérale des tarifs
     ├── TabAmenities.vue            # Onglet Équipements
     ├── TabBooking.vue              # Onglet Réservation
     ├── TabConfig.vue               # Onglet Configuration

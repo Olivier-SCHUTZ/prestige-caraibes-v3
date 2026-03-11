@@ -69,21 +69,13 @@ class PCR_Housing_Ajax_Controller extends PCR_Base_Ajax_Controller
             wp_send_json_error(['message' => 'Logement introuvable ou erreur de chargement.']);
         }
 
-        // Chargement explicite de la classe si l'autoloader l'a manquée
-        if (!class_exists('PCR_Rate_Manager')) {
-            $rate_manager_path = plugin_dir_path(__FILE__) . 'class-rate-manager.php';
-            if (file_exists($rate_manager_path)) {
-                require_once $rate_manager_path;
-            }
-        }
-
-        // Injection des données Rate Manager via la classe spécialisée
-        if (class_exists('PCR_Rate_Manager')) {
-            $rates_data = PCR_Rate_Manager::get_rates_data($post_id);
+        // Injection des données de tarifs depuis le Repository
+        if (class_exists('PCR_Housing_Repository')) {
+            $rates_data = PCR_Housing_Repository::get_rates($post_id);
             $result['data']['seasons_data'] = $rates_data['seasons'];
             $result['data']['promos_data'] = $rates_data['promos'];
         } else {
-            error_log('PCR_Rate_Manager introuvable lors de la lecture du logement ID: ' . $post_id);
+            error_log('PCR_Housing_Repository introuvable lors de la lecture du logement ID: ' . $post_id);
         }
 
         wp_send_json_success([
@@ -139,19 +131,13 @@ class PCR_Housing_Ajax_Controller extends PCR_Base_Ajax_Controller
             wp_send_json_error(['message' => $result['message']]);
         }
 
-        // Chargement explicite de la classe si l'autoloader l'a manquée
-        if (!class_exists('PCR_Rate_Manager') && isset($_POST['rate_manager_data'])) {
-            $rate_manager_path = plugin_dir_path(__FILE__) . 'class-rate-manager.php';
-            if (file_exists($rate_manager_path)) {
-                require_once $rate_manager_path;
+        // Sauvegarde des tarifs via le Repository
+        if (isset($_POST['rate_manager_data'])) {
+            if (class_exists('PCR_Housing_Repository')) {
+                PCR_Housing_Repository::save_rates($post_id, $_POST['rate_manager_data']);
+            } else {
+                error_log('PCR_Housing_Repository introuvable lors de la sauvegarde du logement ID: ' . $post_id);
             }
-        }
-
-        // Sauvegarde Rate Manager
-        if (class_exists('PCR_Rate_Manager') && isset($_POST['rate_manager_data'])) {
-            PCR_Rate_Manager::save_rates_data($post_id, $_POST['rate_manager_data']);
-        } else if (isset($_POST['rate_manager_data'])) {
-            error_log('PCR_Rate_Manager introuvable lors de la sauvegarde du logement ID: ' . $post_id);
         }
 
         wp_send_json_success([

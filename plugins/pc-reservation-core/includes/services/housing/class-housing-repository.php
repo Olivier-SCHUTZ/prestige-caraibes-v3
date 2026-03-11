@@ -264,6 +264,95 @@ class PCR_Housing_Repository
         ];
     }
 
+    // --- À AJOUTER DANS PCR_Housing_Repository ---
+
+    public static function get_rates($post_id)
+    {
+        if (!$post_id) return ['seasons' => [], 'promos' => []];
+
+        return [
+            'seasons' => self::format_seasons(get_field('pc_season_blocks', $post_id)),
+            'promos'  => self::format_promos(get_field('pc_promo_blocks', $post_id)),
+        ];
+    }
+
+    public static function save_rates($post_id, $json_data)
+    {
+        if (!$post_id || empty($json_data)) return;
+
+        $data = is_string($json_data) ? json_decode(stripslashes($json_data), true) : $json_data;
+        if (!is_array($data)) return;
+
+        if (isset($data['seasons'])) {
+            $acf_seasons = array_map(function ($season) {
+                return [
+                    'season_name'            => sanitize_text_field($season['name']),
+                    'season_price'           => floatval($season['price']),
+                    'season_note'            => sanitize_textarea_field($season['note'] ?? ''),
+                    'season_min_nights'      => intval($season['minNights'] ?? 0),
+                    'season_extra_guest_fee' => floatval($season['guestFee'] ?? 0),
+                    'season_extra_guest_from' => intval($season['guestFrom'] ?? 0),
+                    'season_periods'         => array_map(function ($p) {
+                        return ['date_from' => $p['start'], 'date_to' => $p['end']];
+                    }, $season['periods'] ?? [])
+                ];
+            }, $data['seasons']);
+            update_field('field_pc_season_blocks_20250826', $acf_seasons, $post_id);
+        }
+
+        if (isset($data['promos'])) {
+            $acf_promos = array_map(function ($promo) {
+                return [
+                    'nom_de_la_promotion' => sanitize_text_field($promo['name']),
+                    'promo_type'          => sanitize_text_field($promo['promo_type']),
+                    'promo_value'         => floatval($promo['value']),
+                    'promo_valid_until'   => sanitize_text_field($promo['validUntil'] ?? ''),
+                    'promo_periods'       => array_map(function ($p) {
+                        return ['date_from' => $p['start'], 'date_to' => $p['end']];
+                    }, $promo['periods'] ?? [])
+                ];
+            }, $data['promos']);
+            update_field('field_693425b17049d', $acf_promos, $post_id);
+        }
+    }
+
+    // Helpers privés
+    private static function format_seasons($acf_data)
+    {
+        if (!is_array($acf_data)) return [];
+        return array_map(function ($row) {
+            $periods = array_map(function ($p) {
+                return ['start' => $p['date_from'], 'end' => $p['date_to']];
+            }, $row['season_periods'] ?? []);
+            return [
+                'name' => $row['season_name'],
+                'price' => $row['season_price'],
+                'note' => $row['season_note'],
+                'minNights' => $row['season_min_nights'],
+                'guestFee' => $row['season_extra_guest_fee'],
+                'guestFrom' => $row['season_extra_guest_from'],
+                'periods' => $periods
+            ];
+        }, $acf_data);
+    }
+
+    private static function format_promos($acf_data)
+    {
+        if (!is_array($acf_data)) return [];
+        return array_map(function ($row) {
+            $periods = array_map(function ($p) {
+                return ['start' => $p['date_from'], 'end' => $p['date_to']];
+            }, $row['promo_periods'] ?? []);
+            return [
+                'name' => $row['nom_de_la_promotion'],
+                'promo_type' => $row['promo_type'],
+                'value' => $row['promo_value'],
+                'validUntil' => $row['promo_valid_until'],
+                'periods' => $periods
+            ];
+        }, $acf_data);
+    }
+
     /**
      * Supprime définitivement un logement et toutes ses données associées.
      * * @param int $post_id ID du post à supprimer
