@@ -331,13 +331,12 @@
   border-color: #047857 !important;
 }
 
-/* Bleu pour partiel (status--partiel) */
+/* Bleu pour acompte payé (partiel) */
 .pc-cal-dot--partiel,
 .pc-cal-event--partiel,
 .pc-cal-modal-bar--partiel {
   background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
   border-color: #0369a1 !important;
-  color: #fff !important;
 }
 
 /* Orange-rouge pour en_attente paiement */

@@ -6,6 +6,9 @@ if (!defined('ABSPATH')) {
 /**
  * Enqueue les assets du calendrier dashboard.
  */
+/**
+ * Enqueue les assets du calendrier dashboard.
+ */
 function pc_dashboard_calendar_enqueue_assets()
 {
     $version = defined('PC_RES_CORE_VERSION') ? PC_RES_CORE_VERSION : '1.0.0';
@@ -27,6 +30,11 @@ function pc_dashboard_calendar_enqueue_assets()
 
     wp_enqueue_style('pc-calendar');
     wp_enqueue_script('pc-calendar');
+
+    // 🚀 Ajout pour charger l'application Vue 3 du Calendrier
+    if (class_exists('PCR_Vite_Loader')) {
+        PCR_Vite_Loader::enqueue_entry('src/modules/calendar/main.js');
+    }
 
     $localized = [
         'ajaxUrl' => admin_url('admin-ajax.php'),
@@ -72,39 +80,13 @@ function pc_dashboard_calendar_shortcode($atts = [])
 
     ob_start();
 ?>
+    <div data-pc-calendar-vue></div>
     <div class="pc-cal-shell"
         data-pc-calendar
         data-initial-month="<?php echo esc_attr($month); ?>"
         data-initial-year="<?php echo esc_attr($year); ?>"
         data-reservation-url="<?php echo esc_attr($reservation_url); ?>">
-        <div class="pc-cal-heading">
-            <div class="pc-cal-heading__text">
-                <p class="pc-cal-eyebrow"><?php echo esc_html__('Dashboard', 'pc-reservation-core'); ?></p>
-                <h2 class="pc-cal-title"><?php echo esc_html__('Dashboard Calendrier', 'pc-reservation-core'); ?></h2>
-                <p class="pc-cal-subtitle"><?php echo esc_html__('Période affichée : mois courant + 15 jours.', 'pc-reservation-core'); ?></p>
-                <div class="pc-cal-legend">
-                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--paye"></span><?php echo esc_html__('Réservé (Soldé)', 'pc-reservation-core'); ?></span>
-                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--pending"></span><?php echo esc_html__('Réservé (En attente / Acompte)', 'pc-reservation-core'); ?></span>
-                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--manual"></span><?php echo esc_html__('Blocage Manuel', 'pc-reservation-core'); ?></span>
-                    <span class="pc-cal-legend__item"><span class="pc-cal-dot pc-cal-dot--ical"></span><?php echo esc_html__('iCal / Import', 'pc-reservation-core'); ?></span>
-                </div>
-            </div>
-            <div class="pc-cal-actions">
-                <div class="pc-cal-select-group">
-                    <label class="pc-cal-select-label" for="pc-cal-month"><?php echo esc_html__('Mois', 'pc-reservation-core'); ?></label>
-                    <select id="pc-cal-month" class="pc-cal-select" data-pc-cal-month></select>
-                </div>
-                <div class="pc-cal-select-group">
-                    <label class="pc-cal-select-label" for="pc-cal-year"><?php echo esc_html__('Année', 'pc-reservation-core'); ?></label>
-                    <select id="pc-cal-year" class="pc-cal-select" data-pc-cal-year></select>
-                </div>
-                <button type="button"
-                    class="pc-cal-today-btn"
-                    data-pc-cal-today>
-                    <?php echo esc_html__('Aujourd’hui', 'pc-reservation-core'); ?>
-                </button>
-            </div>
-        </div>
+
 
         <div class="pc-cal-error" data-pc-cal-error role="alert" hidden></div>
 

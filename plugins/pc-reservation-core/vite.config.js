@@ -14,6 +14,7 @@ export default defineConfig({
         experience: resolve(__dirname, "src/modules/experience/main.js"),
         // ✨ NOUVEAU : On ajoute le module Logements
         housing: resolve(__dirname, "src/modules/housing/main.js"),
+        calendar: "src/modules/calendar/main.js",
       },
     },
   },

@@ -120,6 +120,8 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
         $logement_id = isset($_POST['logement_id']) ? (int) $_POST['logement_id'] : 0;
         $start_date  = isset($_POST['start_date']) ? sanitize_text_field(wp_unslash($_POST['start_date'])) : '';
         $end_date    = isset($_POST['end_date']) ? sanitize_text_field(wp_unslash($_POST['end_date'])) : '';
+        // 🚀 NOUVEAU : On récupère le motif envoyé par Vue.js
+        $motif       = isset($_POST['motif']) && $_POST['motif'] !== '' ? sanitize_text_field(wp_unslash($_POST['motif'])) : 'Blocage manuel via calendrier';
 
         if ($logement_id <= 0 || $start_date === '' || $end_date === '') {
             wp_send_json_error(['message' => 'Logement ou dates invalides.'], 400);
@@ -144,7 +146,7 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
                 'date_debut'    => $start_date,
                 'date_fin'      => $end_date,
                 'type_source'   => 'manuel',
-                'motif'         => 'Blocage manuel via calendrier',
+                'motif'         => $motif, // 🚀 On injecte la variable ici !
                 'date_creation' => $now,
                 'date_maj'      => $now,
                 'user_id'       => $user_id > 0 ? $user_id : null,
@@ -212,6 +214,39 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
         }
 
         wp_send_json_success(['deleted' => true]);
+    }
+
+    /**
+     * Met à jour le motif d'un blocage manuel existant.
+     */
+    public static function ajax_calendar_update_block()
+    {
+        parent::verify_access('pc_dashboard_calendar');
+
+        $block_id = isset($_POST['block_id']) ? (int) $_POST['block_id'] : 0;
+        $motif    = isset($_POST['motif']) ? sanitize_text_field(wp_unslash($_POST['motif'])) : '';
+
+        if ($block_id <= 0) {
+            wp_send_json_error(['message' => 'Blocage introuvable.'], 400);
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'pc_unavailabilities';
+
+        // Mise à jour de la base de données
+        $updated = $wpdb->update(
+            $table,
+            ['motif' => $motif],
+            ['id' => $block_id],
+            ['%s'],
+            ['%d']
+        );
+
+        if (false === $updated) {
+            wp_send_json_error(['message' => 'Erreur lors de la mise à jour.'], 500);
+        }
+
+        wp_send_json_success(['updated' => true]);
     }
 
     /**
@@ -390,7 +425,7 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
             SELECT id, item_id, date_arrivee, date_depart, statut_reservation, statut_paiement, nom, prenom
             FROM {$table}
             WHERE type = %s
-              AND statut_reservation = %s
+              AND statut_paiement IN ('paye', 'partiellement_paye', 'en_attente_paiement')
               AND item_id IN ({$ids_placeholder})
               AND date_arrivee IS NOT NULL
               AND date_depart IS NOT NULL
@@ -398,7 +433,7 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
               AND date_arrivee <= %s
         ";
 
-        $params = array_merge(['location', 'reservee'], $logement_ids, [$start_date, $end_date]);
+        $params = array_merge(['location'], $logement_ids, [$start_date, $end_date]);
         $rows = $wpdb->get_results($wpdb->prepare($sql, $params));
 
         $events = [];
@@ -431,7 +466,7 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
         $ids_placeholder = implode(',', array_fill(0, count($logement_ids), '%d'));
         $table = $wpdb->prefix . 'pc_unavailabilities';
         $sql = "
-            SELECT id, item_id, date_debut, date_fin, type_source
+            SELECT id, item_id, date_debut, date_fin, type_source, motif
             FROM {$table}
             WHERE item_id IN ({$ids_placeholder})
               AND date_fin >= %s
@@ -450,6 +485,7 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
                 'start'   => sanitize_text_field($row->date_debut),
                 'end'     => sanitize_text_field($row->date_fin),
                 'source'  => sanitize_text_field($row->type_source),
+                'label'   => sanitize_text_field($row->motif),
             ];
         }
 

@@ -47,10 +47,98 @@
 
     // Bouton "Créer une réservation"
     const createBtn = document.querySelector(".pc-resa-create-btn");
-    if (createBtn && createTemplate) {
+
+    // On vérifie que le bouton existe bien
+    if (createBtn) {
+      // 1. Comportement normal au clic (très important de le garder !)
       createBtn.addEventListener("click", function () {
         openManualCreateModal();
       });
+
+      // 2. Auto-ouverture ET auto-remplissage avec Radar
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("auto_create") === "1") {
+        // 🚀 Le fameux délai vital pour que ton Shell respire avant d'ouvrir la modale
+        setTimeout(() => {
+          openManualCreateModal(); // Ouverture !
+
+          // Maintenant que l'ordre d'ouverture est donné, on lance le Radar
+          let tentatives = 0;
+          const radar = setInterval(() => {
+            tentatives++;
+
+            // On cherche les champs
+            const typeSelect = document.querySelector('select[name="type"]');
+            const logementSelect = document.querySelector(
+              'select[name="item_id"]',
+            );
+            const datesInput = document.querySelector(
+              'input[name="logement_dates"]',
+            );
+
+            // Si le champ Type est enfin dans le HTML, c'est gagné
+            if (typeSelect && logementSelect) {
+              clearInterval(radar); // On coupe le radar
+
+              const start = urlParams.get("start");
+              const end = urlParams.get("end");
+              const logementId = urlParams.get("logement_id");
+
+              // --- A. TYPE ---
+              typeSelect.value = "location";
+              typeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+
+              // --- B. LOGEMENT ---
+              logementSelect.value = logementId;
+              logementSelect.dispatchEvent(
+                new Event("change", { bubbles: true }),
+              );
+
+              // Coup de pouce pour Select2/jQuery
+              if (typeof jQuery !== "undefined") {
+                jQuery('select[name="type"]').trigger("change");
+                jQuery('select[name="item_id"]').trigger("change");
+              }
+
+              // --- C. DATES ---
+              if (datesInput && start && end) {
+                datesInput.removeAttribute("disabled");
+                datesInput.removeAttribute("readonly");
+
+                const formatFr = (ds) => {
+                  const [y, m, d] = ds.split("-");
+                  return `${d}/${m}/${y}`;
+                };
+
+                datesInput.value = `${formatFr(start)} - ${formatFr(end)}`;
+                datesInput.dispatchEvent(new Event("input", { bubbles: true }));
+                datesInput.dispatchEvent(
+                  new Event("change", { bubbles: true }),
+                );
+
+                if (typeof jQuery !== "undefined") {
+                  jQuery('input[name="logement_dates"]').trigger("change");
+                }
+              }
+
+              // 🧹 Nettoyage de l'URL pour ne pas ré-ouvrir si on fait F5
+              const cleanUrl =
+                window.location.protocol +
+                "//" +
+                window.location.host +
+                window.location.pathname +
+                window.location.hash;
+              window.history.replaceState({ path: cleanUrl }, "", cleanUrl);
+            }
+
+            // Sécurité : au bout de 5 secondes (25 essais), on abandonne
+            if (tentatives > 25) {
+              clearInterval(radar);
+              console.warn("Radar annulé : champs introuvables.");
+            }
+          }, 200); // Scanne toutes les 200ms
+        }, 500); // <-- LE DELAI SAUVEUR EST LÀ
+      }
     }
 
     // Gestion des menus d'actions (3 petits points)

@@ -54,6 +54,7 @@ class PCR_Ajax_Router
         add_action('wp_ajax_nopriv_pc_get_single_calendar', ['PCR_Calendar_Ajax_Controller', 'ajax_get_single_calendar']);
         add_action('wp_ajax_pc_calendar_create_block', ['PCR_Calendar_Ajax_Controller', 'ajax_calendar_create_block']);
         add_action('wp_ajax_pc_calendar_delete_block', ['PCR_Calendar_Ajax_Controller', 'ajax_calendar_delete_block']);
+        add_action('wp_ajax_pc_calendar_update_block', ['PCR_Calendar_Ajax_Controller', 'ajax_calendar_update_block']);
 
         // --------------------------------------------------------
         // 🛎️ 2. RÉSERVATIONS
