@@ -82,16 +82,43 @@ const props = defineProps({
   extendedEndDate: { type: String, required: true },
 });
 
+// 🚀 L'ARME FATALE V2 (TITANIUM) : Gère tous les formats (FR / EN) et bloque les fuseaux horaires
+const getUtcNoon = (dStr) => {
+  if (!dStr) return 0;
+  let y, m, d;
+  // On récupère les 10 premiers caractères (la date)
+  const cleanStr = String(dStr).trim().substring(0, 10);
+
+  if (cleanStr.includes("/")) {
+    // Cas 1 : Format français JJ/MM/AAAA (ex: "01/04/2026")
+    const parts = cleanStr.split("/");
+    d = parseInt(parts[0], 10);
+    m = parseInt(parts[1], 10);
+    y = parseInt(parts[2], 10);
+    if (y < 100) y += 2000; // Sécurité si l'année est sur 2 chiffres
+  } else if (cleanStr.includes("-")) {
+    // Cas 2 : Format Base de données YYYY-MM-DD (ex: "2026-04-01")
+    const parts = cleanStr.split("-");
+    y = parseInt(parts[0], 10);
+    m = parseInt(parts[1], 10);
+    d = parseInt(parts[2], 10);
+  } else {
+    // Cas 3 : Fallback natif en dernier recours
+    const fb = new Date(dStr);
+    y = fb.getFullYear();
+    m = fb.getMonth() + 1;
+    d = fb.getDate();
+  }
+
+  // On force midi UTC pour que la date ne bouge PLUS JAMAIS !
+  return Date.UTC(y, m - 1, d, 12, 0, 0);
+};
+
 // Calcul de tous les jours entre startDate et extendedEndDate
 const daysInPeriod = computed(() => {
   if (!props.startDate || !props.extendedEndDate) return [];
 
   const days = [];
-  const start = new Date(props.startDate);
-  const end = new Date(props.extendedEndDate);
-  const todayStr = new Date().toISOString().split("T")[0];
-
-  // Noms des jours courts
   const dayNames = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
   const monthNamesShort = [
     "Jan",
@@ -108,33 +135,38 @@ const daysInPeriod = computed(() => {
     "Déc",
   ];
 
-  let current = new Date(start);
-  while (current <= end) {
-    const dateStr = current.toISOString().split("T")[0];
-    const dayOfWeek = current.getDay();
-    const month = current.getMonth();
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
-    // On affiche le mois si c'est le 1er du mois OU si c'est la toute première case de la grille
-    const isFirstDayOfMonth = current.getDate() === 1;
+  let currentUtc = getUtcNoon(props.startDate);
+  const endUtc = getUtcNoon(props.extendedEndDate);
+  const dayMs = 1000 * 60 * 60 * 24;
+
+  while (currentUtc <= endUtc) {
+    const d = new Date(currentUtc);
+    const y = d.getUTCFullYear();
+    const m = d.getUTCMonth();
+    const dateNum = d.getUTCDate();
+    const dayOfWeek = d.getUTCDay();
+
+    const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(dateNum).padStart(2, "0")}`;
+    const isFirstDayOfMonth = dateNum === 1;
     const isFirstDayOfGrid = days.length === 0;
 
     days.push({
       date: dateStr,
       dayName: dayNames[dayOfWeek],
-      dayNumber: current.getDate(),
-      monthName: monthNamesShort[month],
+      dayNumber: dateNum,
+      monthName: monthNamesShort[m],
       showMonthLabel: isFirstDayOfMonth || isFirstDayOfGrid,
       isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
       isToday: dateStr === todayStr,
     });
 
-    current.setDate(current.getDate() + 1);
+    currentUtc += dayMs;
   }
-
   return days;
 });
-
-// --- LOGIQUE DES ÉVÉNEMENTS ---
 
 // 1. Filtrer les événements pour un logement donné
 const getEventsForLogement = (logementId) => {
@@ -146,31 +178,35 @@ const getEventStyle = (event) => {
   if (!props.startDate || !event.start_date || !event.end_date)
     return { display: "none" };
 
-  // On force l'heure à minuit UTC pour éviter les décalages d'heure d'été/hiver
-  const parseDate = (dStr) =>
-    new Date(dStr.substring(0, 10) + "T00:00:00Z").getTime();
-
-  const gridStart = parseDate(props.startDate);
-  const eventStart = parseDate(event.start_date);
-  const eventEnd = parseDate(event.end_date);
+  const gridStart = getUtcNoon(props.startDate);
+  const eventStart = getUtcNoon(event.start_date);
+  const eventEnd = getUtcNoon(event.end_date);
   const dayMs = 1000 * 60 * 60 * 24;
 
-  let offsetDays = (eventStart - gridStart) / dayMs;
-  let durationDays = (eventEnd - eventStart) / dayMs;
+  // Calcul du nombre de jours exacts depuis le début de la grille
+  let startOffsetDays = Math.round((eventStart - gridStart) / dayMs);
+  let endOffsetDays = Math.round((eventEnd - gridStart) / dayMs);
 
-  // Si l'événement a commencé AVANT le premier jour affiché
-  if (offsetDays < 0) {
-    durationDays += offsetDays; // On réduit sa taille visuelle
-    offsetDays = 0; // On le colle tout à gauche
+  // 🚀 LE SECRET EST ICI : On décale visuellement l'affichage à midi (+0.5 jour)
+  let visualStart = startOffsetDays + 0.5;
+  let visualEnd = endOffsetDays + 0.5;
+
+  // Si la réservation a commencé avant le premier jour affiché du calendrier
+  if (visualStart < 0) {
+    visualStart = 0; // On coupe proprement au bord gauche
   }
 
-  // Largeur minimum visuelle pour éviter les bugs si start == end
-  if (durationDays < 0.5) durationDays = 1;
+  // La largeur est la différence entre la fin visuelle et le début visuel
+  let visualWidth = visualEnd - visualStart;
 
-  // 🚀 FIX : On ajoute un espace de 3px de chaque côté pour bien séparer les réservations qui s'enchaînent
+  // Sécurité anti-bug graphique
+  if (visualWidth <= 0) return { display: "none" };
+
+  // 🚀 LE FIX DÉFINITIF : On remplace "100%" par "45px" (la taille exacte de la colonne) !
+  // Ainsi le navigateur ne peut plus faire dériver la barre à cause des bordures.
   return {
-    left: `calc(${offsetDays} * 100% + 3px)`,
-    width: `calc(${durationDays} * 100% - 6px)`,
+    left: `calc(${visualStart} * 45px + 3px)`,
+    width: `calc(${visualWidth} * 45px - 6px)`,
   };
 };
 
@@ -213,9 +249,9 @@ const getEventDefaultLabel = (event) => {
 
 /* 🚀 On force l'affichage en tableau pour écraser l'ancien CSS */
 .pc-cal-table {
-  width: 100%;
+  table-layout: fixed !important; /* Le secret est ici : force les colonnes égales */
+  width: max-content;
   border-collapse: collapse;
-  min-width: 800px;
   display: table !important;
 }
 
@@ -251,16 +287,24 @@ const getEventDefaultLabel = (event) => {
 }
 
 .pc-cal-th-day {
-  padding: 10px 5px;
+  padding: 10px 0 !important; /* On retire le padding horizontal */
   text-align: center;
   border: 1px solid #e2e8f0;
-  min-width: 45px;
+  width: 45px !important;
+  min-width: 45px !important;
+  max-width: 45px !important;
+  box-sizing: border-box !important;
   background: #f8fafc;
 }
 
 .pc-cal-td-cell {
   border: 1px solid #e2e8f0;
   height: 50px;
+  padding: 0 !important; /* Crucial pour que les pourcentages soient parfaits */
+  width: 45px !important;
+  min-width: 45px !important;
+  max-width: 45px !important;
+  box-sizing: border-box !important;
   position: relative;
 }
 

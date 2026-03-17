@@ -29,6 +29,7 @@ require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-config.
 require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-formatter.php';
 require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-repository.php';
 require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-service.php';
+require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-pricing-calculator.php';
 // require_once PC_RES_CORE_PATH . 'includes/class-rate-manager.php';
 require_once PC_RES_CORE_PATH . 'includes/acf-fields.php';
 require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-calendar.php';

@@ -24,9 +24,18 @@ export const useCalendarStore = defineStore("calendar", {
 
     selection: null,
     isCreatingBlock: false,
+
+    isResaModalOpen: false,
   }),
 
   actions: {
+    openResaModal() {
+      this.isResaModalOpen = true;
+    },
+    closeResaModal() {
+      this.isResaModalOpen = false;
+    },
+
     // --- ACTIONS DE LA MODALE ---
     openModal(logement) {
       this.selectedLogement = logement;
@@ -120,6 +129,49 @@ export const useCalendarStore = defineStore("calendar", {
           "Action PHP introuvable ou erreur serveur.";
         console.error("[Calendar Store] Erreur:", err.response || err);
         return { success: false, message: trueError };
+      } finally {
+        this.isCreatingBlock = false;
+      }
+    },
+
+    // 🚀 --- ACTION DE CRÉATION DE RÉSERVATION ---
+    async createReservation(payload) {
+      this.isCreatingBlock = true; // On réutilise ce loader pour bloquer les boutons pendant l'envoi
+      try {
+        const ajaxUrl =
+          window.pcCalendarData?.ajaxUrl || "/wp-admin/admin-ajax.php";
+
+        const formData = new FormData();
+        formData.append("action", "pc_calendar_create_resa"); // Le nom de notre future fonction PHP !
+        formData.append("security", window.pcCalendarData?.nonce);
+        formData.append("nonce", window.pcCalendarData?.nonce);
+
+        // On envoie les données de la modale
+        formData.append("logement_id", payload.logementId);
+        formData.append("start_date", payload.start);
+        formData.append("end_date", payload.end);
+        formData.append("type", payload.type);
+
+        const response = await apiClient.post(ajaxUrl, formData);
+
+        if (response.data && response.data.success) {
+          // Si c'est un succès, on rafraîchit le grand calendrier
+          await this.fetchGlobalCalendar(this.currentMonth, this.currentYear);
+          // On ferme la modale
+          this.closeResaModal();
+          this.clearSelection();
+          return { success: true };
+        } else {
+          return {
+            success: false,
+            message:
+              response.data?.data?.message ||
+              "Erreur lors de la création de la réservation.",
+          };
+        }
+      } catch (err) {
+        console.error("[Calendar Store] Erreur création résa:", err);
+        return { success: false, message: "Erreur serveur." };
       } finally {
         this.isCreatingBlock = false;
       }
@@ -223,7 +275,13 @@ export const useCalendarStore = defineStore("calendar", {
         });
 
         if (response.data && response.data.success) {
-          this.singleEvents = response.data.data.events || [];
+          // 🚀 Filtrage : on ignore aussi les résas annulées dans la vue détaillée (modale)
+          this.singleEvents = (response.data.data.events || []).filter(
+            (e) =>
+              !["annulée", "annulee", "refusee"].includes(
+                e.status?.toLowerCase(),
+              ),
+          );
         }
       } catch (err) {
         console.error("[Calendar Store] Erreur single calendar:", err);
@@ -256,7 +314,13 @@ export const useCalendarStore = defineStore("calendar", {
         if (response.data && response.data.success) {
           const payload = response.data.data;
           this.logements = payload.logements || [];
-          this.events = payload.events || [];
+          // 🚀 Filtrage : on ignore les résas annulées ou refusées pour libérer les dates
+          this.events = (payload.events || []).filter(
+            (e) =>
+              !["annulée", "annulee", "refusee"].includes(
+                e.status?.toLowerCase(),
+              ),
+          );
           this.currentMonth = payload.month;
           this.currentYear = payload.year;
           this.startDate = payload.start_date;

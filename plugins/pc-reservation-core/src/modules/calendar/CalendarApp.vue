@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, onUnmounted } from "vue";
 import { useCalendarStore } from "../../stores/calendar-store";
 import CalendarHeader from "../../components/Calendar/CalendarHeader.vue";
 import CalendarGrid from "../../components/Calendar/CalendarGrid.vue";
@@ -42,8 +42,23 @@ const fetchData = async () => {
   await store.fetchGlobalCalendar(store.currentMonth, store.currentYear);
 };
 
+// 🚀 L'ÉCOUTEUR : Quand une réservation est modifiée (créée, annulée, etc.)
+const handleCalendarRefresh = () => {
+  store.clearSelection(); // Fait disparaître la barre noire
+  fetchData(); // Rafraîchit le calendrier en arrière-plan !
+};
+
 onMounted(() => {
   fetchData();
+  // On branche nos deux écouteurs
+  window.addEventListener("pc-reservation-created", handleCalendarRefresh);
+  window.addEventListener("pc-refresh-calendar", handleCalendarRefresh);
+});
+
+onUnmounted(() => {
+  // On débranche proprement
+  window.removeEventListener("pc-reservation-created", handleCalendarRefresh);
+  window.removeEventListener("pc-refresh-calendar", handleCalendarRefresh);
 });
 </script>
 

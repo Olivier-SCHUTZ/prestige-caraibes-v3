@@ -105,18 +105,33 @@ const submitBlock = async () => {
   if (!result.success) alert("❌ Erreur : " + result.message);
 };
 
+// 🚀 ON CHANGE D'ONGLET PUIS ON OUVRE LA MODALE
 const goToCreateReservation = () => {
+  if (!store.selection) return;
   const { logementId, start, end } = store.selection;
 
-  // 1. On récupère la base de ton site (ex: https://prestige-caraibes.local)
-  const siteUrl = window.location.origin;
+  // 1. On bascule sur l'onglet des réservations pour que la modale soit visible
+  // ⚠️ Adapte "#reservations" selon le vrai nom de ton onglet dans l'URL
+  const resaTabBtn = document.querySelector(
+    'a[href="#reservations"], a[href="#dashboard"], button[data-target="reservations"]',
+  );
+  if (resaTabBtn) {
+    resaTabBtn.click();
+  } else {
+    window.location.hash = "reservations";
+  }
 
-  // 2. On construit le bon lien vers l'Espace Propriétaire
-  // ⚠️ Remplace "#reservations" par le vrai mot utilisé pour ton onglet réservation si c'est différent
-  const url = `${siteUrl}/espace-proprietaire/?auto_create=1&logement_id=${logementId}&start=${start}&end=${end}#dashboard`;
+  // 2. On attend 50 millisecondes que l'onglet s'affiche, puis on crie le signal !
+  setTimeout(() => {
+    window.dispatchEvent(
+      new CustomEvent("pc-open-dashboard-modal", {
+        detail: { logementId, start, end },
+      }),
+    );
+  }, 50);
 
-  // 3. Redirection !
-  window.location.href = url;
+  // 3. On nettoie le calendrier (c'est ça qui fait disparaître tes boutons, c'est le comportement attendu !)
+  store.clearSelection();
 };
 
 const updateBlock = async () => {
@@ -132,7 +147,7 @@ const deleteBlock = async () => {
   if (!confirm("Supprimer définitivement ce blocage ?")) return;
   const result = await store.deleteManualBlock(store.selection.blockId);
   if (!result.success) alert("❌ Erreur : " + result.message);
-  else store.clearSelection(); // Ferme la barre
+  else store.clearSelection();
 };
 </script>
 

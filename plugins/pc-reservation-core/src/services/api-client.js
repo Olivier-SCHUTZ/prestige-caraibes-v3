@@ -38,10 +38,14 @@ apiClient.interceptors.request.use(
         if (!config.data.has("security")) {
           config.data.append("security", wpVars.nonce);
         }
+        if (!config.data.has("nonce")) {
+          config.data.append("nonce", wpVars.nonce); // Rétrocompatibilité Legacy
+        }
       }
       // Si on envoie un objet JavaScript standard
       else {
         config.data.security = config.data.security || wpVars.nonce;
+        config.data.nonce = config.data.nonce || wpVars.nonce; // Rétrocompatibilité Legacy
       }
     } else if (config.method === "get") {
       // Initialisation des paramètres si vides

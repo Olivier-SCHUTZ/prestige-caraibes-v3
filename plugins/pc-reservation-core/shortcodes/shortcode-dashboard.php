@@ -456,17 +456,6 @@ function pc_resa_dashboard_shortcode($atts)
         true
     );
 
-    $pc_devis_js_path = WP_CONTENT_DIR . '/mu-plugins/assets/pc-devis.js';
-    if (file_exists($pc_devis_js_path)) {
-        wp_enqueue_script(
-            'pc-logement-devis',
-            content_url('mu-plugins/assets/pc-devis.js'),
-            ['pc-flatpickr-fr'],
-            filemtime($pc_devis_js_path),
-            true
-        );
-    }
-
     // Charger les modules CSS séparément pour éviter les conflits @import avec Elementor/OceanWP
     $dashboard_base_css = $plugin_path . 'assets/css/dashboard-base.css';
     $dashboard_forms_css = $plugin_path . 'assets/css/dashboard-forms.css';

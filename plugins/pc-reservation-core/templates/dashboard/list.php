@@ -3,6 +3,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 ?>
+<div id="pc-reservation-dashboard-app"></div>
 <div class="pc-resa-dashboard-wrapper">
     <div class="pc-resa-dashboard-header">
         <div class="pc-resa-dashboard-header__left">

@@ -177,6 +177,58 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
         ]);
     }
 
+    public static function ajax_calendar_create_resa()
+    {
+        // 🚀 1. LA FAMEUSE CLÉ DE SÉCURITÉ DE TON PLUGIN !
+        parent::verify_access('pc_dashboard_calendar');
+
+        // 2. Récupération et nettoyage des données (Façon "Prestige Caraïbes")
+        $logement_id = isset($_POST['logement_id']) ? (int) $_POST['logement_id'] : 0;
+        $start_date  = isset($_POST['start_date']) ? sanitize_text_field(wp_unslash($_POST['start_date'])) : '';
+        $end_date    = isset($_POST['end_date']) ? sanitize_text_field(wp_unslash($_POST['end_date'])) : '';
+        $type        = isset($_POST['type']) ? sanitize_text_field(wp_unslash($_POST['type'])) : 'location';
+
+        // Vérification de base
+        if ($logement_id <= 0 || $start_date === '' || $end_date === '') {
+            wp_send_json_error(['message' => 'Logement ou dates invalides.'], 400);
+        }
+
+        // Validation du format de date
+        $start_dt = \DateTime::createFromFormat('Y-m-d', $start_date);
+        $end_dt   = \DateTime::createFromFormat('Y-m-d', $end_date);
+        if (!$start_dt || !$end_dt || $start_dt > $end_dt) {
+            wp_send_json_error(['message' => 'Plage de dates invalide.'], 400);
+        }
+
+        global $wpdb;
+        // ⚠️ Vérifie que c'est bien le nom exact de ta table
+        $table_name = $wpdb->prefix . 'pc_reservations';
+
+        // 3. Insertion dans la base de données
+        $inserted = $wpdb->insert(
+            $table_name,
+            [
+                'item_id'            => $logement_id,
+                'type'               => $type,
+                'date_arrivee'       => $start_date,
+                'date_depart'        => $end_date,
+                // Statuts pour affichage en attente (Orange)
+                'statut_reservation' => 'attente',
+                'statut_paiement'    => 'en_attente_paiement',
+                'nom'                => 'Nouvelle',
+                'prenom'             => 'Réservation',
+                'date_creation'      => current_time('mysql')
+            ],
+            ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+        );
+
+        if ($inserted) {
+            wp_send_json_success(['message' => 'Réservation créée avec succès !']);
+        } else {
+            wp_send_json_error(['message' => 'Erreur lors de l\'enregistrement en base de données.'], 500);
+        }
+    }
+
     /**
      * Supprime un blocage manuel existant.
      */

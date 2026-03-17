@@ -116,13 +116,41 @@ const monthNameFull = computed(() => {
   return nomMois.charAt(0).toUpperCase() + nomMois.slice(1);
 });
 
+// 🚀 L'ARME FATALE V2 (TITANIUM) : Gère tous les formats (FR / EN) et bloque les fuseaux horaires
+const getUtcNoon = (dStr) => {
+  if (!dStr) return 0;
+  let y, m, d;
+  // On récupère les 10 premiers caractères (la date)
+  const cleanStr = String(dStr).trim().substring(0, 10);
+
+  if (cleanStr.includes("/")) {
+    // Cas 1 : Format français JJ/MM/AAAA (ex: "01/04/2026")
+    const parts = cleanStr.split("/");
+    d = parseInt(parts[0], 10);
+    m = parseInt(parts[1], 10);
+    y = parseInt(parts[2], 10);
+    if (y < 100) y += 2000; // Sécurité si l'année est sur 2 chiffres
+  } else if (cleanStr.includes("-")) {
+    // Cas 2 : Format Base de données YYYY-MM-DD (ex: "2026-04-01")
+    const parts = cleanStr.split("-");
+    y = parseInt(parts[0], 10);
+    m = parseInt(parts[1], 10);
+    d = parseInt(parts[2], 10);
+  } else {
+    // Cas 3 : Fallback natif en dernier recours
+    const fb = new Date(dStr);
+    y = fb.getFullYear();
+    m = fb.getMonth() + 1;
+    d = fb.getDate();
+  }
+
+  // On force midi UTC pour que la date ne bouge PLUS JAMAIS !
+  return Date.UTC(y, m - 1, d, 12, 0, 0);
+};
+
 // Calcul des 45 jours à partir du 1er du mois
 const daysInPeriod = computed(() => {
   const days = [];
-  const start = new Date(localDate.value);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 44); // 45 jours d'affichage
-
   const dayNames = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
   const monthNamesShort = [
     "Jan",
@@ -138,28 +166,35 @@ const daysInPeriod = computed(() => {
     "Nov",
     "Déc",
   ];
-  const todayStr = new Date().toISOString().split("T")[0];
 
-  let current = new Date(start);
-  while (current <= end) {
-    const dateStr = current.toISOString().split("T")[0];
-    const dayOfWeek = current.getDay();
-    const month = current.getMonth();
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
-    const isFirstDayOfMonth = current.getDate() === 1;
-    const isFirstDayOfGrid = days.length === 0;
+  // Date de départ (le 1er du mois local)
+  const startStr = `${localDate.value.getFullYear()}-${String(localDate.value.getMonth() + 1).padStart(2, "0")}-01`;
+
+  let currentUtc = getUtcNoon(startStr);
+  const dayMs = 1000 * 60 * 60 * 24;
+
+  for (let i = 0; i < 45; i++) {
+    const d = new Date(currentUtc);
+    const y = d.getUTCFullYear();
+    const m = d.getUTCMonth();
+    const dateNum = d.getUTCDate();
+    const dayOfWeek = d.getUTCDay();
+
+    const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(dateNum).padStart(2, "0")}`;
 
     days.push({
       date: dateStr,
       dayName: dayNames[dayOfWeek],
-      dayNumber: current.getDate(),
-      monthName: monthNamesShort[month],
-      showMonthLabel: isFirstDayOfMonth || isFirstDayOfGrid,
+      dayNumber: dateNum,
+      monthName: monthNamesShort[m],
+      showMonthLabel: dateNum === 1 || i === 0,
       isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
       isToday: dateStr === todayStr,
     });
-
-    current.setDate(current.getDate() + 1);
+    currentUtc += dayMs;
   }
   return days;
 });
@@ -200,32 +235,39 @@ const validEvents = computed(() => {
 });
 
 const getEventStyle = (event) => {
-  if (!daysInPeriod.value.length) return { display: "none" };
+  if (!daysInPeriod.value.length || !event.start_date || !event.end_date)
+    return { display: "none" };
 
-  const parseDate = (dStr) =>
-    new Date(dStr.substring(0, 10) + "T00:00:00Z").getTime();
-  const gridStart = parseDate(daysInPeriod.value[0].date);
-  const eventStart = parseDate(event.start_date);
-  const eventEnd = parseDate(event.end_date);
+  // Le début de la grille est le premier jour affiché
+  const gridStart = getUtcNoon(daysInPeriod.value[0].date);
+  const eventStart = getUtcNoon(event.start_date);
+  const eventEnd = getUtcNoon(event.end_date);
   const dayMs = 1000 * 60 * 60 * 24;
 
-  let offsetDays = (eventStart - gridStart) / dayMs;
-  let durationDays = (eventEnd - eventStart) / dayMs;
+  // Calcul du nombre de jours exacts depuis le début de la grille
+  let startOffsetDays = Math.round((eventStart - gridStart) / dayMs);
+  let endOffsetDays = Math.round((eventEnd - gridStart) / dayMs);
 
-  // Si l'événement a commencé avant le 1er du mois
-  if (offsetDays < 0) {
-    durationDays += offsetDays;
-    offsetDays = 0;
+  // 🚀 On décale visuellement l'affichage à midi (+0.5 jour)
+  let visualStart = startOffsetDays + 0.5;
+  let visualEnd = endOffsetDays + 0.5;
+
+  // Si la réservation a commencé avant le premier jour affiché du calendrier
+  if (visualStart < 0) {
+    visualStart = 0; // On coupe proprement au bord gauche
   }
 
-  // Si la résa est finie ou n'est pas dans la période affichée
-  if (durationDays <= 0) return { display: "none" };
-  if (durationDays < 0.5) durationDays = 1;
+  // La largeur est la différence
+  let visualWidth = visualEnd - visualStart;
 
-  // On garde l'espace de 3px entre les bandes pour la lisibilité
+  // Sécurité anti-bug graphique
+  if (visualWidth <= 0) return { display: "none" };
+
+  // 🚀 LE FIX DÉFINITIF : On remplace "100%" par "45px" (la taille exacte de la colonne) !
+  // Ainsi le navigateur ne peut plus faire dériver la barre à cause des bordures.
   return {
-    left: `calc(${offsetDays} * 100% + 3px)`,
-    width: `calc(${durationDays} * 100% - 6px)`,
+    left: `calc(${visualStart} * 45px + 3px)`,
+    width: `calc(${visualWidth} * 45px - 6px)`,
   };
 };
 
@@ -384,6 +426,7 @@ const handleEventClick = (event) => {
 .pc-cal-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed !important; /* Le secret est ici */
   display: table !important;
 }
 
@@ -405,18 +448,24 @@ const handleEventClick = (event) => {
 }
 
 .pc-cal-th-day {
-  padding: 10px 5px;
+  padding: 10px 0 !important; /* On retire le padding horizontal */
   text-align: center;
   border: 1px solid #e2e8f0;
-  min-width: 45px;
-  width: 45px;
+  width: 45px !important;
+  min-width: 45px !important;
+  max-width: 45px !important;
+  box-sizing: border-box !important;
   background: #f8fafc;
 }
 
 .pc-cal-td-cell {
   border: 1px solid #e2e8f0;
-  /* Hauteur un peu plus grande pour cette ligne unique */
-  height: 80px;
+  height: 80px; /* On garde ta hauteur de 80px pour ce fichier */
+  padding: 0 !important; /* Crucial pour l'alignement */
+  width: 45px !important;
+  min-width: 45px !important;
+  max-width: 45px !important;
+  box-sizing: border-box !important;
   position: relative !important;
 }
 

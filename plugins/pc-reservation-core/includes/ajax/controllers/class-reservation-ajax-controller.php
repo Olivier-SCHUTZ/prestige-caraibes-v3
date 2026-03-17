@@ -13,8 +13,9 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
      */
     public static function handle_manual_reservation()
     {
-        // Vérification du nonce en premier
-        $nonce = isset($_REQUEST['nonce']) ? sanitize_text_field(wp_unslash($_REQUEST['nonce'])) : '';
+        // Vérification du nonce en premier (compatibilité Vue 'security' et legacy 'nonce')
+        $nonce_val = $_REQUEST['security'] ?? $_REQUEST['nonce'] ?? '';
+        $nonce = sanitize_text_field(wp_unslash($nonce_val));
         if (!$nonce || !wp_verify_nonce($nonce, 'pc_resa_manual_create')) {
             wp_send_json_error(['message' => 'Nonce invalide - veuillez actualiser la page.']);
         }
@@ -157,7 +158,9 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
      */
     public static function handle_logement_config()
     {
-        $nonce = isset($_REQUEST['nonce']) ? sanitize_text_field(wp_unslash($_REQUEST['nonce'])) : '';
+        // Compatibilité Vue 'security' et legacy 'nonce'
+        $nonce_val = $_REQUEST['security'] ?? $_REQUEST['nonce'] ?? '';
+        $nonce = sanitize_text_field(wp_unslash($nonce_val));
         if (!$nonce || !wp_verify_nonce($nonce, 'pc_resa_manual_create')) {
             wp_send_json_error([
                 'message' => 'Nonce invalide.',
@@ -268,6 +271,294 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
         wp_send_json_success([
             'message' => 'Réservation confirmée avec succès.',
             'statuts' => $result->data['statuts'] ?? [],
+        ]);
+    }
+
+    /**
+     * NOUVEAU : Récupère la liste des réservations pour le tableau du Dashboard
+     */
+    public static function ajax_get_reservations_list()
+    {
+        // 1. Sécurité (On écoute la clé 'security' envoyée par api-client.js)
+        parent::verify_access('pc_resa_manual_create', 'security');
+
+        // Vérification de la présence de la classe Repository
+        if (!class_exists('PCR_Reservation_Repository')) {
+            wp_send_json_error(['message' => 'Le Repository des réservations est introuvable.']);
+        }
+
+        // 2. Requête DB via le Repository existant
+        $repo = PCR_Reservation_Repository::get_instance();
+
+        // NOUVEAU : Gestion de la pagination (30 par page)
+        $per_page = 30;
+        $current_page = isset($_POST['page']) ? max(1, (int) $_POST['page']) : 1;
+        $offset = ($current_page - 1) * $per_page;
+
+        // NOUVEAU : Récupération du filtre de type
+        $type_filter = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : '';
+        $args = [
+            'limit'  => $per_page,
+            'offset' => $offset
+        ];
+        if (!empty($type_filter)) {
+            $args['type'] = $type_filter; // Ton repository gère déjà ça !
+        }
+
+        // On récupère les réservations avec le bon offset et le bon filtre
+        $reservations_db = $repo->get_list($args);
+        // On récupère le total (en lui passant le type pour que le nombre de pages soit juste)
+        $total_count = $repo->get_count($type_filter);
+
+        $formatted_reservations = [];
+
+        foreach ($reservations_db as $resa) {
+            // Formatage des dates selon le type
+            $dates = '-';
+            if ($resa->type === 'location' && !empty($resa->date_arrivee) && !empty($resa->date_depart)) {
+                $dates = date_i18n('d/m/Y', strtotime($resa->date_arrivee)) . ' - ' . date_i18n('d/m/Y', strtotime($resa->date_depart));
+            } elseif ($resa->type === 'experience' && !empty($resa->date_experience)) {
+                $dates = date_i18n('d/m/Y', strtotime($resa->date_experience));
+            }
+
+            // Récupération du nom du logement/expérience
+            $item_name = 'Inconnu';
+            if (!empty($resa->item_id)) {
+                $item_name = get_the_title($resa->item_id);
+            }
+
+            // Construction de l'objet attendu par notre tableau Vue.js
+            $formatted_reservations[] = [
+                'id'         => (int) $resa->id,
+                'client'     => trim(($resa->prenom ?? '') . ' ' . strtoupper($resa->nom ?? '')),
+                'type'       => $resa->type ?? 'location',
+                'item_name'  => $item_name,
+                'dates'      => $dates,
+                'montant'    => number_format((float)($resa->montant_total ?? 0), 2, ',', ' '),
+                'statut_reservation' => $resa->statut_reservation ?? 'en_attente_traitement',
+                'statut_paiement'    => $resa->statut_paiement ?? 'non_paye'
+            ];
+        }
+
+        // 3. Réponse
+        wp_send_json_success([
+            'reservations' => $formatted_reservations,
+            'total'        => $total_count
+        ]);
+    }
+    /**
+     * Récupère TOUS les détails d'une réservation pour la modale (Vue 3)
+     */
+    public static function ajax_get_reservation_details()
+    {
+        parent::verify_access('pc_resa_manual_create', 'security');
+
+        $reservation_id = isset($_POST['reservation_id']) ? (int) $_POST['reservation_id'] : 0;
+        if ($reservation_id <= 0) wp_send_json_error(['message' => 'ID invalide.']);
+
+        $repo = PCR_Reservation_Repository::get_instance();
+        $resa = $repo->get_by_id($reservation_id);
+
+        if (!$resa) wp_send_json_error(['message' => 'Réservation introuvable.']);
+
+        // 1. Calcul des paiements
+        $payments = class_exists('PCR_Payment') ? PCR_Payment::get_for_reservation($resa->id) : [];
+        $total_paid = 0;
+        foreach ($payments as $pay) {
+            if ($pay->statut === 'paye') {
+                $total_paid += (float) $pay->montant;
+            }
+        }
+        $total_due = max(0, (float)$resa->montant_total - $total_paid);
+
+        // 2. Lignes du devis
+        $quote_lines = !empty($resa->detail_tarif) ? json_decode($resa->detail_tarif, true) : [];
+
+        // 3. Construction des occupants
+        $occupants = intval($resa->adultes) . ' adulte(s)';
+        if (!empty($resa->enfants)) $occupants .= ' - ' . intval($resa->enfants) . ' enfant(s)';
+        if (!empty($resa->bebes)) $occupants .= ' - ' . intval($resa->bebes) . ' bébé(s)';
+
+        // 4. Renvoi du JSON structuré
+        wp_send_json_success([
+            'id' => $resa->id,
+            'client_email' => $resa->email,
+            'client_phone' => $resa->telephone,
+            'client_lang' => $resa->langue ?? 'fr',
+            'client_message' => wp_unslash($resa->commentaire_client ?? ''),
+            'notes_internes' => wp_unslash($resa->notes_internes ?? ''),
+            'occupants' => $occupants,
+            'source' => $resa->source ?? 'direct',
+            'montant_total' => (float)$resa->montant_total,
+            'total_paye' => $total_paid,
+            'total_du' => $total_due,
+            'payments' => $payments,
+            'quote_lines' => $quote_lines,
+            'caution' => [
+                'mode' => $resa->caution_mode ?? 'aucune',
+                'statut' => $resa->caution_statut ?? 'non_demande',
+                'montant' => (float)($resa->caution_montant ?? 0)
+            ]
+        ]);
+    }
+
+    /**
+     * Récupère la liste des logements et expériences pour le formulaire de création
+     */
+    public static function ajax_get_booking_items()
+    {
+        parent::verify_access('pc_resa_manual_create', 'security');
+
+        // 1. On cherche à la fois dans les villas et les appartements !
+        $logements_posts = get_posts([
+            'post_type'      => ['villa', 'appartement'], // <-- LA MAGIE EST ICI
+            'numberposts'    => -1,
+            'post_status'    => 'publish',
+            'orderby'        => 'title',
+            'order'          => 'ASC'
+        ]);
+
+        $locations = [];
+        foreach ($logements_posts as $post) {
+            // Petit bonus : on ajoute le type devant le nom pour que ce soit joli dans la liste
+            $type_label = ($post->post_type === 'villa') ? '🏡 Villa' : '🏢 Appart.';
+            $locations[] = [
+                'id' => $post->ID,
+                'title' => $type_label . ' : ' . $post->post_title
+            ];
+        }
+
+        // 2. On cherche les expériences (si le nom est bien 'experience', sinon dis-le moi !)
+        $experiences_posts = get_posts([
+            'post_type'      => 'experience',
+            'numberposts'    => -1,
+            'post_status'    => 'publish',
+            'orderby'        => 'title',
+            'order'          => 'ASC'
+        ]);
+
+        $experiences = [];
+        foreach ($experiences_posts as $post) {
+            $experiences[] = [
+                'id' => $post->ID,
+                'title' => $post->post_title
+            ];
+        }
+
+        wp_send_json_success([
+            'locations'   => $locations,
+            'experiences' => $experiences
+        ]);
+    }
+
+    /**
+     * Calcule le prix (Devis) d'une réservation en direct pour le formulaire Vue 3
+     */
+    public static function ajax_calculate_price()
+    {
+        parent::verify_access('pc_resa_manual_create', 'security');
+
+        // Récupération des données envoyées par Vue.js
+        $type    = sanitize_text_field($_POST['type'] ?? 'location');
+        $item_id = (int) ($_POST['item_id'] ?? 0);
+        $adultes = (int) ($_POST['adultes'] ?? 2);
+        $enfants = (int) ($_POST['enfants'] ?? 0);
+        $bebes   = (int) ($_POST['bebes'] ?? 0);
+
+        if ($item_id === 0) {
+            wp_send_json_error(['message' => 'Veuillez sélectionner un logement ou une expérience.']);
+        }
+
+        $lines = [];
+        $total = 0.0;
+
+        // 🌴 CALCUL POUR LES EXPÉRIENCES (Le vrai moteur !)
+        if ($type === 'experience') {
+            if (class_exists('PCR_Booking_Pricing_Calculator')) {
+                $calc = PCR_Booking_Pricing_Calculator::get_instance();
+
+                // 🚀 NOUVEAU : On écoute enfin le choix du tarif fait par l'utilisateur !
+                $experience_tarif_type = sanitize_text_field($_POST['experience_tarif_type'] ?? '');
+
+                // On prépare les données au format attendu par ta classe
+                $normalized = [
+                    'context' => ['type' => 'experience'],
+                    'item'    => [
+                        'item_id' => $item_id,
+                        'experience_tarif_type' => $experience_tarif_type // 🚀 CORRIGÉ
+                    ],
+                    'pricing' => ['currency' => 'EUR', 'lines' => [], 'total' => 0],
+                    'people'  => [
+                        'adultes' => $adultes,
+                        'enfants' => $enfants,
+                        'bebes'   => $bebes,
+                    ]
+                ];
+
+                // On lance ton vrai calcul !
+                $result = $calc->maybe_autofill_pricing($normalized);
+
+                $lines = $result['pricing']['lines'] ?? [];
+                $total = $result['pricing']['total'] ?? 0;
+            } else {
+                wp_send_json_error(['message' => 'Le calculateur d\'expérience est introuvable sur le serveur.']);
+            }
+        }
+        // 🏠 CALCUL POUR LES LOGEMENTS (Avec notre nouvelle classe !)
+        else {
+            $date_arrivee = sanitize_text_field($_POST['date_arrivee'] ?? '');
+            $date_depart  = sanitize_text_field($_POST['date_depart'] ?? '');
+
+            if (empty($date_arrivee) || empty($date_depart)) {
+                wp_send_json_error(['message' => 'Veuillez sélectionner vos dates de séjour.']);
+            }
+
+            // On récupère la configuration du logement
+            $config = pc_resa_get_logement_pricing_config($item_id);
+
+            if (!$config) {
+                wp_send_json_error(['message' => 'Configuration tarifaire introuvable pour ce logement.']);
+            }
+
+            // On vérifie que notre nouvelle classe est bien chargée
+            // (Assure-toi que ton autoloader charge bien class-housing-pricing-calculator.php ou inclus-le manuellement si besoin)
+            if (!class_exists('PCR_Housing_Pricing_Calculator')) {
+                wp_send_json_error(['message' => 'Le calculateur de logement (PCR_Housing_Pricing_Calculator) est introuvable.']);
+            }
+
+            $calculator = PCR_Housing_Pricing_Calculator::get_instance();
+
+            $args = [
+                'date_arrivee' => $date_arrivee,
+                'date_depart'  => $date_depart,
+                'adults'       => $adultes,
+                'children'     => $enfants,
+                'infants'      => $bebes,
+            ];
+
+            // On lance le calcul robuste
+            $result = $calculator->calculate_quote($config, $args);
+
+            if (!$result['success']) {
+                wp_send_json_error(['message' => $result['message']]);
+            }
+
+            // Si c'est un logement "Sur devis", on adapte la réponse pour court-circuiter le calcul
+            if (!empty($result['isSurDevis'])) {
+                wp_send_json_success([
+                    'montant_total' => 0,
+                    'lignes_devis'  => $result['lines']
+                ]);
+            }
+
+            $lines = $result['lines'];
+            $total = $result['total'];
+        }
+
+        // On renvoie la réponse finale unifiée (valable pour Logement ET Expérience)
+        wp_send_json_success([
+            'montant_total' => $total,
+            'lignes_devis'  => $lines
         ]);
     }
 }

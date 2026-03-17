@@ -1,113 +1,117 @@
 <template>
-  <div class="pc-dashboard-v2-container">
-    <header class="v2-header">
-      <h2>Espace Propriétaire (Version 2.0)</h2>
-      <span class="status-badge" :class="{ loading: store.isLoading }">
-        {{ store.isLoading ? "Chargement..." : "Actif 🚀" }}
-      </span>
+  <div class="pc-reservation-dashboard">
+    <header class="dashboard-header">
+      <h1>Tableau de bord de Réservations</h1>
+      <span v-if="dashboardStore.isLoading">Chargement des données...</span>
     </header>
 
-    <p class="description">
-      Cette interface est propulsée par Vue.js 3 et Pinia. Les données
-      ci-dessous proviennent de notre nouveau Store de manière asynchrone via
-      Axios.
-    </p>
-
-    <div class="stats-grid">
-      <StatCard title="Réservations" :value="store.stats.totalReservations" />
-
-      <StatCard
-        title="Revenus Générés"
-        :value="store.formattedRevenue"
-        :is-revenue="true"
-      />
-
-      <StatCard
-        title="Messages en attente"
-        :value="store.stats.pendingMessages"
-        :has-alert="store.hasUnreadMessages"
-        alert-text="À traiter !"
-      />
+    <div v-if="dashboardStore.error" class="error-notice">
+      {{ dashboardStore.error }}
     </div>
 
-    <div v-if="store.error" class="error-notice">ℹ️ {{ store.error }}</div>
+    <div
+      v-if="!dashboardStore.isLoading && !dashboardStore.error"
+      class="stats-test-grid"
+    >
+      <div class="stat-card">
+        <h3>Total Résas</h3>
+        <p>{{ dashboardStore.stats.totalReservations }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>Revenus</h3>
+        <p>{{ dashboardStore.stats.revenue }} €</p>
+      </div>
+      <div class="stat-card">
+        <h3>Messages en attente</h3>
+        <p>{{ dashboardStore.stats.pendingMessages }}</p>
+      </div>
+    </div>
+
+    <div
+      style="
+        margin-top: 20px;
+        padding: 15px;
+        background: #fff;
+        border-radius: 6px;
+      "
+    >
+      <h3>Test d'action API Réservation</h3>
+      <button
+        @click="testCancel"
+        :disabled="reservationsStore.isLoading"
+        style="padding: 10px; cursor: pointer"
+      >
+        {{
+          reservationsStore.isLoading
+            ? "Annulation en cours..."
+            : "Tester annulation (ID fictif : 99999)"
+        }}
+      </button>
+      <p
+        v-if="reservationsStore.error"
+        style="color: red; margin-top: 10px; font-weight: bold"
+      >
+        Erreur interceptée depuis le PHP (C'est normal !) :
+        {{ reservationsStore.error }}
+      </p>
+    </div>
+
+    <ReservationList />
+
+    <ReservationModal />
+
+    <BookingForm />
   </div>
 </template>
 
 <script setup>
 import { onMounted } from "vue";
-import { useDashboardStore } from "../../stores/dashboard-store.js";
-import StatCard from "../../components/StatCard.vue"; // ✨ L'import de notre composant
+import { useDashboardStore } from "../../stores/dashboard-store";
+import { useReservationsStore } from "../../stores/reservations-store";
+import ReservationList from "../../components/dashboard/ReservationList.vue";
+import ReservationModal from "../../components/dashboard/ReservationModal.vue";
+import BookingForm from "../../components/dashboard/BookingForm.vue";
 
-// Initialisation du store Pinia
-const store = useDashboardStore();
+const dashboardStore = useDashboardStore();
+const reservationsStore = useReservationsStore(); // NOUVELLE INSTANCE
 
-// Au montage du composant dans le DOM, on déclenche l'appel réseau
 onMounted(() => {
-  store.fetchDashboardStats();
+  // On lance la récupération des stats au montage de l'application
+  dashboardStore.fetchStats();
 });
+
+// NOUVELLE FONCTION DE TEST
+const testCancel = async () => {
+  try {
+    // On tente d'annuler une réservation qui n'existe pas pour tester l'erreur renvoyée par PHP
+    await reservationsStore.cancelReservation(99999);
+  } catch (e) {
+    // L'erreur est gérée par le store et affichée dans le template
+  }
+};
 </script>
 
 <style scoped>
-/* Le CSS est maintenant beaucoup plus court car le style des cartes est dans StatCard.vue ! */
-.pc-dashboard-v2-container {
-  padding: 2rem;
-  background-color: #f8fafc;
-  border: 2px dashed #3b82f6;
+.pc-reservation-dashboard {
+  padding: 20px;
+  background: #f9f9f9;
   border-radius: 8px;
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
-  margin-top: 20px;
-  margin-bottom: 20px;
 }
-
-.v2-header {
+.stats-test-grid {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+  gap: 20px;
+  margin-top: 20px;
 }
-
-h2 {
-  color: #1e293b;
-  margin: 0;
+.stat-card {
+  background: white;
+  padding: 15px 25px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
-.description {
-  color: #64748b;
-  font-size: 0.95rem;
-  margin-bottom: 2rem;
-}
-
-.status-badge {
-  background-color: #10b981;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  transition: all 0.3s ease;
-}
-
-.status-badge.loading {
-  background-color: #f59e0b;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
 .error-notice {
-  background: #eff6ff;
-  color: #1d4ed8;
-  padding: 1rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  border-left: 4px solid #3b82f6;
+  color: red;
+  padding: 10px;
+  background: #ffe6e6;
+  border-radius: 4px;
 }
 </style>

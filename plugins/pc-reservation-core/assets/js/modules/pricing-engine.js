@@ -320,22 +320,22 @@
     },
 
     /**
-     * Calcule un devis logement (délégation vers le moteur existant)
+     * Calcule un devis logement (délégation vers le moteur V3)
      * @param {Object} config - Configuration du logement
      * @param {Object} params - Paramètres du séjour
      * @returns {Object} Résultat du calcul
      */
     calculateLogementQuote: function (config, params) {
-      if (
-        !this._logementQuote ||
-        typeof this._logementQuote.calculateQuote !== "function"
-      ) {
+      // On utilise prioritairement le nouveau moteur global PCDevisCalculator (V3)
+      const calculator = window.PCDevisCalculator || this._logementQuote;
+
+      if (!calculator || typeof calculator.calculateQuote !== "function") {
         return {
           success: false,
           message: "Le moteur logement n'est pas chargé.",
         };
       }
-      return this._logementQuote.calculateQuote(config, params);
+      return calculator.calculateQuote(config, params);
     },
   };
 

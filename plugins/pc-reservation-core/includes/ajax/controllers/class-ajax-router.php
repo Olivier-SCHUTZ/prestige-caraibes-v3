@@ -46,6 +46,7 @@ class PCR_Ajax_Router
         // --------------------------------------------------------
         // 🗓️ 1. CALENDRIER (Sera migré à l'Étape 3)
         // --------------------------------------------------------
+        add_action('wp_ajax_pc_calendar_create_resa', ['PCR_Calendar_Ajax_Controller', 'ajax_calendar_create_resa']);
         add_action('wp_ajax_pc_get_calendar_global', ['PCR_Calendar_Ajax_Controller', 'ajax_get_calendar_global']);
         add_action('wp_ajax_nopriv_pc_get_calendar_global', ['PCR_Calendar_Ajax_Controller', 'ajax_get_calendar_global']);
         add_action('wp_ajax_pc_get_global_calendar', ['PCR_Calendar_Ajax_Controller', 'ajax_get_global_calendar']);
@@ -59,6 +60,10 @@ class PCR_Ajax_Router
         // --------------------------------------------------------
         // 🛎️ 2. RÉSERVATIONS
         // --------------------------------------------------------
+        add_action('wp_ajax_pc_get_reservations_list', ['PCR_Reservation_Ajax_Controller', 'ajax_get_reservations_list']);
+        add_action('wp_ajax_pc_get_reservation_details', ['PCR_Reservation_Ajax_Controller', 'ajax_get_reservation_details']);
+        add_action('wp_ajax_pc_get_booking_items', ['PCR_Reservation_Ajax_Controller', 'ajax_get_booking_items']);
+        add_action('wp_ajax_pc_calculate_price', ['PCR_Reservation_Ajax_Controller', 'ajax_calculate_price']);
         add_action('wp_ajax_pc_manual_reservation_create', ['PCR_Reservation_Ajax_Controller', 'handle_manual_reservation']);
         add_action('wp_ajax_nopriv_pc_manual_reservation_create', ['PCR_Reservation_Ajax_Controller', 'handle_manual_reservation']);
         add_action('wp_ajax_pc_manual_logement_config', ['PCR_Reservation_Ajax_Controller', 'handle_logement_config']);
