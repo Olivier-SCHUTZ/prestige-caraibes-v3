@@ -800,30 +800,35 @@ watch(
 const dateRangeInput = ref(null);
 let flatpickrInstance = null;
 
+// On surveille à la fois l'ID de l'item ET l'ouverture de la modale
 watch(
-  () => formData.value.item_id,
-  async (newId) => {
-    if (formData.value.type === "location" && newId) {
+  () => [formData.value.item_id, store.isCreateModalOpen],
+  async ([newId, isOpen]) => {
+    if (isOpen && formData.value.type === "location" && newId) {
       // 1. On charge la configuration (jours bloqués, etc.)
       await store.fetchHousingConfig(newId);
 
       // 2. 🚀 LA MAGIE EST LÀ : On attend que le champ <input> existe physiquement à l'écran !
       await nextTick();
 
-      // 3. On initialise Flatpickr
-      initFlatpickr();
+      // Petit délai supplémentaire pour garantir que le DOM de Vue est 100% prêt
+      setTimeout(() => {
+        // 3. On initialise Flatpickr
+        initFlatpickr();
 
-      // 4. On remplit visuellement le champ
-      if (
-        formData.value.date_arrivee &&
-        formData.value.date_depart &&
-        flatpickrInstance
-      ) {
-        flatpickrInstance.setDate(
-          [formData.value.date_arrivee, formData.value.date_depart],
-          false,
-        );
-      }
+        // 4. On nettoie les dates (suppression de l'heure si elle vient de la BDD : "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DD")
+        const arrivee = formData.value.date_arrivee
+          ? formData.value.date_arrivee.split(" ")[0]
+          : null;
+        const depart = formData.value.date_depart
+          ? formData.value.date_depart.split(" ")[0]
+          : null;
+
+        // 5. On remplit visuellement le champ
+        if (arrivee && depart && flatpickrInstance) {
+          flatpickrInstance.setDate([arrivee, depart], false);
+        }
+      }, 50);
     }
   },
 );
@@ -870,6 +875,20 @@ const initFlatpickr = () => {
       }
     },
   });
+};
+
+// 🚀 NOUVEAU : La fonction manquante pour gérer les clics sur les boutons + et -
+const updateGuest = (type, step) => {
+  if (type === "adultes") {
+    const newVal = formData.value.adultes + step;
+    if (newVal >= 1) formData.value.adultes = newVal;
+  } else if (type === "enfants") {
+    const newVal = formData.value.enfants + step;
+    if (newVal >= 0) formData.value.enfants = newVal;
+  } else if (type === "bebes") {
+    const newVal = formData.value.bebes + step;
+    if (newVal >= 0) formData.value.bebes = newVal;
+  }
 };
 
 watch([() => formData.value.adultes, () => formData.value.enfants], () => {

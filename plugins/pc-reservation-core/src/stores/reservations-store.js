@@ -281,9 +281,13 @@ export const useReservationsStore = defineStore("reservations", {
         // Le backend legacy attend 'lines_json' et 'montant_total'
         const payload = {
           ...formData,
-          montant_total: this.quotePreview
-            ? this.quotePreview.montant_total
-            : 0,
+          // 🚀 On utilise en priorité le total complet calculé par BookingForm.vue (qui inclut les remises !)
+          montant_total:
+            formData.montant_total !== undefined
+              ? formData.montant_total
+              : this.quotePreview
+                ? this.quotePreview.montant_total
+                : 0,
           lines_json:
             this.quotePreview && this.quotePreview.lignes_devis
               ? JSON.stringify(this.quotePreview.lignes_devis)
@@ -325,7 +329,29 @@ export const useReservationsStore = defineStore("reservations", {
       try {
         const response = await reservationApi.getDetails(reservation.id);
         if (response.data.success) {
-          this.reservationDetails = response.data.data;
+          let data = response.data.data;
+
+          // 🚀 Nettoyage de l'encodage Unicode legacy (ex: "H\u00e9bergement" -> "Hébergement")
+          const fixUnicode = (obj) => {
+            if (typeof obj === "string") {
+              return obj.replace(/\\u[\dA-F]{4}/gi, (match) =>
+                String.fromCharCode(parseInt(match.replace(/\\u/g, ""), 16)),
+              );
+            } else if (Array.isArray(obj)) {
+              return obj.map(fixUnicode);
+            } else if (obj !== null && typeof obj === "object") {
+              const newObj = {};
+              for (const key in obj) {
+                newObj[key] = fixUnicode(obj[key]);
+              }
+              return newObj;
+            }
+            return obj;
+          };
+
+          data = fixUnicode(data);
+
+          this.reservationDetails = data;
           console.log("Détails chargés :", this.reservationDetails); // <-- TRÈS IMPORTANT POUR NOTRE TEST
         }
       } catch (err) {
@@ -432,6 +458,52 @@ export const useReservationsStore = defineStore("reservations", {
       const details = this.reservationDetails;
 
       // On prépare le paquet de données pour BookingForm
+      // 🚀 Extraction super-robuste des plus/moins values sauvegardées
+      let extractedRemiseLabel = details.raw_remise_label || "";
+      let extractedRemiseMontant = details.raw_remise_montant || "";
+      let extractedPlusLabel = details.raw_plus_label || "";
+      let extractedPlusMontant = details.raw_plus_montant || "";
+      let baseTotal = parseFloat(details.montant_total || 0);
+      const cleanQuoteLines = [];
+
+      (details.quote_lines || []).forEach((line) => {
+        const rawAmount =
+          line.amount !== undefined
+            ? parseFloat(line.amount)
+            : parseFloat(line.price || 0);
+        const label = (line.label || "").toLowerCase();
+
+        // Détection de la remise (par son type, un montant négatif, ou un mot clé)
+        if (
+          line.type === "remise" ||
+          rawAmount < 0 ||
+          label.includes("remise") ||
+          label.includes("réduction")
+        ) {
+          extractedRemiseLabel = line.label || "Remise exceptionnelle";
+          extractedRemiseMontant = Math.abs(rawAmount);
+          baseTotal += extractedRemiseMontant; // On rajoute la remise au total de base pour le formulaire
+        }
+        // Détection de la plus-value
+        else if (
+          line.type === "plus_value" ||
+          label.includes("plus-value") ||
+          label.includes("plus value")
+        ) {
+          extractedPlusLabel = line.label || "Plus-value";
+          extractedPlusMontant = Math.abs(rawAmount);
+          baseTotal -= extractedPlusMontant; // On déduit la plus-value du total de base
+        }
+        // Ligne normale
+        else {
+          cleanQuoteLines.push(line);
+        }
+      });
+
+      // Valeurs par défaut si rien n'est trouvé
+      if (!extractedRemiseLabel) extractedRemiseLabel = "Remise exceptionnelle";
+      if (!extractedPlusLabel) extractedPlusLabel = "Plus-value";
+
       const prefill = {
         id: details.id, // Présence de l'ID = Mode Mise à jour !
         type: details.raw_type,
@@ -450,14 +522,18 @@ export const useReservationsStore = defineStore("reservations", {
         commentaire_client: details.client_message,
         notes_internes: details.notes_internes,
         numero_devis: details.raw_numero_devis,
+        remise_label: extractedRemiseLabel,
+        remise_montant: extractedRemiseMontant,
+        plus_label: extractedPlusLabel,
+        plus_montant: extractedPlusMontant,
         source: details.source || "direct",
         type_flux:
           this.selectedReservation.statut_reservation === "devis"
             ? "devis"
             : "reservation",
-        // 🚀 NOUVEAU : On transmet le devis exactement comme il a été sauvegardé en base de données !
-        montant_total: details.montant_total,
-        quote_lines: details.quote_lines || [],
+        // 🚀 On transmet le devis recalculé à l'état brut (sans les ajustements)
+        montant_total: baseTotal,
+        quote_lines: cleanQuoteLines,
       };
 
       this.openCreateModal(prefill);

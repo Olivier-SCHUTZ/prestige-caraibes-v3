@@ -230,7 +230,28 @@
                         line.label
                       }}</span>
                       <template v-else>
-                        <span class="quote-label">{{ line.label }}</span>
+                        <span class="quote-label">
+                          {{ line.clean_label || line.label }}
+                          <span
+                            v-if="
+                              line.qty !== undefined &&
+                              line.qty !== null &&
+                              line.qty !== ''
+                            "
+                            style="
+                              display: inline-block;
+                              background: #f1f5f9;
+                              padding: 2px 6px;
+                              border-radius: 4px;
+                              font-size: 0.85em;
+                              margin-left: 8px;
+                              color: #475569;
+                              font-weight: 600;
+                            "
+                          >
+                            Qté : {{ line.qty }}
+                          </span>
+                        </span>
                         <strong class="quote-price">{{
                           line.price || (line.amount ? line.amount + " €" : "")
                         }}</strong>

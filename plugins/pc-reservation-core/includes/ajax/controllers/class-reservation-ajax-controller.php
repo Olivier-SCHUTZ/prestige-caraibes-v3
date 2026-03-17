@@ -67,9 +67,9 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
         $mode_reservation = (isset($_POST['mode_reservation']) && $_POST['mode_reservation'] === 'directe') ? 'directe' : 'demande';
         $type_flux        = (isset($_POST['type_flux']) && $_POST['type_flux'] === 'devis') ? 'devis' : 'reservation';
         $source_val       = sanitize_text_field($_POST['source'] ?? 'direct');
-        $remise_label  = sanitize_text_field($_POST['remise_label'] ?? '');
+        $remise_label  = sanitize_text_field(wp_unslash($_POST['remise_label'] ?? ''));
         $remise_amount = isset($_POST['remise_montant']) ? (float) $_POST['remise_montant'] : 0;
-        $plus_label    = sanitize_text_field($_POST['plus_label'] ?? '');
+        $plus_label    = sanitize_text_field(wp_unslash($_POST['plus_label'] ?? ''));
         $plus_amount   = isset($_POST['plus_montant']) ? (float) $_POST['plus_montant'] : 0;
 
         $manual_adjustments = [];
@@ -118,15 +118,15 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
                 'manual_adjustments' => $manual_adjustments,
             ],
             'customer' => [
-                'prenom'             => sanitize_text_field($_POST['prenom'] ?? ''),
-                'nom'                => sanitize_text_field($_POST['nom'] ?? ''),
-                'email'              => sanitize_email($_POST['email'] ?? ''),
-                'telephone'          => sanitize_text_field($_POST['telephone'] ?? ''),
-                'commentaire_client' => sanitize_textarea_field($_POST['commentaire_client'] ?? ''),
+                'prenom'             => sanitize_text_field(wp_unslash($_POST['prenom'] ?? '')),
+                'nom'                => sanitize_text_field(wp_unslash($_POST['nom'] ?? '')),
+                'email'              => sanitize_email(wp_unslash($_POST['email'] ?? '')),
+                'telephone'          => sanitize_text_field(wp_unslash($_POST['telephone'] ?? '')),
+                'commentaire_client' => sanitize_textarea_field(wp_unslash($_POST['commentaire_client'] ?? '')),
             ],
             'meta' => [
-                'numero_devis'   => sanitize_text_field($_POST['numero_devis'] ?? ''),
-                'notes_internes' => sanitize_textarea_field($_POST['notes_internes'] ?? ''),
+                'numero_devis'   => sanitize_text_field(wp_unslash($_POST['numero_devis'] ?? '')),
+                'notes_internes' => sanitize_textarea_field(wp_unslash($_POST['notes_internes'] ?? '')),
             ],
         ];
 
@@ -411,7 +411,11 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
             'raw_bebes' => (int) ($resa->bebes ?? 0),
             'raw_prenom' => $resa->prenom ?? '',
             'raw_nom' => $resa->nom ?? '',
-            'raw_numero_devis' => $resa->numero_devis ?? ''
+            'raw_numero_devis' => $resa->numero_devis ?? '',
+            'raw_remise_label' => $resa->remise_label ?? '',
+            'raw_remise_montant' => isset($resa->remise_montant) ? (float) $resa->remise_montant : 0,
+            'raw_plus_label' => $resa->plus_label ?? '',
+            'raw_plus_montant' => isset($resa->plus_montant) ? (float) $resa->plus_montant : 0
         ]);
     }
 
