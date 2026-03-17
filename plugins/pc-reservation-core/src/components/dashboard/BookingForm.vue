@@ -8,7 +8,10 @@
       <div class="pcr-modal-content pcr-modal-large">
         <header class="pcr-modal-header">
           <div class="header-titles">
-            <h2>Nouvelle Réservation / Devis</h2>
+            <h2 v-if="formData.id">
+              ✏️ Modifier la Réservation #{{ formData.id }}
+            </h2>
+            <h2 v-else>✨ Nouvelle Réservation / Devis</h2>
             <p class="text-muted" style="margin: 5px 0 0 0; font-size: 0.9em">
               Le devis se calcule automatiquement en fonction de vos choix.
             </p>
@@ -559,7 +562,9 @@
             {{
               store.isLoading
                 ? "Enregistrement..."
-                : "Enregistrer la réservation"
+                : formData.id
+                  ? "Mettre à jour la réservation"
+                  : "Enregistrer la réservation"
             }}
           </button>
         </footer>
@@ -575,6 +580,7 @@ import { useReservationsStore } from "../../stores/reservations-store";
 const store = useReservationsStore();
 
 const formData = ref({
+  id: null,
   type: "location",
   type_flux: "devis",
   source: "direct",
@@ -688,33 +694,67 @@ onUnmounted(() => {
 });
 // ==========================================
 
-const updateGuest = (type, delta) => {
-  const min = type === "adultes" ? 1 : 0;
-  formData.value[type] = Math.max(min, formData.value[type] + delta);
-};
+const isPrefilling = ref(false); // 🚀 Bloqueur de radar
 
-const finalTotalComputed = computed(() => {
-  if (!store.quotePreview) return 0;
-  let totalBase = store.quotePreview.montant_total;
-  let remise = parseFloat(formData.value.remise_montant) || 0;
-  let plus = parseFloat(formData.value.plus_montant) || 0;
-  return Math.max(0, totalBase - remise + plus);
-});
+// 🚀 NOUVEAU : Quand la modale s'ouvre, on injecte les données d'édition
+watch(
+  () => store.isCreateModalOpen,
+  async (isOpen) => {
+    if (isOpen) {
+      if (store.prefillData) {
+        isPrefilling.value = true; // 🔴 On éteint le radar automatique
 
-const formattedFinalTotal = computed(() => {
-  return finalTotalComputed.value.toLocaleString("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-  });
-});
+        // On remplit les champs du formulaire
+        Object.keys(store.prefillData).forEach((key) => {
+          if (formData.value.hasOwnProperty(key)) {
+            formData.value[key] = store.prefillData[key];
+          }
+        });
+
+        // 🚀 On restaure le devis tel qu'il a été sauvegardé la dernière fois !
+        if (
+          store.prefillData.quote_lines &&
+          store.prefillData.quote_lines.length > 0
+        ) {
+          store.quotePreview = {
+            montant_total: store.prefillData.montant_total,
+            lignes_devis: store.prefillData.quote_lines,
+          };
+        }
+
+        // On attend que Vue mette à jour l'interface visuelle
+        await nextTick();
+
+        // On rallume le radar après un court délai pour éviter qu'il s'affole au chargement
+        setTimeout(() => {
+          isPrefilling.value = false; // 🟢 On rallume le radar
+        }, 300);
+      }
+    } else {
+      // 🧹 Reset total du formulaire quand on le ferme
+      formData.value.id = null;
+      formData.value.item_id = "";
+      formData.value.prenom = "";
+      formData.value.nom = "";
+      formData.value.adultes = 2;
+      formData.value.enfants = 0;
+      formData.value.bebes = 0;
+      formData.value.numero_devis = "";
+      formData.value.remise_montant = "";
+      formData.value.plus_montant = "";
+      store.quotePreview = null;
+    }
+  },
+);
 
 let calcTimeout;
 
 // 🚀 LE FIX : On demande à Vue.js de surveiller TOUT l'objet formData
-// Dès qu'une option, un adulte ou une quantité change, le calcul part instantanément !
 watch(
   formData,
   (newVal) => {
+    if (isPrefilling.value) return; // 🚀 Si on est en train de pré-remplir la modale, on interdit au radar de recalculer et d'écraser le devis !
+
     if (newVal.item_id && store.bookingItems) {
       const locations = store.bookingItems.locations || [];
       const experiences = store.bookingItems.experiences || [];
@@ -849,26 +889,49 @@ watch([() => formData.value.adultes, () => formData.value.enfants], () => {
   }
 });
 
+// ==========================================
+// 💰 CALCULS DU DEVIS (Total & Formatage)
+// ==========================================
+const finalTotalComputed = computed(() => {
+  if (!store.quotePreview) return 0;
+  let totalBase = store.quotePreview.montant_total || 0;
+  let remise = parseFloat(formData.value.remise_montant) || 0;
+  let plus = parseFloat(formData.value.plus_montant) || 0;
+  return Math.max(0, totalBase - remise + plus);
+});
+
+const formattedFinalTotal = computed(() => {
+  return finalTotalComputed.value.toLocaleString("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  });
+});
+
+// ==========================================
+// 💾 SAUVEGARDE EN BASE DE DONNÉES
+// ==========================================
 const handleCreate = async () => {
   try {
+    // Sécurité : On s'assure qu'un devis a bien été généré avant de sauvegarder
+    if (!store.quotePreview) {
+      alert("⚠️ Veuillez attendre le calcul du devis avant d'enregistrer.");
+      return;
+    }
+
     const payloadToSave = {
       ...formData.value,
-      montant_total: finalTotalComputed.value,
+      montant_total: finalTotalComputed.value, // La variable est de retour !
     };
 
     const result = await store.createReservation(payloadToSave);
     if (result && result.success) {
-      // 🚀 1. On retire l'alerte bloquante (la modale se ferme déjà via le store)
-
-      // 🚀 2. On "crie" dans toute l'app pour que le grand calendrier se rafraîchisse instantanément
+      // On prévient le grand calendrier de se mettre à jour
       window.dispatchEvent(new CustomEvent("pc-refresh-calendar"));
-
-      // Optionnel : On peut laisser le closeCreateModal par sécurité (bien que géré dans le store)
+      // On ferme la modale
       store.closeCreateModal();
     }
   } catch (error) {
-    // On garde l'alerte pour les erreurs serveur (ex: "Logement déjà réservé à ces dates")
-    alert("❌ Erreur lors de la création : " + error.message);
+    alert("❌ Erreur lors de l'enregistrement : " + error.message);
   }
 };
 </script>

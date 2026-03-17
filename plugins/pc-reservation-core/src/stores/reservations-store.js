@@ -424,6 +424,46 @@ export const useReservationsStore = defineStore("reservations", {
     },
 
     /**
+     * 🚀 NOUVEAU : Ouvre la modale en mode Édition avec les données du dossier
+     */
+    openEditModal() {
+      if (!this.reservationDetails || !this.selectedReservation) return;
+
+      const details = this.reservationDetails;
+
+      // On prépare le paquet de données pour BookingForm
+      const prefill = {
+        id: details.id, // Présence de l'ID = Mode Mise à jour !
+        type: details.raw_type,
+        item_id: details.raw_item_id,
+        experience_tarif_type: details.raw_tarif_type,
+        date_arrivee: details.raw_date_arrivee,
+        date_depart: details.raw_date_depart,
+        date_experience: details.raw_date_experience,
+        adultes: details.raw_adultes,
+        enfants: details.raw_enfants,
+        bebes: details.raw_bebes,
+        prenom: details.raw_prenom,
+        nom: details.raw_nom,
+        email: details.client_email,
+        telephone: details.client_phone,
+        commentaire_client: details.client_message,
+        notes_internes: details.notes_internes,
+        numero_devis: details.raw_numero_devis,
+        source: details.source || "direct",
+        type_flux:
+          this.selectedReservation.statut_reservation === "devis"
+            ? "devis"
+            : "reservation",
+        // 🚀 NOUVEAU : On transmet le devis exactement comme il a été sauvegardé en base de données !
+        montant_total: details.montant_total,
+        quote_lines: details.quote_lines || [],
+      };
+
+      this.openCreateModal(prefill);
+    },
+
+    /**
      * Ouvre la modale de création et charge les listes
      * @param {Object} prefill - Données optionnelles (ex: { type: 'location', item_id: 12, date_arrivee: '2024-08-10' })
      */

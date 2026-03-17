@@ -398,7 +398,20 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
                 'mode' => $resa->caution_mode ?? 'aucune',
                 'statut' => $resa->caution_statut ?? 'non_demande',
                 'montant' => (float)($resa->caution_montant ?? 0)
-            ]
+            ],
+            // 🚀 NOUVEAU : On ajoute les données brutes vitales pour le formulaire de modification !
+            'raw_type' => $resa->type ?? 'location',
+            'raw_item_id' => (int) $resa->item_id,
+            'raw_tarif_type' => $resa->experience_tarif_type ?? '',
+            'raw_date_arrivee' => $resa->date_arrivee ?? '',
+            'raw_date_depart' => $resa->date_depart ?? '',
+            'raw_date_experience' => $resa->date_experience ?? '',
+            'raw_adultes' => (int) ($resa->adultes ?? 1),
+            'raw_enfants' => (int) ($resa->enfants ?? 0),
+            'raw_bebes' => (int) ($resa->bebes ?? 0),
+            'raw_prenom' => $resa->prenom ?? '',
+            'raw_nom' => $resa->nom ?? '',
+            'raw_numero_devis' => $resa->numero_devis ?? ''
         ]);
     }
 

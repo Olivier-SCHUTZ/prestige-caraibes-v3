@@ -38,7 +38,11 @@
             </div>
           </div>
           <div class="header-actions">
-            <button v-if="!isCreateMode" class="pc-btn-outline">
+            <button
+              v-if="!isCreateMode"
+              class="pc-btn-outline"
+              @click="handleEdit"
+            >
               ✏️ Modifier
             </button>
             <button class="btn-close" @click="closeModal">&times;</button>
@@ -433,6 +437,11 @@ const handleCancel = async (id) => {
   ) {
     await store.cancelReservation(id);
   }
+};
+
+const handleEdit = () => {
+  store.openEditModal(); // Ouvre BookingForm avec les données pré-remplies
+  closeModal(); // Ferme la modale de détails pour faire place nette
 };
 </script>
 
