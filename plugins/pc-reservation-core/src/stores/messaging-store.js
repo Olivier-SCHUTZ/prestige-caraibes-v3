@@ -20,6 +20,9 @@ export const useMessagingStore = defineStore("messaging", {
     isTyping: false,
     connectionStatus: "connected",
     error: null,
+
+    // NOUVEAU : ID du minuteur pour le temps réel
+    pollingIntervalId: null,
   }),
 
   getters: {
@@ -194,6 +197,50 @@ export const useMessagingStore = defineStore("messaging", {
         }
       } catch (err) {
         console.error("Messaging Store Error (markAsRead):", err);
+      }
+    },
+
+    /**
+     * NOUVEAU : Lance la vérification silencieuse des nouveaux messages
+     */
+    startPolling(reservationId) {
+      // Nettoie d'abord s'il y en a un existant
+      this.stopPolling();
+
+      // Lance une vérification toutes les 15 secondes
+      this.pollingIntervalId = setInterval(async () => {
+        try {
+          const response = await messagingApi.getHistory(reservationId);
+          const payload = response.data.data || response.data;
+
+          if (response.data.success || payload.success) {
+            // Met à jour la conversation silencieusement (sans toucher à this.isLoading)
+            this.currentConversation = payload.messages || [];
+            this.unreadCount = payload.unread_count || 0;
+
+            // Met à jour le cache frontend en passant
+            this.conversationCache.set(`conversation_${reservationId}`, {
+              data: {
+                messages: this.currentConversation,
+                reservation: payload.reservation || this.reservationContext,
+                unreadCount: this.unreadCount,
+              },
+              timestamp: Date.now(),
+            });
+          }
+        } catch (err) {
+          // Si la requête de fond échoue (ex: micro-coupure internet), on ignore pour ne pas spammer d'erreurs
+        }
+      }, 15000);
+    },
+
+    /**
+     * NOUVEAU : Arrête la vérification silencieuse
+     */
+    stopPolling() {
+      if (this.pollingIntervalId) {
+        clearInterval(this.pollingIntervalId);
+        this.pollingIntervalId = null;
       }
     },
   },

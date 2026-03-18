@@ -40,9 +40,9 @@ class PCR_Messaging_Ajax_Controller extends PCR_Base_Ajax_Controller
         $template_id    = isset($_POST['template_id']) ? sanitize_text_field($_POST['template_id']) : ''; // Peut être 'custom'
         $template_id    = isset($_POST['template_id']) ? sanitize_text_field($_POST['template_id']) : ''; // Peut être 'custom'
 
-        // Données message libre
-        $custom_subject = isset($_POST['custom_subject']) ? sanitize_text_field($_POST['custom_subject']) : '';
-        $custom_body    = isset($_POST['custom_body']) ? wp_kses_post($_POST['custom_body']) : '';
+        // Données message libre (avec wp_unslash pour corriger les antislashs automatiques)
+        $custom_subject = isset($_POST['custom_subject']) ? sanitize_text_field(wp_unslash($_POST['custom_subject'])) : '';
+        $custom_body    = isset($_POST['custom_body']) ? wp_kses_post(wp_unslash($_POST['custom_body'])) : '';
 
         // Support des pièces jointes
         $attachment_path = isset($_POST['attachment_path']) ? sanitize_text_field($_POST['attachment_path']) : '';
@@ -64,24 +64,16 @@ class PCR_Messaging_Ajax_Controller extends PCR_Base_Ajax_Controller
             $custom_args = [
                 'sujet' => $custom_subject,
                 'corps' => $custom_body,
-                'attachment_path' => $attachment_path
+                // NOUVEAU : Récupération des multiples documents cochés
+                'document_ids' => isset($_POST['document_ids']) ? explode(',', sanitize_text_field($_POST['document_ids'])) : []
             ];
         } elseif (empty($template_id)) {
             wp_send_json_error(['message' => 'Veuillez choisir un modèle ou écrire un message.']);
         }
 
-        // Gestion des pièces jointes
+        // Gestion des pièces jointes uploadées manuellement (non générées)
         $attachments = [];
         $temp_files = []; // Pour nettoyer les fichiers temporaires après envoi
-
-        // 1. Pièce jointe système (Fichier existant OU Code natif)
-        if (!empty($attachment_path)) {
-            if (file_exists($attachment_path)) {
-                $attachments[] = $attachment_path;
-            } elseif (strpos($attachment_path, 'native_') === 0 || strpos($attachment_path, 'template_') === 0) {
-                $attachments[] = $attachment_path;
-            }
-        }
 
         // 2. Pièce jointe uploadée par l'utilisateur
         if (!empty($_FILES['file_upload']) && $_FILES['file_upload']['error'] === UPLOAD_ERR_OK) {

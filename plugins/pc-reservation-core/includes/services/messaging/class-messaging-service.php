@@ -139,7 +139,13 @@ class PCR_Messaging_Service
 
         // 5. PIÈCES JOINTES
         $attachments = [];
-        if (!empty($attachment_pdf_id) && class_exists('PCR_Documents')) {
+
+        // --- NOUVEAU MOTEUR DE DOCUMENTS (Vue 3) ---
+        $doc_service_exists = class_exists('PCR_Document_Service');
+
+        // A. Documents attachés depuis un Template d'email automatique
+        if (!empty($attachment_pdf_id) && $doc_service_exists) {
+            $doc_service = PCR_Document_Service::get_instance();
             if (is_string($attachment_pdf_id) && strpos($attachment_pdf_id, 'native_') === 0) {
                 $native_mappings = [
                     'native_devis' => 'devis',
@@ -150,12 +156,12 @@ class PCR_Messaging_Service
                 ];
                 $doc_type = $native_mappings[$attachment_pdf_id] ?? null;
                 if ($doc_type) {
-                    $gen = PCR_Documents::generate_native($doc_type, $resa->id);
+                    $gen = $doc_service->generate_native($doc_type, $resa->id);
                     if ($gen['success'] && !empty($gen['path'])) $attachments[] = $gen['path'];
                 }
             } elseif (is_string($attachment_pdf_id) && strpos($attachment_pdf_id, 'template_') === 0) {
                 $template_id = (int) str_replace('template_', '', $attachment_pdf_id);
-                $gen = PCR_Documents::generate($template_id, $resa->id, true);
+                $gen = $doc_service->generate($template_id, $resa->id, true);
                 if ($gen['success'] && !empty($gen['url'])) {
                     $upload_dir = wp_upload_dir();
                     $local_path = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $gen['url']);
@@ -164,14 +170,23 @@ class PCR_Messaging_Service
             }
         }
 
-        if (!empty($custom_args['attachment_path'])) {
-            $path = $custom_args['attachment_path'];
-            if (strpos($path, 'native_') === 0 && class_exists('PCR_Documents')) {
-                $doc_type = str_replace('native_', '', $path);
-                $gen = PCR_Documents::generate_native($doc_type, $resa->id);
-                if ($gen['success'] && !empty($gen['path'])) $attachments[] = $gen['path'];
-            } elseif (file_exists($path)) {
-                $attachments[] = $path;
+        // B. Documents multiples attachés manuellement depuis l'interface Vue 3
+        if (!empty($custom_args['document_ids']) && is_array($custom_args['document_ids']) && $doc_service_exists) {
+            $doc_service = PCR_Document_Service::get_instance();
+            foreach ($custom_args['document_ids'] as $doc_id) {
+                if (strpos($doc_id, 'native_') === 0) {
+                    $doc_type = str_replace('native_', '', $doc_id);
+                    $gen = $doc_service->generate_native($doc_type, $resa->id);
+                    if ($gen['success'] && !empty($gen['path'])) $attachments[] = $gen['path'];
+                } elseif (strpos($doc_id, 'template_') === 0) {
+                    $tpl_id = (int) str_replace('template_', '', $doc_id);
+                    $gen = $doc_service->generate($tpl_id, $resa->id, false); // Utilise le cache PDF si existant
+                    if ($gen['success'] && !empty($gen['url'])) {
+                        $upload_dir = wp_upload_dir();
+                        $local_path = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $gen['url']);
+                        if (file_exists($local_path)) $attachments[] = $local_path;
+                    }
+                }
             }
         }
 
