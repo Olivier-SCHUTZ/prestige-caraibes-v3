@@ -2,8 +2,8 @@ import { createApp } from "vue";
 import { createPinia } from "pinia";
 import CalendarApp from "./CalendarApp.vue";
 
-// On cherche le conteneur défini dans le shortcode legacy
-const mountEl = document.querySelector("[data-pc-calendar-vue]");
+// On cherche le nouveau conteneur défini dans app-shell.php
+const mountEl = document.querySelector("#pc-calendar-v2-app");
 
 if (mountEl) {
   const pinia = createPinia();

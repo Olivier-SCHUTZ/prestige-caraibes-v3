@@ -14,20 +14,16 @@ pc-reservation-core/
 ├── package.json
 ├── package-lock.json
 ├── vite.config.js
-├── @architecture.md
 ├── @architecture-refactoring.md
 ├── @structure.md
-├── ANALYSE-SYSTEME-CALENDRIER.md
 ├── db/
 ├── assets/
-├── dist/
 ├── includes/
 ├── shortcodes/
 ├── src/
 ├── templates/
-├── fichier-md/
-├── vendor/
-└── node_modules/
+├── vendor/ (généré)
+└── node_modules/ (généré)
 ```
 
 ---
@@ -47,19 +43,10 @@ db/
 assets/
 ├── css/
 │   ├── dashboard-base.css
-│   ├── dashboard-experience.css.off
-│   ├── dashboard-forms.css
-│   ├── dashboard-housing.css.off
-│   ├── dashboard-messaging.css
-│   ├── dashboard-modals.css
-│   ├── dashboard-rates.css.off
 │   ├── dashboard-style.css
 │   └── pc-calendar.css
 └── js/
     ├── dashboard-core.js
-    ├── dashboard-experience.js.off
-    ├── dashboard-housing.js.off
-    ├── dashboard-rates.js.off
     ├── pc-calendar.js
     └── modules/
         ├── booking-form.js
@@ -68,21 +55,6 @@ assets/
         ├── payments.js
         ├── pricing-engine.js
         └── utils.js
-```
-
----
-
-## ⚡ Build frontend (Vite)
-
-```text
-dist/
-├── .vite/manifest.json
-└── assets/
-    ├── dashboard-*.js / dashboard-*.css
-    ├── housing-*.js / housing-*.css
-    ├── experience-*.js / experience-*.css
-    ├── calendar-*.js / calendar-*.css
-    └── WpMediaUploader-*.js / WpMediaUploader-*.css
 ```
 
 ---
@@ -101,7 +73,6 @@ includes/
 ├── class-ical-export.php
 ├── class-messaging.php
 ├── class-payment.php
-├── class-rate-manager.php.off
 ├── class-reservation.php
 ├── class-settings.php
 ├── class-vite-loader.php
@@ -168,6 +139,7 @@ includes/services/
 ├── housing/
 │   ├── class-housing-config.php
 │   ├── class-housing-formatter.php
+│   ├── class-housing-pricing-calculator.php
 │   ├── class-housing-repository.php
 │   └── class-housing-service.php
 ├── messaging/
@@ -225,8 +197,13 @@ src/components/
 │   └── WpMediaUploader.vue
 ├── dashboard/
 │   ├── BookingForm.vue
+│   ├── MessageCenter.vue
 │   ├── ReservationList.vue
 │   └── ReservationModal.vue
+├── documents/
+│   ├── DocumentsList.vue
+│   ├── DocumentsManager.vue
+│   └── DocumentTemplateSelector.vue
 ├── experience/
 │   ├── ExperienceTabFaq.vue
 │   ├── ExperienceTabGalerie.vue
@@ -249,6 +226,9 @@ src/components/
 │   ├── TabImages.vue
 │   ├── TabLocation.vue
 │   └── TabRates.vue
+├── payment/
+│   ├── CautionActions.vue
+│   └── PaymentsList.vue
 ├── ExperienceModal.vue
 ├── HousingModal.vue
 └── StatCard.vue
@@ -260,14 +240,17 @@ src/components/
 src/stores/
 ├── calendar-store.js
 ├── dashboard-store.js
+├── document-store.js
 ├── experience-store.js
 ├── housing-modal-store.js
 ├── housing-store.js
 ├── messaging-store.js
+├── payments-store.js
 └── reservations-store.js
 
 src/services/
 ├── api-client.js
+├── document-api.js
 ├── messaging-api.js
 └── reservation-api.js
 ```
@@ -287,9 +270,7 @@ templates/
 
 shortcodes/
 ├── shortcode-calendar.php
-├── shortcode-dashboard.php
-├── shortcode-experience.php.off
-└── shortcode-housing.php.off
+└── shortcode-dashboard.php
 ```
 
 ---

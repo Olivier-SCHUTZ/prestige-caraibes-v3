@@ -3,8 +3,8 @@ import { createPinia } from "pinia";
 import App from "./App.vue";
 
 const initDashboard = () => {
-  // Assure-toi que cet ID correspond à la div générée par ton shortcode actuel
-  const container = document.getElementById("pc-reservation-dashboard-app");
+  // On cible le nouveau conteneur défini directement dans app-shell.php
+  const container = document.getElementById("pc-dashboard-v2-app");
 
   if (container) {
     const pinia = createPinia();

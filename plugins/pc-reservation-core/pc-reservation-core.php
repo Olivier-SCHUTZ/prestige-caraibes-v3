@@ -32,8 +32,6 @@ require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-service
 require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-pricing-calculator.php';
 // require_once PC_RES_CORE_PATH . 'includes/class-rate-manager.php';
 require_once PC_RES_CORE_PATH . 'includes/acf-fields.php';
-require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-calendar.php';
-require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-dashboard.php';
 // require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-housing.php';
 
 // Nouveaux Contrôleurs AJAX (Refactoring v2)
@@ -354,7 +352,7 @@ add_filter('template_include', function ($template) {
 }, 99); // <--- LE 99 EST CRUCIAL POUR PASSER APRÈS LE THÈME
 
 /**
- * 5. Injection des Scripts
+ * 5. Injection des Scripts (Architecture 100% Vue V2)
  */
 add_action('wp_enqueue_scripts', function () {
     // On ne fait rien si ce n'est pas notre page Dashboard
@@ -362,29 +360,35 @@ add_action('wp_enqueue_scripts', function () {
         return;
     }
 
-    // 🛡️ NETTOYAGE : On retire Elementor et autres scripts parasites qui causent des erreurs
+    // 🛡️ NETTOYAGE : On retire Elementor et autres scripts parasites
     wp_dequeue_script('elementor-frontend');
     wp_dequeue_script('elementor-pro-frontend');
     wp_dequeue_style('elementor-frontend');
     wp_dequeue_style('elementor-pro-frontend');
-    // Si tu as d'autres plugins qui injectent du JS (ex: Pixel, Chatbot...), retire-les ici aussi
 
-    // A. Chargement des assets CALENDRIER
-    if (function_exists('pc_dashboard_calendar_enqueue_assets')) {
-        pc_dashboard_calendar_enqueue_assets();
-    }
-
-    // B. [DÉSACTIVÉ] Ancien chargement legacy dashboard (cause double affichage)
-    // if (function_exists('pc_resa_dashboard_shortcode')) {
-    //     ob_start();
-    //     pc_resa_dashboard_shortcode([]);
-    //     ob_end_clean();
-    // }
-
-    // ✨ C. Chargement des assets VUE.JS V2 (Nouveau système - Pattern Strangler)
     if (class_exists('PCR_Vite_Loader')) {
+
+        // 1. Création du pont global UNIQUE pour transmettre les variables PHP à Vue
+        wp_register_script('pc-vue-global-bridge', false);
+        wp_enqueue_script('pc-vue-global-bridge');
+
+        // A. Variables pour Dashboard, Housing et Experience (api-client.js)
+        wp_localize_script('pc-vue-global-bridge', 'pcReservationVars', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            // Le nonce principal attendu par tes contrôleurs AJAX (ex: pc_resa_manual_create)
+            'nonce'    => wp_create_nonce('pc_resa_manual_create'),
+            'security' => wp_create_nonce('pc_resa_manual_create'),
+        ));
+
+        // B. Variables spécifiques pour le Calendrier (Rétrocompatibilité)
+        wp_localize_script('pc-vue-global-bridge', 'pcCalendarData', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce'   => wp_create_nonce('pc_dashboard_calendar'),
+        ));
+
+        // 3. Chargement des modules Vue V2
         PCR_Vite_Loader::enqueue_entry('src/modules/dashboard/main.js');
-        // NOUVEAU : Module Expérience
+        PCR_Vite_Loader::enqueue_entry('src/modules/calendar/main.js');
         PCR_Vite_Loader::enqueue_entry('src/modules/experience/main.js');
         PCR_Vite_Loader::enqueue_entry('src/modules/housing/main.js');
     }
