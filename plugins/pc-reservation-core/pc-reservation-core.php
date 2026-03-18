@@ -98,6 +98,11 @@ if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
     require_once PC_RES_CORE_PATH . 'includes/controller-forms.php';
 }
 
+// 🧹 SCRIPT DE NETTOYAGE POST-REFACTORING (désactivé pour éviter erreur fatale)
+// if (is_admin() && file_exists(PC_RES_CORE_PATH . 'cleanup-legacy-script.php')) {
+//     require_once PC_RES_CORE_PATH . 'cleanup-legacy-script.php';
+// }
+
 // Activation : création / mise à jour des tables
 register_activation_hook(__FILE__, function () {
     if (class_exists('PCR_Reservation_Schema')) {
@@ -369,12 +374,12 @@ add_action('wp_enqueue_scripts', function () {
         pc_dashboard_calendar_enqueue_assets();
     }
 
-    // B. Chargement des assets DASHBOARD
-    if (function_exists('pc_resa_dashboard_shortcode')) {
-        ob_start();
-        pc_resa_dashboard_shortcode([]);
-        ob_end_clean();
-    }
+    // B. [DÉSACTIVÉ] Ancien chargement legacy dashboard (cause double affichage)
+    // if (function_exists('pc_resa_dashboard_shortcode')) {
+    //     ob_start();
+    //     pc_resa_dashboard_shortcode([]);
+    //     ob_end_clean();
+    // }
 
     // ✨ C. Chargement des assets VUE.JS V2 (Nouveau système - Pattern Strangler)
     if (class_exists('PCR_Vite_Loader')) {
