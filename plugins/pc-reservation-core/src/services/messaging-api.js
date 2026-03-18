@@ -15,20 +15,21 @@ export default {
    * Envoie un nouveau message (gère aussi les templates et pièces jointes)
    */
   sendMessage(payload) {
-    // payload contient reservation_id, template_id, custom_subject, custom_body, etc.
-    return apiClient.post(
-      "",
-      {
-        action: "pc_send_message",
-        ...payload,
+    // Transformation dynamique en FormData pour supporter l'upload de fichiers vers wp_ajax
+    const formData = new FormData();
+    formData.append("action", "pc_send_message");
+
+    Object.keys(payload).forEach((key) => {
+      if (payload[key] !== null && payload[key] !== undefined) {
+        formData.append(key, payload[key]);
+      }
+    });
+
+    return apiClient.post("", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
       },
-      {
-        // Configuration spécifique si on envoie des fichiers (FormData) plus tard
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      },
-    );
+    });
   },
 
   /**
@@ -48,6 +49,28 @@ export default {
     return apiClient.post("", {
       action: "pc_get_quick_replies",
       reservation_id: reservationId,
+    });
+  },
+
+  /**
+   * NOUVEAU : Récupère le résumé des conversations pour le dashboard principal
+   */
+  getConversationsDashboard() {
+    return apiClient.post("", {
+      action: "pc_get_conversations_dashboard",
+    });
+  },
+
+  /**
+   * NOUVEAU : Recherche avancée dans les messages
+   */
+  searchMessages(query, filters = {}) {
+    return apiClient.post("", {
+      action: "pc_search_messages",
+      query: query,
+      channel: filters.channel || "",
+      date_from: filters.date_from || "",
+      date_to: filters.date_to || "",
     });
   },
 };

@@ -55,15 +55,15 @@ class PCR_Voucher_Renderer extends PCR_Base_Document_Renderer
                 <table style="margin-top:15px;">
                     <tr>
                         <td width="30%"><strong>Client :</strong></td>
-                        <td><?php echo $resa->prenom . ' ' . strtoupper($resa->nom); ?></td>
+                        <td><?php echo $this->escapeForPdf(($resa->prenom ?? '') . ' ' . strtoupper($resa->nom ?? '')); ?></td>
                     </tr>
                     <tr>
                         <td><strong>Activité / Logement :</strong></td>
-                        <td><?php echo get_the_title($resa->item_id); ?></td>
+                        <td><?php echo $this->escapeForPdf(get_the_title($resa->item_id ?? 0)); ?></td>
                     </tr>
                     <tr>
                         <td><strong>Participants :</strong></td>
-                        <td><?php echo $resa->adultes; ?> Adultes, <?php echo $resa->enfants; ?> Enfants</td>
+                        <td><?php echo $resa->adultes ?? 0; ?> Adultes, <?php echo $resa->enfants ?? 0; ?> Enfants</td>
                     </tr>
                 </table>
             </div>
@@ -86,7 +86,7 @@ class PCR_Voucher_Renderer extends PCR_Base_Document_Renderer
                 </table>
                 <hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">
                 <strong>Lieu de rendez-vous / Adresse :</strong><br>
-                <?php echo nl2br($adresse_lieu); ?>
+                <?php echo nl2br($this->escapeForPdf($adresse_lieu ?? '')); ?>
             </div>
 
             <div class="text-center" style="margin-top:50px;">

@@ -9,6 +9,34 @@ if (!defined('ABSPATH')) {
 class PCR_Document_Ajax_Controller extends PCR_Base_Ajax_Controller
 {
     /**
+     * Valide de manière stricte le chemin d'un document pour éviter le Path Traversal.
+     */
+    private static function validate_secure_path($filename, $reservation_id)
+    {
+        if (strpos($filename, '..') !== false) {
+            return false;
+        }
+
+        $upload_dir = wp_upload_dir();
+        $expected_dir = $upload_dir['basedir'] . '/pc-reservation/documents/' . $reservation_id;
+        $file_path = $expected_dir . '/' . basename($filename);
+
+        // realpath() résout les liens symboliques et retourne false si le fichier n'existe pas
+        $real_path = realpath($file_path);
+
+        // Standardisation des séparateurs de dossiers pour compatibilité Windows/Linux
+        $real_path = wp_normalize_path($real_path);
+        $expected_dir = wp_normalize_path($expected_dir);
+
+        // On vérifie que le fichier existe ET qu'il est bien dans le dossier attendu
+        if (!$real_path || strpos($real_path, $expected_dir) !== 0) {
+            return false;
+        }
+
+        return $real_path;
+    }
+
+    /**
      * Récupère la liste des documents disponibles (Natifs + Personnalisés).
      */
     public static function ajax_get_documents_templates()
@@ -272,11 +300,17 @@ class PCR_Document_Ajax_Controller extends PCR_Base_Ajax_Controller
                     $file_size_formatted = round($file_size / (1024 * 1024), 1) . ' MB';
                 }
 
+                // Construction de l'URL sécurisée au lieu de l'URL directe du dossier uploads
+                $nonce = wp_create_nonce('pc_document_download');
+                $secure_url = admin_url('admin-ajax.php') . '?action=pc_secure_download&filename=' . urlencode($filename) . '&reservation_id=' . $reservation_id . '&nonce=' . $nonce;
+
                 $files[] = [
+                    'id' => $filename, // Utilisation du nom comme ID temporaire
                     'name' => $display_name,
                     'filename' => $filename,
                     'path' => $file_path,
-                    'url' => $upload_dir['baseurl'] . '/pc-reservation/documents/' . $reservation_id . '/' . $filename,
+                    'url' => $secure_url, // L'ancienne propriété 'url' devient sécurisée
+                    'secure_download_url' => $secure_url,
                     'type' => $doc_type,
                     'icon' => $icon,
                     'size' => $file_size,
@@ -315,4 +349,90 @@ class PCR_Document_Ajax_Controller extends PCR_Base_Ajax_Controller
                 : 'Aucun document généré pour cette réservation.'
         ]);
     }
+
+    /**
+     * (NOUVEAU) Télécharge un document de manière sécurisée via PHP Stream.
+     * Accessible en GET (sans vérifier PCR_Base_Ajax_Controller) car c'est un lien direct cliqué,
+     * MAIS on vérifie un nonce spécifique.
+     */
+    public static function ajax_secure_download()
+    {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'pc_document_download')) {
+            wp_die('Lien expiré ou accès non autorisé.', 'Accès refusé', ['response' => 403]);
+        }
+
+        if (!current_user_can('edit_posts')) {
+            wp_die('Privilèges insuffisants.', 'Accès refusé', ['response' => 403]);
+        }
+
+        $reservation_id = isset($_GET['reservation_id']) ? (int) $_GET['reservation_id'] : 0;
+        $filename = isset($_GET['filename']) ? sanitize_file_name($_GET['filename']) : '';
+
+        if (!$reservation_id || empty($filename)) {
+            wp_die('Paramètres manquants.', 'Erreur', ['response' => 400]);
+        }
+
+        $real_path = self::validate_secure_path($filename, $reservation_id);
+
+        if (!$real_path || !file_exists($real_path)) {
+            wp_die('Fichier introuvable ou accès interdit sur le serveur.', 'Erreur 404', ['response' => 404]);
+        }
+
+        // Audit Log
+        error_log(sprintf('[PC-DOCUMENTS] Download - User:%d - Resa:%d - File:%s', get_current_user_id(), $reservation_id, $filename));
+
+        // Nettoyage agressif du buffer pour éviter toute corruption (caractères invisibles)
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Gestion du mode de disposition
+        $disposition = (isset($_GET['download']) && $_GET['download'] === '1') ? 'attachment' : 'inline';
+
+        // En-têtes complets pour forcer le lecteur PDF natif du navigateur
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: ' . $disposition . '; filename="' . basename($real_path) . '"');
+        header('Content-Transfer-Encoding: binary');
+        header('Content-Length: ' . filesize($real_path));
+        header('Accept-Ranges: bytes'); // Indispensable pour certains navigateurs (Chrome/Safari)
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: public');
+
+        flush();
+        readfile($real_path);
+        exit;
+    }
+
+    /**
+     * (NOUVEAU) Supprime physiquement un document généré.
+     */
+    public static function ajax_delete_document()
+    {
+        // Sécurité centralisée
+        parent::verify_access('pc_resa_manual_create', 'nonce');
+
+        $reservation_id = isset($_POST['reservation_id']) ? (int) $_POST['reservation_id'] : 0;
+        $filename = isset($_POST['document_id']) ? sanitize_file_name($_POST['document_id']) : '';
+
+        if (!$reservation_id || empty($filename)) {
+            wp_send_json_error(['message' => 'Paramètres invalides.']);
+        }
+
+        $real_path = self::validate_secure_path($filename, $reservation_id);
+
+        if (!$real_path) {
+            wp_send_json_error(['message' => 'Fichier introuvable.']);
+        }
+
+        if (unlink($real_path)) {
+            // Audit Log
+            error_log(sprintf('[PC-DOCUMENTS] Delete - User:%d - Resa:%d - File:%s', get_current_user_id(), $reservation_id, $filename));
+            wp_send_json_success(['message' => 'Document supprimé avec succès.']);
+        } else {
+            wp_send_json_error(['message' => 'Impossible de supprimer le fichier.']);
+        }
+    }
 }
+
+// FORCE WordPress à écouter cette action spécifique même si le Routeur AJAX global l'ignore
+add_action('wp_ajax_pc_secure_download', ['PCR_Document_Ajax_Controller', 'ajax_secure_download']);

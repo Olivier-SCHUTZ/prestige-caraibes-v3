@@ -293,21 +293,18 @@
             </div>
 
             <div v-if="activeTab === 'documents'" class="pcr-tab-content">
-              <div class="pcr-card-section text-center p-30">
-                <h3>Génération PDF</h3>
-                <p class="text-muted">
-                  Ce module sera migré lors de la Phase 4 !
-                </p>
-              </div>
+              <DocumentsManager
+                v-if="store.selectedReservation?.id"
+                :reservationId="store.selectedReservation.id"
+                :reservationType="store.selectedReservation.type"
+              />
             </div>
 
             <div v-if="activeTab === 'messages'" class="pcr-tab-content">
-              <div class="pcr-card-section text-center p-30">
-                <h3>Channel Manager</h3>
-                <p class="text-muted">
-                  Ce module sera migré lors de la Phase 3 !
-                </p>
-              </div>
+              <MessageCenter
+                v-if="store.selectedReservation?.id"
+                :reservationId="store.selectedReservation.id"
+              />
             </div>
           </div>
         </template>
@@ -361,6 +358,8 @@ import { ref, onMounted, onUnmounted } from "vue";
 import { useReservationsStore } from "../../stores/reservations-store";
 import PaymentsList from "../payment/PaymentsList.vue";
 import CautionActions from "../payment/CautionActions.vue";
+import MessageCenter from "@/components/dashboard/MessageCenter.vue";
+import DocumentsManager from "@/components/documents/DocumentsManager.vue";
 
 const store = useReservationsStore();
 const activeTab = ref("details");

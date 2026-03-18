@@ -63,7 +63,8 @@ class PCR_Document_Financial_Calculator
         ];
 
         foreach ($lines as $line) {
-            $label_raw = $line['label'];
+            // Sécurisation si la clé 'label' est manquante ou mal formatée
+            $label_raw = isset($line['label']) ? (string) $line['label'] : (isset($line['description']) ? (string) $line['description'] : 'Ligne sans titre');
 
             // --- 1. NETTOYAGE ROBUSTE DU PRIX ---
             // On récupère la valeur brute

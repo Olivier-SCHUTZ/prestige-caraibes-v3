@@ -352,7 +352,13 @@ class PCR_Document_Service
         $dompdf->loadHtml($html_content);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
+
+        // Nettoyage du buffer pour éviter la corruption du PDF streamé
+        if (ob_get_length()) {
+            ob_clean();
+        }
+
         $dompdf->stream("apercu-document.pdf", ["Attachment" => 0]);
-        exit;
+        wp_die(); // Utilisation de wp_die() au lieu de exit; pour une terminaison propre sous WordPress
     }
 }

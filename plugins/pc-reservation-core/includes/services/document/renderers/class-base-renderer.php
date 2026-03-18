@@ -126,4 +126,20 @@ abstract class PCR_Base_Document_Renderer
 
         return 'data:' . $mime . ';base64,' . base64_encode($data);
     }
+
+    /**
+     * Échappe les données dynamiques avant de les injecter dans le HTML pour DomPDF.
+     * Empêche les caractères spéciaux (ex: &) ou le code malveillant de casser le rendu PDF.
+     *
+     * @param string|null $data La chaîne à sécuriser.
+     * @return string           La chaîne sécurisée.
+     */
+    protected function escapeForPdf($data)
+    {
+        if (empty($data)) {
+            return '';
+        }
+        // ENT_QUOTES | ENT_HTML5 convertit les guillemets et utilise les entités HTML5
+        return htmlspecialchars((string) $data, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
 }

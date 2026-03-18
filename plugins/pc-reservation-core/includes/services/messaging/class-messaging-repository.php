@@ -228,4 +228,93 @@ class PCR_Messaging_Repository
 
         return $stats;
     }
+
+    /**
+     * NOUVEAU : Récupère les conversations récentes avec statistiques (pour Dashboard Vue 3).
+     *
+     * @param int $limit Nombre de conversations à retourner
+     * @return array
+     */
+    public function get_recent_conversations_with_stats($limit = 50)
+    {
+        global $wpdb;
+
+        $sql = "
+            SELECT 
+                m.reservation_id,
+                m.conversation_id,
+                r.prenom,
+                r.nom,
+                r.email,
+                r.statut_reservation,
+                MAX(m.date_creation) as last_activity,
+                COUNT(m.id) as total_messages,
+                SUM(CASE WHEN m.direction = 'entrant' AND m.read_at IS NULL THEN 1 ELSE 0 END) as unread_count
+            FROM {$this->table_messages} m
+            LEFT JOIN {$this->table_reservations} r ON m.reservation_id = r.id
+            GROUP BY m.reservation_id
+            ORDER BY last_activity DESC
+            LIMIT %d
+        ";
+
+        return $wpdb->get_results($wpdb->prepare($sql, (int) $limit), ARRAY_A);
+    }
+
+    /**
+     * NOUVEAU : Recherche avancée "Full Text" dans les messages.
+     *
+     * @param string $query Texte à rechercher
+     * @param int|null $reservation_id Filtrer par réservation
+     * @param array $filters Filtres supplémentaires (channel, dates)
+     * @return array
+     */
+    public function search_full_text($query, $reservation_id = null, $filters = [])
+    {
+        global $wpdb;
+
+        $sql = "SELECT m.*, r.prenom, r.nom 
+                FROM {$this->table_messages} m
+                LEFT JOIN {$this->table_reservations} r ON m.reservation_id = r.id
+                WHERE 1=1";
+        $params = [];
+
+        // Recherche textuelle
+        if (!empty($query)) {
+            $sql .= " AND (m.sujet LIKE %s OR m.corps LIKE %s)";
+            $like = '%' . $wpdb->esc_like($query) . '%';
+            $params[] = $like;
+            $params[] = $like;
+        }
+
+        // Filtre réservation
+        if (!empty($reservation_id)) {
+            $sql .= " AND m.reservation_id = %d";
+            $params[] = (int) $reservation_id;
+        }
+
+        // Filtre canal
+        if (!empty($filters['channel'])) {
+            $sql .= " AND m.channel_source = %s";
+            $params[] = sanitize_text_field($filters['channel']);
+        }
+
+        // Filtres dates
+        if (!empty($filters['date_from'])) {
+            $sql .= " AND DATE(m.date_creation) >= %s";
+            $params[] = sanitize_text_field($filters['date_from']);
+        }
+        if (!empty($filters['date_to'])) {
+            $sql .= " AND DATE(m.date_creation) <= %s";
+            $params[] = sanitize_text_field($filters['date_to']);
+        }
+
+        $sql .= " ORDER BY m.date_creation DESC LIMIT 100";
+
+        // Préparation de la requête si on a des paramètres
+        if (!empty($params)) {
+            $sql = $wpdb->prepare($sql, $params);
+        }
+
+        return $wpdb->get_results($sql, ARRAY_A);
+    }
 }

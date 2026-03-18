@@ -216,10 +216,10 @@ class PCR_Contract_Renderer extends PCR_Base_Document_Renderer
                 <tr>
                     <td width="50%" class="party-box" valign="top">
                         <span class="party-title">LE PRENEUR (LOCATAIRE)</span>
-                        <strong><?php echo $resa->prenom . ' ' . strtoupper($resa->nom); ?></strong><br>
-                        Email : <?php echo $resa->email; ?><br>
-                        Tél : <?php echo $resa->telephone; ?><br><br>
-                        Occupants : <?php echo $resa->adultes; ?> Adultes, <?php echo $resa->enfants; ?> Enfants
+                        <strong><?php echo $this->escapeForPdf(($resa->prenom ?? '') . ' ' . strtoupper($resa->nom ?? '')); ?></strong><br>
+                        Email : <?php echo $this->escapeForPdf($resa->email ?? ''); ?><br>
+                        Tél : <?php echo $this->escapeForPdf($resa->telephone ?? ''); ?><br><br>
+                        Occupants : <?php echo $resa->adultes ?? 0; ?> Adultes, <?php echo $resa->enfants ?? 0; ?> Enfants
                     </td>
                     <td width="50%" class="party-box" valign="top">
                         <span class="party-title">LE BAILLEUR (POUR LE COMPTE DE)</span>
@@ -257,7 +257,7 @@ class PCR_Contract_Renderer extends PCR_Base_Document_Renderer
                 <tbody>
                     <?php foreach ($fin['lines'] as $line): ?>
                         <tr>
-                            <td><?php echo $line['description']; ?></td>
+                            <td><?php echo $this->escapeForPdf($line['description'] ?? ''); ?></td>
                             <td style="text-align:right;"><?php echo number_format($line['total_ttc'], 2, ',', ' '); ?> €</td>
                         </tr>
                     <?php endforeach; ?>

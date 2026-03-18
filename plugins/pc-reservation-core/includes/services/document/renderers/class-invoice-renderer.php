@@ -94,19 +94,19 @@ class PCR_Invoice_Renderer extends PCR_Base_Document_Renderer
                 </div>
                 <div class="addr-box client">
                     <div class="addr-title">Facturé à</div>
-                    <strong><?php echo $resa->prenom . ' ' . strtoupper($resa->nom); ?></strong><br>
-                    Email : <?php echo $resa->email; ?><br>
-                    Tél : <?php echo $resa->telephone; ?>
+                    <strong><?php echo $this->escapeForPdf(($resa->prenom ?? '') . ' ' . strtoupper($resa->nom ?? '')); ?></strong><br>
+                    Email : <?php echo $this->escapeForPdf($resa->email ?? ''); ?><br>
+                    Tél : <?php echo $this->escapeForPdf($resa->telephone ?? ''); ?>
                 </div>
                 <div class="clear"></div>
             </div>
 
             <div style="margin-bottom: 20px; padding: 10px; background: #eee; font-size: 11px;">
-                <strong>Objet :</strong> <?php echo ($resa->type === 'location') ? 'Séjour Location' : 'Expérience'; ?>
-                - <?php echo get_the_title($resa->item_id); ?><br>
-                <strong>Dates :</strong> Du <?php echo date_i18n('d/m/Y', strtotime($resa->date_arrivee)); ?>
-                au <?php echo date_i18n('d/m/Y', strtotime($resa->date_depart)); ?>
-                (<?php echo $resa->adultes; ?> Adultes, <?php echo $resa->enfants; ?> Enfants)
+                <strong>Objet :</strong> <?php echo (isset($resa->type) && $resa->type === 'location') ? 'Séjour Location' : 'Expérience'; ?>
+                - <?php echo $this->escapeForPdf(get_the_title($resa->item_id ?? 0)); ?><br>
+                <strong>Dates :</strong> Du <?php echo !empty($resa->date_arrivee) ? date_i18n('d/m/Y', strtotime($resa->date_arrivee)) : '-'; ?>
+                au <?php echo !empty($resa->date_depart) ? date_i18n('d/m/Y', strtotime($resa->date_depart)) : '-'; ?>
+                (<?php echo $resa->adultes ?? 0; ?> Adultes, <?php echo $resa->enfants ?? 0; ?> Enfants)
             </div>
 
             <table>
@@ -123,7 +123,7 @@ class PCR_Invoice_Renderer extends PCR_Base_Document_Renderer
                     <?php foreach ($fin['lines'] as $line): ?>
                         <tr>
                             <td>
-                                <?php echo $line['description']; ?>
+                                <?php echo $this->escapeForPdf($line['description']); ?>
                                 <?php if ($line['taux_tva'] == 0): ?><br><em style="font-size:9px;color:#666;">(Exonéré de TVA)</em><?php endif; ?>
                             </td>
                             <td class="col-num" style="text-align:center;"><?php echo $line['quantity']; ?></td>
@@ -277,14 +277,14 @@ class PCR_Invoice_Renderer extends PCR_Base_Document_Renderer
                 </div>
                 <div class="addr-box client">
                     <div class="addr-title">Avoir au profit de</div>
-                    <strong><?php echo $resa->prenom . ' ' . strtoupper($resa->nom); ?></strong>
+                    <strong><?php echo $this->escapeForPdf(($resa->prenom ?? '') . ' ' . strtoupper($resa->nom ?? '')); ?></strong>
                 </div>
                 <div class="clear"></div>
             </div>
 
             <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #cc0000; color: #cc0000; font-size: 11px; text-align: center;">
                 <strong>NOTE DE CRÉDIT</strong><br>
-                Ce document annule et remplace la facture n° <?php echo $ref_facture_origine; ?>.
+                Ce document annule et remplace la facture n° <?php echo $this->escapeForPdf($ref_facture_origine); ?>.
             </div>
 
             <table>
@@ -299,7 +299,7 @@ class PCR_Invoice_Renderer extends PCR_Base_Document_Renderer
                 <tbody>
                     <?php foreach ($fin['lines'] as $line): ?>
                         <tr>
-                            <td><?php echo $line['description']; ?></td>
+                            <td><?php echo $this->escapeForPdf($line['description']); ?></td>
                             <td class="col-num"><?php echo number_format($line['total_ht'], 2, ',', ' '); ?> €</td>
                             <td class="col-num"><?php echo ($line['taux_tva'] > 0) ? $line['taux_tva'] . '%' : '-'; ?></td>
                             <td class="col-num bold"><?php echo number_format($line['total_ttc'], 2, ',', ' '); ?> €</td>

@@ -16,8 +16,28 @@ class PCR_Messaging_Ajax_Controller extends PCR_Base_Ajax_Controller
         // 1. Sécurité centralisée
         parent::verify_access('pc_resa_manual_create', 'nonce');
 
-        // 2. Données
+        // --- NOUVEAU : Protection anti-flood (Rate Limiting) ---
         $reservation_id = isset($_POST['reservation_id']) ? (int) $_POST['reservation_id'] : 0;
+        $user_id = get_current_user_id();
+
+        if ($user_id && $reservation_id > 0) {
+            $cache_key = "msg_rate_limit_{$user_id}_{$reservation_id}";
+            $sent_count = wp_cache_get($cache_key);
+
+            if ($sent_count === false) {
+                $sent_count = 0;
+            }
+
+            if ($sent_count >= 10) { // Max 10 messages par 5 minutes
+                wp_send_json_error(['message' => 'Limite d\'envoi atteinte. Veuillez patienter 5 minutes.']);
+            }
+
+            wp_cache_set($cache_key, $sent_count + 1, '', 300); // Expiration dans 300s (5 minutes)
+        }
+        // --------------------------------------------------------
+
+        // 2. Données
+        $template_id    = isset($_POST['template_id']) ? sanitize_text_field($_POST['template_id']) : ''; // Peut être 'custom'
         $template_id    = isset($_POST['template_id']) ? sanitize_text_field($_POST['template_id']) : ''; // Peut être 'custom'
 
         // Données message libre
@@ -85,9 +105,25 @@ class PCR_Messaging_Ajax_Controller extends PCR_Base_Ajax_Controller
 
             $finfo = new finfo(FILEINFO_MIME_TYPE);
             $detected_type = $finfo->file($uploaded_file['tmp_name']);
+            $declared_type = $uploaded_file['type'];
 
-            if (!in_array($detected_type, $allowed_types)) {
-                wp_send_json_error(['message' => 'Type de fichier non supporté.']);
+            // 1. Double vérification MIME stricte
+            if (!in_array($detected_type, $allowed_types) || $detected_type !== $declared_type) {
+                wp_send_json_error(['message' => 'Type de fichier non supporté ou falsifié.']);
+            }
+
+            // 2. Scan antivirus (si ClamAV est disponible sur le serveur)
+            if (function_exists('clamdscan')) {
+                $scan_result = clamdscan($uploaded_file['tmp_name']);
+                if ($scan_result !== 'OK') {
+                    wp_send_json_error(['message' => 'Menace de sécurité détectée dans le fichier.']);
+                }
+            }
+
+            // 3. Vérification du contenu (headers malveillants)
+            $content_sample = file_get_contents($uploaded_file['tmp_name'], false, null, 0, 1024);
+            if (preg_match('/<\?php|<script|javascript:|data:/i', $content_sample)) {
+                wp_send_json_error(['message' => 'Contenu malveillant détecté. Envoi annulé.']);
             }
 
             // Déplacer le fichier vers un répertoire temporaire sécurisé
@@ -311,5 +347,46 @@ class PCR_Messaging_Ajax_Controller extends PCR_Base_Ajax_Controller
             'reservation_id' => $reservation_id,
             'variables_replaced' => $reservation_id > 0
         ]);
+    }
+
+    /**
+     * NOUVEAU : Dashboard des conversations
+     */
+    public static function ajax_get_conversations_dashboard()
+    {
+        parent::verify_access('pc_resa_manual_create', 'nonce');
+
+        if (!class_exists('PCR_Messaging_Service')) {
+            wp_send_json_error(['message' => 'Service Messagerie indisponible.']);
+        }
+
+        $service = PCR_Messaging_Service::get_instance();
+        $conversations = $service->get_conversations_summary(50);
+
+        wp_send_json_success($conversations);
+    }
+
+    /**
+     * NOUVEAU : Recherche avancée
+     */
+    public static function ajax_search_messages()
+    {
+        parent::verify_access('pc_resa_manual_create', 'nonce');
+
+        if (!class_exists('PCR_Messaging_Service')) {
+            wp_send_json_error(['message' => 'Service Messagerie indisponible.']);
+        }
+
+        $query = isset($_POST['query']) ? sanitize_text_field($_POST['query']) : '';
+        $filters = [
+            'channel' => isset($_POST['channel']) ? sanitize_text_field($_POST['channel']) : '',
+            'date_from' => isset($_POST['date_from']) ? sanitize_text_field($_POST['date_from']) : '',
+            'date_to' => isset($_POST['date_to']) ? sanitize_text_field($_POST['date_to']) : ''
+        ];
+
+        $service = PCR_Messaging_Service::get_instance();
+        $results = $service->search_messages($query, null, $filters);
+
+        wp_send_json_success($results);
     }
 }

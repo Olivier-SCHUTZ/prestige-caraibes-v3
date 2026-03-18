@@ -132,8 +132,8 @@ class PCR_Deposit_Renderer extends PCR_Base_Document_Renderer
                 </div>
                 <div class="addr-box client">
                     <div class="addr-title">Facturé à</div>
-                    <strong><?php echo $resa->prenom . ' ' . strtoupper($resa->nom); ?></strong><br>
-                    Email : <?php echo $resa->email; ?>
+                    <strong><?php echo $this->escapeForPdf(($resa->prenom ?? '') . ' ' . strtoupper($resa->nom ?? '')); ?></strong><br>
+                    Email : <?php echo $this->escapeForPdf($resa->email ?? ''); ?>
                 </div>
                 <div class="clear"></div>
             </div>
@@ -150,7 +150,7 @@ class PCR_Deposit_Renderer extends PCR_Base_Document_Renderer
                 <tbody>
                     <tr>
                         <td style="padding: 15px 10px;">
-                            <strong><?php echo $description_ligne; ?></strong><br>
+                            <strong><?php echo $this->escapeForPdf($description_ligne); ?></strong><br>
                             <em style="font-size: 10px; color: #666;">Conformément à vos conditions de réservation.</em>
                         </td>
                         <td class="col-num"><?php echo number_format($montant_acompte_ht, 2, ',', ' '); ?> €</td>

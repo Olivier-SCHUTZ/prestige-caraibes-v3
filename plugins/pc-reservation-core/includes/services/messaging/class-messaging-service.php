@@ -47,7 +47,16 @@ class PCR_Messaging_Service
                 return ['success' => false, 'message' => 'Sujet ou message manquant pour l\'envoi manuel.'];
             }
             $subject = sanitize_text_field($custom_args['sujet']);
-            $body    = wp_kses_post($custom_args['corps']);
+
+            // Échappement HTML renforcé et restrictif
+            $body = wp_kses($custom_args['corps'], [
+                'p'      => [],
+                'br'     => [],
+                'strong' => [],
+                'em'     => [],
+                'a'      => ['href' => [], 'title' => [], 'target' => []]
+            ]);
+
             $template_code = 'manuel_custom';
         } else {
             $template_post = null;
@@ -217,6 +226,22 @@ class PCR_Messaging_Service
     /**
      * HISTORIQUE & CONVERSATIONS
      */
+
+    public function get_conversation_cached($reservation_id)
+    {
+        $cache_key = "pcr_conversation_{$reservation_id}";
+        $conversation = wp_cache_get($cache_key);
+
+        if ($conversation === false) {
+            $conversation = $this->get_conversation($reservation_id);
+            if ($conversation['success']) {
+                wp_cache_set($cache_key, $conversation, '', 300); // Cache de 5 minutes
+            }
+        }
+
+        return $conversation;
+    }
+
     public function get_conversation($reservation_id)
     {
         $reservation_id = (int) $reservation_id;
@@ -321,6 +346,24 @@ class PCR_Messaging_Service
         if (!is_array($message_ids)) $message_ids = [(int) $message_ids];
         $updated = PCR_Messaging_Repository::get_instance()->mark_messages_read($message_ids);
         return ['success' => true, 'updated_count' => $updated];
+    }
+
+    /**
+     * NOUVEAU : Récupère le résumé des conversations pour le dashboard.
+     */
+    public function get_conversations_summary($limit = 50)
+    {
+        $repo = PCR_Messaging_Repository::get_instance();
+        return $repo->get_recent_conversations_with_stats($limit);
+    }
+
+    /**
+     * NOUVEAU : Recherche full-text dans l'historique.
+     */
+    public function search_messages($query, $reservation_id = null, $filters = [])
+    {
+        $repo = PCR_Messaging_Repository::get_instance();
+        return $repo->search_full_text($query, $reservation_id, $filters);
     }
 
     // --- Helpers Privés de Design ---

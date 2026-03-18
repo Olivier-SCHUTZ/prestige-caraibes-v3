@@ -40,11 +40,11 @@ class PCR_Custom_Renderer extends PCR_Base_Document_Renderer
         // 3. Définition des Variables
         $variables = [
             // Client
-            '{prenom_client}' => $resa->prenom,
-            '{nom_client}'    => strtoupper($resa->nom),
-            '{email_client}'  => $resa->email,
-            '{telephone}'     => $resa->telephone,
-            '{adresse_client}' => $adresse_client,
+            '{prenom_client}' => $this->escapeForPdf($resa->prenom ?? ''),
+            '{nom_client}'    => $this->escapeForPdf(strtoupper($resa->nom ?? '')),
+            '{email_client}'  => $this->escapeForPdf($resa->email ?? ''),
+            '{telephone}'     => $this->escapeForPdf($resa->telephone ?? ''),
+            '{adresse_client}' => $this->escapeForPdf($adresse_client),
 
             // Séjour
             '{date_arrivee}'  => date_i18n('d/m/Y', $ts_arr),
@@ -123,10 +123,10 @@ class PCR_Custom_Renderer extends PCR_Base_Document_Renderer
                 </div>
                 <div class="addr-box client">
                     <strong>À l'attention de :</strong><br>
-                    <?php echo $resa->prenom . ' ' . strtoupper($resa->nom); ?><br>
-                    <?php if (!empty($adresse_client) && $adresse_client !== "Adresse non renseignée") echo $adresse_client . '<br>'; ?>
-                    <?php echo $resa->email; ?><br>
-                    <?php echo $resa->telephone; ?>
+                    <?php echo $this->escapeForPdf(($resa->prenom ?? '') . ' ' . strtoupper($resa->nom ?? '')); ?><br>
+                    <?php if (!empty($adresse_client) && $adresse_client !== "Adresse non renseignée") echo $this->escapeForPdf($adresse_client) . '<br>'; ?>
+                    <?php echo $this->escapeForPdf($resa->email ?? ''); ?><br>
+                    <?php echo $this->escapeForPdf($resa->telephone ?? ''); ?>
                 </div>
                 <div class="clear"></div>
             </div>
