@@ -145,6 +145,24 @@ class PCR_Housing_Service
                 }
             }
 
+            // NOUVEAU SYSTÈME : Sauvegarde native des règles de paiement (Indépendant d'ACF)
+            if (isset($data['payment_rules']) && is_array($data['payment_rules'])) {
+                $sanitized_rules = [
+                    'mode_pay'       => sanitize_text_field($data['payment_rules']['mode_pay'] ?? 'acompte_plus_solde'),
+                    'deposit_type'   => sanitize_text_field($data['payment_rules']['deposit_type'] ?? 'pourcentage'),
+                    'deposit_value'  => (float) ($data['payment_rules']['deposit_value'] ?? 30),
+                    'delay_days'     => (int) ($data['payment_rules']['delay_days'] ?? 30),
+                    'caution_type'   => sanitize_text_field($data['payment_rules']['caution_type'] ?? 'aucune'),
+                    'caution_amount' => (float) ($data['payment_rules']['caution_amount'] ?? 0)
+                ];
+
+                // Sauvegarde magique en base de données de manière groupée (ultra rapide)
+                update_post_meta($post_id, '_pc_payment_rules', $sanitized_rules);
+
+                // On le retire du tableau $data pour ne pas perturber la boucle ACF juste en dessous
+                unset($data['payment_rules']);
+            }
+
             // 2. Mise à jour des champs ACF
             if (function_exists('update_field')) {
                 $updated_fields = 0;
@@ -173,7 +191,13 @@ class PCR_Housing_Service
                         $value = $formatter->process_image_field($value);
                     }
 
-                    $clean_value = $formatter->sanitize_field_value($clean_key, $value);
+                    // FIX : Protection vitale pour les tableaux (comme les cases à cocher de la taxe de séjour)
+                    if (is_array($value)) {
+                        $clean_value = array_map('sanitize_text_field', $value);
+                    } else {
+                        $clean_value = $formatter->sanitize_field_value($clean_key, $value);
+                    }
+
                     $update_key = $field_config['key'] ?? $field_config['meta_key'];
 
                     $result = update_field($update_key, $clean_value, $post_id);

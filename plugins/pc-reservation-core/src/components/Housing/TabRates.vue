@@ -196,11 +196,14 @@
       </div>
     </div>
 
-    <h4 class="pc-section-title">Règles de paiement</h4>
+    <h4 class="pc-section-title">Règles de paiement (Nouveau Système)</h4>
     <div class="pc-form-grid">
       <div class="pc-form-group">
         <label>Mode de paiement</label>
-        <select v-model="modalStore.formData.pc_pay_mode" class="pc-select">
+        <select
+          v-model="modalStore.formData.payment_rules.mode_pay"
+          class="pc-select"
+        >
           <option value="acompte_plus_solde">Acompte + Solde</option>
           <option value="totalite">Totalité à la réservation</option>
         </select>
@@ -208,12 +211,14 @@
 
       <div
         class="pc-form-group"
-        v-if="modalStore.formData.pc_pay_mode === 'acompte_plus_solde'"
+        v-if="
+          modalStore.formData.payment_rules.mode_pay === 'acompte_plus_solde'
+        "
       >
         <label>Délai paiement solde (jours avant arrivée)</label>
         <input
           type="number"
-          v-model="modalStore.formData.pc_balance_delay_days"
+          v-model="modalStore.formData.payment_rules.delay_days"
           class="pc-input"
           min="0"
         />
@@ -221,10 +226,15 @@
 
       <div
         class="pc-form-group"
-        v-if="modalStore.formData.pc_pay_mode === 'acompte_plus_solde'"
+        v-if="
+          modalStore.formData.payment_rules.mode_pay === 'acompte_plus_solde'
+        "
       >
         <label>Type d'acompte</label>
-        <select v-model="modalStore.formData.pc_deposit_type" class="pc-select">
+        <select
+          v-model="modalStore.formData.payment_rules.deposit_type"
+          class="pc-select"
+        >
           <option value="pourcentage">Pourcentage (%)</option>
           <option value="montant_fixe">Montant fixe (€)</option>
         </select>
@@ -232,12 +242,14 @@
 
       <div
         class="pc-form-group"
-        v-if="modalStore.formData.pc_pay_mode === 'acompte_plus_solde'"
+        v-if="
+          modalStore.formData.payment_rules.mode_pay === 'acompte_plus_solde'
+        "
       >
         <label>Valeur acompte</label>
         <input
           type="number"
-          v-model="modalStore.formData.pc_deposit_value"
+          v-model="modalStore.formData.payment_rules.deposit_value"
           class="pc-input"
           min="0"
         />
@@ -245,9 +257,12 @@
 
       <div class="pc-form-group">
         <label>Type de caution</label>
-        <select v-model="modalStore.formData.pc_caution_type" class="pc-select">
+        <select
+          v-model="modalStore.formData.payment_rules.caution_type"
+          class="pc-select"
+        >
           <option value="aucune">Aucune</option>
-          <option value="empreinte">Empreinte bancaire (Swikly)</option>
+          <option value="empreinte">Empreinte bancaire (Stripe)</option>
           <option value="virement">Virement</option>
           <option value="cheque">Chèque</option>
           <option value="especes">Espèces</option>
@@ -256,12 +271,12 @@
 
       <div
         class="pc-form-group"
-        v-if="modalStore.formData.pc_caution_type !== 'aucune'"
+        v-if="modalStore.formData.payment_rules.caution_type !== 'aucune'"
       >
         <label>Montant de la caution (€)</label>
         <input
           type="number"
-          v-model="modalStore.formData.pc_caution_amount"
+          v-model="modalStore.formData.payment_rules.caution_amount"
           class="pc-input"
           min="0"
           step="1"
@@ -321,12 +336,18 @@ if (!modalStore.formData.unite_de_prix)
   modalStore.formData.unite_de_prix = "par nuit";
 if (!modalStore.formData.mode_reservation)
   modalStore.formData.mode_reservation = "log_directe";
-if (!modalStore.formData.pc_pay_mode)
-  modalStore.formData.pc_pay_mode = "acompte_plus_solde";
-if (!modalStore.formData.pc_deposit_type)
-  modalStore.formData.pc_deposit_type = "pourcentage";
-if (!modalStore.formData.pc_caution_type)
-  modalStore.formData.pc_caution_type = "aucune";
+
+// NOUVEAU SYSTÈME : Initialisation de l'objet propre et migration automatique du legacy ACF
+if (!modalStore.formData.payment_rules) {
+  modalStore.formData.payment_rules = {
+    mode_pay: modalStore.formData.pc_pay_mode || "acompte_plus_solde",
+    delay_days: modalStore.formData.pc_balance_delay_days || 30,
+    deposit_type: modalStore.formData.pc_deposit_type || "pourcentage",
+    deposit_value: modalStore.formData.pc_deposit_value || 30,
+    caution_type: modalStore.formData.pc_caution_type || "aucune",
+    caution_amount: modalStore.formData.pc_caution_amount || 0,
+  };
+}
 
 // Conversion du booléen
 modalStore.formData.pc_promo_log =

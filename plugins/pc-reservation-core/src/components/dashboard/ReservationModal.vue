@@ -264,84 +264,31 @@
                 </div>
 
                 <div class="pcr-card-section">
-                  <h3>Échéancier de paiements</h3>
-                  <table
-                    v-if="
-                      store.reservationDetails.payments &&
-                      store.reservationDetails.payments.length > 0
-                    "
-                    class="pcr-table-minimal"
-                  >
-                    <thead>
-                      <tr>
-                        <th>Type</th>
-                        <th>Montant</th>
-                        <th>Échéance</th>
-                        <th>Statut</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr
-                        v-for="pay in store.reservationDetails.payments"
-                        :key="pay.id"
-                      >
-                        <td>{{ pay.type_paiement }}</td>
-                        <td>{{ formatPrice(pay.montant) }}</td>
-                        <td>{{ formatDate(pay.date_echeance) }}</td>
-                        <td>
-                          <span
-                            class="badge-status"
-                            :class="'status-pay-' + pay.statut"
-                            >{{ pay.statut.replace(/_/g, " ") }}</span
-                          >
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  <p v-else class="text-muted">Aucun paiement enregistré.</p>
+                  <PaymentsList
+                    :payments="store.reservationDetails.payments || []"
+                    :reservation-id="store.selectedReservation.id"
+                  />
                 </div>
               </div>
 
               <div
-                v-if="store.selectedReservation.type === 'location'"
-                class="pcr-card-section mt-15"
+                v-if="
+                  store.selectedReservation.type === 'location' &&
+                  store.reservationDetails.caution
+                "
+                class="pcr-card-section mt-15 p-0 border-0"
               >
-                <h3>🛡️ Caution (Empreinte Bancaire)</h3>
-                <div
+                <CautionActions
                   v-if="store.reservationDetails.caution.mode !== 'aucune'"
-                  class="caution-flex"
-                >
-                  <div>
-                    <strong>Montant :</strong>
-                    {{ formatPrice(store.reservationDetails.caution.montant)
-                    }}<br />
-                    <strong>Statut :</strong>
-                    <span
-                      class="badge-status"
-                      style="background: #f3f4f6; color: #4b5563"
-                      >{{
-                        store.reservationDetails.caution.statut.replace(
-                          /_/g,
-                          " ",
-                        )
-                      }}</span
-                    >
-                  </div>
-                  <div class="caution-actions">
-                    <button class="pc-btn-outline" style="color: blue">
-                      🔗 Lien caution
-                    </button>
-                    <button class="pc-btn-outline" style="color: green">
-                      Libérer
-                    </button>
-                    <button class="pc-btn-outline" style="color: red">
-                      Encaisser
-                    </button>
-                  </div>
+                  :caution="store.reservationDetails.caution"
+                  :reservation-id="store.selectedReservation.id"
+                />
+                <div v-else class="p-5 border rounded-lg bg-white shadow-sm">
+                  <h4 class="font-bold text-lg m-0 mb-2">🛡️ Caution</h4>
+                  <p class="text-muted m-0">
+                    Pas de gestion de caution pour cette réservation.
+                  </p>
                 </div>
-                <p v-else class="text-muted">
-                  Pas de gestion de caution pour cette réservation.
-                </p>
               </div>
             </div>
 
@@ -412,6 +359,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 import { useReservationsStore } from "../../stores/reservations-store";
+import PaymentsList from "../payment/PaymentsList.vue";
+import CautionActions from "../payment/CautionActions.vue";
 
 const store = useReservationsStore();
 const activeTab = ref("details");

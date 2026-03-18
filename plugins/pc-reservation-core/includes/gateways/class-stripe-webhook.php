@@ -24,11 +24,25 @@ class PCR_Stripe_Webhook
         error_log('[Stripe Webhook] Signal reçu...');
 
         $payload = @file_get_contents('php://input');
-        $event = json_decode($payload, true);
+        $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
+        $endpoint_secret = get_field('pc_stripe_webhook_secret', 'option');
 
-        if (!$event || !isset($event['type'])) {
+        if (empty($endpoint_secret)) {
+            error_log('[Stripe Webhook] ❌ Erreur : Webhook secret non configuré.');
+            status_header(500);
+            exit('Configuration error');
+        }
+
+        try {
+            $event = \Stripe\Webhook::constructEvent($payload, $sig_header, $endpoint_secret);
+        } catch (\UnexpectedValueException $e) {
+            error_log('[Stripe Webhook] ❌ Erreur : Payload invalide.');
             status_header(400);
             exit('Payload invalide');
+        } catch (\Stripe\Exception\SignatureVerificationException $e) {
+            error_log('[Stripe Webhook] 🚨 ALERTE SÉCURITÉ : Signature invalide - tentative de fraude ? IP: ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+            status_header(400);
+            exit('Signature invalide');
         }
 
         if ($event['type'] !== 'checkout.session.completed') {
@@ -110,6 +124,19 @@ class PCR_Stripe_Webhook
         }
 
         if ($payment) {
+            // Validation stricte du montant
+            $expected_amount = (float) $payment->montant;
+            if (abs($amount_received - $expected_amount) > 0.01) {
+                error_log(sprintf(
+                    '[SECURITY ALERT] Montant suspect pour le paiement ID %d - Attendu: %.2f€, Reçu: %.2f€, Session: %s',
+                    $payment->id,
+                    $expected_amount,
+                    $amount_received,
+                    $stripe_id
+                ));
+                return; // On stoppe le processus silencieusement pour ne pas valider la ligne
+            }
+
             $wpdb->update(
                 $table_pay,
                 [

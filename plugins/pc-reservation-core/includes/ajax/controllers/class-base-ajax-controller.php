@@ -16,19 +16,32 @@ abstract class PCR_Base_Ajax_Controller
      * @param string $nonce_action L'action du nonce à vérifier.
      * @param string $nonce_key    La clé dans $_REQUEST (souvent 'nonce' ou '_wpnonce').
      */
-    protected static function verify_access($nonce_action = 'pc_resa_manual_create', $nonce_key = 'nonce')
+    private static function security_log($message, $context = [])
+    {
+        error_log(sprintf(
+            '[PC-SECURITY] %s | IP: %s | User: %s | Context: %s',
+            $message,
+            $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+            get_current_user_id(),
+            json_encode($context)
+        ));
+    }
+
+    protected static function verify_access($nonce_action = 'pc_resa_manual_create', $nonce_key = 'nonce', $required_capability = 'manage_options')
     {
         $nonce = isset($_REQUEST[$nonce_key]) ? sanitize_text_field(wp_unslash($_REQUEST[$nonce_key])) : '';
 
         if (!$nonce || !wp_verify_nonce($nonce, $nonce_action)) {
-            self::send_error('Nonce invalide - veuillez actualiser la page.', 400);
+            self::security_log('Nonce invalide', ['action' => $nonce_action, 'request' => $_REQUEST]);
+            self::send_error('Token de sécurité invalide - veuillez actualiser la page.', 403);
         }
 
         if (!is_user_logged_in()) {
-            self::send_error('Veuillez vous connecter.', 403);
+            self::send_error('Veuillez vous connecter.', 401);
         }
 
-        if (!self::current_user_can_manage()) {
+        if (!current_user_can($required_capability)) {
+            self::security_log('Droits insuffisants', ['required' => $required_capability]);
             self::send_error('Action non autorisée.', 403);
         }
     }

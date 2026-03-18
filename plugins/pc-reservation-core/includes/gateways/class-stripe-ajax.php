@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 /**
  * Gère les requêtes AJAX pour Stripe (Génération de liens).
  */
-class PCR_Stripe_Ajax
+class PCR_Stripe_Ajax extends PCR_Base_Ajax_Controller
 {
     public static function init()
     {
@@ -23,12 +23,8 @@ class PCR_Stripe_Ajax
 
     public static function handle_get_link()
     {
-        // 1. Sécurité
-        check_ajax_referer('pc_resa_manual_create', 'nonce'); // On réutilise le nonce du dashboard
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Non autorisé.']);
-        }
+        // 1. Sécurité centralisée (Logs automatiques + Nonce + Droits)
+        parent::verify_access('pc_resa_manual_create', 'nonce', 'manage_options');
 
         // 2. Récupération des données
         $payment_id = isset($_POST['payment_id']) ? (int) $_POST['payment_id'] : 0;
@@ -83,11 +79,7 @@ class PCR_Stripe_Ajax
 
     public static function handle_get_caution_link()
     {
-        check_ajax_referer('pc_resa_manual_create', 'nonce');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Non autorisé.']);
-        }
+        parent::verify_access('pc_resa_manual_create', 'nonce', 'manage_options');
 
         $resa_id = isset($_POST['reservation_id']) ? (int) $_POST['reservation_id'] : 0;
         if ($resa_id <= 0) wp_send_json_error(['message' => 'ID manquant.']);
@@ -116,8 +108,7 @@ class PCR_Stripe_Ajax
 
     public static function handle_release_caution()
     {
-        check_ajax_referer('pc_resa_manual_create', 'nonce');
-        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Non autorisé.']);
+        parent::verify_access('pc_resa_manual_create', 'nonce', 'manage_options');
 
         $resa_id = (int) $_POST['reservation_id'];
         $ref     = sanitize_text_field($_POST['ref']);
@@ -144,8 +135,7 @@ class PCR_Stripe_Ajax
 
     public static function handle_capture_caution()
     {
-        check_ajax_referer('pc_resa_manual_create', 'nonce');
-        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Non autorisé.']);
+        parent::verify_access('pc_resa_manual_create', 'nonce', 'manage_options');
 
         $resa_id = (int) $_POST['reservation_id'];
         $ref     = sanitize_text_field($_POST['ref']);
@@ -180,8 +170,7 @@ class PCR_Stripe_Ajax
 
     public static function handle_rotate_caution()
     {
-        check_ajax_referer('pc_resa_manual_create', 'nonce');
-        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Non autorisé.']);
+        parent::verify_access('pc_resa_manual_create', 'nonce', 'manage_options');
 
         $resa_id = (int) $_POST['reservation_id'];
         $old_ref = sanitize_text_field($_POST['old_ref']); // L'ancienne réf Stripe

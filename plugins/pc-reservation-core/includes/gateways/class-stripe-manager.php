@@ -18,10 +18,15 @@ class PCR_Stripe_Manager
         if (!function_exists('get_field')) return '';
 
         $mode = get_field('pc_stripe_mode', 'option');
-        if ($mode === 'live') {
-            return get_field('pc_stripe_live_sk', 'option');
+        $key = ($mode === 'live') ? get_field('pc_stripe_live_sk', 'option') : get_field('pc_stripe_test_sk', 'option');
+
+        // Sanity check : Prévention des incohérences critiques
+        if ($mode === 'live' && strpos($key, 'sk_test_') === 0) {
+            error_log('[Stripe Manager] 🚨 ALERTE CRITIQUE : Clé TEST détectée alors que le mode LIVE est actif !');
+            return ''; // Renvoie vide pour faire échouer gracieusement les méthodes appelantes
         }
-        return get_field('pc_stripe_test_sk', 'option');
+
+        return $key;
     }
 
     /**

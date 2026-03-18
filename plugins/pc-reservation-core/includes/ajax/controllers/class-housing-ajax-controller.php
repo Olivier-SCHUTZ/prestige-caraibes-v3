@@ -117,6 +117,16 @@ class PCR_Housing_Ajax_Controller extends PCR_Base_Ajax_Controller
         if (isset($_POST['post_type'])) $data['post_type'] = sanitize_text_field($_POST['post_type']);
         if (isset($_POST['featured_image_id'])) $data['featured_image_id'] = (int) $_POST['featured_image_id'];
 
+        // NOUVEAU SYSTÈME : Capture de l'objet natif des règles de paiement
+        if (isset($_POST['payment_rules'])) {
+            // Si Vue 3 l'envoie sous forme de chaîne JSON (très fréquent avec Axios/FormData)
+            if (is_string($_POST['payment_rules'])) {
+                $data['payment_rules'] = json_decode(stripslashes($_POST['payment_rules']), true);
+            } else {
+                $data['payment_rules'] = (array) $_POST['payment_rules'];
+            }
+        }
+
         // Champs ACF
         foreach ($_POST as $key => $value) {
             if (strpos($key, 'acf_') === 0) {

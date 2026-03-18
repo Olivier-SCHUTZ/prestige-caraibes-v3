@@ -379,6 +379,17 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
         if (!empty($resa->enfants)) $occupants .= ' - ' . intval($resa->enfants) . ' enfant(s)';
         if (!empty($resa->bebes)) $occupants .= ' - ' . intval($resa->bebes) . ' bébé(s)';
 
+        // NOUVEAU SYSTÈME : On interroge le Cerveau pour connaître le type de caution du logement
+        $caution_mode = 'aucune';
+        if (!empty($resa->item_id) && class_exists('PCR_Payment_Service')) {
+            $payment_rules = PCR_Payment_Service::get_instance()->get_item_payment_rules($resa->item_id);
+            if (!empty($payment_rules['caution_type'])) {
+                $caution_mode = $payment_rules['caution_type'];
+            }
+        } elseif (!empty($resa->caution_mode)) {
+            $caution_mode = $resa->caution_mode; // Fallback legacy
+        }
+
         // 4. Renvoi du JSON structuré
         wp_send_json_success([
             'id' => $resa->id,
@@ -395,7 +406,7 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
             'payments' => $payments,
             'quote_lines' => $quote_lines,
             'caution' => [
-                'mode' => $resa->caution_mode ?? 'aucune',
+                'mode' => $caution_mode,
                 'statut' => $resa->caution_statut ?? 'non_demande',
                 'montant' => (float)($resa->caution_montant ?? 0)
             ],

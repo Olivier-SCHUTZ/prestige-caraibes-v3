@@ -39,6 +39,55 @@ class PCR_Payment_Service
     }
 
     /**
+     * NOUVEAU SYSTÈME VUE 3 : Récupère les règles depuis la meta native '_pc_payment_rules'
+     * Indépendant d'ACF. Gère ses propres valeurs par défaut.
+     */
+    public function get_item_payment_rules($item_id)
+    {
+        // 1. Le Contrat Standard (Valeurs par défaut si le logement vient d'être créé)
+        $rules = [
+            'mode_pay'       => 'acompte_plus_solde',
+            'deposit_type'   => 'pourcentage',
+            'deposit_value'  => 30.0,
+            'delay_days'     => 30,
+            'caution_amount' => 0.0,
+            'caution_type'   => 'empreinte'
+        ];
+
+        if (!$item_id) return $rules;
+
+        // 2. Lecture de la nouvelle boîte noire (Native WP Meta gérée par Vue 3)
+        $vue_rules = get_post_meta($item_id, '_pc_payment_rules', true);
+
+        if (!empty($vue_rules) && is_array($vue_rules)) {
+            // wp_parse_args fusionne les règles sauvegardées avec les valeurs par défaut (si une clé manque)
+            return wp_parse_args($vue_rules, $rules);
+        }
+
+        // 3. FALLBACK LEGACY (Roue de secours temporaire)
+        // Si la meta '_pc_payment_rules' n'existe pas encore (vieux logement non migré), 
+        // on tente une dernière fois de lire l'ancien système ACF pour ne pas bloquer les résas en cours.
+        if (function_exists('get_field')) {
+            $mode = get_field('pc_pay_mode', $item_id);
+            if ($mode) {
+                $rules['mode_pay']       = $mode;
+                $rules['deposit_type']   = get_field('pc_deposit_type', $item_id) ?: $rules['deposit_type'];
+                $rules['deposit_value']  = (float) (get_field('pc_deposit_value', $item_id) ?: $rules['deposit_value']);
+                $rules['delay_days']     = (int) (get_field('pc_balance_delay_days', $item_id) ?: $rules['delay_days']);
+            }
+            // Recherche de l'ancienne caution
+            $caution = get_field('pc_caution_amount', $item_id);
+            if (!$caution) $caution = get_field('caution', $item_id);
+
+            if (is_numeric($caution)) {
+                $rules['caution_amount'] = (float) $caution;
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
      * Génère les paiements pour une réservation donnée.
      * $resa_id = ID dans wp_pc_reservations
      */
@@ -68,32 +117,14 @@ class PCR_Payment_Service
             return;
         }
 
-        // 2) Lecture des règles ACF sur la fiche
-        $mode_pay      = '';
-        $deposit_type  = '';
-        $deposit_value = '';
-        $delay_days    = '';
+        // 2) Lecture des règles unifiées (Indépendant d'ACF)
+        $payment_rules = $this->get_item_payment_rules($item_id);
 
-        if (function_exists('get_field')) {
-            // Group ACF : "regles_de_paiement"
-            $rules = get_field('regles_de_paiement', $item_id);
-
-            if (is_array($rules)) {
-                $mode_pay      = $rules['pc_pay_mode'] ?? '';
-                $deposit_type  = $rules['pc_deposit_type'] ?? '';
-                $deposit_value = $rules['pc_deposit_value'] ?? '';
-                $delay_days    = $rules['pc_balance_delay_days'] ?? '';
-            }
-        }
-
-        // Valeurs par défaut si rien n'est configuré
-        if (!$mode_pay) {
-            $mode_pay = 'acompte_plus_solde'; // par défaut
-        }
-
-        $deposit_type  = $deposit_type ?: 'pourcentage';
-        $deposit_value = $deposit_value !== '' ? (float) $deposit_value : 30.0; // 30% par défaut
-        $delay_days    = $delay_days !== '' ? (int) $delay_days : 30;
+        $mode_pay       = $payment_rules['mode_pay'];
+        $deposit_type   = $payment_rules['deposit_type'];
+        $deposit_value  = $payment_rules['deposit_value'];
+        $delay_days     = $payment_rules['delay_days'];
+        $caution_amount = $payment_rules['caution_amount'];
 
         $now = current_time('mysql');
 
@@ -143,23 +174,27 @@ class PCR_Payment_Service
             // Date de base pour le calcul (logement ou expérience)
             $base_date = $date_arrivee ?: $date_exp;
 
-            // Calcul standard de l’acompte / solde
+            // Calcul standard de l’acompte / solde (ARRONDI À 2 DÉCIMALES)
             if ($deposit_type === 'montant_fixe') {
-                $acompte = min($total, max(0, $deposit_value));
+                $acompte = round(min($total, max(0, $deposit_value)), 2);
             } else {
-                $acompte = max(0, $total * ($deposit_value / 100));
+                $acompte = round(max(0, $total * ($deposit_value / 100)), 2);
             }
 
-            $solde = max(0, $total - $acompte);
+            // Le solde est la différence exacte pour éviter de perdre 1 centime
+            $solde = round(max(0, $total - $acompte), 2);
             $force_total = false;
 
             if ($base_date && $delay_days > 0) {
                 try {
                     $dt_arrivee = new DateTime($base_date);
                     $now_dt     = new DateTime(current_time('Y-m-d'));
-                    $diff_days  = (int) $now_dt->diff($dt_arrivee)->days;
 
-                    if ($diff_days <= $delay_days) {
+                    // NOUVEAU: invert = 1 si la date d'arrivée est dans le passé
+                    $interval = $now_dt->diff($dt_arrivee);
+
+                    // Si la date d'arrivée est dépassée OU qu'on est trop proche de la date d'arrivée
+                    if ($interval->invert === 1 || $interval->days <= $delay_days) {
                         $force_total = true;
                     }
                 } catch (Exception $e) {
@@ -190,6 +225,12 @@ class PCR_Payment_Service
                     if ($base_date && $delay_days > 0) {
                         $dt = new DateTime($base_date);
                         $dt->modify('-' . $delay_days . ' days');
+                        $now_dt = new DateTime(current_time('Y-m-d'));
+
+                        // Si l'échéance théorique est déjà passée, le solde est dû immédiatement (aujourd'hui)
+                        if ($dt < $now_dt) {
+                            $dt = $now_dt;
+                        }
                         $date_echeance = $dt->format('Y-m-d') . ' 00:00:00';
                     }
 
@@ -221,6 +262,17 @@ class PCR_Payment_Service
         }
 
         $current_resa_status = $resa['statut_reservation'] ?? 'en_attente_traitement';
+
+        // Sauvegarde de la caution dans la réservation (pour que Vue 3 l'affiche)
+        global $wpdb;
+        $wpdb->update(
+            $wpdb->prefix . 'pc_reservations',
+            [
+                'caution_montant' => $caution_amount,
+                'caution_statut'  => $caution_amount > 0 ? 'non_demande' : 'non_demande'
+            ],
+            ['id' => $resa_id]
+        );
 
         // Mise à jour finale en base via le Repository
         $repository->update_reservation_statuses($resa_id, $new_payment_state, $current_resa_status);
