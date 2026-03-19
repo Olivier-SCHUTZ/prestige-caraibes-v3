@@ -34,7 +34,27 @@
             <span class="vue-msg-author">{{ msg.sender_name }}</span>
             <span class="vue-msg-date">{{ msg.formatted_date }}</span>
           </div>
-          <div class="vue-msg-body" v-html="formatMessageBody(msg.corps)"></div>
+          <div
+            :class="[
+              'vue-msg-body',
+              {
+                'is-collapsed':
+                  !expandedMessages.includes(msg.id) &&
+                  msg.corps &&
+                  msg.corps.length > 300,
+              },
+            ]"
+          >
+            <div v-html="formatMessageBody(msg.corps)"></div>
+          </div>
+
+          <button
+            v-if="msg.corps && msg.corps.length > 300"
+            class="pc-msg-see-more-btn"
+            @click="toggleMessage(msg.id)"
+          >
+            {{ expandedMessages.includes(msg.id) ? "Réduire" : "Voir plus" }}
+          </button>
 
           <div
             class="vue-msg-attachments"
@@ -84,13 +104,106 @@
         </div>
       </div>
 
+      <div v-if="showTemplates" class="pc-templates-panel">
+        <div class="pc-templates-header">
+          <span class="pc-attach-title">⚡ Réponses rapides :</span>
+          <button class="pc-close-btn" @click="showTemplates = false">
+            &times;
+          </button>
+        </div>
+        <div
+          v-if="!quickReplies || quickReplies.length === 0"
+          class="pc-templates-empty"
+        >
+          Aucun modèle disponible.
+        </div>
+        <div v-else class="pc-template-list">
+          <button
+            v-for="tpl in quickReplies"
+            :key="tpl.id"
+            class="pc-template-item-btn"
+            @click="insertTemplate(tpl)"
+            :title="tpl.preview"
+          >
+            <strong>{{ tpl.title }}</strong>
+          </button>
+        </div>
+      </div>
+
       <textarea
+        ref="messageTextarea"
         v-model="newMessage"
         :placeholder="`Écrire un message via ${capitalize(activeTab)}...`"
         :disabled="isSending"
+        @input="autoResize"
       ></textarea>
 
+      <input
+        type="file"
+        ref="customFileInput"
+        style="display: none"
+        @change="handleFileSelection"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+      />
+
+      <div
+        v-if="customFile"
+        class="pc-custom-attachment-chip"
+        style="
+          margin-bottom: 10px;
+          display: inline-flex;
+          align-items: center;
+          background: #f1f5f9;
+          padding: 4px 10px;
+          border-radius: 15px;
+          font-size: 0.85em;
+          border: 1px solid #cbd5e1;
+        "
+      >
+        📎 {{ customFile.name }}
+        <button
+          type="button"
+          @click="removeCustomFile"
+          style="
+            background: none;
+            border: none;
+            margin-left: 8px;
+            color: #ef4444;
+            cursor: pointer;
+            font-weight: bold;
+          "
+        >
+          ×
+        </button>
+      </div>
+
       <div class="pc-composer-actions">
+        <button
+          class="pc-btn-outline"
+          @click="triggerFileInput"
+          title="Joindre un fichier de votre ordinateur"
+        >
+          📎 Joindre
+        </button>
+
+        <button
+          class="pc-btn-outline"
+          @click="showTemplates = !showTemplates"
+          style="margin-right: auto; margin-left: 10px"
+        >
+          ⚡ Modèles
+        </button>
+
+        <button
+          v-if="activeTab === 'whatsapp'"
+          class="pc-btn-outline"
+          @click="openWhatsAppApp"
+          style="margin-right: 10px; border-color: #25d366; color: #25d366"
+          title="Ouvrir l'application WhatsApp (Web/Mobile)"
+        >
+          📱 Ouvrir App
+        </button>
+
         <button
           class="pc-btn-primary"
           @click="handleSend"
@@ -119,9 +232,66 @@ const store = useMessagingStore();
 const docStore = useDocumentStore();
 const newMessage = ref("");
 const selectedDocs = ref([]);
+const showTemplates = ref(false);
+const messageTextarea = ref(null);
+
+// Gestion de la pièce jointe personnalisée
+const customFileInput = ref(null);
+const customFile = ref(null);
+
+// Gestion du bouton "Voir plus"
+const expandedMessages = ref([]);
+
+const toggleMessage = (id) => {
+  if (expandedMessages.value.includes(id)) {
+    expandedMessages.value = expandedMessages.value.filter((mId) => mId !== id);
+  } else {
+    expandedMessages.value.push(id);
+  }
+};
 
 // États réactifs depuis le store
 const activeTab = computed(() => store.activeTab);
+const quickReplies = computed(() => store.quickReplies);
+const reservationContext = computed(() => store.reservationContext);
+
+// Méthode d'insertion et de remplacement des variables
+const insertTemplate = (template) => {
+  let content = template.content;
+  const ctx = reservationContext.value;
+
+  if (ctx) {
+    const vars = {
+      "{prenom}": ctx.prenom || "",
+      "{prenom_client}": ctx.prenom || "",
+      "{nom_client}": ctx.full_name || "",
+      "{email_client}": ctx.email || "",
+      "{telephone}": ctx.telephone || "",
+      "{numero_resa}": "#" + ctx.id,
+      "{logement}": ctx.logement || "",
+      "{date_arrivee}": ctx.date_arrivee || "",
+      "{date_depart}": ctx.date_depart || "",
+      "{duree_sejour}": ctx.duree_sejour || "",
+      "{montant_total}": ctx.montant_total || "",
+      "{acompte_paye}": ctx.acompte_paye || "",
+      "{solde_restant}": ctx.solde_restant || "",
+      "{lien_paiement}": ctx.lien_paiement || "",
+    };
+
+    Object.keys(vars).forEach((key) => {
+      const regex = new RegExp(key.replace(/[{}]/g, "\\$&"), "g");
+      content = content.replace(regex, vars[key]);
+    });
+  }
+
+  newMessage.value = content;
+  showTemplates.value = false;
+
+  // UX : Si c'est un email système, on bascule sur l'onglet Email
+  if (template.category === "email_system" && activeTab.value !== "email") {
+    switchTab("email");
+  }
+};
 const filteredMessages = computed(() => store.filteredMessages);
 const isLoading = computed(() => store.isLoading);
 const isSending = computed(() => store.isSending);
@@ -129,6 +299,68 @@ const isSending = computed(() => store.isSending);
 // Actions
 const switchTab = (tab) => {
   store.activeTab = tab;
+};
+
+// Gestion de la sélection d'un fichier local
+const triggerFileInput = () => {
+  if (customFileInput.value) customFileInput.value.click();
+};
+
+const handleFileSelection = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validation basique (comme dans ton ancien messaging.js)
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  const allowedTypes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  if (file.size > maxSize) {
+    alert("Le fichier est trop volumineux. Taille maximum : 10MB");
+    event.target.value = "";
+    return;
+  }
+
+  if (!allowedTypes.includes(file.type)) {
+    alert(
+      "Type de fichier non supporté. Formats acceptés : PDF, JPG, PNG, DOC, DOCX",
+    );
+    event.target.value = "";
+    return;
+  }
+
+  customFile.value = file;
+  event.target.value = ""; // Reset pour permettre de re-sélectionner le même fichier si on l'annule
+};
+
+const removeCustomFile = () => {
+  customFile.value = null;
+};
+
+const openWhatsAppApp = () => {
+  const ctx = reservationContext.value;
+  let phone = "";
+
+  // On récupère le téléphone selon la structure renvoyée par ton API
+  if (ctx) {
+    phone = ctx.telephone || ctx.client_phone || "";
+  }
+
+  // Nettoyage et ajout du préfixe par défaut (comme dans ton ancien messaging.js)
+  let cleanPhone = phone.replace(/[^\d+]/g, "");
+  if (cleanPhone && !cleanPhone.startsWith("+")) {
+    cleanPhone = "+590" + cleanPhone; // Fallback par défaut
+  }
+
+  const text = encodeURIComponent(newMessage.value.trim());
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${text}`;
+  window.open(whatsappUrl, "_blank");
 };
 
 const handleSend = async () => {
@@ -141,15 +373,26 @@ const handleSend = async () => {
     template_id: "custom",
     channel_source: activeTab.value,
     document_ids: selectedDocs.value.join(","),
+    file_upload: customFile.value || null, // Ajout du fichier local
   });
 
   if (!store.error) {
     newMessage.value = "";
     selectedDocs.value = [];
+    customFile.value = null; // Reset du fichier après envoi
+    if (messageTextarea.value) messageTextarea.value.style.height = "auto"; // Reset hauteur
   }
 };
 
 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
+// Auto-ajustement de la hauteur du champ de texte
+const autoResize = () => {
+  const textarea = messageTextarea.value;
+  if (!textarea) return;
+  textarea.style.height = "auto";
+  textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px"; // Limite à 120px max
+};
 
 // Formateur de texte ultra-puissant
 const formatMessageBody = (html) => {
@@ -204,6 +447,7 @@ const formatMessageBody = (html) => {
 onMounted(() => {
   store.fetchConversation(props.reservationId);
   docStore.fetchTemplates(props.reservationId);
+  store.fetchQuickReplies(props.reservationId);
   store.startPolling(props.reservationId);
 });
 
@@ -326,6 +570,46 @@ onUnmounted(() => {
   line-height: 1.5;
   word-break: break-word;
   overflow-wrap: break-word;
+}
+
+/* Troncature élégante "Voir plus" */
+.vue-msg-body.is-collapsed {
+  max-height: 120px;
+  overflow: hidden;
+  position: relative;
+}
+.vue-msg-body.is-collapsed::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(transparent, #ffffff);
+}
+.vue-message-item.sortant .vue-msg-body.is-collapsed::after {
+  background: linear-gradient(
+    transparent,
+    #e0f2fe
+  ); /* S'adapte au fond bleu des messages sortants */
+}
+
+.pc-msg-see-more-btn {
+  background: none;
+  border: none;
+  color: #0073aa;
+  font-size: 0.85em;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  text-align: left;
+  margin-top: 5px;
+  align-self: flex-start;
+  transition: color 0.2s;
+}
+.pc-msg-see-more-btn:hover {
+  text-decoration: underline;
+  color: #005177;
 }
 
 /* 3.1 Sécurité absolue pour les Tableaux (Évite que la signature ne casse tout) */
@@ -511,5 +795,71 @@ textarea {
   background-color: rgba(255, 255, 255, 0.6);
   border-color: rgba(0, 0, 0, 0.1);
   color: #0c4a6e;
+}
+
+/* ==========================================================
+   6. RÉPONSES RAPIDES (TEMPLATES)
+========================================================== */
+.pc-btn-outline {
+  background-color: transparent;
+  color: #475569;
+  padding: 8px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.pc-btn-outline:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.pc-templates-panel {
+  margin-bottom: 12px;
+  padding: 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.pc-templates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.pc-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #64748b;
+  cursor: pointer;
+}
+.pc-templates-empty {
+  font-size: 0.85em;
+  color: #64748b;
+  font-style: italic;
+}
+.pc-template-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.pc-template-item-btn {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.85em;
+  color: #334155;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s;
+}
+.pc-template-item-btn:hover {
+  border-color: #0073aa;
+  color: #0073aa;
 }
 </style>

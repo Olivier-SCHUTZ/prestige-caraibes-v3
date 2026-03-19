@@ -236,8 +236,26 @@ class PCR_Document_Service
     {
         $avoir_number = $this->generate_next_number('avoir');
 
+        // CLONAGE : On crée une copie isolée de la réservation pour l'avoir
+        $resa_avoir = clone $resa;
+
+        // CORRECTION COMPTABLE : Si on annule une facture d'acompte, 
+        // l'avoir doit être du montant strict de l'acompte, pas du séjour complet.
+        if (isset($old_doc->type_doc) && $old_doc->type_doc === 'facture_acompte') {
+            $resa_avoir->montant_total = $resa->montant_acompte;
+
+            // On force une ligne de détail unique pour être très clair sur le PDF
+            $resa_avoir->detail_tarif = json_encode([
+                [
+                    'label'  => 'Annulation Acompte (Réf: ' . $old_doc->numero_doc . ')',
+                    'amount' => $resa->montant_acompte,
+                    'price'  => $resa->montant_acompte
+                ]
+            ]);
+        }
+
         $renderer = new PCR_Invoice_Renderer();
-        $html_content = $renderer->render_cancellation_credit_note($resa, $avoir_number, $old_doc->numero_doc);
+        $html_content = $renderer->render_cancellation_credit_note($resa_avoir, $avoir_number, $old_doc->numero_doc);
 
         $options = new Options();
         $options->set('isRemoteEnabled', true);

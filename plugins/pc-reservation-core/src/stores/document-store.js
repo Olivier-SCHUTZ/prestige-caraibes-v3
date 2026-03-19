@@ -12,6 +12,11 @@ export const useDocumentStore = defineStore("documents", {
 
     error: null,
     successMessage: null,
+
+    // NOUVEAU : Gestion des blocages légaux (Factures existantes)
+    requiresForce: false,
+    forceMessage: null,
+    pendingTemplateId: null,
   }),
 
   actions: {
@@ -60,6 +65,7 @@ export const useDocumentStore = defineStore("documents", {
       this.isGenerating = true;
       this.error = null;
       this.successMessage = null;
+      this.requiresForce = false; // Reset au début de chaque tentative
 
       try {
         const response = await documentApi.generateDocument(
@@ -71,10 +77,22 @@ export const useDocumentStore = defineStore("documents", {
 
         if (response.data.success || data.success) {
           this.successMessage = "Document généré avec succès !";
+          this.pendingTemplateId = null;
           // Recharger la liste des documents pour afficher le nouveau PDF
           await this.fetchDocuments(reservationId);
           return true;
         } else {
+          // Interception du blocage PHP (ex: Facture existante ou Acompte manquant)
+          if (
+            data.error_code === "document_exists" ||
+            data.error_code === "missing_deposit"
+          ) {
+            this.requiresForce = true;
+            this.forceMessage = data.message;
+            this.pendingTemplateId = templateId; // On mémorise quel modèle on voulait générer
+            return false;
+          }
+
           throw new Error(
             data.message || "Échec de la génération du document.",
           );
@@ -110,6 +128,9 @@ export const useDocumentStore = defineStore("documents", {
     clearMessages() {
       this.error = null;
       this.successMessage = null;
+      this.requiresForce = false;
+      this.forceMessage = null;
+      this.pendingTemplateId = null;
     },
   },
 });

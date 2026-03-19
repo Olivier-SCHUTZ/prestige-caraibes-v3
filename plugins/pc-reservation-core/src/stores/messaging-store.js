@@ -201,6 +201,22 @@ export const useMessagingStore = defineStore("messaging", {
     },
 
     /**
+     * Récupère les réponses rapides (templates) depuis l'API
+     */
+    async fetchQuickReplies(reservationId) {
+      try {
+        const response = await messagingApi.getQuickReplies(reservationId);
+        const payload = response.data.data || response.data;
+
+        if (response.data.success || payload.success) {
+          this.quickReplies = payload.templates || [];
+        }
+      } catch (err) {
+        console.error("Messaging Store Error (fetchQuickReplies):", err);
+      }
+    },
+
+    /**
      * NOUVEAU : Lance la vérification silencieuse des nouveaux messages
      */
     startPolling(reservationId) {

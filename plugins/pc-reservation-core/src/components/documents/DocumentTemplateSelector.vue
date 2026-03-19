@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 const props = defineProps({
   templates: { type: [Array, Object], required: true }, // Modifié pour accepter l'objet groupé du backend
@@ -42,6 +42,31 @@ const props = defineProps({
 
 const emit = defineEmits(["generate"]);
 const selectedTemplate = ref("");
+
+// Smart Select : Auto-sélection s'il n'y a qu'un seul modèle disponible
+watch(
+  () => props.templates,
+  (newTemplates) => {
+    if (!newTemplates) return;
+
+    let totalItems = 0;
+    let firstItemId = null;
+
+    // Parcours des groupes (native / custom) pour compter les modèles
+    Object.values(newTemplates).forEach((group) => {
+      if (group && group.items && group.items.length > 0) {
+        totalItems += group.items.length;
+        if (!firstItemId) firstItemId = group.items[0].id;
+      }
+    });
+
+    // S'il n'y a qu'un seul choix possible, on le sélectionne d'office
+    if (totalItems === 1 && firstItemId) {
+      selectedTemplate.value = firstItemId;
+    }
+  },
+  { immediate: true, deep: true },
+);
 
 const emitGenerate = () => {
   if (selectedTemplate.value) {
