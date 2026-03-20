@@ -37,6 +37,13 @@ export const usePaymentsStore = defineStore("payments", {
         // Fallback temporaire (à éviter car il cause le saut d'UI)
         await resStore.openDetailModal({ id: reservationId });
       }
+
+      // --- NOUVEAU : On force le rafraîchissement de la liste en arrière-plan ---
+      if (typeof resStore.fetchList === "function") {
+        // On relance la liste en restant sur la page actuelle (sans bloquer l'interface)
+        resStore.fetchList(resStore.currentPage);
+      }
+      // -------------------------------------------------------------------------
     },
 
     // --- PAIEMENTS CLASSIQUES ---
@@ -59,6 +66,37 @@ export const usePaymentsStore = defineStore("payments", {
         }
 
         return response.data.data; // Retourne { url: "...", id: "cs_..." }
+      } catch (error) {
+        throw new Error(error.response?.data?.data?.message || error.message);
+      } finally {
+        this.setLoading(loadingKey, false);
+      }
+    },
+
+    /**
+     * NOUVEAU : Met à jour manuellement le statut d'un paiement (Virement, Espèces)
+     */
+    async updatePaymentStatus(paymentId, reservationId, status, method) {
+      const loadingKey = `payment_update_${paymentId}`;
+      this.setLoading(loadingKey, true);
+
+      try {
+        const response = await apiClient.post("", {
+          action: "pc_update_payment_status",
+          payment_id: paymentId,
+          status: status,
+          method: method,
+        });
+
+        if (!response.data.success) {
+          throw new Error(
+            response.data.data.message || "Erreur de mise à jour",
+          );
+        }
+
+        // On rafraîchit silencieusement la réservation pour afficher les nouveaux statuts
+        await this.refreshReservationDetails(reservationId);
+        return response.data.data;
       } catch (error) {
         throw new Error(error.response?.data?.data?.message || error.message);
       } finally {

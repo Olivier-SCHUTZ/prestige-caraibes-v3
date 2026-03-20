@@ -110,7 +110,13 @@
                 class="badge-status"
                 :class="'status-pay-' + resa.statut_paiement"
               >
-                P: {{ resa.statut_paiement.replace(/_/g, " ") }}
+                P:
+                {{
+                  resa.statut_paiement === "partiellement_paye_sur_place" ||
+                  resa.statut_paiement === "sur_place"
+                    ? "⚠️ "
+                    : ""
+                }}{{ resa.statut_paiement.replace(/_/g, " ") }}
               </span>
             </div>
           </td>
@@ -307,6 +313,26 @@ onMounted(() => {
   background: #9c1a1c;
   color: #ffffff;
   border: 1px solid #7a1516;
+}
+/* ========================================= */
+/* 🚨 ALERTES PAIEMENT SUR PLACE             */
+/* ========================================= */
+
+/* ALERTE : Acompte payé + Solde prévu sur place (Orange vif / ombré) */
+.status-pay-partiellement_paye_sur_place {
+  background: #ffebd6;
+  color: #cc5500;
+  border: 2px solid #ff8c00;
+  font-weight: 900;
+  box-shadow: 0 0 5px rgba(255, 140, 0, 0.4);
+}
+
+/* 100% sur place (Jaune/Orange plus classique) */
+.status-pay-sur_place {
+  background: #fff3cd;
+  color: #856404;
+  border: 2px solid #ffc107;
+  font-weight: bold;
 }
 .badge-type {
   margin-right: 5px;

@@ -145,4 +145,25 @@ class PCR_Payment_Repository
 
         return $updated !== false;
     }
+
+    /**
+     * Met à jour une ligne de paiement spécifique.
+     *
+     * @param int   $payment_id ID du paiement
+     * @param array $data       Données à mettre à jour
+     * @return bool
+     */
+    public function update_payment($payment_id, array $data)
+    {
+        global $wpdb;
+        $data['date_maj'] = current_time('mysql');
+
+        $updated = $wpdb->update(
+            $this->table_pay,
+            $data,
+            ['id' => (int) $payment_id]
+        );
+
+        return $updated !== false;
+    }
 }
