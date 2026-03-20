@@ -119,7 +119,8 @@ export const useReservationsStore = defineStore("reservations", {
           const expId = String(formData.item_id);
           const tarifKey = formData.experience_tarif_type;
 
-          const allTariffs = window.pcResaParams?.experienceTarifs || {};
+          // 🚀 FIX : On lit les tarifs depuis Pinia et non plus depuis l'ancienne variable globale
+          const allTariffs = this.bookingItems?.experienceTarifs || {};
           const expTariffs = allTariffs[expId] || [];
           const config = expTariffs.find((t) => t.key === tarifKey);
 
@@ -159,7 +160,6 @@ export const useReservationsStore = defineStore("reservations", {
             else if (type === "enfant") qty = Number(formData.enfants) || 0;
             else if (type === "bebe") qty = Number(formData.bebes) || 0;
             else if (line.enable_qty) {
-              // 🚀 Gestion des Forfaits / Privatisations / Quantités libres
               const mapKey = line.uid || `line_${index}`;
               if (typeof customQtyMap[mapKey] !== "undefined") {
                 qty = Number(customQtyMap[mapKey]) || 0;
@@ -170,52 +170,35 @@ export const useReservationsStore = defineStore("reservations", {
               }
             }
 
-            if (qty > 0) {
-              const amount = qty * unit;
-              // On garde l'ancien label pour la rétrocompatibilité (Base de données, PDF)
-              let prefix = qty > 1 && type !== "personnalise" ? `${qty} ` : "";
-              const label = `${prefix}${line.label || type}`.trim();
-
-              // 🚀 NOUVEAU : Un label propre et la quantité pour le tableau Vue.js
-              const cleanLabel = (line.label || type).trim();
-
-              if (
-                type === "bebe" &&
-                unit === 0 &&
-                config.code !== "sur-devis"
-              ) {
-                lignes_devis.push({
-                  label: label,
-                  clean_label: cleanLabel,
-                  qty: qty,
-                  amount: 0,
-                  price: "Gratuit",
-                });
-              } else {
-                lignes_devis.push({
-                  label: label,
-                  clean_label: cleanLabel,
-                  qty: qty,
-                  amount: amount,
-                  price: amount + " €",
-                });
-                total += amount;
-              }
+            // 1. Si la quantité est 0, on ignore totalement la ligne (plus de lignes parasites !)
+            if (qty <= 0) {
+              return;
             }
-          });
 
-          // B. FRAIS FIXES
-          (config.fixed_fees || []).forEach((fee) => {
-            const label = fee.label || "Frais fixes";
-            const amount = parseFloat(fee.price) || 0;
-            if (amount > 0) {
-              lignes_devis.push({
-                label: label,
-                clean_label: label,
-                qty: 1,
-                amount: amount,
-                price: amount + " €",
-              });
+            // 2. Si la quantité est > 0, on ajoute la ligne ET on colle son observation directement avec
+            const amount = qty * unit;
+            let prefix = qty > 1 && type !== "personnalise" ? `${qty} ` : "";
+            const label = `${prefix}${line.label || type}`.trim();
+            const cleanLabel = (line.label || type).trim();
+
+            lignes_devis.push({
+              label: label,
+              clean_label: cleanLabel,
+              qty: qty,
+              amount:
+                type === "bebe" && unit === 0 && config.code !== "sur-devis"
+                  ? 0
+                  : amount,
+              price:
+                type === "bebe" && unit === 0 && config.code !== "sur-devis"
+                  ? "Gratuit"
+                  : amount + " €",
+              observation: line.observation || null, // L'observation est toujours attachée à la ligne facturée
+            });
+
+            if (
+              !(type === "bebe" && unit === 0 && config.code !== "sur-devis")
+            ) {
               total += amount;
             }
           });
@@ -334,9 +317,35 @@ export const useReservationsStore = defineStore("reservations", {
           // 🚀 Nettoyage de l'encodage Unicode legacy (ex: "H\u00e9bergement" -> "Hébergement")
           const fixUnicode = (obj) => {
             if (typeof obj === "string") {
-              return obj.replace(/\\u[\dA-F]{4}/gi, (match) =>
-                String.fromCharCode(parseInt(match.replace(/\\u/g, ""), 16)),
+              // 1. Corrige le format valide (avec antislash)
+              let str = obj.replace(/\\u([\dA-F]{4})/gi, (match, grp) =>
+                String.fromCharCode(parseInt(grp, 16)),
               );
+              // 2. Corrige le format cassé par la BDD WordPress (antislash manquant)
+              const brokenMap = {
+                u00e9: "é",
+                u00e8: "è",
+                u00ea: "ê",
+                u00eb: "ë",
+                u00e0: "à",
+                u00e2: "â",
+                u00e4: "ä",
+                u00ee: "î",
+                u00ef: "ï",
+                u00f4: "ô",
+                u00f6: "ö",
+                u00f9: "ù",
+                u00fb: "û",
+                u00fc: "ü",
+                u00e7: "ç",
+                u20ac: "€",
+                u0027: "'",
+                u00a0: " ",
+              };
+              for (const [broken, fixed] of Object.entries(brokenMap)) {
+                str = str.split(broken).join(fixed);
+              }
+              return str;
             } else if (Array.isArray(obj)) {
               return obj.map(fixUnicode);
             } else if (obj !== null && typeof obj === "object") {
@@ -374,11 +383,38 @@ export const useReservationsStore = defineStore("reservations", {
           let data = response.data.data;
 
           // Réutilisation de ta logique de nettoyage Unicode
+          // 🚀 Nettoyage de l'encodage Unicode legacy (ex: "H\u00e9bergement" -> "Hébergement")
           const fixUnicode = (obj) => {
             if (typeof obj === "string") {
-              return obj.replace(/\\u[\dA-F]{4}/gi, (match) =>
-                String.fromCharCode(parseInt(match.replace(/\\u/g, ""), 16)),
+              // 1. Corrige le format valide (avec antislash)
+              let str = obj.replace(/\\u([\dA-F]{4})/gi, (match, grp) =>
+                String.fromCharCode(parseInt(grp, 16)),
               );
+              // 2. Corrige le format cassé par la BDD WordPress (antislash manquant)
+              const brokenMap = {
+                u00e9: "é",
+                u00e8: "è",
+                u00ea: "ê",
+                u00eb: "ë",
+                u00e0: "à",
+                u00e2: "â",
+                u00e4: "ä",
+                u00ee: "î",
+                u00ef: "ï",
+                u00f4: "ô",
+                u00f6: "ö",
+                u00f9: "ù",
+                u00fb: "û",
+                u00fc: "ü",
+                u00e7: "ç",
+                u20ac: "€",
+                u0027: "'",
+                u00a0: " ",
+              };
+              for (const [broken, fixed] of Object.entries(brokenMap)) {
+                str = str.split(broken).join(fixed);
+              }
+              return str;
             } else if (Array.isArray(obj)) {
               return obj.map(fixUnicode);
             } else if (obj !== null && typeof obj === "object") {

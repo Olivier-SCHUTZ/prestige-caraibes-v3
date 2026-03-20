@@ -466,16 +466,82 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
         ]);
 
         $experiences = [];
+        $experience_tarifs = [];
+
         foreach ($experiences_posts as $post) {
             $experiences[] = [
                 'id' => $post->ID,
                 'title' => $post->post_title
             ];
+
+            // 🚀 NOUVEAU : On récupère et "traduit" les tarifs ACF pour Vue.js
+            $tarifs = function_exists('get_field') ? get_field('exp_types_de_tarifs', $post->ID) : [];
+            $formatted_tarifs = [];
+
+            if (is_array($tarifs)) {
+                foreach ($tarifs as $index => $t) {
+                    // 1. Détermination du label et de la clé technique
+                    $type = !empty($t['exp_type']) ? $t['exp_type'] : 'custom';
+                    $label = 'Tarif ' . ($index + 1);
+                    $key = 'tarif_' . $index;
+
+                    if ($type === 'custom' && !empty($t['exp_type_custom'])) {
+                        $label = $t['exp_type_custom'];
+                        $key = sanitize_title($label) . '_' . $index; // ex: "1-kayak-transparent_0"
+                    } elseif ($type === 'adulte_enfant') {
+                        $label = 'Par adulte / enfant';
+                        $key = 'adulte_enfant';
+                    } elseif ($type === 'forfait') {
+                        $label = 'Forfait';
+                        $key = 'forfait';
+                    }
+
+                    // 2. Formatage des lignes (Quantités, prix, observations)
+                    $lines = [];
+                    if (!empty($t['exp_tarifs_lignes']) && is_array($t['exp_tarifs_lignes'])) {
+                        foreach ($t['exp_tarifs_lignes'] as $l_idx => $l) {
+                            $lines[] = [
+                                'uid'         => 'line_' . $index . '_' . $l_idx,
+                                'type'        => !empty($l['type_ligne']) ? $l['type_ligne'] : 'personnalise',
+                                'price'       => (float) ($l['tarif_valeur'] ?? 0),
+                                'label'       => $l['tarif_nom_perso'] ?? '',
+                                'enable_qty'  => !empty($l['tarif_enable_qty']),
+                                'observation' => $l['tarif_observation'] ?? ''
+                            ];
+                        }
+                    }
+
+                    // 3. Formatage des options
+                    $options = [];
+                    if (!empty($t['exp_options_tarifaires']) && is_array($t['exp_options_tarifaires'])) {
+                        foreach ($t['exp_options_tarifaires'] as $o_idx => $o) {
+                            $options[] = [
+                                'uid'        => 'opt_' . $index . '_' . $o_idx,
+                                'label'      => $o['exp_description_option'] ?? '',
+                                'price'      => (float) ($o['exp_tarif_option'] ?? 0),
+                                'enable_qty' => !empty($o['option_enable_qty'])
+                            ];
+                        }
+                    }
+
+                    // 4. On assemble la ligne de configuration finale
+                    $formatted_tarifs[] = [
+                        'key'        => $key,
+                        'label'      => $label,
+                        'code'       => 'standard',
+                        'lines'      => $lines,
+                        'options'    => $options,
+                        'fixed_fees' => []
+                    ];
+                }
+            }
+            $experience_tarifs[$post->ID] = $formatted_tarifs;
         }
 
         wp_send_json_success([
             'locations'   => $locations,
-            'experiences' => $experiences
+            'experiences' => $experiences,
+            'experienceTarifs' => $experience_tarifs
         ]);
     }
 

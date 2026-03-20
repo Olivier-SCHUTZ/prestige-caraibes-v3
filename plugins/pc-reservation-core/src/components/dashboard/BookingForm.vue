@@ -201,6 +201,9 @@
                   >
                     <div v-if="line.enable_qty" class="pcr-field">
                       <span>{{ line.label }} (Prix : {{ line.price }}€)</span>
+                      <small v-if="line.observation" style="color: #64748b; font-style: italic; font-size: 0.85em; margin-top: -2px; margin-bottom: 4px;">
+                        ℹ️ {{ line.observation }}
+                      </small>
                       <input
                         type="number"
                         min="0"
@@ -443,34 +446,41 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr
-                    v-for="(line, index) in store.quotePreview.lignes_devis"
-                    :key="index"
-                    style="border-bottom: 1px dashed #e2e8f0"
-                  >
-                    <td style="padding: 10px 15px; color: #334155">
-                      {{ line.clean_label || line.label }}
-                    </td>
-                    <td
-                      style="
-                        padding: 10px 15px;
-                        text-align: center;
-                        color: #64748b;
-                        font-weight: bold;
-                      "
-                    >
-                      {{ line.qty || "-" }}
-                    </td>
-                    <td
-                      style="
-                        padding: 10px 15px;
-                        text-align: right;
-                        color: #0f172a;
-                      "
-                    >
-                      <strong>{{ line.price || line.amount + " €" }}</strong>
-                    </td>
-                  </tr>
+                  <template v-for="(line, index) in store.quotePreview.lignes_devis" :key="index">
+                    <tr v-if="line.is_observation_only" style="border-bottom: 1px dashed #e2e8f0; background: #f8fafc;">
+                      <td colspan="3" style="padding: 8px 15px; color: #64748b; font-size: 0.9em; font-style: italic;">
+                        ℹ️ {{ line.clean_label }}
+                      </td>
+                    </tr>
+                    
+                    <tr v-else style="border-bottom: 1px dashed #e2e8f0">
+                      <td style="padding: 10px 15px; color: #334155">
+                        {{ line.clean_label || line.label }}
+                        <div v-if="line.observation" style="font-size: 0.85em; color: #64748b; margin-top: 4px; font-style: italic;">
+                          ℹ️ {{ line.observation }}
+                        </div>
+                      </td>
+                      <td
+                        style="
+                          padding: 10px 15px;
+                          text-align: center;
+                          color: #64748b;
+                          font-weight: bold;
+                        "
+                      >
+                        {{ line.qty || "-" }}
+                      </td>
+                      <td
+                        style="
+                          padding: 10px 15px;
+                          text-align: right;
+                          color: #0f172a;
+                        "
+                      >
+                        <strong>{{ line.price || line.amount + " €" }}</strong>
+                      </td>
+                    </tr>
+                  </template>
 
                   <tr
                     v-if="formData.remise_montant > 0"
@@ -610,8 +620,8 @@ const formData = ref({
 const availableTariffs = computed(() => {
   if (formData.value.type !== "experience" || !formData.value.item_id)
     return [];
-  // On utilise les données pré-chargées par WordPress sur la page
-  const allTariffs = window.pcResaParams?.experienceTarifs || {};
+  // 🚀 FIX : On utilise les données du store injectées par la requête API
+  const allTariffs = store.bookingItems?.experienceTarifs || {};
   return allTariffs[formData.value.item_id] || [];
 });
 
@@ -623,7 +633,8 @@ const currentExperienceConfig = computed(() => {
     !formData.value.experience_tarif_type
   )
     return null;
-  const allTariffs = window.pcResaParams?.experienceTarifs || {};
+  // 🚀 FIX : On passe par Pinia ici aussi
+  const allTariffs = store.bookingItems?.experienceTarifs || {};
   const expTariffs = allTariffs[formData.value.item_id] || [];
   return (
     expTariffs.find((t) => t.key === formData.value.experience_tarif_type) ||
