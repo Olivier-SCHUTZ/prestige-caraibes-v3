@@ -73,52 +73,58 @@
     <table v-else class="pcr-table">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Client</th>
-          <th>Type</th>
-          <th>Logement / Expérience</th>
-          <th>Dates</th>
-          <th>Montant</th>
-          <th>Statuts</th>
-          <th>Actions</th>
+          <th style="width: 5%;">ID</th>
+          <th style="width: 16%;">Client</th>
+          <th style="width: 12%;">Type</th>
+          <th style="width: 22%;">Logement / Expérience</th> <th style="width: 22%;">Dates</th>                 <th style="width: 13%;">Montant</th>               <th style="width: 10%;" class="text-right">Actions</th>
         </tr>
       </thead>
-      <tbody>
-        <tr v-for="resa in store.items" :key="resa.id">
-          <td>#{{ resa.id }}</td>
-          <td>{{ resa.client }}</td>
+      
+      <tbody
+        v-for="(resa, index) in store.items"
+        :key="resa.id"
+        class="resa-group"
+        :style="index % 2 === 0 ? 'background-color: #ffffff;' : 'background-color: #f8fafc;'"
+      >
+        <tr class="info-row">
+          <td style="font-weight: 600; color: #64748b;">#{{ resa.id }}</td>
+          <td style="font-weight: bold; color: #1e293b;">{{ resa.client }}</td>
           <td>
-            <span
-              class="badge-type"
-              :title="resa.type === 'location' ? 'Location' : 'Expérience'"
-            >
+            <span class="badge-type" :title="resa.type === 'location' ? 'Location' : 'Expérience'">
               {{ resa.type === "location" ? "🏠 Location" : "🌴 Expérience" }}
             </span>
           </td>
-          <td>{{ resa.item_name }}</td>
-          <td>{{ resa.dates }}</td>
-          <td>{{ resa.montant }} €</td>
-          <td>
-            <div class="pcr-status-group">
-              <span class="badge-status" :class="'status-resa-' + resa.statut_reservation">
-                R: {{ resa.statut_reservation.replace(/_/g, " ") }}
-              </span>
-              <span class="badge-status" :class="'status-pay-' + resa.statut_paiement">
-                P: {{ (resa.statut_paiement === 'partiellement_paye_sur_place' || resa.statut_paiement === 'sur_place') ? '⚠️ ' : '' }}{{ resa.statut_paiement.replace(/_/g, " ") }}
-              </span>
-              <span v-if="resa.caution_statut" class="badge-status" :class="'status-caution-' + resa.caution_statut">
-                🔒 C: {{ resa.caution_statut.replace(/_/g, " ") }}
-              </span>
-            </div>
-          </td>
-          <td>
+          <td style="color: #334155;">{{ resa.item_name }}</td>
+          <td style="color: #475569;">{{ resa.dates }}</td>
+          <td style="font-weight: bold; color: #0f172a;">{{ resa.montant }} €</td>
+          
+          <td rowspan="2" style="text-align: right; vertical-align: middle; padding-right: 15px;">
             <button class="btn-action" @click="store.openDetailModal(resa)">
               Voir
             </button>
           </td>
         </tr>
-        <tr v-if="store.items.length === 0">
-          <td colspan="8" class="text-center">Aucune réservation trouvée.</td>
+
+        <tr class="status-row">
+          <td colspan="6" style="padding-top: 0; padding-bottom: 16px; border-bottom: none;">
+            <div class="pcr-status-group-horizontal">
+              <span v-if="resa.statut_reservation" class="badge-status" :class="'status-resa-' + resa.statut_reservation">
+                <span class="status-icon">📅</span> {{ resa.statut_reservation.replace(/_/g, " ") }}
+              </span>
+              <span v-if="resa.statut_paiement" class="badge-status" :class="'status-pay-' + resa.statut_paiement">
+                <span class="status-icon">{{ (resa.statut_paiement === 'partiellement_paye_sur_place' || resa.statut_paiement === 'sur_place') ? '⚠️' : '💳' }}</span> {{ resa.statut_paiement.replace(/_/g, " ") }}
+              </span>
+              <span v-if="resa.caution_statut" class="badge-status" :class="'status-caution-' + resa.caution_statut">
+                <span class="status-icon">🔒</span> {{ resa.caution_statut.replace(/_/g, " ") }}
+              </span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+
+      <tbody v-if="store.items.length === 0">
+        <tr>
+          <td colspan="7" class="text-center" style="padding: 30px;">Aucune réservation trouvée.</td>
         </tr>
       </tbody>
     </table>
@@ -172,29 +178,70 @@ onMounted(() => {
   width: 100%;
   border-collapse: collapse;
   margin-top: 15px;
-}
-.pcr-table th,
-.pcr-table td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
+  background: white;
 }
 .pcr-table th {
-  background-color: #f8f9fa;
-  font-weight: 600;
+  padding: 16px 12px;
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+  background-color: #f8fafc;
 }
-.pcr-status-group {
+.pcr-table td {
+  padding: 16px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+/* --- DESIGN ZÉBRÉ & SURVOL --- */
+.resa-group {
+  transition: all 0.2s ease;
+  border-bottom: 2px solid #e2e8f0;
+}
+.resa-group:hover {
+  box-shadow: inset 4px 0 0 0 #3b82f6;
+}
+.info-row td {
+  border-bottom: none !important;
+  padding-bottom: 6px !important;
+}
+.status-row td {
+  border-bottom: none !important;
+}
+
+/* --- DESIGN DES STATUTS HORIZONTAUX --- */
+.pcr-status-group-horizontal {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  align-items: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 4px;
 }
 .badge-status {
-  padding: 4px 8px;
-  border-radius: 4px; /* Un peu plus carré pour être compact */
-  font-size: 0.75em;
-  font-weight: bold;
-  text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s;
+}
+.badge-status:hover {
+  transform: translateY(-1px);
+}
+.status-icon {
+  font-style: normal;
+  font-size: 1.1em;
 }
 /* =========================================
    🎨 PALETTE DES STATUTS (Hautement distincte)

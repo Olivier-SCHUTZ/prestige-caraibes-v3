@@ -1,9 +1,9 @@
 <template>
   <div class="pc-caution-actions mt-4 p-5 border rounded-lg bg-white shadow-sm">
-    <div class="flex justify-between items-center mb-4">
-      <h4 class="font-bold text-lg m-0">
-        Gestion de la Caution
-        <span class="text-gray-500 font-normal"
+    <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
+      <h4 class="font-bold text-lg text-gray-800 m-0 flex items-center gap-2">
+        🔒 Gestion de la Caution
+        <span class="text-gray-500 font-normal text-sm"
           >({{ formatCurrency(caution.montant) }})</span
         >
       </h4>
@@ -12,36 +12,24 @@
       </span>
     </div>
 
-    <div v-if="['non_demande', 'demande_envoyee'].includes(caution.statut)">
-      <div
-        v-if="generatedCautionUrl"
-        class="flex flex-col gap-2 bg-gray-50 p-3 rounded border border-gray-200 w-full max-w-md"
-      >
-        <label
-          class="text-xs text-gray-500 font-semibold uppercase tracking-wide"
-          >Lien de la caution</label
+    <div v-if="['non_demande', 'demande_envoyee'].includes(caution.statut)" class="flex flex-col gap-3 max-w-[400px]">
+      
+      <div v-if="generatedCautionUrl" class="flex items-center justify-end gap-2 w-full">
+        <input
+          type="text"
+          readonly
+          :value="generatedCautionUrl"
+          class="text-xs p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        />
+        <button
+          type="button"
+          @click.prevent="copyCautionLink(generatedCautionUrl)"
+          class="flex-shrink-0 px-3 py-2 text-xs font-semibold rounded-md transition-colors shadow-sm border"
+          :class="isLinkCopied ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
         >
-        <div class="flex gap-2">
-          <input
-            type="text"
-            readonly
-            :value="generatedCautionUrl"
-            class="text-sm p-2 border border-gray-300 rounded flex-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            @click.prevent="copyCautionLink(generatedCautionUrl)"
-            class="pc-btn pc-btn-sm"
-            :class="
-              isLinkCopied
-                ? 'pc-btn-success text-green-700 bg-green-100'
-                : 'pc-btn-secondary'
-            "
-          >
-            <span v-if="isLinkCopied">✅</span>
-            <span v-else>📋 Copier</span>
-          </button>
-        </div>
+          <span v-if="isLinkCopied">✅ Copié</span>
+          <span v-else>📋 Copier</span>
+        </button>
       </div>
 
       <button
@@ -49,61 +37,58 @@
         type="button"
         @click.prevent="handleGenerateLink"
         :disabled="isLoading('link')"
-        class="pc-btn pc-btn-sm pc-btn-primary flex items-center gap-2"
+        class="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors disabled:opacity-50"
       >
-        <span v-if="isLoading('link')">⏳ Génération...</span>
-        <span v-else>🔗 Générer le lien d'empreinte</span>
+        <span v-if="isLoading('link')">⏳ Génération en cours...</span>
+        <span v-else>🔗 Générer le lien d'empreinte Stripe</span>
       </button>
 
-      <p
+      <div
         v-if="caution.statut === 'demande_envoyee'"
-        class="text-sm text-orange-600 mt-2"
+        class="text-[11px] text-orange-700 bg-orange-50 border border-orange-200 p-2 rounded-md font-medium mt-1"
       >
-        ⚠️ Un lien a déjà été généré le {{ formatDate(caution.date_demande) }}.
-        Toujours en attente du client.
-      </p>
+        ⚠️ Un lien a été généré le {{ formatDate(caution.date_demande) }}. En attente de l'action du client.
+      </div>
     </div>
 
-    <div
-      v-else-if="caution.statut === 'empreinte_validee'"
-      class="flex flex-wrap gap-2"
-    >
-      <button
-        type="button"
-        @click.prevent="handleRelease"
-        :disabled="isAnyLoading"
-        class="pc-btn pc-btn-sm pc-btn-success"
-      >
-        <span v-if="isLoading('release')">⏳ Libération...</span>
-        <span v-else>🟢 Libérer</span>
-      </button>
+    <div v-else-if="caution.statut === 'empreinte_validee'" class="flex flex-col gap-3">
+      <div class="flex gap-2 w-full max-w-[500px]">
+        
+        <button
+          type="button"
+          @click.prevent="handleRelease"
+          :disabled="isAnyLoading"
+          class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-[10px] uppercase tracking-wide font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors shadow-sm disabled:opacity-50"
+        >
+          <span v-if="isLoading('release')">⏳</span>
+          <span v-else class="text-sm">🟢</span> Libérer
+        </button>
 
-      <button
-        type="button"
-        @click.prevent="handleRotate"
-        :disabled="isAnyLoading"
-        class="pc-btn pc-btn-sm pc-btn-secondary"
-        title="Renouvelle la pré-autorisation pour 7 jours de plus"
-      >
-        <span v-if="isLoading('rotate')">⏳ Renouvellement...</span>
-        <span v-else>🔄 Renouveler (7j)</span>
-      </button>
+        <button
+          type="button"
+          @click.prevent="handleRotate"
+          :disabled="isAnyLoading"
+          class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-[10px] uppercase tracking-wide font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors shadow-sm disabled:opacity-50"
+          title="Renouvelle la pré-autorisation pour 7 jours de plus"
+        >
+          <span v-if="isLoading('rotate')">⏳</span>
+          <span v-else class="text-sm">🔄</span> Renouveler (7j)
+        </button>
 
-      <button
-        type="button"
-        @click.prevent="promptCapture"
-        :disabled="isAnyLoading"
-        class="pc-btn pc-btn-sm pc-btn-danger"
-      >
-        <span v-if="isLoading('capture')">⏳ Encaissement...</span>
-        <span v-else>🔴 Encaisser (Dégâts)</span>
-      </button>
+        <button
+          type="button"
+          @click.prevent="promptCapture"
+          :disabled="isAnyLoading"
+          class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-[10px] uppercase tracking-wide font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors shadow-sm disabled:opacity-50"
+        >
+          <span v-if="isLoading('capture')">⏳</span>
+          <span v-else class="text-sm">🔴</span> Encaisser
+        </button>
+      </div>
 
-      <p class="text-xs text-gray-500 w-full mt-2">
+      <p class="text-[11px] text-gray-500 m-0 mt-1">
         Ref Stripe :
-        <code class="bg-gray-100 p-1 rounded">{{
-          caution.reference || caution.caution_reference
-        }}</code>
+        <code class="bg-gray-50 border border-gray-200 text-gray-600 px-1.5 py-0.5 rounded ml-1">{{ caution.reference || caution.caution_reference }}</code>
       </p>
     </div>
 
@@ -406,14 +391,13 @@ const formatStatut = (statut) => {
 };
 
 const getBadgeClass = (statut) => {
-  const base = "px-3 py-1 text-sm rounded-full font-semibold ";
-  if (statut === "empreinte_validee")
-    return base + "bg-green-100 text-green-800";
-  if (statut === "demande_envoyee")
-    return base + "bg-orange-100 text-orange-800";
-  if (statut === "liberee") return base + "bg-gray-200 text-gray-700";
-  if (statut === "encaissee") return base + "bg-red-100 text-red-800";
-  return base + "bg-gray-100 text-gray-500";
+  // Nouveau style "Pilule" (identique au tableau principal)
+  const base = "px-3 py-1 text-[10px] rounded-full font-bold uppercase tracking-wide border ";
+  if (statut === "empreinte_validee") return base + "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (statut === "demande_envoyee") return base + "bg-orange-50 text-orange-700 border-orange-200";
+  if (statut === "liberee") return base + "bg-slate-50 text-slate-600 border-slate-200";
+  if (statut === "encaissee") return base + "bg-red-50 text-red-700 border-red-200 shadow-sm";
+  return base + "bg-gray-50 text-gray-500 border-gray-200";
 };
 
 // --- ACTIONS API ---
