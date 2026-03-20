@@ -100,23 +100,14 @@
           <td>{{ resa.montant }} €</td>
           <td>
             <div class="pcr-status-group">
-              <span
-                class="badge-status"
-                :class="'status-resa-' + resa.statut_reservation"
-              >
+              <span class="badge-status" :class="'status-resa-' + resa.statut_reservation">
                 R: {{ resa.statut_reservation.replace(/_/g, " ") }}
               </span>
-              <span
-                class="badge-status"
-                :class="'status-pay-' + resa.statut_paiement"
-              >
-                P:
-                {{
-                  resa.statut_paiement === "partiellement_paye_sur_place" ||
-                  resa.statut_paiement === "sur_place"
-                    ? "⚠️ "
-                    : ""
-                }}{{ resa.statut_paiement.replace(/_/g, " ") }}
+              <span class="badge-status" :class="'status-pay-' + resa.statut_paiement">
+                P: {{ (resa.statut_paiement === 'partiellement_paye_sur_place' || resa.statut_paiement === 'sur_place') ? '⚠️ ' : '' }}{{ resa.statut_paiement.replace(/_/g, " ") }}
+              </span>
+              <span v-if="resa.caution_statut" class="badge-status" :class="'status-caution-' + resa.caution_statut">
+                🔒 C: {{ resa.caution_statut.replace(/_/g, " ") }}
               </span>
             </div>
           </td>
@@ -313,6 +304,36 @@ onMounted(() => {
   background: #9c1a1c;
   color: #ffffff;
   border: 1px solid #7a1516;
+}
+
+/* === STATUTS CAUTION === */
+/* Demande envoyée (Bleu info) */
+.status-caution-demande_envoyee {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+/* Empreinte validée (Vert rassurant) */
+.status-caution-empreinte_validee {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+/* Libérée (Gris neutre, c'est terminé) */
+.status-caution-liberee {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+/* Encaissée (Rouge vif, cas problématique) */
+.status-caution-encaissee {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  font-weight: 900;
 }
 /* ========================================= */
 /* 🚨 ALERTES PAIEMENT SUR PLACE             */

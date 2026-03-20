@@ -334,7 +334,8 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
                 'dates'      => $dates,
                 'montant'    => number_format((float)($resa->montant_total ?? 0), 2, ',', ' '),
                 'statut_reservation' => $resa->statut_reservation ?? 'en_attente_traitement',
-                'statut_paiement'    => $resa->statut_paiement ?? 'non_paye'
+                'statut_paiement'    => $resa->statut_paiement ?? 'non_paye',
+                'caution_statut'     => $resa->caution_statut ?? '' // <-- NOUVEAU : On ajoute la caution au colis !
             ];
         }
 
