@@ -32,18 +32,56 @@
               {{ formatStatut(payment.statut) }}
             </span>
           </td>
-          <td class="p-2 border-b text-right">
-            <button
+          <td class="p-2 border-b text-right min-w-[250px]">
+            <template
               v-if="payment.statut !== 'paye' && payment.statut !== 'annule'"
-              @click="handleGenerateLink(payment)"
-              :disabled="paymentsStore.isLoading(`payment_link_${payment.id}`)"
-              class="pc-btn pc-btn-sm pc-btn-primary"
             >
-              <span v-if="paymentsStore.isLoading(`payment_link_${payment.id}`)"
-                >⏳ Création...</span
+              <div
+                v-if="payment.url_paiement || generatedUrls[payment.id]"
+                class="flex items-center justify-end gap-1"
               >
-              <span v-else>🔗 Obtenir le lien</span>
-            </button>
+                <input
+                  type="text"
+                  readonly
+                  :value="payment.url_paiement || generatedUrls[payment.id]"
+                  class="text-xs p-1 border border-gray-200 rounded bg-gray-50 text-gray-500 w-32 focus:outline-none"
+                  title="Lien de paiement"
+                />
+                <button
+                  @click="
+                    copyToClipboard(
+                      payment.id,
+                      payment.url_paiement || generatedUrls[payment.id],
+                    )
+                  "
+                  class="pc-btn pc-btn-sm"
+                  :class="
+                    copiedPayments[payment.id]
+                      ? 'pc-btn-success text-green-700 bg-green-100'
+                      : 'pc-btn-secondary'
+                  "
+                  title="Copier le lien"
+                >
+                  <span v-if="copiedPayments[payment.id]">✅</span>
+                  <span v-else>📋 Copier</span>
+                </button>
+              </div>
+
+              <button
+                v-else
+                @click="handleGenerateLink(payment)"
+                :disabled="
+                  paymentsStore.isLoading(`payment_link_${payment.id}`)
+                "
+                class="pc-btn pc-btn-sm pc-btn-primary"
+              >
+                <span
+                  v-if="paymentsStore.isLoading(`payment_link_${payment.id}`)"
+                  >⏳ Création...</span
+                >
+                <span v-else>🔗 Générer le lien</span>
+              </button>
+            </template>
 
             <span
               v-else-if="payment.statut === 'paye'"
@@ -59,7 +97,11 @@
 </template>
 
 <script setup>
+import { ref } from "vue";
 import { usePaymentsStore } from "../../stores/payments-store";
+
+const copiedPayments = ref({});
+const generatedUrls = ref({}); // Stocke les URLs générées sans recharger la page
 
 const props = defineProps({
   payments: {
@@ -120,16 +162,32 @@ const handleGenerateLink = async (payment) => {
       props.reservationId,
     );
 
-    // Copie automatique dans le presse-papier
-    await navigator.clipboard.writeText(result.url);
+    // On sauvegarde l'URL pour l'afficher dans l'interface de façon permanente
+    generatedUrls.value[payment.id] = result.url;
 
-    // TODO: Déclencher un Toast global de succès au lieu d'un simple alert
-    alert(
-      "Lien généré et copié avec succès ! Vous pouvez le coller (Ctrl+V) dans votre message au client.",
-    );
+    // On copie automatiquement la première fois
+    await copyToClipboard(payment.id, result.url);
   } catch (error) {
     alert("Erreur: " + error.message);
   }
+};
+
+const copyToClipboard = async (paymentId, url) => {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      throw new Error("HTTPS requis pour la copie auto");
+    }
+  } catch (err) {
+    prompt("Voici le lien (Ctrl+C pour copier) :", url);
+  }
+
+  // Feedback visuel du bouton de copie
+  copiedPayments.value[paymentId] = true;
+  setTimeout(() => {
+    copiedPayments.value[paymentId] = false;
+  }, 3000);
 };
 </script>
 

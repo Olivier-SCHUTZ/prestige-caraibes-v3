@@ -33,7 +33,9 @@ class PCR_Stripe_Webhook
             exit('Configuration error');
         }
 
+        $event = null;
         try {
+            // Cette méthode valide la signature ET retourne l'objet événement sécurisé
             $event = \Stripe\Webhook::constructEvent($payload, $sig_header, $endpoint_secret);
         } catch (\UnexpectedValueException $e) {
             error_log('[Stripe Webhook] ❌ Erreur : Payload invalide.');
@@ -45,16 +47,15 @@ class PCR_Stripe_Webhook
             exit('Signature invalide');
         }
 
-        if ($event['type'] !== 'checkout.session.completed') {
+        // Utiliser l'objet $event sécurisé généré par la librairie Stripe
+        if ($event->type !== 'checkout.session.completed') {
             status_header(200);
             exit('Event ignored');
         }
 
-        $session = $event['data']['object'];
-        self::handle_checkout_session($session);
-
-        status_header(200);
-        exit('Webhook processed');
+        // Récupérer l'objet session de manière sécurisée et le convertir en vrai tableau PHP
+        $session = $event->data->object;
+        self::handle_checkout_session($session->toArray());
     }
 
     private static function handle_checkout_session($session)
@@ -102,18 +103,28 @@ class PCR_Stripe_Webhook
         // ====================================================
         $amount_received = isset($session['amount_total']) ? $session['amount_total'] / 100 : 0;
         $table_pay = $wpdb->prefix . 'pc_payments';
+        $payment_id_meta = isset($session['metadata']['payment_id']) ? (int) $session['metadata']['payment_id'] : 0;
 
-        // Recherche du paiement correspondant (par montant approximatif)
-        $payment = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$table_pay} 
-             WHERE reservation_id = %d 
-             AND statut != 'paye'
-             AND (montant BETWEEN %f AND %f)
-             LIMIT 1",
-            $resa_id,
-            $amount_received - 1,
-            $amount_received + 1
-        ));
+        $payment = null;
+
+        // 1. Recherche précise par ID de paiement (priorité absolue)
+        if ($payment_id_meta > 0) {
+            $payment = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_pay} WHERE id = %d AND statut != 'paye'", $payment_id_meta));
+        }
+
+        // 2. Fallback : Recherche du paiement correspondant (par montant approximatif)
+        if (!$payment) {
+            $payment = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$table_pay} 
+                 WHERE reservation_id = %d 
+                 AND statut != 'paye'
+                 AND (montant BETWEEN %f AND %f)
+                 LIMIT 1",
+                $resa_id,
+                $amount_received - 1,
+                $amount_received + 1
+            ));
+        }
 
         // Fallback : premier paiement en attente
         if (!$payment) {

@@ -3,6 +3,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Chargement de notre nouvelle boîte à outils
+require_once __DIR__ . '/class-legacy-utils.php';
+
 /**
  * Contrôleur AJAX pour la gestion des Réservations (Création, Annulation, Confirmation).
  */
@@ -154,7 +157,7 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
     }
 
     /**
-     * Récupère la configuration des tarifs d'un logement.
+     * Récupère la configuration des tarifs d'un logement (Version V2).
      */
     public static function handle_logement_config()
     {
@@ -184,17 +187,12 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
             ], 400);
         }
 
-        if (!function_exists('pc_resa_get_logement_pricing_config')) {
-            wp_send_json_error([
-                'message' => 'Config logement indisponible.',
-                'code'    => 'config_unavailable',
-            ], 500);
-        }
+        // Appel à notre nouvelle boîte à outils !
+        $config = PCR_Legacy_Utils::get_pricing_config($logement_id);
 
-        $config = pc_resa_get_logement_pricing_config($logement_id);
         if (empty($config)) {
             wp_send_json_error([
-                'message' => 'Impossible de charger ce logement.',
+                'message' => 'Impossible de charger les tarifs pour ce logement.',
                 'code'    => 'logement_config_empty',
             ], 404);
         }
@@ -408,7 +406,8 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
             'caution' => [
                 'mode' => $caution_mode,
                 'statut' => $resa->caution_statut ?? 'non_demande',
-                'montant' => (float)($resa->caution_montant ?? 0)
+                'montant' => (float)($resa->caution_montant ?? 0),
+                'reference' => $resa->caution_reference ?? ''
             ],
             // 🚀 NOUVEAU : On ajoute les données brutes vitales pour le formulaire de modification !
             'raw_type' => $resa->type ?? 'location',
@@ -541,8 +540,8 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
                 wp_send_json_error(['message' => 'Veuillez sélectionner vos dates de séjour.']);
             }
 
-            // On récupère la configuration du logement
-            $config = pc_resa_get_logement_pricing_config($item_id);
+            // Appel à notre nouvelle boîte à outils !
+            $config = PCR_Legacy_Utils::get_pricing_config($item_id);
 
             if (!$config) {
                 wp_send_json_error(['message' => 'Configuration tarifaire introuvable pour ce logement.']);

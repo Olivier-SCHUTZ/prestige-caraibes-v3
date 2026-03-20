@@ -63,12 +63,24 @@ class PCR_Stripe_Ajax extends PCR_Base_Ajax_Controller
         $result = PCR_Stripe_Manager::create_payment_link(
             $payment->reservation_id,
             $amount,
-            $payment->type_paiement
+            $payment->type_paiement,
+            $payment->id // <-- AJOUT DE L'ID DU PAIEMENT
         );
 
         if (!$result['success']) {
             wp_send_json_error(['message' => $result['message']]);
         }
+
+        // --- NOUVEAU : Sauvegarde du lien en base de données ---
+        $wpdb->update(
+            $table_pay,
+            [
+                'url_paiement'      => $result['url'],
+                'gateway_reference' => $result['id'], // ID de la session Stripe
+                'date_maj'          => current_time('mysql')
+            ],
+            ['id' => $payment_id]
+        );
 
         // 5. Succès : on renvoie l'URL
         wp_send_json_success([

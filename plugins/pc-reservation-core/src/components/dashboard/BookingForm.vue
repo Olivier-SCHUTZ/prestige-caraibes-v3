@@ -834,7 +834,21 @@ watch(
 );
 
 const initFlatpickr = () => {
-  if (!dateRangeInput.value || !window.flatpickr) return;
+  console.log("📅 Tentative d'initialisation du calendrier...");
+
+  if (!window.flatpickr) {
+    console.error(
+      "🚨 ERREUR CRITIQUE : La librairie Flatpickr n'est pas chargée par WordPress !",
+    );
+    return;
+  }
+
+  if (!dateRangeInput.value) {
+    console.error(
+      "🚨 ERREUR : Le champ input du calendrier est introuvable dans le DOM !",
+    );
+    return;
+  }
 
   if (flatpickrInstance) flatpickrInstance.destroy();
 
@@ -1139,5 +1153,11 @@ const handleCreate = async () => {
   padding: 6px 0;
   border-bottom: 1px dashed #eee;
   font-size: 0.9em;
+}
+</style>
+<style>
+/* 🚀 LA PIÈCE MANQUANTE 2 : FORCER LE CALENDRIER AU-DESSUS DE LA MODALE NOIRE */
+.flatpickr-calendar {
+  z-index: 999999 !important;
 }
 </style>

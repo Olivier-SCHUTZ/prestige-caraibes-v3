@@ -25,8 +25,18 @@ export const usePaymentsStore = defineStore("payments", {
      */
     async refreshReservationDetails(reservationId) {
       const resStore = useReservationsStore();
-      // On simule l'objet attendu par openDetailModal
-      await resStore.openDetailModal({ id: reservationId });
+
+      // On appelle une fonction de rafraîchissement silencieux
+      // (Il faudra s'assurer que cette fonction existe dans reservations-store.js)
+      if (typeof resStore.refreshCurrentReservation === "function") {
+        await resStore.refreshCurrentReservation(reservationId);
+      } else {
+        console.warn(
+          "La méthode refreshCurrentReservation est manquante dans reservations-store.",
+        );
+        // Fallback temporaire (à éviter car il cause le saut d'UI)
+        await resStore.openDetailModal({ id: reservationId });
+      }
     },
 
     // --- PAIEMENTS CLASSIQUES ---
@@ -73,7 +83,7 @@ export const usePaymentsStore = defineStore("payments", {
 
         if (!response.data.success) throw new Error(response.data.data.message);
 
-        await this.refreshReservationDetails(reservationId);
+        // Pas de rafraîchissement global ici pour éviter le "saut" de l'onglet
         return response.data.data;
       } catch (error) {
         throw new Error(error.response?.data?.data?.message || error.message);

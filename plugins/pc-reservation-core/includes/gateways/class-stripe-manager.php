@@ -36,7 +36,7 @@ class PCR_Stripe_Manager
      * @param string $type           Type de paiement ('acompte', 'solde', 'total')
      * * @return array ['success' => bool, 'url' => string, 'message' => string]
      */
-    public static function create_payment_link($reservation_id, $amount, $type = 'total')
+    public static function create_payment_link($reservation_id, $amount, $type = 'total', $payment_id = 0)
     {
         $secret_key = self::get_secret_key();
         if (empty($secret_key)) {
@@ -100,6 +100,7 @@ class PCR_Stripe_Manager
             'metadata' => [
                 'reservation_id' => $reservation_id,
                 'payment_type'   => $type,
+                'payment_id'     => $payment_id, // <-- AJOUT DANS LES METADONNÉES STRIPE
                 'plugin_source'  => 'pc-reservation-core'
             ]
         ];

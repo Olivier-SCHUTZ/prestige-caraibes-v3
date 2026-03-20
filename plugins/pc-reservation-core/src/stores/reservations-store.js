@@ -362,6 +362,61 @@ export const useReservationsStore = defineStore("reservations", {
     },
 
     /**
+     * 🚀 NOUVEAU : Met à jour silencieusement les détails d'une réservation
+     * sans déclencher d'état de chargement ni modifier l'état de la modale.
+     * Utilisé principalement après une action de paiement/caution réussie.
+     */
+    async refreshCurrentReservation(reservationId) {
+      try {
+        const response = await reservationApi.getDetails(reservationId);
+
+        if (response.data.success) {
+          let data = response.data.data;
+
+          // Réutilisation de ta logique de nettoyage Unicode
+          const fixUnicode = (obj) => {
+            if (typeof obj === "string") {
+              return obj.replace(/\\u[\dA-F]{4}/gi, (match) =>
+                String.fromCharCode(parseInt(match.replace(/\\u/g, ""), 16)),
+              );
+            } else if (Array.isArray(obj)) {
+              return obj.map(fixUnicode);
+            } else if (obj !== null && typeof obj === "object") {
+              const newObj = {};
+              for (const key in obj) {
+                newObj[key] = fixUnicode(obj[key]);
+              }
+              return newObj;
+            }
+            return obj;
+          };
+
+          data = fixUnicode(data);
+
+          // On met à jour l'objet directement pour déclencher la réactivité
+          // SANS toucher à this.isDetailModalOpen ou this.isLoadingDetails
+          this.reservationDetails = data;
+
+          // Optionnel : on met aussi à jour l'objet résumé dans la liste (si présent)
+          const index = this.items.findIndex(
+            (item) => item.id == reservationId,
+          );
+          if (index !== -1) {
+            // Fusionne les données essentielles pour que le tableau de bord soit à jour
+            this.items[index] = { ...this.items[index], ...data };
+          }
+
+          console.log(
+            "Détails rafraîchis silencieusement :",
+            this.reservationDetails,
+          );
+        }
+      } catch (err) {
+        console.error("Erreur lors du rafraîchissement silencieux :", err);
+      }
+    },
+
+    /**
      * Charge la configuration d'un logement (Capacité, iCal...)
      */
     async fetchHousingConfig(logementId) {

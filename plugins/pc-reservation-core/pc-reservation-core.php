@@ -16,6 +16,11 @@ define('PC_RES_CORE_VERSION', '0.1.0');
 define('PC_RES_CORE_PATH', plugin_dir_path(__FILE__));
 define('PC_RES_CORE_URL', plugin_dir_url(__FILE__));
 
+// 🚨 CHARGEMENT OBLIGATOIRE DE COMPOSER (Stripe, DomPDF, etc.)
+if (file_exists(PC_RES_CORE_PATH . 'vendor/autoload.php')) {
+    require_once PC_RES_CORE_PATH . 'vendor/autoload.php';
+}
+
 // Chargement des fichiers internes
 require_once PC_RES_CORE_PATH . 'db/schema.php';
 require_once PC_RES_CORE_PATH . 'includes/class-reservation.php';
@@ -385,6 +390,11 @@ add_action('wp_enqueue_scripts', function () {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce('pc_dashboard_calendar'),
         ));
+
+        // 🚀 LA PIÈCE MANQUANTE 1 : CHARGEMENT DE LA LIBRAIRIE FLATPICKR
+        wp_enqueue_style('pc-flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', [], '4.6.13');
+        wp_enqueue_script('pc-flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js', [], '4.6.13', false);
+        wp_enqueue_script('pc-flatpickr-fr', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js', ['pc-flatpickr'], '4.6.13', false);
 
         // 3. Chargement des modules Vue V2
         PCR_Vite_Loader::enqueue_entry('src/modules/dashboard/main.js');
