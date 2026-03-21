@@ -60,13 +60,84 @@ class PCR_Booking_Pricing_Calculator
         if (empty($pricing['lines']) && !empty($pricing['lines_json'])) {
             $pricing = $this->maybe_merge_pricing_lines_from_source($pricing, $pricing['lines_json']);
         }
-        if (empty($pricing['raw_lines_json']) && !empty($pricing['lines']) && is_array($pricing['lines'])) {
-            $encoded = wp_json_encode($pricing['lines']);
-            if ($encoded !== false) $pricing['raw_lines_json'] = $encoded;
+
+        // 🚀 THE FIX : Sas de décontamination ! On nettoie les vieilles lignes du front-end legacy !
+        if (!empty($pricing['lines']) && is_array($pricing['lines'])) {
+            $pricing['lines'] = $this->clean_legacy_lines($pricing['lines']);
+
+            // 🚀 FIX PDF CRITIQUE : On force l'UTF-8 pour empêcher la création de "\u20ac" (Symbole €) 
+            // qui se transformait en chiffre "20" dans le générateur de facture !
+            $encoded = wp_json_encode($pricing['lines'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($encoded !== false) {
+                $pricing['raw_lines_json'] = $encoded;
+                $pricing['lines_json'] = $encoded;
+            }
         }
+
         if (!is_array($pricing['lines'])) $pricing['lines'] = [];
 
         return $pricing;
+    }
+
+    /**
+     * 🚀 NOUVEAU : Intercepte et répare le JSON du front-end avant sauvegarde
+     */
+    private function clean_legacy_lines(array $lines)
+    {
+        $cleaned = [];
+        foreach ($lines as $line) {
+            $label = $line['label'] ?? '';
+
+            // 1. On supprime la ligne inutile "Options"
+            if (strtolower(trim($label)) === 'options' && empty($line['amount'])) {
+                continue;
+            }
+
+            // 2. Réparation du prix
+            $amount = 0;
+            if (isset($line['amount']) && is_numeric($line['amount'])) {
+                $amount = (float)$line['amount'];
+            } elseif (!empty($line['price'])) {
+                $amount = $this->parse_price_to_float($line['price']);
+            }
+
+            // 3. Correction des symboles cassés
+            $label = str_replace(['\u00d7', 'u00d7'], '×', $label);
+
+            $qty = isset($line['qty']) ? (int)$line['qty'] : 0;
+            $clean_label = $line['clean_label'] ?? $label;
+
+            // 4. Extraction de la quantité si absente (🚀 FIX : Ajout du flag /u pour supporter l'UTF-8 sur le symbole ×)
+            if ($qty <= 0) {
+                if (preg_match('/^(?:(\d+)\s*[x×X]\s*)/u', $label, $matches) || preg_match('/^(\d+)\s+/u', $label, $matches)) {
+                    $qty = (int)$matches[1];
+                    $clean_label = preg_replace('/^(?:\d+\s*[x×X]\s*|\d+\s+)/u', '', $label);
+                } elseif (preg_match('/(?:\s*[x×X]\s*(\d+))$/u', $label, $matches)) {
+                    $qty = (int)$matches[1];
+                    $clean_label = preg_replace('/(?:\s*[x×X]\s*\d+)$/u', '', $label);
+                } else {
+                    $qty = 1;
+                }
+            }
+
+            // 🚀 SÉCURITÉ : On nettoie les espaces invisibles corrompus ou caractères spéciaux restants au début/fin
+            $clean_label = trim(preg_replace('/^[\pZ\pC]+|[\pZ\pC]+$/u', '', $clean_label));
+
+            // 5. Réparation du texte "undefined"
+            $price_str = $line['price'] ?? '';
+            if (empty($price_str) || strpos((string)$price_str, 'undefined') !== false) {
+                $price_str = $this->format_currency_display($amount, 'EUR');
+            }
+
+            $cleaned[] = [
+                'label'       => trim($label),
+                'clean_label' => $clean_label,
+                'qty'         => $qty,
+                'amount'      => $amount,
+                'price'       => $price_str
+            ];
+        }
+        return $cleaned;
     }
 
     private function maybe_merge_pricing_lines_from_source(array $pricing, $source)
@@ -189,11 +260,23 @@ class PCR_Booking_Pricing_Calculator
             $display_label = trim($qty . ' ' . $label);
 
             if ($type === 'bebe' && $unit <= 0) {
-                $lines[] = ['label' => $display_label, 'price' => __('Gratuit', 'pc'), 'amount' => 0];
+                $lines[] = [
+                    'label' => $display_label,
+                    'clean_label' => trim($label),
+                    'qty' => $qty,
+                    'price' => __('Gratuit', 'pc'),
+                    'amount' => 0
+                ];
                 continue;
             }
 
-            $lines[] = ['label' => $display_label, 'price' => $this->format_currency_display($amount, $currency), 'amount' => $amount];
+            $lines[] = [
+                'label' => $display_label,
+                'clean_label' => trim($label),
+                'qty' => $qty,
+                'price' => $this->format_currency_display($amount, $currency),
+                'amount' => $amount
+            ];
             $total += $amount;
         }
 
@@ -202,7 +285,13 @@ class PCR_Booking_Pricing_Calculator
             $fee_label = trim((string) ($fee['exp_description_frais_fixe'] ?? ''));
             $fee_amount = isset($fee['exp_tarif_frais_fixe']) ? (float) $fee['exp_tarif_frais_fixe'] : 0;
             if ($fee_label === '' || $fee_amount == 0) continue;
-            $lines[] = ['label' => $fee_label, 'price' => $this->format_currency_display($fee_amount, $currency), 'amount' => $fee_amount];
+            $lines[] = [
+                'label' => $fee_label,
+                'clean_label' => $fee_label,
+                'qty' => 1,
+                'price' => $this->format_currency_display($fee_amount, $currency),
+                'amount' => $fee_amount
+            ];
             $total += $fee_amount;
         }
 

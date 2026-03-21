@@ -651,72 +651,33 @@ const currentExperienceConfig = computed(() => {
   );
 });
 
-// 🚀 NOUVEAU : Quand le tarif change, on scanne le devis sauvegardé pour restaurer les quantités
+// 🚀 NETTOYÉ : Quand le tarif change, on initialise les valeurs par défaut (plus de RegEx de rétrocompatibilité)
 watch(currentExperienceConfig, (newConfig) => {
+  // Ne pas réinitialiser si on est en cours de pré-remplissage avec les données structurées
+  if (isPrefilling.value) return;
+
   formData.value.customQty = {};
   formData.value.options = {};
 
   if (newConfig) {
-    // On récupère les lignes sauvegardées en BDD si on est en train d'éditer
-    const savedLines = isPrefilling.value && store.prefillData ? store.prefillData.quote_lines || [] : [];
-
-    // 1. Pré-remplir les quantités des privatisations / forfaits
+    // 1. Initialiser les quantités des lignes à zéro ou valeur par défaut
     if (newConfig.lines) {
       newConfig.lines.forEach((line, index) => {
         if (line.enable_qty) {
           const key = line.uid || `line_${index}`;
-          const cleanLabel = (line.label || line.type).trim().toLowerCase();
-          
-          // 🚀 FIX : Recherche insensible à la casse
-          const foundSaved = savedLines.find(sl => {
-            const slLabel = (sl.clean_label || sl.label || '').toLowerCase();
-            return slLabel === cleanLabel || slLabel.includes(cleanLabel);
-          });
-
-          if (foundSaved && isPrefilling.value) {
-            // 🚀 FIX : Rétrocompatibilité avec les anciennes réservations (extraction du texte "4 Location...")
-            let savedQty = Number(foundSaved.qty);
-            if (!foundSaved.qty || isNaN(savedQty) || savedQty === 0) {
-              const match = (foundSaved.label || '').match(/^(\d+)/); 
-              savedQty = match ? parseInt(match[1], 10) : 1;
-            }
-            formData.value.customQty[key] = savedQty || 0;
-          } else {
-            formData.value.customQty[key] = line.default_qty ? Number(line.default_qty) : 0;
-          }
+          formData.value.customQty[key] = line.default_qty ? Number(line.default_qty) : 0;
         }
       });
     }
-    // 2. Pré-remplir les options
+
+    // 2. Initialiser les options à non-sélectionnées
     if (newConfig.options) {
       newConfig.options.forEach((opt, index) => {
         const optId = opt.uid || `option_${index}`;
-        const cleanLabel = opt.label.trim().toLowerCase();
-        
-        // 🚀 FIX : Recherche insensible à la casse
-        const foundSaved = savedLines.find(sl => {
-            const slLabel = (sl.clean_label || sl.label || '').toLowerCase();
-            return slLabel === cleanLabel || slLabel.includes(cleanLabel);
-        });
-
-        if (foundSaved && isPrefilling.value) {
-          // 🚀 FIX : Rétrocompatibilité extraction quantité des options (supporte "4 x Option" et "Option x 4")
-          let savedQty = Number(foundSaved.qty);
-          if (!foundSaved.qty || isNaN(savedQty) || savedQty === 0) {
-            // Cherche un nombre avant ou après le "x" ou "×"
-            const match = (foundSaved.label || '').match(/(?:^(\d+)\s*[x×X])|(?:[x×X]\s*(\d+))/); 
-            savedQty = match ? parseInt(match[1] || match[2], 10) : 1;
-          }
-          formData.value.options[optId] = {
-            selected: true,
-            qty: savedQty || 1,
-          };
-        } else {
-          formData.value.options[optId] = {
-            selected: false,
-            qty: opt.default_qty ? Number(opt.default_qty) : 1,
-          };
-        }
+        formData.value.options[optId] = {
+          selected: false,
+          qty: opt.default_qty ? Number(opt.default_qty) : 1,
+        };
       });
     }
   }
@@ -757,7 +718,7 @@ onUnmounted(() => {
 
 const isPrefilling = ref(false); // 🚀 Bloqueur de radar
 
-// 🚀 NOUVEAU : Quand la modale s'ouvre, on injecte les données d'édition
+// 🚀 FIX FLASH : Gestion séquentielle stricte du DOM avec nextTick()
 watch(
   () => store.isCreateModalOpen,
   async (isOpen) => {
@@ -765,14 +726,24 @@ watch(
       if (store.prefillData) {
         isPrefilling.value = true; // 🔴 On éteint le radar automatique
 
-        // On remplit les champs du formulaire
+        console.log('🚀 Démarrage pré-remplissage séquentiel', store.prefillData);
+
+        // ÉTAPE 1 : Assigner d'abord type et item_id (les champs critiques pour la logique conditionnelle)
+        formData.value.type = store.prefillData.type || 'location';
+        formData.value.item_id = store.prefillData.item_id || "";
+
+        // ÉTAPE 2 : Premier nextTick - Laisse à Vue le temps de détruire le calendrier et de construire le <select> des tarifs
+        await nextTick();
+
+        // ÉTAPE 3 : Assigner le reste des données de base (SANS experience_tarif_type encore)
         Object.keys(store.prefillData).forEach((key) => {
-          if (formData.value.hasOwnProperty(key)) {
+          // On ignore temporairement experience_tarif_type et les données structurées
+          if (key !== 'experience_tarif_type' && key !== 'structured_experience_data' && formData.value.hasOwnProperty(key)) {
             formData.value[key] = store.prefillData[key];
           }
         });
 
-        // 🚀 On restaure le devis tel qu'il a été sauvegardé la dernière fois !
+        // ÉTAPE 4 : Restaurer le devis tel qu'il a été sauvegardé
         if (
           store.prefillData.quote_lines &&
           store.prefillData.quote_lines.length > 0
@@ -783,12 +754,59 @@ watch(
           };
         }
 
-        // On attend que Vue mette à jour l'interface visuelle
-        await nextTick();
+        // ÉTAPE 5 : Si structured_experience_data est présent, assigner experience_tarif_type
+        if (store.prefillData.structured_experience_data) {
+          const expData = store.prefillData.structured_experience_data;
+          console.log('🎯 Application experience_tarif_type:', expData.resolved_tarif_type);
+          
+          formData.value.experience_tarif_type = expData.resolved_tarif_type;
+
+          // ÉTAPE 6 : Deuxième nextTick - Laisse le temps au computed currentExperienceConfig de se mettre à jour
+          await nextTick();
+
+          console.log('🎯 Application customQty et options:', { customQty: expData.customQty, options: expData.options });
+
+          // 🚀 FIX VUE.JS : On génère manuellement toutes les lignes et options vides (car le watcher automatique est bloqué par isPrefilling)
+          const config = currentExperienceConfig.value;
+          if (config) {
+             if (config.lines) {
+                 config.lines.forEach((line, index) => {
+                     const key = line.uid || `line_${index}`;
+                     if (formData.value.customQty[key] === undefined) formData.value.customQty[key] = line.default_qty ? Number(line.default_qty) : 0;
+                 });
+             }
+             if (config.options) {
+                 config.options.forEach((opt, index) => {
+                     const optId = opt.uid || `option_${index}`;
+                     if (!formData.value.options[optId]) formData.value.options[optId] = { selected: false, qty: opt.default_qty ? Number(opt.default_qty) : 1 };
+                 });
+             }
+          }
+
+          // ÉTAPE 7 : Enfin, on fusionne intelligemment les données trouvées en PHP SANS écraser le reste
+          Object.keys(expData.customQty).forEach(key => {
+              formData.value.customQty[key] = expData.customQty[key];
+          });
+          
+          Object.keys(expData.options).forEach(key => {
+              if (formData.value.options[key]) {
+                  formData.value.options[key].selected = expData.options[key].selected;
+                  formData.value.options[key].qty = expData.options[key].qty;
+              } else {
+                  formData.value.options[key] = expData.options[key];
+              }
+          });
+        } else if (store.prefillData.experience_tarif_type) {
+          // Fallback pour les cas sans données structurées
+          formData.value.experience_tarif_type = store.prefillData.experience_tarif_type;
+        }
+
+        console.log('✅ Pré-remplissage terminé, formData final:', formData.value);
 
         // On rallume le radar après un court délai pour éviter qu'il s'affole au chargement
         setTimeout(() => {
           isPrefilling.value = false; // 🟢 On rallume le radar
+          console.log('🟢 Radar réactivé');
         }, 300);
       }
     } else {

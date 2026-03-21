@@ -347,6 +347,7 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
     }
     /**
      * Récupère TOUS les détails d'une réservation pour la modale (Vue 3)
+     * Phase 2A & 2B : Payloads distincts et épurés selon le type
      */
     public static function ajax_get_reservation_details()
     {
@@ -360,25 +361,52 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
 
         if (!$resa) wp_send_json_error(['message' => 'Réservation introuvable.']);
 
-        // 1. Calcul des paiements
-        $payments = class_exists('PCR_Payment') ? PCR_Payment::get_for_reservation($resa->id) : [];
-        $total_paid = 0;
-        foreach ($payments as $pay) {
-            if ($pay->statut === 'paye') {
-                $total_paid += (float) $pay->montant;
+        // Phase 2A : Scission des payloads selon le type
+        if ($resa->type === 'experience') {
+            $payload = self::build_experience_payload($resa);
+        } else {
+            $payload = self::build_location_payload($resa);
+        }
+
+        wp_send_json_success($payload);
+    }
+
+    /**
+     * Phase 2A : Payload épuré pour les expériences
+     */
+    private static function build_experience_payload($resa)
+    {
+        $base = self::build_base_payload($resa);
+
+        // Construction des données structurées pour les expériences
+        $structured_experience_data = null;
+        if (!empty($resa->detail_tarif)) {
+            $structured_experience_data = self::reconstruct_experience_structure($resa);
+
+            // Audit serveur pour debug
+            if ($structured_experience_data) {
+                error_log(print_r($structured_experience_data, true));
             }
         }
-        $total_due = max(0, (float)$resa->montant_total - $total_paid);
 
-        // 2. Lignes du devis
-        $quote_lines = !empty($resa->detail_tarif) ? json_decode($resa->detail_tarif, true) : [];
+        return array_merge($base, [
+            // Spécifique EXPÉRIENCE uniquement
+            'structured_experience_data' => $structured_experience_data,
+            'raw_tarif_type' => $resa->experience_tarif_type ?? '',
+            'raw_date_experience' => $resa->date_experience ?? '',
+            // ❌ PAS de caution pour les expériences
+            // ❌ PAS de dates logement pour les expériences
+        ]);
+    }
 
-        // 3. Construction des occupants
-        $occupants = intval($resa->adultes) . ' adulte(s)';
-        if (!empty($resa->enfants)) $occupants .= ' - ' . intval($resa->enfants) . ' enfant(s)';
-        if (!empty($resa->bebes)) $occupants .= ' - ' . intval($resa->bebes) . ' bébé(s)';
+    /**
+     * Phase 2A : Payload épuré pour les logements
+     */
+    private static function build_location_payload($resa)
+    {
+        $base = self::build_base_payload($resa);
 
-        // NOUVEAU SYSTÈME : On interroge le Cerveau pour connaître le type de caution du logement
+        // Construction des données de caution (UNIQUEMENT pour les logements)
         $caution_mode = 'aucune';
         if (!empty($resa->item_id) && class_exists('PCR_Payment_Service')) {
             $payment_rules = PCR_Payment_Service::get_instance()->get_item_payment_rules($resa->item_id);
@@ -389,8 +417,47 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
             $caution_mode = $resa->caution_mode; // Fallback legacy
         }
 
-        // 4. Renvoi du JSON structuré
-        wp_send_json_success([
+        return array_merge($base, [
+            // Spécifique LOGEMENT uniquement
+            'caution' => [
+                'mode' => $caution_mode,
+                'statut' => $resa->caution_statut ?? 'non_demande',
+                'montant' => (float)($resa->caution_montant ?? 0),
+                'reference' => $resa->caution_reference ?? ''
+            ],
+            'raw_date_arrivee' => $resa->date_arrivee ?? '',
+            'raw_date_depart' => $resa->date_depart ?? '',
+            // ❌ PAS de structured_experience_data pour les logements
+            // ❌ PAS de raw_tarif_type pour les logements
+            // ❌ PAS de date_experience pour les logements
+        ]);
+    }
+
+    /**
+     * Phase 2B : Payload de base commun aux deux types
+     */
+    private static function build_base_payload($resa)
+    {
+        // Calcul des paiements
+        $payments = class_exists('PCR_Payment') ? PCR_Payment::get_for_reservation($resa->id) : [];
+        $total_paid = 0;
+        foreach ($payments as $pay) {
+            if ($pay->statut === 'paye') {
+                $total_paid += (float) $pay->montant;
+            }
+        }
+        $total_due = max(0, (float)$resa->montant_total - $total_paid);
+
+        // Lignes du devis (communes)
+        $quote_lines = !empty($resa->detail_tarif) ? json_decode($resa->detail_tarif, true) : [];
+
+        // Construction des occupants
+        $occupants = intval($resa->adultes) . ' adulte(s)';
+        if (!empty($resa->enfants)) $occupants .= ' - ' . intval($resa->enfants) . ' enfant(s)';
+        if (!empty($resa->bebes)) $occupants .= ' - ' . intval($resa->bebes) . ' bébé(s)';
+
+        return [
+            // Données communes
             'id' => $resa->id,
             'client_email' => $resa->email,
             'client_phone' => $resa->telephone,
@@ -404,19 +471,10 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
             'total_du' => $total_due,
             'payments' => $payments,
             'quote_lines' => $quote_lines,
-            'caution' => [
-                'mode' => $caution_mode,
-                'statut' => $resa->caution_statut ?? 'non_demande',
-                'montant' => (float)($resa->caution_montant ?? 0),
-                'reference' => $resa->caution_reference ?? ''
-            ],
-            // 🚀 NOUVEAU : On ajoute les données brutes vitales pour le formulaire de modification !
+
+            // Données communes formulaire (Logement & Expérience)
             'raw_type' => $resa->type ?? 'location',
             'raw_item_id' => (int) $resa->item_id,
-            'raw_tarif_type' => $resa->experience_tarif_type ?? '',
-            'raw_date_arrivee' => $resa->date_arrivee ?? '',
-            'raw_date_depart' => $resa->date_depart ?? '',
-            'raw_date_experience' => $resa->date_experience ?? '',
             'raw_adultes' => (int) ($resa->adultes ?? 1),
             'raw_enfants' => (int) ($resa->enfants ?? 0),
             'raw_bebes' => (int) ($resa->bebes ?? 0),
@@ -427,7 +485,7 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
             'raw_remise_montant' => isset($resa->remise_montant) ? (float) $resa->remise_montant : 0,
             'raw_plus_label' => $resa->plus_label ?? '',
             'raw_plus_montant' => isset($resa->plus_montant) ? (float) $resa->plus_montant : 0
-        ]);
+        ];
     }
 
     /**
@@ -655,5 +713,459 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
             'montant_total' => $total,
             'lignes_devis'  => $lines
         ]);
+    }
+
+    /**
+     * NOUVEAU : Reconstruit la structure des expériences pour le pré-remplissage
+     * Version INDESTRUCTIBLE - Ne retourne jamais null
+     * 
+     * @param object $resa L'objet réservation depuis la base de données
+     * @return array Les données structurées (toujours un tableau valide)
+     */
+    private static function reconstruct_experience_structure($resa)
+    {
+        // Valeurs par défaut pour garantir un retour valide
+        $default_response = [
+            'resolved_tarif_type' => '',
+            'customQty' => [],
+            'options' => []
+        ];
+
+        if (empty($resa->detail_tarif) || empty($resa->item_id)) {
+            // Tentative de récupérer le premier tarif disponible comme fallback
+            $fallback_tarif = self::get_first_available_tarif($resa->item_id);
+            if ($fallback_tarif) {
+                $default_response['resolved_tarif_type'] = $fallback_tarif;
+            }
+            return $default_response;
+        }
+
+        // 1. Décoder le JSON des lignes de devis avec nettoyage Unicode
+        $quote_lines = json_decode($resa->detail_tarif, true);
+        if (!is_array($quote_lines) || empty($quote_lines)) {
+            $fallback_tarif = self::get_first_available_tarif($resa->item_id);
+            if ($fallback_tarif) {
+                $default_response['resolved_tarif_type'] = $fallback_tarif;
+            }
+            return $default_response;
+        }
+
+        // Correction du problème d'encodage Unicode sur les quote_lines
+        $quote_lines = self::fix_unicode_in_quote_lines($quote_lines);
+
+        // 2. Résoudre le tarif_type (mapping label -> clé technique ACF)
+        $resolved_tarif_type = self::resolve_tarif_type($resa->item_id, $resa->experience_tarif_type ?? '');
+
+        // 🚀 FALLBACK DE LA DERNIÈRE CHANCE
+        if (!$resolved_tarif_type) {
+            $resolved_tarif_type = self::fallback_resolve_tarif_from_quote_lines($resa->item_id, $quote_lines);
+        }
+
+        // Si toujours pas trouvé, on prend le premier disponible
+        if (!$resolved_tarif_type) {
+            $resolved_tarif_type = self::get_first_available_tarif($resa->item_id);
+        }
+
+        // On s'assure d'avoir au minimum un tarif_type
+        if (!$resolved_tarif_type) {
+            return $default_response;
+        }
+
+        // 3. Charger la configuration ACF de l'expérience
+        $acf_config = self::get_acf_experience_config($resa->item_id, $resolved_tarif_type);
+        if (!$acf_config) {
+            // Même si on n'a pas la config, on retourne au moins le tarif_type résolu
+            $default_response['resolved_tarif_type'] = $resolved_tarif_type;
+            return $default_response;
+        }
+
+        // 4. Reconstruire customQty et options basé sur quote_lines
+        $customQty = [];
+        $options = [];
+
+        foreach ($quote_lines as $line) {
+            $mapped = self::map_quote_line_to_acf($line, $acf_config);
+            if ($mapped) {
+                $qty = isset($line['qty']) ? (int) $line['qty'] : self::extract_qty_from_label($line);
+
+                if ($mapped['type'] === 'line') {
+                    $customQty[$mapped['uid']] = $qty;
+                } elseif ($mapped['type'] === 'option') {
+                    $options[$mapped['uid']] = [
+                        'selected' => true,
+                        'qty' => $qty
+                    ];
+                }
+            }
+        }
+
+        return [
+            'resolved_tarif_type' => $resolved_tarif_type,
+            'customQty' => $customQty,
+            'options' => $options
+        ];
+    }
+
+    /**
+     * Résout le type de tarif (mapping label -> clé technique ACF)
+     */
+    private static function resolve_tarif_type($item_id, $tarif_type)
+    {
+        if (empty($tarif_type)) {
+            return null;
+        }
+
+        // Si c'est déjà une clé technique valide, on la retourne
+        if (in_array($tarif_type, ['forfait', 'adulte_enfant']) || strpos($tarif_type, 'tarif_') === 0) {
+            return $tarif_type;
+        }
+
+        // Sinon, on cherche dans la configuration ACF
+        if (!function_exists('get_field')) {
+            return null;
+        }
+
+        $tarifs = get_field('exp_types_de_tarifs', $item_id);
+        if (!is_array($tarifs)) {
+            return null;
+        }
+
+        $tarif_type_lower = strtolower(trim($tarif_type));
+
+        foreach ($tarifs as $index => $t) {
+            $type = !empty($t['exp_type']) ? $t['exp_type'] : 'custom';
+
+            if ($type === 'custom' && !empty($t['exp_type_custom'])) {
+                $label_lower = strtolower(trim($t['exp_type_custom']));
+                if ($label_lower === $tarif_type_lower) {
+                    return $t['exp_type_custom']; // Retourne le label brut comme clé (compatibilité legacy)
+                }
+            } elseif ($type === 'adulte_enfant') {
+                $labels = ['par adulte / enfant', 'adulte enfant', 'adulte/enfant'];
+                if (in_array($tarif_type_lower, $labels)) {
+                    return 'adulte_enfant';
+                }
+            } elseif ($type === 'forfait') {
+                $labels = ['forfait', 'forfait groupe'];
+                if (in_array($tarif_type_lower, $labels)) {
+                    return 'forfait';
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Charge la configuration ACF pour un tarif spécifique
+     */
+    private static function get_acf_experience_config($item_id, $tarif_type)
+    {
+        if (!function_exists('get_field')) {
+            return null;
+        }
+
+        $tarifs = get_field('exp_types_de_tarifs', $item_id);
+        if (!is_array($tarifs)) {
+            return null;
+        }
+
+        foreach ($tarifs as $index => $t) {
+            $type = !empty($t['exp_type']) ? $t['exp_type'] : 'custom';
+            $key = 'tarif_' . $index;
+
+            if ($type === 'custom' && !empty($t['exp_type_custom'])) {
+                $key = $t['exp_type_custom'];
+            } elseif ($type === 'adulte_enfant') {
+                $key = 'adulte_enfant';
+            } elseif ($type === 'forfait') {
+                $key = 'forfait';
+            }
+
+            if ($key === $tarif_type) {
+                return [
+                    'index' => $index,
+                    'config' => $t
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Nettoyeur ultime pour comparer les textes (Legacy BDD vs ACF)
+     */
+    private static function normalize_for_comparison($string)
+    {
+        if (empty($string)) return '';
+        // 1. Fix des encodages cassés de l'ancienne BDD
+        $brokenMap = [
+            'u00e9' => 'e',
+            'u00e8' => 'e',
+            'u00ea' => 'e',
+            'u00eb' => 'e',
+            'u00e0' => 'a',
+            'u00e2' => 'a',
+            'u00e4' => 'a',
+            'u00ee' => 'i',
+            'u00ef' => 'i',
+            'u00f4' => 'o',
+            'u00f6' => 'o',
+            'u00f9' => 'u',
+            'u00fb' => 'u',
+            'u00fc' => 'u',
+            'u00e7' => 'c',
+            'u0027' => ' ',
+            'u00a0' => ' ',
+            'u00d7' => ' '
+        ];
+        $string = str_ireplace(array_keys($brokenMap), array_values($brokenMap), $string);
+
+        // 2. Minuscules et suppression manuelle des accents
+        $string = mb_strtolower($string, 'UTF-8');
+        $string = str_replace(['é', 'è', 'ê', 'ë'], 'e', $string);
+        $string = str_replace(['à', 'á', 'â', 'ã', 'ä'], 'a', $string);
+        $string = str_replace(['î', 'ï', 'í', 'ì'], 'i', $string);
+        $string = str_replace(['ô', 'ö', 'ó', 'ò'], 'o', $string);
+        $string = str_replace(['û', 'ü', 'ú', 'ù'], 'u', $string);
+        $string = str_replace(['ç'], 'c', $string);
+
+        // 3. Remplacer les tirets et parenthèses par des espaces
+        $string = str_replace(['-', '_', '/', '\\', '(', ')', '[', ']', '+'], ' ', $string);
+
+        // 4. Nettoyer les espaces multiples
+        return trim(preg_replace('/\s+/', ' ', $string));
+    }
+
+    /**
+     * Mappe une ligne de devis vers les UIDs ACF
+     */
+    private static function map_quote_line_to_acf($line, $acf_config)
+    {
+        if (!$acf_config || !isset($line['label']) && !isset($line['clean_label'])) {
+            return null;
+        }
+
+        // 🚀 FIX PHP : Utilisation du nettoyeur ultime pour gommer 100% des différences
+        $line_label = self::normalize_for_comparison($line['clean_label'] ?? $line['label'] ?? '');
+        $index = $acf_config['index'];
+        $config = $acf_config['config'];
+
+        // 1. Vérifier les lignes principales (tarifs avec quantité)
+        if (!empty($config['exp_tarifs_lignes']) && is_array($config['exp_tarifs_lignes'])) {
+            foreach ($config['exp_tarifs_lignes'] as $l_idx => $l) {
+                if (!empty($l['tarif_enable_qty'])) {
+                    $acf_label = self::normalize_for_comparison($l['tarif_nom_perso'] ?? '');
+
+                    if ($acf_label && (
+                        $line_label === $acf_label ||
+                        strpos($line_label, $acf_label) !== false ||
+                        strpos($acf_label, $line_label) !== false
+                    )) {
+                        return [
+                            'type' => 'line',
+                            'uid' => 'line_' . $index . '_' . $l_idx
+                        ];
+                    }
+                }
+            }
+        }
+
+        // 2. Vérifier les options
+        if (!empty($config['exp_options_tarifaires']) && is_array($config['exp_options_tarifaires'])) {
+            foreach ($config['exp_options_tarifaires'] as $o_idx => $o) {
+                $acf_label = self::normalize_for_comparison($o['exp_description_option'] ?? '');
+
+                if ($acf_label && (
+                    $line_label === $acf_label ||
+                    strpos($line_label, $acf_label) !== false ||
+                    strpos($acf_label, $line_label) !== false
+                )) {
+                    return [
+                        'type' => 'option',
+                        'uid' => 'opt_' . $index . '_' . $o_idx
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Extrait la quantité depuis un label (rétrocompatibilité)
+     */
+    private static function extract_qty_from_label($line)
+    {
+        $label = $line['label'] ?? '';
+
+        // Correction du problème d'encodage Unicode avant extraction
+        $label = str_replace('u00d7', '×', $label); // Fix pour le symbole cassé
+        $label = str_replace('u00d7', ' ', $label); // Alternative : remplacer par un espace
+
+        // Essaie d'extraire un nombre en début de chaîne "4 x Location" ou "2 Location"
+        if (preg_match('/^(\d+)\s*[x×X]?\s*/', $label, $matches)) {
+            return (int) $matches[1];
+        }
+
+        // Essaie d'extraire "Option x 4" ou "Option × 2"
+        if (preg_match('/[x×X]\s*(\d+)$/', $label, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return 1; // Quantité par défaut
+    }
+
+    /**
+     * Corrige les problèmes d'encodage Unicode dans les quote_lines
+     * Notamment le symbole × qui devient u00d7 en base de données
+     */
+    private static function fix_unicode_in_quote_lines($quote_lines)
+    {
+        if (!is_array($quote_lines)) {
+            return $quote_lines;
+        }
+
+        foreach ($quote_lines as &$line) {
+            if (isset($line['label'])) {
+                // Correction du symbole de multiplication cassé
+                $line['label'] = str_replace('u00d7', '×', $line['label']);
+
+                // Création d'un label "propre" pour la comparaison
+                $line['clean_label'] = $line['label'];
+
+                // Suppression des quantités pour avoir un label propre pour la comparaison
+                $line['clean_label'] = preg_replace('/^\d+\s*[x×X]?\s*/', '', $line['clean_label']);
+                $line['clean_label'] = preg_replace('/\s*[x×X]\s*\d+$/', '', $line['clean_label']);
+                $line['clean_label'] = trim($line['clean_label']);
+            }
+        }
+
+        return $quote_lines;
+    }
+
+    /**
+     * FALLBACK DE LA DERNIÈRE CHANCE : 
+     * Parcourt tous les tarifs ACF et cherche des correspondances avec les quote_lines
+     */
+    private static function fallback_resolve_tarif_from_quote_lines($item_id, $quote_lines)
+    {
+        if (empty($item_id) || !function_exists('get_field') || empty($quote_lines)) {
+            return null;
+        }
+
+        $tarifs = get_field('exp_types_de_tarifs', $item_id);
+        if (!is_array($tarifs)) {
+            return null;
+        }
+
+        // Extraction des labels propres des quote_lines pour la comparaison
+        $quote_labels = [];
+        foreach ($quote_lines as $line) {
+            $clean_label = self::normalize_for_comparison($line['clean_label'] ?? $line['label'] ?? '');
+            if (!empty($clean_label)) {
+                $quote_labels[] = $clean_label;
+            }
+        }
+
+        if (empty($quote_labels)) {
+            return null;
+        }
+
+        // Parcours de TOUS les tarifs ACF pour trouver des correspondances
+        foreach ($tarifs as $index => $tarif) {
+            $correspondances = 0;
+            $total_items = 0;
+
+            // Vérification des lignes de ce tarif
+            if (!empty($tarif['exp_tarifs_lignes']) && is_array($tarif['exp_tarifs_lignes'])) {
+                foreach ($tarif['exp_tarifs_lignes'] as $ligne) {
+                    $total_items++;
+                    $acf_label = self::normalize_for_comparison($ligne['tarif_nom_perso'] ?? '');
+
+                    if (!empty($acf_label)) {
+                        foreach ($quote_labels as $quote_label) {
+                            if (
+                                $acf_label === $quote_label ||
+                                strpos($quote_label, $acf_label) !== false ||
+                                strpos($acf_label, $quote_label) !== false
+                            ) {
+                                $correspondances++;
+                                break; // Une correspondance trouvée pour cette ligne
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Vérification des options de ce tarif
+            if (!empty($tarif['exp_options_tarifaires']) && is_array($tarif['exp_options_tarifaires'])) {
+                foreach ($tarif['exp_options_tarifaires'] as $option) {
+                    $total_items++;
+                    $acf_label = self::normalize_for_comparison($option['exp_description_option'] ?? '');
+
+                    if (!empty($acf_label)) {
+                        foreach ($quote_labels as $quote_label) {
+                            if (
+                                $acf_label === $quote_label ||
+                                strpos($quote_label, $acf_label) !== false ||
+                                strpos($acf_label, $quote_label) !== false
+                            ) {
+                                $correspondances++;
+                                break; // Une correspondance trouvée pour cette option
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Si on a trouvé des correspondances significatives (au moins 50% des éléments)
+            if ($correspondances > 0 && $total_items > 0 && ($correspondances / $total_items) >= 0.5) {
+                // Détermination de la clé de retour
+                $type = !empty($tarif['exp_type']) ? $tarif['exp_type'] : 'custom';
+
+                if ($type === 'custom' && !empty($tarif['exp_type_custom'])) {
+                    return $tarif['exp_type_custom'];
+                } elseif ($type === 'adulte_enfant') {
+                    return 'adulte_enfant';
+                } elseif ($type === 'forfait') {
+                    return 'forfait';
+                } else {
+                    return 'tarif_' . $index; // Fallback générique
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Récupère le premier tarif disponible pour une expérience (fallback final)
+     */
+    private static function get_first_available_tarif($item_id)
+    {
+        if (empty($item_id) || !function_exists('get_field')) {
+            return null;
+        }
+
+        $tarifs = get_field('exp_types_de_tarifs', $item_id);
+        if (!is_array($tarifs) || empty($tarifs)) {
+            return null;
+        }
+
+        // On prend le premier tarif disponible
+        $first_tarif = reset($tarifs);
+        $type = !empty($first_tarif['exp_type']) ? $first_tarif['exp_type'] : 'custom';
+
+        if ($type === 'custom' && !empty($first_tarif['exp_type_custom'])) {
+            return $first_tarif['exp_type_custom'];
+        } elseif ($type === 'adulte_enfant') {
+            return 'adulte_enfant';
+        } elseif ($type === 'forfait') {
+            return 'forfait';
+        } else {
+            return 'tarif_0'; // Premier tarif par défaut
+        }
     }
 }

@@ -346,8 +346,52 @@ export const useReservationsStore = defineStore("reservations", {
 
           data = fixUnicode(data);
 
+          // 🚀 FIX LECTURE : Nettoyage des lignes du front-end à la volée pour un affichage parfait dans ReservationModal
+          if (data.quote_lines && Array.isArray(data.quote_lines)) {
+            data.quote_lines = data.quote_lines.map((line) => {
+              let fixedLine = { ...line };
+
+              // 1. On extrait la quantité du vieux texte "2 x Location"
+              let qty = Number(fixedLine.qty);
+              if (!fixedLine.qty || isNaN(qty) || qty === 0) {
+                const match = (fixedLine.label || "").match(
+                  /(?:^(\d+)\s*[x×X])|(?:[x×X]\s*(\d+))/,
+                );
+                fixedLine.qty = match ? parseInt(match[1] || match[2], 10) : 1;
+              }
+
+              // 2. On utilise le label propre sans les "x 2"
+              if (fixedLine.clean_label) {
+                fixedLine.label = fixedLine.clean_label;
+              }
+
+              // 3. On répare les prix "undefined" de l'ancien système
+              if (fixedLine.amount === undefined)
+                fixedLine.amount = parseFloat(fixedLine.price) || 0;
+              if (
+                fixedLine.price === undefined ||
+                fixedLine.price === null ||
+                String(fixedLine.price).includes("undefined")
+              ) {
+                fixedLine.price = fixedLine.amount + " €";
+              }
+
+              // 4. On cache la vieille ligne titre "Options" à 0€ (ou on la marque comme observation)
+              if (
+                (fixedLine.label || "").toLowerCase().trim() === "options" &&
+                fixedLine.amount === 0
+              ) {
+                fixedLine.is_observation_only = true;
+                fixedLine.label = "Options sélectionnées";
+                fixedLine.price = "";
+              }
+
+              return fixedLine;
+            });
+          }
+
           this.reservationDetails = data;
-          console.log("Détails chargés :", this.reservationDetails); // <-- TRÈS IMPORTANT POUR NOTRE TEST
+          console.log("Détails chargés et nettoyés :", this.reservationDetails); // <-- TRÈS IMPORTANT POUR NOTRE TEST
         }
       } catch (err) {
         console.error("Erreur chargement détails :", err);
@@ -414,6 +458,40 @@ export const useReservationsStore = defineStore("reservations", {
           };
 
           data = fixUnicode(data);
+
+          // 🚀 FIX LECTURE : On applique le même nettoyage lors du rafraîchissement
+          if (data.quote_lines && Array.isArray(data.quote_lines)) {
+            data.quote_lines = data.quote_lines.map((line) => {
+              let fixedLine = { ...line };
+              let qty = Number(fixedLine.qty);
+              if (!fixedLine.qty || isNaN(qty) || qty === 0) {
+                const match = (fixedLine.label || "").match(
+                  /(?:^(\d+)\s*[x×X])|(?:[x×X]\s*(\d+))/,
+                );
+                fixedLine.qty = match ? parseInt(match[1] || match[2], 10) : 1;
+              }
+              if (fixedLine.clean_label)
+                fixedLine.label = fixedLine.clean_label;
+              if (fixedLine.amount === undefined)
+                fixedLine.amount = parseFloat(fixedLine.price) || 0;
+              if (
+                fixedLine.price === undefined ||
+                fixedLine.price === null ||
+                String(fixedLine.price).includes("undefined")
+              ) {
+                fixedLine.price = fixedLine.amount + " €";
+              }
+              if (
+                (fixedLine.label || "").toLowerCase().trim() === "options" &&
+                fixedLine.amount === 0
+              ) {
+                fixedLine.is_observation_only = true;
+                fixedLine.label = "Options sélectionnées";
+                fixedLine.price = "";
+              }
+              return fixedLine;
+            });
+          }
 
           // On met à jour l'objet directement pour déclencher la réactivité
           // SANS toucher à this.isDetailModalOpen ou this.isLoadingDetails
@@ -637,6 +715,8 @@ export const useReservationsStore = defineStore("reservations", {
         )
           ? "devis"
           : "reservation",
+        // 🚀 On transmet le devis recalculé à l'état brut (sans les ajustements)
+        structured_experience_data: details.structured_experience_data || null,
         // 🚀 On transmet le devis recalculé à l'état brut (sans les ajustements)
         montant_total: baseTotal,
         quote_lines: cleanQuoteLines,

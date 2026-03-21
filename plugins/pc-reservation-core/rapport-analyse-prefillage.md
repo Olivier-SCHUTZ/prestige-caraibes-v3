@@ -379,3 +379,261 @@ La solution principale consiste à **enrichir `ajax_get_reservation_details()`**
 
 **Complexité estimée** : Moyenne (2-3 jours de développement)
 **Impact** : Résolution complète du problème de pré-remplissage des expériences
+
+---
+
+## 9. Audit Post-Phase 1 : Données BDD vs Payload Front-End
+
+### 9.1 État actuel des données transmises
+
+**Situation analysée** : Après implémentation de la Phase 1, analyse du payload complet envoyé par `ajax_get_reservation_details()` au composant Vue pour une **expérience**.
+
+#### Structure actuelle du payload (EXPÉRIENCE) :
+
+```json
+{
+  // Données de base
+  "id": 123,
+  "client_email": "client@email.com",
+  "client_phone": "+33123456789",
+  "client_lang": "fr",
+  "client_message": "Commentaire du client",
+  "notes_internes": "Notes internes",
+  "occupants": "2 adulte(s) - 1 enfant(s)",
+  "source": "direct",
+  "montant_total": 350.00,
+  "total_paye": 100.00,
+  "total_du": 250.00,
+  "payments": [...],
+  "quote_lines": [...],
+
+  // Données de caution (❌ INUTILES pour une expérience)
+  "caution": {
+    "mode": "aucune",
+    "statut": "non_demande",
+    "montant": 0,
+    "reference": ""
+  },
+
+  // 🆕 Nouvelles données structurées (Phase 1)
+  "structured_experience_data": {
+    "resolved_tarif_type": "forfait",
+    "customQty": { "line_0_0": 2 },
+    "options": { "opt_0_1": { "selected": true, "qty": 1 } }
+  },
+
+  // Données brutes pour formulaire
+  "raw_type": "experience",
+  "raw_item_id": 456,
+  "raw_tarif_type": "forfait",
+
+  // ❌ DONNÉES LOGEMENT INUTILES pour une expérience
+  "raw_date_arrivee": "", // Vide mais présent
+  "raw_date_depart": "",  // Vide mais présent
+
+  // ✅ DONNÉES EXPÉRIENCE PERTINENTES
+  "raw_date_experience": "2024-08-15",
+  "raw_adultes": 2,
+  "raw_enfants": 1,
+  "raw_bebes": 0,
+
+  // Données client
+  "raw_prenom": "Jean",
+  "raw_nom": "Dupont",
+  "raw_numero_devis": "DEV-2024-001",
+  "raw_remise_label": "Remise exceptionnelle",
+  "raw_remise_montant": 50.00,
+  "raw_plus_label": "Plus-value",
+  "raw_plus_montant": 0.00
+}
+```
+
+### 9.2 Problèmes identifiés
+
+#### ❌ **Pollution du Payload - Données Inutiles pour Expériences** :
+
+1. **Caution** : Les expériences n'ont jamais de caution, mais le payload contient :
+   - `caution.mode`, `caution.statut`, `caution.montant`, `caution.reference`
+
+2. **Dates Logement** : Pour une expérience, ces champs sont vides mais présents :
+   - `raw_date_arrivee`, `raw_date_depart`
+
+#### ✅ **Données Manquantes pour Logements** :
+
+Actuellement, pour un **logement**, le payload ne contient pas :
+
+- `structured_logement_data` : Données spécifiques aux logements
+- Informations sur les périodes de prix (haute/basse saison)
+- Configuration des frais fixes (ménage, électricité, etc.)
+
+#### 📊 **Données BDD vs Front** :
+
+| Colonne BDD             | Présent dans Payload     | Type Expérience | Type Logement | Remarque  |
+| ----------------------- | ------------------------ | --------------- | ------------- | --------- |
+| `experience_tarif_type` | ✅ `raw_tarif_type`      | ✅ Nécessaire   | ❌ Inutile    | -         |
+| `date_experience`       | ✅ `raw_date_experience` | ✅ Nécessaire   | ❌ Inutile    | -         |
+| `date_arrivee`          | ✅ `raw_date_arrivee`    | ❌ Inutile      | ✅ Nécessaire | Pollution |
+| `date_depart`           | ✅ `raw_date_depart`     | ❌ Inutile      | ✅ Nécessaire | Pollution |
+| `caution_*`             | ✅ `caution.*`           | ❌ Inutile      | ✅ Nécessaire | Pollution |
+
+### 9.3 Impact Performance
+
+**Taille Payload Actuel** : ~2-3KB par réservation
+**Pollution Estimée** : 15-20% de données inutiles selon le type
+
+**Problèmes** :
+
+- Bande passante gaspillée
+- Parsing JSON inutile côté front
+- Confusion développeur (quelle donnée utiliser ?)
+- Logique conditionnelle complexe côté Vue
+
+### 9.4 Plan de Nettoyage Recommandé
+
+#### **Phase 2A : Scission des Payloads**
+
+**Objectif** : Créer deux payloads distincts et épurés selon le type de réservation.
+
+**Implémentation** :
+
+```php
+// Dans ajax_get_reservation_details()
+if ($resa->type === 'experience') {
+    $payload = self::build_experience_payload($resa);
+} else {
+    $payload = self::build_location_payload($resa);
+}
+```
+
+#### **Payload Expérience Épuré** :
+
+```json
+{
+  // Données communes
+  "id": 123,
+  "client_email": "...",
+  "client_phone": "...",
+  "montant_total": 350.00,
+  "payments": [...],
+  "quote_lines": [...],
+
+  // Spécifique EXPÉRIENCE
+  "structured_experience_data": {...},
+  "raw_type": "experience",
+  "raw_item_id": 456,
+  "raw_tarif_type": "forfait",
+  "raw_date_experience": "2024-08-15",
+  "raw_adultes": 2,
+  "raw_enfants": 1,
+  "raw_bebes": 0,
+
+  // Données communes formulaire
+  "raw_prenom": "Jean",
+  "raw_nom": "Dupont",
+  // ... autres champs communs
+}
+```
+
+#### **Payload Logement Épuré** :
+
+```json
+{
+  // Données communes (identiques)
+  "id": 123,
+  "client_email": "...",
+
+  // Spécifique LOGEMENT
+  "caution": {
+    "mode": "cheque",
+    "statut": "demande",
+    "montant": 500.0,
+    "reference": "CHQ-2024-001"
+  },
+  "raw_type": "location",
+  "raw_item_id": 789,
+  "raw_date_arrivee": "2024-08-10",
+  "raw_date_depart": "2024-08-17",
+  "capacity_info": {
+    "max_guests": 6,
+    "bedrooms": 3
+  },
+
+  // Données communes formulaire
+  "raw_prenom": "Marie",
+  "raw_nom": "Martin"
+  // ... autres champs communs
+}
+```
+
+#### **Phase 2B : Méthodes Dédiées**
+
+```php
+private static function build_experience_payload($resa) {
+    $base = self::build_base_payload($resa);
+
+    return array_merge($base, [
+        'structured_experience_data' => self::reconstruct_experience_structure($resa),
+        'raw_tarif_type' => $resa->experience_tarif_type ?? '',
+        'raw_date_experience' => $resa->date_experience ?? '',
+        'raw_adultes' => (int)($resa->adultes ?? 1),
+        'raw_enfants' => (int)($resa->enfants ?? 0),
+        'raw_bebes' => (int)($resa->bebes ?? 0),
+    ]);
+}
+
+private static function build_location_payload($resa) {
+    $base = self::build_base_payload($resa);
+
+    return array_merge($base, [
+        'caution' => self::build_caution_data($resa),
+        'raw_date_arrivee' => $resa->date_arrivee ?? '',
+        'raw_date_depart' => $resa->date_depart ?? '',
+        'capacity_info' => self::get_location_capacity($resa->item_id),
+    ]);
+}
+
+private static function build_base_payload($resa) {
+    return [
+        'id' => $resa->id,
+        'client_email' => $resa->email,
+        'client_phone' => $resa->telephone,
+        'montant_total' => (float)$resa->montant_total,
+        'raw_type' => $resa->type ?? 'location',
+        'raw_item_id' => (int)$resa->item_id,
+        'raw_prenom' => $resa->prenom ?? '',
+        'raw_nom' => $resa->nom ?? '',
+        // ... autres champs communs
+    ];
+}
+```
+
+### 9.5 Bénéfices Attendus
+
+**Performance** :
+
+- Réduction 15-20% taille payload
+- Parsing plus rapide côté front
+- Moins de transfert réseau
+
+**Maintenabilité** :
+
+- Code plus lisible et spécialisé
+- Logique métier séparée
+- Tests unitaires plus faciles
+
+**Évolutivité** :
+
+- Ajout facile de champs spécifiques
+- Versioning API plus simple
+- Support de nouveaux types à l'avenir
+
+### 9.6 Plan d'Implémentation Recommandé
+
+1. **Étape 1** : Créer les méthodes `build_*_payload()`
+2. **Étape 2** : Modifier `ajax_get_reservation_details()` avec switch
+3. **Étape 3** : Tests de régression (expériences + logements)
+4. **Étape 4** : Optimisation côté Vue (suppression des conditions inutiles)
+5. **Étape 5** : Documentation des nouveaux formats
+
+**Estimation** : 1-2 jours de développement + tests
+**Risque** : Faible (pas de breaking change, ajout de fonctionnalité)

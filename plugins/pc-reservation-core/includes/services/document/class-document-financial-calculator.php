@@ -87,12 +87,26 @@ class PCR_Document_Financial_Calculator
             $quantity = 1;
             $description = $label_raw;
 
-            // Détection "3 Adulte"
-            if (preg_match('/^(\d+)\s+(.*)/', $label_raw, $matches)) {
-                $quantity = (int) $matches[1];
-                $description = $matches[2];
+            // 🚀 THE FIX : On utilise d'abord nos nouvelles données propres (JSON V2)
+            if (isset($line['qty']) && (int)$line['qty'] > 0) {
+                $quantity = (int)$line['qty'];
+                $description = !empty($line['clean_label']) ? $line['clean_label'] : $label_raw;
+            }
+            // Fallback de sécurité pour les très vieilles factures qui n'ont pas encore le JSON V2
+            else {
+                if (preg_match('/^(?:(\d+)\s*[x×X]\s*)/u', $label_raw, $matches) || preg_match('/^(\d+)\s+/u', $label_raw, $matches)) {
+                    $quantity = (int) $matches[1];
+                    $description = preg_replace('/^(?:\d+\s*[x×X]\s*|\d+\s+)/u', '', $label_raw);
+                } elseif (preg_match('/(?:\s*[x×X]\s*(\d+))$/u', $label_raw, $matches)) {
+                    $quantity = (int) $matches[1];
+                    $description = preg_replace('/(?:\s*[x×X]\s*\d+)$/u', '', $label_raw);
+                }
             }
 
+            // On nettoie les espaces en trop
+            $description = trim($description);
+
+            // Le calcul du Prix Unitaire redevient parfait ! (Ex: 20€ total / 4 Qté = 5€ l'unité)
             $unit_ttc = ($quantity > 0) ? $total_line_ttc / $quantity : 0;
 
             // --- 3. DÉTECTION TAUX TVA ---
