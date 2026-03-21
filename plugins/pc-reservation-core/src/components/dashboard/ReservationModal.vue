@@ -210,7 +210,7 @@
                 }}</strong>
               </div>
 
-              <div class="pcr-grid-2 mt-15">
+              <div class="pcr-layout-vertical mt-15">
                 <div class="pcr-card-section">
                   <h3>Détail du Devis</h3>
                   <ul
@@ -527,6 +527,14 @@ const handleEdit = () => {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
+
+/* NOUVEAU : Layout empilé pour faire respirer les gros blocs */
+.pcr-layout-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .pcr-card-section {
   background: white;
   padding: 20px;
