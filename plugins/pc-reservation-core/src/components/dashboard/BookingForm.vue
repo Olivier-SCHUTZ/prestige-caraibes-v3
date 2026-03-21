@@ -810,18 +810,44 @@ watch(
         }, 300);
       }
     } else {
-      // 🧹 Reset total du formulaire quand on le ferme
-      formData.value.id = null;
-      formData.value.item_id = "";
-      formData.value.prenom = "";
-      formData.value.nom = "";
-      formData.value.adultes = 2;
-      formData.value.enfants = 0;
-      formData.value.bebes = 0;
-      formData.value.numero_devis = "";
-      formData.value.remise_montant = "";
-      formData.value.plus_montant = "";
+      // 🧹 RESET INTÉGRAL DU FORMULAIRE QUAND ON LE FERME
+      // On remplace tout l'objet par un neuf, vierge de toute donnée !
+      formData.value = {
+        id: null,
+        type: "location",
+        type_flux: "devis",
+        source: "direct",
+        item_id: "",
+        experience_tarif_type: "",
+        date_arrivee: "",
+        date_depart: "",
+        date_experience: "",
+        adultes: 2,
+        enfants: 0,
+        bebes: 0,
+        prenom: "",
+        nom: "",
+        email: "",
+        telephone: "",
+        remise_label: "Remise exceptionnelle",
+        remise_montant: "",
+        plus_label: "Plus-value",
+        plus_montant: "",
+        commentaire_client: "",
+        notes_internes: "",
+        numero_devis: "",
+        customQty: {},
+        options: {},
+      };
+      
+      // On vide le devis et les données en cache
       store.quotePreview = null;
+      store.prefillData = null; 
+      
+      // On efface visuellement les dates restées coincées dans le calendrier
+      if (flatpickrInstance) {
+        flatpickrInstance.clear();
+      }
     }
   },
 );
