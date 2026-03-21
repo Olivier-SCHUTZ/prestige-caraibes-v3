@@ -267,6 +267,7 @@
                   <PaymentsList
                     :payments="store.reservationDetails.payments || []"
                     :reservation-id="store.selectedReservation.id"
+                    :amount-due="parseFloat(store.reservationDetails.total_du || 0)"
                   />
                 </div>
               </div>

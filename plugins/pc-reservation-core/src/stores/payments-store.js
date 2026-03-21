@@ -104,6 +104,39 @@ export const usePaymentsStore = defineStore("payments", {
       }
     },
 
+    /**
+     * NOUVEAU : Crée un appel de fond (paiement libre) et génère le lien Stripe
+     */
+    async createCustomPayment(reservationId, amount, actionType = "stripe") {
+      const loadingKey = `custom_payment_${reservationId}`;
+      this.setLoading(loadingKey, true);
+
+      try {
+        const response = await apiClient.post("", {
+          action: "pc_stripe_create_custom_payment",
+          reservation_id: reservationId,
+          amount: amount,
+          action_type: actionType, // NOUVEAU: on envoie le type au backend
+        });
+
+        if (!response.data.success) {
+          throw new Error(
+            response.data.data.message ||
+              "Erreur de création du paiement manuel",
+          );
+        }
+
+        // Succès ! On rafraîchit silencieusement la modale pour voir apparaître la nouvelle ligne
+        await this.refreshReservationDetails(reservationId);
+
+        return response.data.data;
+      } catch (error) {
+        throw new Error(error.response?.data?.data?.message || error.message);
+      } finally {
+        this.setLoading(loadingKey, false);
+      }
+    },
+
     // --- CAUTIONS (EMPREINTES) ---
 
     /**
