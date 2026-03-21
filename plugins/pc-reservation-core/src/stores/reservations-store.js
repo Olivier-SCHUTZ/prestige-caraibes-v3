@@ -69,20 +69,6 @@ export const useReservationsStore = defineStore("reservations", {
     },
 
     /**
-     * Ouvre la modale de création et charge les listes
-     */
-    openCreateModal() {
-      this.isCreateModalOpen = true;
-      // On charge les listes si elles sont vides pour éviter des appels API inutiles
-      if (
-        this.bookingItems.locations.length === 0 &&
-        this.bookingItems.experiences.length === 0
-      ) {
-        this.fetchBookingItems();
-      }
-    },
-
-    /**
      * Charge les logements et expériences depuis l'API
      */
     async fetchBookingItems() {
@@ -543,7 +529,7 @@ export const useReservationsStore = defineStore("reservations", {
     /**
      * 🚀 NOUVEAU : Ouvre la modale en mode Édition avec les données du dossier
      */
-    openEditModal() {
+    async openEditModal() {
       if (!this.reservationDetails || !this.selectedReservation) return;
 
       const details = this.reservationDetails;
@@ -551,10 +537,15 @@ export const useReservationsStore = defineStore("reservations", {
       // On prépare le paquet de données pour BookingForm
       // 🚀 Extraction super-robuste des plus/moins values sauvegardées
       let extractedRemiseLabel = details.raw_remise_label || "";
-      let extractedRemiseMontant = details.raw_remise_montant || "";
+      let extractedRemiseMontant = parseFloat(details.raw_remise_montant) || 0;
       let extractedPlusLabel = details.raw_plus_label || "";
-      let extractedPlusMontant = details.raw_plus_montant || "";
+      let extractedPlusMontant = parseFloat(details.raw_plus_montant) || 0;
+
       let baseTotal = parseFloat(details.montant_total || 0);
+
+      // 🚀 FIX : On reconstitue le sous-total de base en inversant les ajustements connus de la BDD (colonnes)
+      baseTotal = baseTotal + extractedRemiseMontant - extractedPlusMontant;
+
       const cleanQuoteLines = [];
 
       (details.quote_lines || []).forEach((line) => {
@@ -571,9 +562,12 @@ export const useReservationsStore = defineStore("reservations", {
           label.includes("remise") ||
           label.includes("réduction")
         ) {
-          extractedRemiseLabel = line.label || "Remise exceptionnelle";
-          extractedRemiseMontant = Math.abs(rawAmount);
-          baseTotal += extractedRemiseMontant; // On rajoute la remise au total de base pour le formulaire
+          // Si on n'a pas trouvé la remise en BDD, on l'extrait de la ligne
+          if (extractedRemiseMontant === 0) {
+            extractedRemiseLabel = line.label || "Remise exceptionnelle";
+            extractedRemiseMontant = Math.abs(rawAmount);
+            baseTotal += extractedRemiseMontant; // On l'ajoute au sous-total car la BDD ne l'avait pas
+          }
         }
         // Détection de la plus-value
         else if (
@@ -587,13 +581,33 @@ export const useReservationsStore = defineStore("reservations", {
         }
         // Ligne normale
         else {
-          cleanQuoteLines.push(line);
+          // 🚀 FIX : On répare les vieilles lignes cassées (prix undefined, etc.)
+          let fixedLine = { ...line };
+          if (fixedLine.amount === undefined)
+            fixedLine.amount = parseFloat(fixedLine.price) || 0;
+          if (
+            fixedLine.price === undefined ||
+            fixedLine.price === null ||
+            String(fixedLine.price).includes("undefined")
+          ) {
+            fixedLine.price = fixedLine.amount + " €";
+          }
+          // Si c'est juste un titre "Options" à 0€, on le passe en observation pour nettoyer le tableau
+          if (label === "options" && fixedLine.amount === 0) {
+            fixedLine.is_observation_only = true;
+            fixedLine.clean_label = "Options sélectionnées";
+          }
+          cleanQuoteLines.push(fixedLine);
         }
       });
 
-      // Valeurs par défaut si rien n'est trouvé
-      if (!extractedRemiseLabel) extractedRemiseLabel = "Remise exceptionnelle";
-      if (!extractedPlusLabel) extractedPlusLabel = "Plus-value";
+      // Valeurs par défaut si rien n'est trouvé, ou on vide ("") pour nettoyer l'affichage UI
+      extractedRemiseLabel = extractedRemiseLabel || "Remise exceptionnelle";
+      extractedPlusLabel = extractedPlusLabel || "Plus-value";
+      extractedRemiseMontant =
+        extractedRemiseMontant > 0 ? extractedRemiseMontant : "";
+      extractedPlusMontant =
+        extractedPlusMontant > 0 ? extractedPlusMontant : "";
 
       const prefill = {
         id: details.id, // Présence de l'ID = Mode Mise à jour !
@@ -618,33 +632,34 @@ export const useReservationsStore = defineStore("reservations", {
         plus_label: extractedPlusLabel,
         plus_montant: extractedPlusMontant,
         source: details.source || "direct",
-        type_flux:
-          this.selectedReservation.statut_reservation === "devis"
-            ? "devis"
-            : "reservation",
+        type_flux: ["devis", "demande", "en_attente_traitement"].includes(
+          this.selectedReservation.statut_reservation,
+        )
+          ? "devis"
+          : "reservation",
         // 🚀 On transmet le devis recalculé à l'état brut (sans les ajustements)
         montant_total: baseTotal,
         quote_lines: cleanQuoteLines,
       };
 
-      this.openCreateModal(prefill);
+      await this.openCreateModal(prefill);
     },
 
     /**
      * Ouvre la modale de création et charge les listes
      * @param {Object} prefill - Données optionnelles (ex: { type: 'location', item_id: 12, date_arrivee: '2024-08-10' })
      */
-    openCreateModal(prefill = null) {
-      this.prefillData = prefill;
-      this.isCreateModalOpen = true;
-
-      // On charge les listes si elles sont vides
+    async openCreateModal(prefill = null) {
+      // 🚀 FIX : On s'assure que l'API a répondu AVANT d'ouvrir et de pré-remplir la modale
       if (
         this.bookingItems.locations.length === 0 &&
         this.bookingItems.experiences.length === 0
       ) {
-        this.fetchBookingItems();
+        await this.fetchBookingItems();
       }
+
+      this.prefillData = prefill;
+      this.isCreateModalOpen = true;
     },
 
     /**

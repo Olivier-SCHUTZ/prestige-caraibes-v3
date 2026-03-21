@@ -125,6 +125,15 @@
                     {{ store.currentLogementConfig.cap }} personnes
                   </small>
                 </label>
+                
+                <div v-if="showOverlapPopup" style="margin-top: 10px; padding: 15px; background: #fef2f2; border: 1px solid #f87171; border-radius: 6px; color: #991b1b;">
+                  <strong style="display: block; margin-bottom: 5px;">⚠️ Attention : Chevauchement détecté</strong>
+                  <p style="margin: 0 0 10px 0; font-size: 0.9em;">Votre sélection inclut des dates déjà occupées. Voulez-vous forcer cette réservation ?</p>
+                  <div style="display: flex; gap: 10px;">
+                    <button type="button" @click="cancelOverlap" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; font-weight: bold;">Annuler la sélection</button>
+                    <button type="button" @click="confirmOverlap" style="padding: 6px 12px; background: white; border: 1px solid #ef4444; color: #ef4444; border-radius: 4px; cursor: pointer; font-size: 0.9em; font-weight: bold;">Forcer quand même</button>
+                  </div>
+                </div>
               </div>
               <div v-else>
                 <label class="pcr-field"
@@ -642,20 +651,39 @@ const currentExperienceConfig = computed(() => {
   );
 });
 
-// 🚀 NOUVEAU : Quand le tarif change, on prépare les variables par défaut pour les options et quantités
+// 🚀 NOUVEAU : Quand le tarif change, on scanne le devis sauvegardé pour restaurer les quantités
 watch(currentExperienceConfig, (newConfig) => {
   formData.value.customQty = {};
   formData.value.options = {};
 
   if (newConfig) {
+    // On récupère les lignes sauvegardées en BDD si on est en train d'éditer
+    const savedLines = isPrefilling.value && store.prefillData ? store.prefillData.quote_lines || [] : [];
+
     // 1. Pré-remplir les quantités des privatisations / forfaits
     if (newConfig.lines) {
       newConfig.lines.forEach((line, index) => {
         if (line.enable_qty) {
           const key = line.uid || `line_${index}`;
-          formData.value.customQty[key] = line.default_qty
-            ? Number(line.default_qty)
-            : 0;
+          const cleanLabel = (line.label || line.type).trim().toLowerCase();
+          
+          // 🚀 FIX : Recherche insensible à la casse
+          const foundSaved = savedLines.find(sl => {
+            const slLabel = (sl.clean_label || sl.label || '').toLowerCase();
+            return slLabel === cleanLabel || slLabel.includes(cleanLabel);
+          });
+
+          if (foundSaved && isPrefilling.value) {
+            // 🚀 FIX : Rétrocompatibilité avec les anciennes réservations (extraction du texte "4 Location...")
+            let savedQty = Number(foundSaved.qty);
+            if (!foundSaved.qty || isNaN(savedQty) || savedQty === 0) {
+              const match = (foundSaved.label || '').match(/^(\d+)/); 
+              savedQty = match ? parseInt(match[1], 10) : 1;
+            }
+            formData.value.customQty[key] = savedQty || 0;
+          } else {
+            formData.value.customQty[key] = line.default_qty ? Number(line.default_qty) : 0;
+          }
         }
       });
     }
@@ -663,10 +691,32 @@ watch(currentExperienceConfig, (newConfig) => {
     if (newConfig.options) {
       newConfig.options.forEach((opt, index) => {
         const optId = opt.uid || `option_${index}`;
-        formData.value.options[optId] = {
-          selected: false,
-          qty: opt.default_qty ? Number(opt.default_qty) : 1,
-        };
+        const cleanLabel = opt.label.trim().toLowerCase();
+        
+        // 🚀 FIX : Recherche insensible à la casse
+        const foundSaved = savedLines.find(sl => {
+            const slLabel = (sl.clean_label || sl.label || '').toLowerCase();
+            return slLabel === cleanLabel || slLabel.includes(cleanLabel);
+        });
+
+        if (foundSaved && isPrefilling.value) {
+          // 🚀 FIX : Rétrocompatibilité extraction quantité des options (supporte "4 x Option" et "Option x 4")
+          let savedQty = Number(foundSaved.qty);
+          if (!foundSaved.qty || isNaN(savedQty) || savedQty === 0) {
+            // Cherche un nombre avant ou après le "x" ou "×"
+            const match = (foundSaved.label || '').match(/(?:^(\d+)\s*[x×X])|(?:[x×X]\s*(\d+))/); 
+            savedQty = match ? parseInt(match[1] || match[2], 10) : 1;
+          }
+          formData.value.options[optId] = {
+            selected: true,
+            qty: savedQty || 1,
+          };
+        } else {
+          formData.value.options[optId] = {
+            selected: false,
+            qty: opt.default_qty ? Number(opt.default_qty) : 1,
+          };
+        }
       });
     }
   }
@@ -811,6 +861,22 @@ watch(
 const dateRangeInput = ref(null);
 let flatpickrInstance = null;
 
+// 🚀 NOUVEAU : Gestion du popup de chevauchement
+const showOverlapPopup = ref(false);
+
+const cancelOverlap = () => {
+  if (flatpickrInstance) {
+    flatpickrInstance.clear();
+  }
+  formData.value.date_arrivee = "";
+  formData.value.date_depart = "";
+  showOverlapPopup.value = false;
+};
+
+const confirmOverlap = () => {
+  showOverlapPopup.value = false;
+};
+
 // On surveille à la fois l'ID de l'item ET l'ouverture de la modale
 watch(
   () => [formData.value.item_id, store.isCreateModalOpen],
@@ -879,21 +945,51 @@ const initFlatpickr = () => {
       formData.value.date_arrivee && formData.value.date_depart
         ? [formData.value.date_arrivee, formData.value.date_depart]
         : null,
-    disable: [
-      function (date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const ymd = `${year}-${month}-${day}`;
-        return disableRanges.some((r) => ymd >= r.from && ymd <= r.to);
-      },
-    ],
+    // 🚀 FIX : On ne "disable" plus nativement pour permettre le forçage admin
+    onDayCreate: function (dObj, dStr, fp, dayElem) {
+      // On reproduit l'ancien style visuel
+      const year = dayElem.dateObj.getFullYear();
+      const month = String(dayElem.dateObj.getMonth() + 1).padStart(2, "0");
+      const day = String(dayElem.dateObj.getDate()).padStart(2, "0");
+      const dateYMD = `${year}-${month}-${day}`;
+
+      const isBlocked = disableRanges.some(
+        (range) => dateYMD >= range.from && dateYMD <= range.to,
+      );
+      
+      if (isBlocked) {
+        dayElem.style.backgroundColor = "#fee2e2";
+        dayElem.style.color = "#b91c1c";
+        dayElem.style.textDecoration = "line-through";
+        dayElem.title = "Période occupée (Forçage possible)";
+      }
+    },
     onChange: (selectedDates) => {
+      // A chaque changement de date, on cache l'alerte par défaut
+      showOverlapPopup.value = false;
+      
       if (selectedDates.length === 2) {
         const formatYMD = (d) =>
           `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-        formData.value.date_arrivee = formatYMD(selectedDates[0]);
-        formData.value.date_depart = formatYMD(selectedDates[1]);
+        
+        const startYMD = formatYMD(selectedDates[0]);
+        const endYMD = formatYMD(selectedDates[1]);
+        
+        formData.value.date_arrivee = startYMD;
+        formData.value.date_depart = endYMD;
+
+        // 🚀 NOUVEAU : Détection de chevauchement
+        let hasOverlap = false;
+        if (disableRanges.length > 0) {
+          hasOverlap = disableRanges.some(
+            (range) => startYMD <= range.to && endYMD >= range.from
+          );
+        }
+
+        if (hasOverlap) {
+          showOverlapPopup.value = true;
+        }
+
       } else {
         formData.value.date_arrivee = "";
         formData.value.date_depart = "";

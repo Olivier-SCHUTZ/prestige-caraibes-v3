@@ -487,7 +487,8 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
 
                     if ($type === 'custom' && !empty($t['exp_type_custom'])) {
                         $label = $t['exp_type_custom'];
-                        $key = sanitize_title($label) . '_' . $index; // ex: "1-kayak-transparent_0"
+                        // 🚀 FIX : L'ancien système stockait le label brut en base de données, on l'utilise directement comme clé !
+                        $key = $label;
                     } elseif ($type === 'adulte_enfant') {
                         $label = 'Par adulte / enfant';
                         $key = 'adulte_enfant';
