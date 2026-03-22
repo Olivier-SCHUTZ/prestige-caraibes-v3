@@ -104,5 +104,11 @@ class PCR_Ajax_Router
         add_action('wp_ajax_pc_experience_get_details', ['PCR_Experience_Ajax_Controller', 'ajax_experience_get_details']);
         add_action('wp_ajax_pc_experience_save', ['PCR_Experience_Ajax_Controller', 'ajax_experience_save']);
         add_action('wp_ajax_pc_experience_delete', ['PCR_Experience_Ajax_Controller', 'ajax_experience_delete']);
+
+        // --------------------------------------------------------
+        // ⚙️ 7. FIELD MANAGER NATIVE (Refonte ACF)
+        // --------------------------------------------------------
+        add_action('wp_ajax_pc_get_native_fields', ['PCR_Field_Ajax_Controller', 'ajax_get_fields']);
+        add_action('wp_ajax_pc_save_native_fields', ['PCR_Field_Ajax_Controller', 'ajax_save_fields']);
     }
 }

@@ -37,6 +37,11 @@ require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-service
 require_once PC_RES_CORE_PATH . 'includes/services/housing/class-housing-pricing-calculator.php';
 // require_once PC_RES_CORE_PATH . 'includes/class-rate-manager.php';
 require_once PC_RES_CORE_PATH . 'includes/acf-fields.php';
+// ✨ NOUVEAU : Système de champs natifs (Refonte ACF)
+require_once PC_RES_CORE_PATH . 'includes/fields/class-field-manager.php';
+require_once PC_RES_CORE_PATH . 'includes/fields/class-fields.php';
+// Chargement des définitions de champs
+require_once PC_RES_CORE_PATH . 'includes/fields/definitions/housing-fields.php';
 // require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-housing.php';
 
 // Nouveaux Contrôleurs AJAX (Refactoring v2)
@@ -48,6 +53,7 @@ require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-messaging-ajax-
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-document-ajax-controller.php';
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-housing-ajax-controller.php';
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-experience-ajax-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-field-ajax-controller.php';
 // ✨ NOUVEAU : API Controller pour l'interface Vue.js (Dashboard)
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-dashboard-api-controller.php';
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-experience-bridge-controller.php';
@@ -96,6 +102,8 @@ require_once PC_RES_CORE_PATH . 'includes/services/document/renderers/class-vouc
 require_once PC_RES_CORE_PATH . 'includes/services/document/renderers/class-custom-renderer.php';
 require_once PC_RES_CORE_PATH . 'includes/services/document/class-document-service.php';
 require_once PC_RES_CORE_PATH . 'includes/api/class-rest-webhook.php';
+
+require_once PC_RES_CORE_PATH . 'includes/migration-logements.php';
 // controller-forms sera branché plus tard quand tu seras prêt
 if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
     require_once PC_RES_CORE_PATH . 'includes/controller-forms.php';
@@ -133,6 +141,11 @@ add_action('plugins_loaded', function () {
     // Initialisation du noyau réservation (si besoin plus tard)
     if (class_exists('PCR_Reservation')) {
         PCR_Reservation::init();
+    }
+
+    // Initialisation du Field Manager (Nouveau système natif)
+    if (class_exists('PCR_Field_Manager')) {
+        PCR_Field_Manager::init();
     }
 
     // Initialisation du contrôleur de formulaires (si présent)

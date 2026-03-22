@@ -132,28 +132,20 @@ class PCR_Housing_Repository
                     ];
                 }
 
-                // Champs critiques via ACF
-                if (function_exists('get_field')) {
-                    $item['capacite'] = get_field('capacite', $post_id) ?: 0;
-                    $item['base_price_from'] = get_field('prix-a-partir-de-e-nuit-prix-de-base', $post_id) ?: 0;
-                    $item['identifiant_lodgify'] = get_field('identifiant_lodgify', $post_id) ?: '';
-                    $item['mode_reservation'] = get_field('mode_reservation', $post_id) ?: 'log_directe';
+                // Champs critiques (Utilisation de la nouvelle API PCR_Fields)
+                $item['capacite'] = PCR_Fields::get('capacite', $post_id, 0);
+                $item['base_price_from'] = PCR_Fields::get('base_price_from', $post_id, 0); // On utilise la clé normalisée
+                $item['identifiant_lodgify'] = PCR_Fields::get('identifiant_lodgify', $post_id, '');
+                $item['mode_reservation'] = PCR_Fields::get('mode_reservation', $post_id, 'log_directe');
 
-                    // Ville (peut venir du champ ACF ou de la taxonomie)
-                    $ville_acf = get_field('ville', $post_id);
-                    $ville_tax = '';
-                    $terms = get_the_terms($post_id, 'destination');
-                    if ($terms && !is_wp_error($terms)) {
-                        $ville_tax = $terms[0]->name;
-                    }
-                    $item['ville'] = $ville_acf ?: $ville_tax;
-                } else {
-                    $item['capacite'] = 0;
-                    $item['base_price_from'] = 0;
-                    $item['identifiant_lodgify'] = '';
-                    $item['mode_reservation'] = 'log_directe';
-                    $item['ville'] = '';
+                // Ville (peut venir du champ ou de la taxonomie)
+                $ville_field = PCR_Fields::get('ville', $post_id, '');
+                $ville_tax = '';
+                $terms = get_the_terms($post_id, 'destination');
+                if ($terms && !is_wp_error($terms)) {
+                    $ville_tax = $terms[0]->name;
                 }
+                $item['ville'] = $ville_field ?: $ville_tax;
 
                 // Statut formaté pour l'affichage (Utilisation de la Config)
                 $item['status_label'] = $config->get_status_label($item['status']);
@@ -209,28 +201,25 @@ class PCR_Housing_Repository
         $config = PCR_Housing_Config::get_instance();
         $formatter = PCR_Housing_Formatter::get_instance();
 
-        // Chargement de tous les champs ACF mappés
-        if (function_exists('get_field')) {
-            $mapped_fields = $config->get_mapped_fields();
-            $special_keys = $config->get_special_meta_keys();
+        // Chargement de tous les champs mappés via le nouveau système natif (avec Fallback ACF intégré)
+        $mapped_fields = $config->get_mapped_fields();
+        $special_keys = $config->get_special_meta_keys();
 
-            foreach ($mapped_fields as $normalized_key => $meta_key) {
-                // Utilise la vraie meta_key si elle a un trait d'union
-                $real_meta_key = $special_keys[$normalized_key] ?? $meta_key;
+        foreach ($mapped_fields as $normalized_key => $meta_key) {
+            // On vérifie d'abord s'il y a une clé "spéciale" (comme les vieilles clés ACF avec des tirets)
+            $real_meta_key = $special_keys[$normalized_key] ?? $meta_key;
 
-                $value = get_field($real_meta_key, $post_id);
+            // On utilise notre pont anti-régression !
+            // On tente d'abord avec la clé normalisée
+            $value = PCR_Fields::get($normalized_key, $post_id);
 
-                // Traitement spécifique selon le type de champ via le Formatter
-                $details[$normalized_key] = $formatter->process_field_value($normalized_key, $value);
+            // Si rien n'est trouvé et qu'on a une ancienne clé bizarre (real_meta_key), on tente avec celle-ci pour le fallback ACF
+            if ($value === null && $normalized_key !== $real_meta_key) {
+                $value = PCR_Fields::get($real_meta_key, $post_id);
             }
-        } else {
-            // Fallback sans ACF : on charge ce qu'on peut via get_post_meta
-            error_log('[PCR Housing Repository] ACF non disponible, fallback vers get_post_meta');
-            $mapped_fields = $config->get_mapped_fields();
 
-            foreach ($mapped_fields as $normalized_key => $meta_key) {
-                $details[$normalized_key] = get_post_meta($post_id, $meta_key, true);
-            }
+            // Traitement spécifique selon le type de champ via le Formatter
+            $details[$normalized_key] = $formatter->process_field_value($normalized_key, $value);
         }
 
         // Image à la une
@@ -270,9 +259,29 @@ class PCR_Housing_Repository
     {
         if (!$post_id) return ['seasons' => [], 'promos' => []];
 
+        // 1. Tenter de lire les métadonnées natives (ultra-rapide)
+        $native_seasons = get_post_meta($post_id, 'pc_rates_seasons', true);
+        $native_promos  = get_post_meta($post_id, 'pc_rates_promos', true);
+
+        $seasons = [];
+        $promos  = [];
+
+        // 2. Fallback ACF (Utile UNIQUEMENT jusqu'à ce qu'on lance le script de migration)
+        if (!empty($native_seasons) && is_array($native_seasons)) {
+            $seasons = $native_seasons;
+        } else if (function_exists('get_field')) {
+            $seasons = self::format_seasons(get_field('pc_season_blocks', $post_id));
+        }
+
+        if (!empty($native_promos) && is_array($native_promos)) {
+            $promos = $native_promos;
+        } else if (function_exists('get_field')) {
+            $promos = self::format_promos(get_field('pc_promo_blocks', $post_id));
+        }
+
         return [
-            'seasons' => self::format_seasons(get_field('pc_season_blocks', $post_id)),
-            'promos'  => self::format_promos(get_field('pc_promo_blocks', $post_id)),
+            'seasons' => $seasons,
+            'promos'  => $promos,
         ];
     }
 
@@ -283,7 +292,29 @@ class PCR_Housing_Repository
         $data = is_string($json_data) ? json_decode(stripslashes($json_data), true) : $json_data;
         if (!is_array($data)) return;
 
+        // 🚀 1. SAUVEGARDE DES SAISONS
         if (isset($data['seasons'])) {
+            // A. Format Natif (Pour le futur)
+            $native_seasons = array_map(function ($season) {
+                return [
+                    'name'       => sanitize_text_field($season['name'] ?? ''),
+                    'price'      => floatval($season['price'] ?? 0),
+                    'note'       => sanitize_textarea_field($season['note'] ?? ''),
+                    'minNights'  => intval($season['minNights'] ?? 0),
+                    'guestFee'   => floatval($season['guestFee'] ?? 0),
+                    'guestFrom'  => intval($season['guestFrom'] ?? 0),
+                    'periods'    => array_map(function ($p) {
+                        return [
+                            'start' => sanitize_text_field($p['start'] ?? ''),
+                            'end'   => sanitize_text_field($p['end'] ?? '')
+                        ];
+                    }, $season['periods'] ?? [])
+                ];
+            }, $data['seasons']);
+
+            update_post_meta($post_id, 'pc_rates_seasons', $native_seasons);
+
+            // B. Format ACF (Pour que le site public actuel continue de fonctionner)
             $acf_seasons = array_map(function ($season) {
                 return [
                     'season_name'            => sanitize_text_field($season['name']),
@@ -297,10 +328,33 @@ class PCR_Housing_Repository
                     }, $season['periods'] ?? [])
                 ];
             }, $data['seasons']);
-            update_field('field_pc_season_blocks_20250826', $acf_seasons, $post_id);
+
+            if (function_exists('update_field')) {
+                update_field('field_pc_season_blocks_20250826', $acf_seasons, $post_id);
+            }
         }
 
+        // 🚀 2. SAUVEGARDE DES PROMOTIONS
         if (isset($data['promos'])) {
+            // A. Format Natif
+            $native_promos = array_map(function ($promo) {
+                return [
+                    'name'       => sanitize_text_field($promo['name'] ?? ''),
+                    'promo_type' => sanitize_text_field($promo['promo_type'] ?? ''),
+                    'value'      => floatval($promo['value'] ?? 0),
+                    'validUntil' => sanitize_text_field($promo['validUntil'] ?? ''),
+                    'periods'    => array_map(function ($p) {
+                        return [
+                            'start' => sanitize_text_field($p['start'] ?? ''),
+                            'end'   => sanitize_text_field($p['end'] ?? '')
+                        ];
+                    }, $promo['periods'] ?? [])
+                ];
+            }, $data['promos']);
+
+            update_post_meta($post_id, 'pc_rates_promos', $native_promos);
+
+            // B. Format ACF
             $acf_promos = array_map(function ($promo) {
                 return [
                     'nom_de_la_promotion' => sanitize_text_field($promo['name']),
@@ -312,7 +366,10 @@ class PCR_Housing_Repository
                     }, $promo['periods'] ?? [])
                 ];
             }, $data['promos']);
-            update_field('field_693425b17049d', $acf_promos, $post_id);
+
+            if (function_exists('update_field')) {
+                update_field('field_693425b17049d', $acf_promos, $post_id);
+            }
         }
     }
 
