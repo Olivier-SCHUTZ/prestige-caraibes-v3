@@ -57,10 +57,7 @@ class PC_Booking_Router_Shortcode extends PC_Shortcode_Base
      */
     private function get_lodgify_embed($post_id)
     {
-        if (!function_exists('get_field')) {
-            return '';
-        }
-        $embed_raw = get_field('lodgify_widget_embed', $post_id);
+        $embed_raw = PCR_Fields::get('lodgify_widget_embed', $post_id);
         return is_string($embed_raw) ? trim($embed_raw) : '';
     }
 
@@ -99,8 +96,8 @@ class PC_Booking_Router_Shortcode extends PC_Shortcode_Base
     private function render_lodgify_widget($post_id, $embed, $show_header)
     {
         $title = get_the_title($post_id);
-        $price = function_exists('get_field') ? get_field('base_price_from', $post_id) : '';
-        $unite = function_exists('get_field') ? get_field('unite_de_prix', $post_id) : 'par nuit';
+        $price = PCR_Fields::get('base_price_from', $post_id) ?: '';
+        $unite = PCR_Fields::get('unite_de_prix', $post_id) ?: 'par nuit';
         if (!$unite) $unite = 'par nuit';
 
         ob_start();

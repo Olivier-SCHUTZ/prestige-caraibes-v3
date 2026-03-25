@@ -27,7 +27,7 @@ class PC_Location_Map_Shortcode extends PC_Shortcode_Base
         $a = $this->validate_atts($atts);
         $post = get_post();
 
-        if (!$post || !function_exists('get_field')) {
+        if (!$post) {
             return '';
         }
 
@@ -38,7 +38,7 @@ class PC_Location_Map_Shortcode extends PC_Shortcode_Base
         }
 
         // 2. Récupération du rayon d'affichage
-        $radius = (int) get_field('geo_radius_m', $post->ID);
+        $radius = (int) PCR_Fields::get('geo_radius_m', $post->ID);
         if ($radius <= 0) {
             $radius = 600; // Rayon par défaut
         }
@@ -70,7 +70,7 @@ class PC_Location_Map_Shortcode extends PC_Shortcode_Base
      */
     private function get_coordinates($post_id)
     {
-        $coords_string = trim((string)get_field('geo_coords', $post_id));
+        $coords_string = trim((string)PCR_Fields::get('geo_coords', $post_id));
 
         if (!$coords_string || strpos($coords_string, ',') === false) {
             return false;

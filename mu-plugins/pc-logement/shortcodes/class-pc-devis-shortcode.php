@@ -19,14 +19,16 @@ class PC_Devis_Shortcode extends PC_Shortcode_Base
     public function render($atts, $content = null)
     {
         $post_id = get_the_ID();
-        if (!$post_id || !function_exists('get_field')) {
+
+        // 🚀 CORRECTION 1 : Plus de blocage lié à ACF
+        if (!$post_id) {
             return '';
         }
 
         // 1. Détection de Lodgify
-        $lodgify_embed = get_field('lodgify_widget_embed', $post_id);
+        $lodgify_embed = PCR_Fields::get('lodgify_widget_embed', $post_id);
         $has_lodgify   = !empty(trim($lodgify_embed));
-        $manual_quote  = (bool) get_field('pc_manual_quote', $post_id);
+        $manual_quote  = (bool) PCR_Fields::get('pc_manual_quote', $post_id);
 
         // 2. Récupération des données complexes structurées
         $company_info = $this->get_company_info();
@@ -122,25 +124,65 @@ class PC_Devis_Shortcode extends PC_Shortcode_Base
      */
     private function get_devis_config($post_id, $manual)
     {
-        $base_price   = (float) get_field('base_price_from', $post_id);
-        $unit         = (string) get_field('unite_de_prix',   $post_id);
-        $min_nights   = (int)    get_field('min_nights',      $post_id);
-        $max_nights   = (int)    get_field('max_nights',      $post_id);
-        $cap          = (int)    get_field('capacite',        $post_id);
+        $base_price   = (float) PCR_Fields::get('base_price_from', $post_id);
+        $unit         = (string) PCR_Fields::get('unite_de_prix',   $post_id);
+        $min_nights   = (int)    PCR_Fields::get('min_nights',      $post_id);
+        $max_nights   = (int)    PCR_Fields::get('max_nights',      $post_id);
+        $cap          = (int)    PCR_Fields::get('capacite',        $post_id);
 
         if ($cap <= 0) $cap = 1;
 
-        $extra_fee    = (float)  get_field('extra_guest_fee',  $post_id);
-        $extra_from   = (int)    get_field('extra_guest_from', $post_id);
-        $cleaning     = (float)  get_field('frais_menage',     $post_id);
-        $other_fee    = (float)  get_field('autres_frais',     $post_id);
-        $other_label  = (string) get_field('autres_frais_type', $post_id);
-        $taxe_choices = (array)  get_field('taxe_sejour',      $post_id);
+        $extra_fee    = (float)  PCR_Fields::get('extra_guest_fee',  $post_id);
+        $extra_from   = (int)    PCR_Fields::get('extra_guest_from', $post_id);
+        $cleaning     = (float)  PCR_Fields::get('frais_menage',     $post_id);
+        $other_fee    = (float)  PCR_Fields::get('autres_frais',     $post_id);
+        $other_label  = (string) PCR_Fields::get('autres_frais_type', $post_id);
+
+        // 🚀 CORRECTION : Aspirateur Universel pour la Taxe de Séjour
+        $taxe_raw = PCR_Fields::get('taxe_sejour', $post_id);
+
+        // 1. Détection ancien format Répéteur ACF (un chiffre)
+        if (is_numeric($taxe_raw) && $taxe_raw > 0 && $taxe_raw < 20) {
+            $reconstructed = [];
+            for ($i = 0; $i < intval($taxe_raw); $i++) {
+                $val = PCR_Fields::get("taxe_sejour_{$i}_value", $post_id)
+                    ?: PCR_Fields::get("taxe_sejour_{$i}_type", $post_id)
+                    ?: PCR_Fields::get("taxe_sejour_{$i}_taux", $post_id);
+                if ($val) $reconstructed[] = $val;
+            }
+            $taxe_raw = $reconstructed;
+        }
+        // 2. Décodeur JSON / Sérialisé
+        elseif (is_string($taxe_raw)) {
+            $decoded = json_decode($taxe_raw, true);
+            $taxe_raw = (json_last_error() === JSON_ERROR_NONE) ? $decoded : maybe_unserialize($taxe_raw);
+        }
+
+        // 3. Extraction agressive (Aspirateur à données multi-niveaux)
+        $taxe_choices = [];
+        if (is_array($taxe_raw)) {
+            array_walk_recursive($taxe_raw, function ($value, $key) use (&$taxe_choices) {
+                // Si Vue a sauvegardé les choix en tant que clés (ex: {"5%": "Label..."})
+                if (is_string($key) && !is_numeric($key)) {
+                    $taxe_choices[] = $key;
+                }
+                if (is_string($value) && !empty(trim($value))) {
+                    $taxe_choices[] = trim($value);
+                }
+            });
+        } elseif (is_string($taxe_raw) && !empty(trim($taxe_raw))) {
+            $taxe_choices[] = trim($taxe_raw);
+        }
 
         $unit_is_week = (stripos($unit, 'semaine') !== false);
 
         // Récupération des modes
-        $mode_raw = get_field('mode_reservation', $post_id);
+        $mode_raw = PCR_Fields::get('mode_reservation', $post_id);
+        if (is_string($mode_raw)) {
+            $decoded_mode = json_decode($mode_raw, true);
+            if (json_last_error() === JSON_ERROR_NONE) $mode_raw = $decoded_mode;
+            else $mode_raw = maybe_unserialize($mode_raw);
+        }
         if (is_array($mode_raw)) $mode_raw = $mode_raw['value'] ?? $mode_raw[0] ?? '';
         $booking_mode = ($mode_raw === 'log_directe' || $mode_raw === 'log_direct') ? 'directe' : 'demande';
 
@@ -154,30 +196,79 @@ class PC_Devis_Shortcode extends PC_Shortcode_Base
             'cleaning'    => $cleaning,
             'otherFee'    => $other_fee,
             'otherLabel'  => $other_label ?: 'Autres frais',
-            'taxe_sejour' => $taxe_choices,
+            'taxe_sejour' => array_values(array_unique(array_filter($taxe_choices))),
             'seasons'     => $this->get_formatted_seasons($post_id, $base_price, $extra_fee, $extra_from, $unit_is_week),
             'icsDisable'  => $this->get_disabled_dates($post_id),
             'payment'     => $this->get_payment_rules($post_id),
             'bookingMode' => $booking_mode,
-            'lodgifyId'   => get_field('identifiant_lodgify', $post_id) ?: '',
+            'lodgifyId'   => PCR_Fields::get('identifiant_lodgify', $post_id) ?: '',
             'lodgifyAccount' => 'marine-schutz-431222',
             'manualQuote' => $manual,
         ];
     }
 
     /**
-     * Helper : Formate les saisons ACF pour le JS
+     * Helper : Formate les saisons pour le JS (Compatible ancien et nouveau format)
      */
     private function get_formatted_seasons($post_id, $base_price, $extra_fee, $extra_from, $unit_is_week)
     {
-        $seasons_raw = (array) get_field('pc_season_blocks', $post_id);
-        $seasons = [];
+        $raw_seasons = PCR_Fields::get('pc_season_blocks', $post_id);
 
-        foreach ($seasons_raw as $s) {
+        // --- 🚀 CORRECTION 2 : RECONSTRUCTEUR ACF ---
+        if (is_numeric($raw_seasons) && $raw_seasons > 0) {
+            $reconstructed = [];
+            for ($i = 0; $i < intval($raw_seasons); $i++) {
+                $prefix = "pc_season_blocks_{$i}_";
+
+                $periods_count = PCR_Fields::get($prefix . 'season_periods', $post_id);
+                $periods = [];
+                if (is_numeric($periods_count) && $periods_count > 0) {
+                    for ($j = 0; $j < intval($periods_count); $j++) {
+                        $p_prefix = $prefix . "season_periods_{$j}_";
+                        $periods[] = [
+                            'date_from' => PCR_Fields::get($p_prefix . 'date_from', $post_id),
+                            'date_to'   => PCR_Fields::get($p_prefix . 'date_to', $post_id),
+                        ];
+                    }
+                }
+
+                $reconstructed[] = [
+                    'season_name'             => PCR_Fields::get($prefix . 'season_name', $post_id),
+                    'season_price'            => PCR_Fields::get($prefix . 'season_price', $post_id),
+                    'season_min_nights'       => PCR_Fields::get($prefix . 'season_min_nights', $post_id),
+                    'season_extra_guest_fee'  => PCR_Fields::get($prefix . 'season_extra_guest_fee', $post_id),
+                    'season_extra_guest_from' => PCR_Fields::get($prefix . 'season_extra_guest_from', $post_id),
+                    'season_periods'          => $periods
+                ];
+            }
+            $raw_seasons = $reconstructed;
+        }
+        // --- DÉCODEUR JSON/SÉRIALISÉ ---
+        elseif (is_string($raw_seasons)) {
+            $decoded = json_decode($raw_seasons, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $raw_seasons = $decoded;
+            } else {
+                $raw_seasons = maybe_unserialize($raw_seasons);
+            }
+        }
+
+        if (!is_array($raw_seasons)) return [];
+
+        $seasons = [];
+        foreach ($raw_seasons as $s) {
             if (!is_array($s)) continue;
 
             $price = isset($s['season_price']) ? (float)$s['season_price'] : 0.0;
             if ($unit_is_week && $price > 0) $price = $price / 7.0;
+
+            // Gestion de la sous-liste de périodes
+            $periods = $s['season_periods'] ?? [];
+            if (is_string($periods)) {
+                $decoded_p = json_decode($periods, true);
+                $periods = (json_last_error() === JSON_ERROR_NONE) ? $decoded_p : maybe_unserialize($periods);
+            }
+            if (!is_array($periods)) $periods = [];
 
             $seasons[] = [
                 'name'        => trim((string)($s['season_name'] ?? 'Saison')),
@@ -187,7 +278,7 @@ class PC_Devis_Shortcode extends PC_Shortcode_Base
                 'price'       => ($price > 0 ? $price : ($unit_is_week ? ($base_price / 7.0) : $base_price)),
                 'periods'     => array_values(array_map(function ($p) {
                     return ['from' => (string)($p['date_from'] ?? ''), 'to' => (string)($p['date_to'] ?? '')];
-                }, (array)($s['season_periods'] ?? [])))
+                }, $periods))
             ];
         }
         return $seasons;
@@ -216,11 +307,13 @@ class PC_Devis_Shortcode extends PC_Shortcode_Base
     }
 
     /**
-     * Helper : Récupère les règles de paiement
+     * Helper : Récupère les règles de paiement (Sécurisé sans ACF)
      */
     private function get_payment_rules($post_id)
     {
-        $pay_rules = get_field('regles_de_paiement', $post_id);
+        $pay_rules = PCR_Fields::get('regles_de_paiement', $post_id);
+        if (is_string($pay_rules)) $pay_rules = json_decode($pay_rules, true) ?: [];
+
         return [
             'mode'         => $pay_rules['pc_pay_mode'] ?? 'acompte_plus_solde',
             'deposit_type' => $pay_rules['pc_deposit_type'] ?? 'pourcentage',
@@ -234,19 +327,20 @@ class PC_Devis_Shortcode extends PC_Shortcode_Base
      */
     private function get_company_info()
     {
+        // 🚀 CORRECTION 3 : Sécurité Options sans ACF
         $info = [
-            'name'    => get_field('pc_org_name', 'option') ?: get_bloginfo('name'),
-            'legal'   => get_field('pc_org_legal_name', 'option'),
-            'address' => get_field('pc_org_address_street', 'option'),
-            'city'    => get_field('pc_org_address_postal', 'option') . ' ' . get_field('pc_org_address_locality', 'option'),
-            'phone'   => get_field('pc_org_phone', 'option'),
-            'email'   => get_field('pc_org_email', 'option'),
-            'vat'     => get_field('pc_org_vat_id', 'option'),
-            'logo'    => get_field('pc_org_logo', 'option'),
+            'name'    => get_option('options_pc_org_name') ?: get_bloginfo('name'),
+            'legal'   => get_option('options_pc_org_legal_name'),
+            'address' => get_option('options_pc_org_address_street'),
+            'city'    => get_option('options_pc_org_address_postal') . ' ' . get_option('options_pc_org_address_locality'),
+            'phone'   => get_option('options_pc_org_phone'),
+            'email'   => get_option('options_pc_org_email'),
+            'vat'     => get_option('options_pc_org_vat_id'),
+            'logo'    => get_option('options_pc_org_logo'),
         ];
 
         // CGV
-        $terms_raw = get_field('cgv_location', 'option');
+        $terms_raw = get_option('options_cgv_location');
         $info['cgv_location'] = $terms_raw ? trim(wp_strip_all_tags(wp_kses_post($terms_raw))) : '';
 
         // Conversion du logo en Base64 (fond blanc forcé pour jsPDF)

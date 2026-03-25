@@ -119,6 +119,7 @@ class PCR_Housing_Config
             // === HÔTE ===
             'hote_nom' => 'hote_nom',
             'hote_description' => 'hote_description',
+            'hote_photo' => 'hote_photo',
 
             // === OVERRIDES SEO ===
             'log_exclude_sitemap' => 'log_exclude_sitemap',

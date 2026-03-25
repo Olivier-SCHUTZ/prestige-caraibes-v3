@@ -1,0 +1,152 @@
+/* --- Wrapper Global --- */
+.pc-regles-wrapper {
+  margin: 2rem 0;
+  font-family: var(--pc-font-family-body, system-ui, -apple-system, sans-serif);
+}
+
+/* --- La Carte Unifiée --- */
+.pc-regles-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: var(--pc-border-radius, 16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.pc-regles-card:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 800px) {
+  .pc-regles-card {
+    flex-direction: row;
+    align-items: stretch; /* Les deux colonnes font la même hauteur */
+  }
+}
+
+/* --- Colonne de Gauche : Texte --- */
+.pc-regles-texte-col {
+  padding: 2.5rem;
+  flex: 2; /* Prend 2/3 de l'espace sur grand écran */
+  border-bottom: 1px solid #e2e8f0;
+}
+
+@media (min-width: 800px) {
+  .pc-regles-texte-col {
+    border-bottom: none;
+    border-right: 1px solid #e2e8f0;
+  }
+}
+
+.pc-regles-title {
+  font-size: 1.4rem;
+  color: var(--pc-primary, #0e2b5c);
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-family: var(--pc-font-family-heading, inherit);
+  font-weight: 600;
+}
+
+.pc-regles-texte {
+  color: #475569;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.pc-regles-texte p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.pc-regles-texte p:last-child {
+  margin-bottom: 0;
+}
+
+/* Amélioration si les règles contiennent des tirets ou des listes */
+.pc-regles-texte ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.pc-regles-texte li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.pc-regles-texte li::before {
+  content: "•";
+  color: var(--pc-primary, #0e2b5c);
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}
+
+/* --- Colonne de Droite : Horaires --- */
+.pc-regles-horaires-col {
+  padding: 2.5rem;
+  flex: 1; /* Prend 1/3 de l'espace */
+  background: #f8fafc; /* Légèrement grisé pour démarquer la zone technique */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pc-horaire-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.pc-horaire-item {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+/* Icônes modernisées avec ombre douce */
+.pc-horaire-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(14, 43, 92, 0.08); /* Ombre aux couleurs de la marque */
+  color: var(--pc-primary, #0e2b5c);
+  flex-shrink: 0;
+}
+
+.pc-horaire-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.pc-horaire-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pc-horaire-info strong {
+  font-size: 1.15rem;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.pc-horaire-info span {
+  font-size: 0.95rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pc-horaire-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 1.5rem 0;
+}

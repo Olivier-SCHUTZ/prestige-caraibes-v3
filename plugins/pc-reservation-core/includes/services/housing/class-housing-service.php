@@ -145,71 +145,77 @@ class PCR_Housing_Service
                 }
             }
 
-            // NOUVEAU SYSTÈME : Sauvegarde native des règles de paiement (Indépendant d'ACF)
-            if (isset($data['payment_rules']) && is_array($data['payment_rules'])) {
-                $sanitized_rules = [
-                    'mode_pay'       => sanitize_text_field($data['payment_rules']['mode_pay'] ?? 'acompte_plus_solde'),
-                    'deposit_type'   => sanitize_text_field($data['payment_rules']['deposit_type'] ?? 'pourcentage'),
-                    'deposit_value'  => (float) ($data['payment_rules']['deposit_value'] ?? 30),
-                    'delay_days'     => (int) ($data['payment_rules']['delay_days'] ?? 30),
-                    'caution_type'   => sanitize_text_field($data['payment_rules']['caution_type'] ?? 'aucune'),
-                    'caution_amount' => (float) ($data['payment_rules']['caution_amount'] ?? 0)
-                ];
+            // 🚀 SYSTÈME HYBRIDE : Mapping corrigé pour correspondre à la Config et à Vue.js
+            if (isset($data['payment_rules'])) {
+                $rules = is_string($data['payment_rules']) ? json_decode(wp_unslash($data['payment_rules']), true) : $data['payment_rules'];
 
-                // Sauvegarde magique en base de données de manière groupée (ultra rapide)
-                update_post_meta($post_id, '_pc_payment_rules', $sanitized_rules);
+                if (is_array($rules)) {
+                    // MAPPING CORRIGÉ : On utilise les clés exactes de class-housing-config.php
+                    $mapping = [
+                        'mode_pay'       => 'pc_pay_mode',
+                        'deposit_type'   => 'pc_deposit_type',
+                        'deposit_value'  => 'pc_deposit_value',
+                        'delay_days'     => 'pc_balance_delay_days',
+                        'caution_type'   => 'pc_caution_type',
+                        'caution_amount' => 'pc_caution_amount'
+                    ];
 
-                // On le retire du tableau $data pour ne pas perturber la boucle ACF juste en dessous
+                    foreach ($mapping as $vue_key => $db_key) {
+                        if (isset($rules[$vue_key])) {
+                            // On ajoute la bonne clé dans $data pour que la boucle native s'en occupe
+                            $data[$db_key] = $rules[$vue_key];
+
+                            // FORCE SAVE : On l'écrit aussi directement pour être sûr à 100%
+                            update_post_meta($post_id, $db_key, sanitize_text_field($rules[$vue_key]));
+                        }
+                    }
+
+                    // On sauvegarde l'objet groupé au cas où une vieille fonction en aurait besoin
+                    update_post_meta($post_id, '_pc_payment_rules', $rules);
+                }
+
                 unset($data['payment_rules']);
             }
 
-            // 2. Mise à jour des champs ACF
-            if (function_exists('update_field')) {
-                $updated_fields = 0;
-                $config = PCR_Housing_Config::get_instance();
-                $formatter = PCR_Housing_Formatter::get_instance();
+            // 2. Mise à jour des champs (Désormais 100% Natif WordPress !)
+            $updated_fields = 0;
+            $config = PCR_Housing_Config::get_instance();
+            $formatter = PCR_Housing_Formatter::get_instance();
 
-                foreach ($data as $normalized_key => $value) {
-                    if (in_array($normalized_key, ['title', 'slug', 'status', 'content', 'excerpt', 'featured_image_id', 'post_type'])) {
-                        continue;
-                    }
-
-                    if ($normalized_key === 'acf_groupes_images') {
-                        $success = $this->update_repeater_field($post_id, 'groupes_images', $value);
-                        if ($success) $updated_fields++;
-                        continue;
-                    }
-
-                    $clean_key = str_replace('acf_', '', $normalized_key);
-                    $field_config = $config->get_field_config_by_slug($clean_key);
-
-                    if (!$field_config) {
-                        continue;
-                    }
-
-                    if (in_array($clean_key, ['hero_desktop_url', 'hero_mobile_url'])) {
-                        $value = $formatter->process_image_field($value);
-                    }
-
-                    // FIX : Protection vitale pour les tableaux (comme les cases à cocher de la taxe de séjour)
-                    if (is_array($value)) {
-                        $clean_value = array_map('sanitize_text_field', $value);
-                    } else {
-                        $clean_value = $formatter->sanitize_field_value($clean_key, $value);
-                    }
-
-                    $update_key = $field_config['key'] ?? $field_config['meta_key'];
-
-                    $result = update_field($update_key, $clean_value, $post_id);
-                    if ($result !== false) {
-                        $updated_fields++;
-                    }
+            foreach ($data as $normalized_key => $value) {
+                if (in_array($normalized_key, ['title', 'slug', 'status', 'content', 'excerpt', 'featured_image_id', 'post_type'])) {
+                    continue;
                 }
-            } else {
-                return [
-                    'success' => false,
-                    'message' => 'ACF non disponible pour la sauvegarde.',
-                ];
+
+                if ($normalized_key === 'acf_groupes_images') {
+                    $success = $this->update_repeater_field($post_id, 'groupes_images', $value);
+                    if ($success) $updated_fields++;
+                    continue;
+                }
+
+                $clean_key = str_replace('acf_', '', $normalized_key);
+                $field_config = $config->get_field_config_by_slug($clean_key);
+
+                if (!$field_config) {
+                    continue;
+                }
+
+                if (in_array($clean_key, ['hero_desktop_url', 'hero_mobile_url'])) {
+                    $value = $formatter->process_image_field($value);
+                }
+
+                // FIX : Protection vitale pour les tableaux (comme les cases à cocher de la taxe de séjour)
+                if (is_array($value)) {
+                    $clean_value = array_map('sanitize_text_field', $value);
+                } else {
+                    $clean_value = $formatter->sanitize_field_value($clean_key, $value);
+                }
+
+                // SAUVEGARDE NATIVE (On remplace update_field par update_post_meta)
+                $result = update_post_meta($post_id, $clean_key, $clean_value);
+                if ($result !== false) {
+                    $updated_fields++;
+                }
             }
 
             // 3. Mise à jour de l'image à la une

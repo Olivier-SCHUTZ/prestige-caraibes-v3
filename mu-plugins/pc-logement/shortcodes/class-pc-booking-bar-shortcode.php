@@ -19,19 +19,17 @@ class PC_Booking_Bar_Shortcode extends PC_Shortcode_Base
      */
     public function render($atts, $content = null)
     {
-        if (!is_singular(['villa', 'appartement', 'logement']) || is_page(['reserver', 'demande-sejour'])) {
-            return '';
-        }
-
         $post_id = get_the_ID();
-        if (!$post_id || !function_exists('get_field')) {
+
+        // 🚀 CORRECTION : On a viré le "videur" (is_singular) qui bloquait l'affichage
+        if (!$post_id) {
             return '';
         }
 
-        // Récupération des données nécessaires
-        $lodgify_embed = get_field('lodgify_widget_embed', $post_id);
+        // Récupération des données nécessaires (en natif !)
+        $lodgify_embed = PCR_Fields::get('lodgify_widget_embed', $post_id);
         $has_lodgify   = !empty(trim((string)$lodgify_embed));
-        $price         = get_field('base_price_from', $post_id);
+        $price         = PCR_Fields::get('base_price_from', $post_id);
 
         ob_start();
 

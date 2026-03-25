@@ -62,6 +62,16 @@
           placeholder="Présentation de l'hôte..."
         ></textarea>
       </div>
+
+      <div class="pc-form-group pc-form-group--full">
+        <label>Photo de l'hôte (ID de l'image Media WP)</label>
+        <input
+          type="number"
+          v-model="modalStore.formData.hote_photo"
+          class="pc-input"
+          placeholder="Ex: 1542"
+        />
+      </div>
     </div>
 
     <h4 class="pc-section-title">Intégrations externes</h4>

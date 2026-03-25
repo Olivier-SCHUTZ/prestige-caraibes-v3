@@ -22,7 +22,7 @@ class PC_Availability_Helper
         $today = current_time('Y-m-d');
 
         // 1. External iCals (via le champ ACF ical_url)
-        $ical_url = function_exists('get_field') ? get_field('ical_url', $logement_id) : '';
+        $ical_url = PCR_Fields::get('ical_url', $logement_id) ?: '';
         if ($ical_url) {
             $ext_ranges = json_decode(self::get_ics_disabled_ranges($ical_url, 24), true);
             if (is_array($ext_ranges)) {

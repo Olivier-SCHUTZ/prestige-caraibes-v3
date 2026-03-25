@@ -108,6 +108,7 @@ $manager->register_field_group('housing_booking', [
         'horaire_depart'        => ['type' => 'text'],
         'ical_url'              => ['type' => 'text'],
         'lodgify_widget_embed'  => ['type' => 'textarea'],
+        'pc_manual_quote'       => ['type' => 'checkbox'],
     ]
 ]);
 
@@ -140,6 +141,7 @@ $manager->register_field_group('housing_host_contract', [
     'fields'     => [
         'hote_nom'                  => ['type' => 'text'],
         'hote_description'          => ['type' => 'textarea'],
+        'hote_photo'                => ['type' => 'image', 'label' => 'Photo de l\'hôte'],
         'log_proprietaire_identite' => ['type' => 'text'],
         'personne_logement'         => ['type' => 'text'],
         'proprietaire_adresse'      => ['type' => 'textarea'],
@@ -148,6 +150,20 @@ $manager->register_field_group('housing_host_contract', [
         'has_piscine'               => ['type' => 'checkbox'],
         'has_jacuzzi'               => ['type' => 'checkbox'],
         'has_guide_numerique'       => ['type' => 'checkbox'],
+    ]
+]);
+
+// 9. RÈGLES DE PAIEMENT (CHAMPS INDIVIDUELS)
+$manager->register_field_group('housing_payment_rules', [
+    'title'      => 'Règles de Paiement',
+    'post_types' => $post_types,
+    'fields'     => [
+        'pc_pay_mode'           => ['type' => 'select'],
+        'pc_deposit_type'       => ['type' => 'select'],
+        'pc_deposit_value'      => ['type' => 'number'],
+        'pc_balance_delay_days' => ['type' => 'number'],
+        'pc_caution_amount'     => ['type' => 'number'],
+        'pc_caution_type'       => ['type' => 'select'],
     ]
 ]);
 

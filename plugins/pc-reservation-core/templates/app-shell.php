@@ -52,6 +52,7 @@ if (function_exists('get_field')) {
 }
 
 // 3. CHARGEMENT DES ASSETS
+wp_enqueue_media(); // 🚀 LA MAGIE EST ICI : On force le chargement de la bibliothèque média WP
 do_action('pc_resa_app_enqueue_assets');
 
 ?>

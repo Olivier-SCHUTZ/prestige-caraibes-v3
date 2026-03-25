@@ -20,16 +20,13 @@ class PC_Proximites_Shortcode extends PC_Shortcode_Base
     {
         $post = get_post();
 
-        if (!$post || !function_exists('get_field')) {
+        // 🚀 CORRECTION : On a supprimé la vérification !function_exists('get_field')
+        if (!$post) {
             return '';
         }
 
         // 1. Récupération et formatage des données
         $proximites = $this->get_proximites_data($post->ID);
-
-        if (empty($proximites)) {
-            return '';
-        }
 
         // 2. Affichage HTML
         ob_start(); ?>
@@ -63,25 +60,25 @@ class PC_Proximites_Shortcode extends PC_Shortcode_Base
             [
                 'slug'  => 'airport',
                 'label' => 'Aéroport',
-                'val'   => get_field('prox_airport_km', $post_id),
+                'val'   => PCR_Fields::get('prox_airport_km', $post_id),
                 'svg'   => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 13l20 0" stroke="currentColor" stroke-width="2"/><path d="M3 10l6 3-1 6 3-3 5 3 1-4-5-5z" fill="none" stroke="currentColor" stroke-width="2"/></svg>'
             ],
             [
                 'slug'  => 'bus',
                 'label' => 'Autobus',
-                'val'   => get_field('prox_bus_km', $post_id),
+                'val'   => PCR_Fields::get('prox_bus_km', $post_id),
                 'svg'   => '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2" stroke="currentColor" fill="none" stroke-width="2"/><circle cx="7" cy="17" r="1.5" fill="currentColor"/><circle cx="17" cy="17" r="1.5" fill="currentColor"/></svg>'
             ],
             [
                 'slug'  => 'port',
                 'label' => 'Port',
-                'val'   => get_field('prox_port_km', $post_id),
+                'val'   => PCR_Fields::get('prox_port_km', $post_id),
                 'svg'   => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v3a8 8 0 01-16 0z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3v9" stroke="currentColor" stroke-width="2"/></svg>'
             ],
             [
                 'slug'  => 'beach',
                 'label' => 'Plage',
-                'val'   => get_field('prox_beach_km', $post_id),
+                'val'   => PCR_Fields::get('prox_beach_km', $post_id),
                 'svg'   => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 7c3-3 5-3 8 0" stroke="currentColor" stroke-width="2" fill="none"/></svg>'
             ],
         ];

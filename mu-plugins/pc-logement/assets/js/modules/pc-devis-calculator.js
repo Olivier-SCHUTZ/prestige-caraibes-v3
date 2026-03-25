@@ -224,20 +224,45 @@ class PCDevisCalculator {
     const other = Number(cfg.otherFee) || 0;
     let taxe = 0;
 
-    let taxRaw = cfg.taxe_sejour || "";
-    if (Array.isArray(taxRaw)) taxRaw = taxRaw[0] != null ? taxRaw[0] : "";
-    if (typeof taxRaw === "object" && taxRaw !== null && taxRaw.value)
-      taxRaw = taxRaw.value;
+    // 🚀 CORRECTION : Scanner de taxe (Gère Vue.js "object Object" et le "non_classe")
+    let taxRawArray = Array.isArray(cfg.taxe_sejour)
+      ? cfg.taxe_sejour
+      : [cfg.taxe_sejour];
+    let isPct5 = false;
+    let stars = null;
 
-    const taxKey = this.normKey(taxRaw);
-    const isPct5 =
-      taxKey &&
-      (/\b5\b/.test(taxKey) || taxKey.includes("5")) &&
-      (taxKey.includes("%") ||
-        taxKey.includes("pourcent") ||
-        taxKey.includes("pct"));
-    const m = taxKey.match(/([1-5])_?etoile/);
-    const stars = m ? parseInt(m[1], 10) : null;
+    for (let item of taxRawArray) {
+      if (!item) continue;
+
+      let val = item;
+      if (typeof val === "object" && val !== null && val.value) val = val.value;
+
+      // On ignore la scorie Vue.js si elle est présente
+      if (typeof val === "string" && val.includes("object Object")) continue;
+
+      const taxKey = this.normKey(val);
+
+      // Test 5% OU Non Classé (qui déclenche la taxe à 5%)
+      const is5Percent =
+        taxKey &&
+        (/\b5\b/.test(taxKey) || taxKey.includes("5")) &&
+        (taxKey.includes("%") ||
+          taxKey.includes("pourcent") ||
+          taxKey.includes("pct"));
+      const isNonClasse = taxKey && taxKey.includes("non_classe");
+
+      if (is5Percent || isNonClasse) {
+        isPct5 = true;
+        break; // On a trouvé la règle des 5%, on arrête de chercher
+      }
+
+      // Test Étoiles (1_etoiles, 2_etoiles, etc.)
+      const m = taxKey.match(/([1-5])_?etoile/);
+      if (m) {
+        stars = parseInt(m[1], 10);
+        break; // On a trouvé le nombre d'étoiles, on arrête de chercher
+      }
+    }
     const classRates = { 1: 0.8, 2: 0.9, 3: 1.5, 4: 2.3, 5: 3.0 };
 
     if (isPct5 && nN > 0 && guestsForExtras > 0 && adults > 0) {

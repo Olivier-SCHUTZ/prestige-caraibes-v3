@@ -27,7 +27,8 @@ class PC_Gallery_Shortcode extends PC_Shortcode_Base
         $a = $this->validate_atts($atts);
         $post = get_post();
 
-        if (!$post || !function_exists('get_field')) {
+        // 🚀 CORRECTION : On a retiré la dépendance à ACF (!function_exists('get_field'))
+        if (!$post) {
             return '';
         }
 
@@ -46,7 +47,6 @@ class PC_Gallery_Shortcode extends PC_Shortcode_Base
         // Fallback si aucune image
         return '<div class="pc-gallery"><p class="pc-empty">Aucune photo pour ce logement</p></div>';
     }
-
     /**
      * Chargement conditionnel des assets (JS / CSS)
      * Vide car géré par le PC_Asset_Manager global.
@@ -58,15 +58,18 @@ class PC_Gallery_Shortcode extends PC_Shortcode_Base
      */
     private function get_external_urls($post_id, $field_name)
     {
-        $raw = get_field($field_name, $post_id, false);
+        $raw = PCR_Fields::get($field_name, $post_id);
         $urls = [];
 
         if (!empty($raw)) {
             if (is_string($raw)) {
-                $parts = preg_split('~[\r\n,]+~', trim($raw));
+                // 🚀 CORRECTION : On découpe par sauts de ligne, virgules, ET espaces (\s) !
+                $parts = preg_split('~[\r\n,\s]+~', trim($raw));
                 foreach ($parts as $p) {
                     $p = trim($p);
-                    if ($p) $urls[] = esc_url_raw($p);
+                    if ($p) {
+                        $urls[] = esc_url_raw($p);
+                    }
                 }
             } elseif (is_array($raw)) {
                 foreach ($raw as $row) {
@@ -87,7 +90,7 @@ class PC_Gallery_Shortcode extends PC_Shortcode_Base
      */
     private function get_acf_groups($post_id)
     {
-        $groups = get_field('groupes_images', $post_id);
+        $groups = PCR_Fields::get('groupes_images', $post_id);
         $cats = [];
 
         if (is_array($groups)) {

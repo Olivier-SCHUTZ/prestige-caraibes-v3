@@ -33,8 +33,9 @@ class PC_ICal_Shortcode extends PC_Shortcode_Base
         }
 
         // 1. Détermination de l'URL iCal (si non fournie en attribut)
-        if (!$a['url'] && function_exists('get_field')) {
-            $a['url'] = (string) get_field('ical_url', $post->ID);
+        // 🚀 CORRECTION : On a supprimé la dépendance à ACF (&& function_exists('get_field'))
+        if (empty($a['url'])) {
+            $a['url'] = (string) PCR_Fields::get('ical_url', $post->ID);
         }
 
         // Sécurité propriétaire : Si pas d'iCal configuré, on cache le calendrier
@@ -91,16 +92,41 @@ class PC_ICal_Shortcode extends PC_Shortcode_Base
                         } : r;
                     });
 
-                    flatpickr(inputEl, {
+                    // 1. Helper pour déterminer le nombre de mois selon l'écran
+                    function getMonthsCount() {
+                        if (window.innerWidth >= 1024) return 3;
+                        if (window.innerWidth >= 768) return 2;
+                        return 1; // Mobile par défaut
+                    }
+
+                    // 2. Initialisation avec assignation à une variable
+                    var fpInstance = flatpickr(inputEl, {
                         inline: true,
                         mode: 'range',
                         dateFormat: 'Y-m-d',
                         locale: 'fr',
                         minDate: '<?php echo esc_js($a['min']); ?>',
-                        showMonths: window.innerWidth >= 1025 ? 3 : (window.innerWidth >= 641 ? 2 : 1),
+                        maxDate: new Date(new Date().setFullYear(new Date().getFullYear() + 3)),
+                        /* Limite stricte à +3 ans */
+                        showMonths: getMonthsCount(),
                         disable: disabledRanges,
                         clickOpens: false,
                         allowInput: false
+                    });
+
+                    // 3. Écouteur de redimensionnement (Responsive en temps réel)
+                    var resizeTimer;
+                    window.addEventListener('resize', function() {
+                        clearTimeout(resizeTimer);
+                        resizeTimer = setTimeout(function() {
+                            if (fpInstance && fpInstance.config) {
+                                var newCount = getMonthsCount();
+                                // Ne met à jour que si le nombre de mois nécessaire a changé
+                                if (fpInstance.config.showMonths !== newCount) {
+                                    fpInstance.set('showMonths', newCount);
+                                }
+                            }
+                        }, 200); // Debounce pour ne pas faire ramer le navigateur
                     });
                 }
 

@@ -74,8 +74,8 @@ class PCR_FormController
         // 2. Détection du mode via ACF
         $mode_reservation = 'demande'; // Par défaut
 
-        if ($item_id > 0 && function_exists('get_field')) {
-            $setting = get_field('mode_reservation', $item_id);
+        if ($item_id > 0 && class_exists('PCR_Fields')) {
+            $setting = PCR_Fields::get('mode_reservation', $item_id);
 
             // Gestion format tableau/string
             if (is_array($setting)) {

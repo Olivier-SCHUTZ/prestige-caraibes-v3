@@ -1,107 +1,69 @@
 /**
  * Fichier : mu-plugins/assets/css/components/pc-highlights.css
- * Rôle : Styles du composant Points Forts (Pastilles)
+ * Rôle : Styles du composant Points Forts (Pastilles transparentes avec icône encapsulée)
  */
 
-/* ============================================================
-   CONTENEUR PRINCIPAL
-   ============================================================ */
-.pc-hl {
+.pc-hl-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* Variante compacte optionnelle */
-.pc-hl--tight {
-  gap: 0.5rem;
+  gap: 0.8rem;
+  margin: 1.5rem 0;
+  font-family: var(--pc-font-family-body, system-ui, sans-serif);
 }
 
 /* ============================================================
-   PASTILLES (ITEMS)
+   LA PASTILLE (Fond transparent)
    ============================================================ */
-.pc-hl__item {
+.pc-hl-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  background: transparent;
-  border: 1.5px solid var(--pc-color-text);
-  border-radius: 9999px; /* Forme "Pill" parfaite */
-  padding: 0.6rem 1.1rem;
-  font-family: var(--pc-font-body);
-  font-weight: 600;
-  font-size: 1.05rem;
-  line-height: 1.35;
-  color: var(--pc-color-text);
-  white-space: nowrap;
+  /* Fond légèrement transparent (5%) basé sur un bleu foncé */
+  background: rgba(14, 43, 92, 0.05);
+  border-radius: 9999px; /* Forme de pilule parfaite */
+
+  /* Padding asymétrique : très fin à gauche pour englober le rond de l'icône, plus large à droite pour le texte */
+  padding: 0.35rem 1.2rem 0.35rem 0.35rem;
+  gap: 0.75rem;
+
+  border: 1px solid rgba(14, 43, 92, 0.05); /* Bordure quasi invisible pour la netteté */
   transition:
-    border-color 0.15s ease,
-    color 0.15s ease,
-    background-color 0.15s ease,
-    box-shadow 0.15s ease;
+    transform 0.2s ease,
+    background 0.2s ease;
 }
 
-/* Hover/focus : accent brand (sans remplir la pastille pour rester sobre) */
-.pc-hl__item:hover,
-.pc-hl__item:focus-visible {
-  border-color: var(--pc-color-primary);
-  color: var(--pc-color-primary);
-  box-shadow: var(--pc-shadow-soft, 0 4px 12px rgba(0, 0, 0, 0.06));
-  outline: none;
-}
-
-/* Variante : Pastille compacte */
-.pc-hl__item--sm {
-  font-size: 0.95rem;
-  padding: 0.45rem 0.9rem;
-}
-
-/* Variante : Pastille pleine (si utilisée pour des tags actifs par exemple) */
-.pc-hl--filled .pc-hl__item {
-  background: color-mix(in oklab, var(--pc-color-primary) 10%, white);
-  border-color: color-mix(
-    in oklab,
-    var(--pc-color-primary) 40%,
-    var(--pc-color-text)
-  );
+.pc-hl-pill:hover {
+  background: rgba(
+    14,
+    43,
+    92,
+    0.08
+  ); /* S'assombrit très légèrement au survol */
+  transform: translateY(-2px);
 }
 
 /* ============================================================
-   ICÔNES
+   L'ICÔNE ENCAPSULÉE (Cercle blanc pur)
    ============================================================ */
-.pc-hl__icon {
-  display: inline-flex;
+.pc-hl-icon-circle {
+  display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 0.25rem;
-  color: currentColor;
-}
-
-.pc-hl__icon i {
-  font-size: 1.05rem;
-  line-height: 1;
-}
-
-.pc-hl__icon svg {
-  width: 1.05rem;
-  height: 1.05rem;
-  display: block;
-  fill: currentColor;
+  width: 36px;
+  height: 36px;
+  background: #ffffff; /* Le blanc pur fait ressortir l'icône du fond transparent */
+  border-radius: 50%;
+  color: var(--pc-primary, #0e2b5c);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); /* Micro-ombre interne */
+  font-size: 0.95rem; /* Taille de l'icône FontAwesome */
+  flex-shrink: 0;
 }
 
 /* ============================================================
-   RESPONSIVE (MOBILE)
+   LE TEXTE
    ============================================================ */
-@media (max-width: 480px) {
-  .pc-hl {
-    gap: 0.6rem;
-  }
-
-  .pc-hl__item {
-    padding: 0.5rem 0.9rem;
-    font-size: 1rem;
-  }
+.pc-hl-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--pc-primary, #0e2b5c); /* Texte de la même couleur que l'icône */
+  white-space: nowrap; /* Empêche le texte de se casser sur deux lignes */
 }

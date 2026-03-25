@@ -43,13 +43,14 @@
       </div>
 
       <div class="pc-form-group pc-form-group--full">
-        <label>Points forts personnalisés (Texte libre)</label>
-        <input
-          type="text"
+        <label>Points forts personnalisés (Un par ligne)</label>
+        <textarea
           v-model="modalStore.formData.highlights_custom"
-          class="pc-input"
-          placeholder="Ex: Chef à domicile sur demande, Conciergerie 24/7"
-        />
+          class="pc-textarea"
+          rows="4"
+          placeholder="Chef à domicile sur demande&#10;Conciergerie 24/7&#10;Ménage quotidien"
+        ></textarea>
+        <small class="pc-help-text">Saisissez un point fort par ligne. Ils s'afficheront avec une icône de validation par défaut.</small>
       </div>
     </div>
 
@@ -103,16 +104,18 @@ const experiencesText = computed({
   },
 });
 
-// Options par défaut (À modifier avec tes vraies options ACF si différentes)
+// Liste parfaitement synchronisée avec le dictionnaire de class-pc-highlights-shortcode.php
 const highlightOptions = [
+  { value: "parking", label: "🚗 Parking" },
+  { value: "wifi", label: "🚀 Wi-Fi" },
+  { value: "piscine", label: "🏊 Piscine" },
+  { value: "clim", label: "❄️ Climatisation" },
   { value: "vue_mer", label: "🌊 Vue mer" },
-  { value: "piscine_privee", label: "🏊 Piscine privée" },
-  { value: "acces_plage", label: "🏖️ Accès direct plage" },
-  { value: "jardin_tropical", label: "🌴 Jardin tropical" },
-  { value: "calme_absolu", label: "🤫 Calme absolu" },
-  { value: "proche_commodites", label: "🛍️ Proche commodités" },
-  { value: "wifi_haut_debit", label: "🚀 Wi-Fi Haut débit" },
-  { value: "parking_prive", label: "🚗 Parking privé" },
+  { value: "front_mer", label: "🏖️ Front de mer" },
+  { value: "jacuzzi", label: "🛁 Jacuzzi" },
+  { value: "spa", label: "🧖 Spa" },
+  { value: "barbecue", label: "🍖 Barbecue" },
+  { value: "classement", label: "⭐ Classement" },
 ];
 </script>
 

@@ -18,7 +18,7 @@ class PC_Experiences_Shortcode extends PC_Shortcode_Base
      */
     public function render($atts, $content = null)
     {
-        if (!is_singular() || !function_exists('get_field')) {
+        if (!is_singular()) {
             return '';
         }
 
@@ -28,7 +28,7 @@ class PC_Experiences_Shortcode extends PC_Shortcode_Base
         }
 
         // 1. Récupération des IDs recommandés via ACF
-        $recommended_ids = get_field('logement_experiences_recommandees', $post_id);
+        $recommended_ids = PCR_Fields::get('logement_experiences_recommandees', $post_id);
         if (empty($recommended_ids)) {
             return '';
         }
@@ -101,14 +101,25 @@ class PC_Experiences_Shortcode extends PC_Shortcode_Base
     /**
      * Helper : Extrait le prix "à partir de" depuis le répéteur ACF des tarifs
      */
+    /**
+     * Helper : Extrait le prix "à partir de" depuis le répéteur ACF des tarifs
+     */
     private function get_experience_price($exp_id)
     {
         $price = 0;
+
+        // 1. Protection vitale : Si ACF est désactivé, on ne plante pas !
+        if (!function_exists('get_field')) {
+            return $price;
+        }
+
         $pricing_tiers = get_field('exp_types_de_tarifs', $exp_id);
 
         if (is_array($pricing_tiers) && !empty($pricing_tiers)) {
             $first_tier = $pricing_tiers[0]; // On prend le premier palier
-            if (isset($first_tier['exp_tarif_adulte']) && is_numeric($first_tier['exp_tarif_adulte'])) {
+
+            // 2. Protection PHP 8 : On s'assure que c'est bien un tableau avant de chercher dedans
+            if (is_array($first_tier) && isset($first_tier['exp_tarif_adulte']) && is_numeric($first_tier['exp_tarif_adulte'])) {
                 $price = (float) $first_tier['exp_tarif_adulte'];
             }
         }

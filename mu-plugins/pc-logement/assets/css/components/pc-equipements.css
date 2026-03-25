@@ -1,0 +1,92 @@
+/* --- Grille Principale Responsive --- */
+.pc-equipements-grid {
+  display: grid;
+  /* Par défaut (Mobile) : 1 seule colonne */
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+/* Tablette (Large Mobile, Portrait Tablet) */
+@media (min-width: 640px) {
+  .pc-equipements-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 colonnes */
+  }
+}
+
+/* Ordinateur (Desktop) */
+@media (min-width: 1024px) {
+  .pc-equipements-grid {
+    grid-template-columns: repeat(3, 1fr); /* 🚀 3 colonnes fixes ! */
+  }
+}
+
+/* --- Style des Boîtes (Inchangé mais pour rappel) --- */
+.pc-equip-box {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.pc-equip-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
+}
+
+.pc-equip-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.pc-equip-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #4f46e5; /* Ta couleur principale */
+}
+
+.pc-equip-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pc-equip-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.pc-equip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pc-equip-list li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.pc-equip-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #94a3b8;
+  font-weight: bold;
+}

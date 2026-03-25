@@ -44,7 +44,7 @@ class PC_Experience_Description_Shortcode extends PC_Experience_Shortcode_Base
     protected function render(array $atts): void
     {
         $content = get_the_content();
-        $html = apply_filters('the_content', $content);
+        $html = wpautop($content);
 
         // Si pas de contenu, on arrête tout (la classe parente renverra une chaîne vide)
         if (empty(trim($html))) {

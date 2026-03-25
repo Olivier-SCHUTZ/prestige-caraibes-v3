@@ -104,6 +104,7 @@ require_once PC_RES_CORE_PATH . 'includes/services/document/class-document-servi
 require_once PC_RES_CORE_PATH . 'includes/api/class-rest-webhook.php';
 
 require_once PC_RES_CORE_PATH . 'includes/migration-logements.php';
+require_once PC_RES_CORE_PATH . 'includes/class-elementor-pcr-tags.php';
 // controller-forms sera branché plus tard quand tu seras prêt
 if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
     require_once PC_RES_CORE_PATH . 'includes/controller-forms.php';

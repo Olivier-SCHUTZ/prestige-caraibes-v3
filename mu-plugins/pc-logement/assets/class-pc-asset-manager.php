@@ -68,7 +68,9 @@ class PC_Asset_Manager
             'pc-anchor-menu'     => 'components/pc-anchor-menu.css',
             'pc-booking-fab'     => 'components/pc-booking-fab.css',
             'pc-booking-sheet'   => 'components/pc-booking-sheet.css',
-            'pc-recommendations' => 'components/pc-recommendations.css'
+            'pc-recommendations' => 'components/pc-recommendations.css',
+            'pc-equipements'     => 'components/pc-equipements.css',
+            'pc-regles'          => 'components/pc-regles.css'
         ];
 
         foreach ($components_css as $handle => $relative_path) {

@@ -2,6 +2,7 @@
 
 /**
  * Composant Shortcode : Points Forts [pc_highlights]
+ * Design : Grille Premium dans une Card
  */
 
 if (!defined('ABSPATH')) {
@@ -10,7 +11,6 @@ if (!defined('ABSPATH')) {
 
 class PC_Highlights_Shortcode extends PC_Shortcode_Base
 {
-
     protected $tag = 'pc_highlights';
 
     protected $default_atts = [
@@ -59,10 +59,6 @@ class PC_Highlights_Shortcode extends PC_Shortcode_Base
     {
         $a = $this->validate_atts($atts);
 
-        if (!function_exists('get_field')) {
-            return '';
-        }
-
         $post_id = get_the_ID();
         if (!$post_id) {
             return '';
@@ -89,18 +85,27 @@ class PC_Highlights_Shortcode extends PC_Shortcode_Base
         }
 
         ob_start(); ?>
-        <div class="pc-hl">
+
+        <div class="pc-hl-container">
             <?php foreach ($entries as $e): ?>
-                <span class="pc-hl__item">
-                    <?php if ($a['icons'] !== '0' && !$e['custom'] && !empty($e['fa'])): ?>
-                        <span class="pc-hl__icon" aria-hidden="true">
-                            <i class="<?php echo esc_attr($e['fa']); ?>"></i>
-                        </span>
+                <div class="pc-hl-pill">
+
+                    <?php if ($a['icons'] !== '0'): ?>
+                        <div class="pc-hl-icon-circle" aria-hidden="true">
+                            <?php if (!$e['custom'] && !empty($e['fa'])): ?>
+                                <i class="<?php echo esc_attr($e['fa']); ?>"></i>
+                            <?php else: ?>
+                                <i class="fa-solid fa-check"></i>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
-                    <span class="pc-hl__label"><?php echo esc_html($e['label']); ?></span>
-                </span>
+
+                    <span class="pc-hl-text"><?php echo esc_html($e['label']); ?></span>
+
+                </div>
             <?php endforeach; ?>
         </div>
+
 <?php return ob_get_clean();
     }
 
@@ -117,8 +122,8 @@ class PC_Highlights_Shortcode extends PC_Shortcode_Base
      */
     private function get_entries($post_id)
     {
-        $checked = (array) get_field('highlights', $post_id);
-        $custom  = (string) get_field('highlights_custom', $post_id);
+        $checked = (array) PCR_Fields::get('highlights', $post_id);
+        $custom  = (string) PCR_Fields::get('highlights_custom', $post_id);
         $entries = [];
 
         // Traitement des cases à cocher standard

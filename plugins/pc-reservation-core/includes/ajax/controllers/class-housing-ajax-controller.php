@@ -118,59 +118,11 @@ class PCR_Housing_Ajax_Controller extends PCR_Base_Ajax_Controller
         if (isset($_POST['post_type'])) $data['post_type'] = sanitize_text_field($_POST['post_type']);
         if (isset($_POST['featured_image_id'])) $data['featured_image_id'] = (int) $_POST['featured_image_id'];
 
-        // NOUVEAU SYSTÈME : Capture de l'objet natif des règles de paiement
-        if (isset($_POST['payment_rules'])) {
-            if (is_string($_POST['payment_rules'])) {
-                $data['payment_rules'] = json_decode(stripslashes($_POST['payment_rules']), true);
-            } else {
-                $data['payment_rules'] = (array) $_POST['payment_rules'];
-            }
-        }
-
         // 1.5 DÉCODAGE VUE.JS : On récupère les champs préfixés par 'acf_' envoyés par le frontend
         foreach ($_POST as $key => $value) {
             if (strpos($key, 'acf_') === 0) {
                 $clean_key = substr($key, 4);
                 $data[$clean_key] = $value;
-            }
-        }
-
-        // 🚀 2. NOUVEAU SYSTÈME : Sauvegarde dynamique via notre Field Manager natif
-        if (class_exists('PCR_Field_Manager')) {
-            $field_manager = PCR_Field_Manager::init();
-            $all_groups = $field_manager->get_field_groups();
-
-            // On boucle sur tous les groupes de champs enregistrés
-            foreach ($all_groups as $group_id => $config) {
-                if (isset($config['post_types']) && in_array(get_post_type($post_id) ?: 'villa', $config['post_types'])) {
-                    foreach ($config['fields'] as $field_key => $field_config) {
-                        $value_to_save = null;
-
-                        // On cherche la valeur (soit brute, soit décodée depuis le préfixe acf_)
-                        if (isset($_POST[$field_key])) {
-                            $value_to_save = $_POST[$field_key];
-                        } elseif (isset($data[$field_key])) {
-                            $value_to_save = $data[$field_key];
-                        }
-
-                        // Si la donnée a été trouvée, on la sauvegarde
-                        if ($value_to_save !== null) {
-                            // Nettoyage selon le type (tableau pour les équipements, texte pour le reste)
-                            $clean_value = is_array($value_to_save) ? wp_unslash($value_to_save) : wp_unslash(sanitize_text_field($value_to_save));
-
-                            // Enregistrement NATIF
-                            $field_manager->save_native_field($field_key, $post_id, $clean_value);
-
-                            // 🛠️ ASTUCE ACF : On enregistre la "clé cachée" pour que l'interface WP Admin classique continue de s'afficher parfaitement !
-                            if (class_exists('PCR_Housing_Config')) {
-                                $acf_keys = PCR_Housing_Config::get_instance()->get_acf_field_keys();
-                                if (isset($acf_keys[$field_key])) {
-                                    update_post_meta($post_id, '_' . $field_key, $acf_keys[$field_key]);
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
 

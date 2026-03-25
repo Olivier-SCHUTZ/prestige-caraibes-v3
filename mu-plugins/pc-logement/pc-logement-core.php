@@ -116,6 +116,9 @@ class PC_Logement_Core
         if (class_exists('PC_Gallery_Shortcode')) {
             (new PC_Gallery_Shortcode())->register();
         }
+        if (class_exists('PC_Anchor_Menu_Shortcode')) {
+            (new PC_Anchor_Menu_Shortcode())->register();
+        }
         if (class_exists('PC_Tarifs_Shortcode')) {
             (new PC_Tarifs_Shortcode())->register();
         }
@@ -152,8 +155,23 @@ class PC_Logement_Core
         if (class_exists('PC_Booking_Handler')) {
             (new PC_Booking_Handler())->register();
         }
+        if (class_exists('PC_Equipements_Shortcode')) {
+            (new PC_Equipements_Shortcode())->register();
+        }
+        if (class_exists('PC_Regles_Shortcode')) {
+            (new PC_Regles_Shortcode())->register();
+        }
+        if (class_exists('PC_Politique_Shortcode')) {
+            (new PC_Politique_Shortcode())->register();
+        }
         if (class_exists('PC_Asset_Manager')) {
             (new PC_Asset_Manager())->register();
+        }
+        if (class_exists('PC_Hote_Shortcode')) {
+            (new PC_Hote_Shortcode())->register();
+        }
+        if (class_exists('PC_Essentiels_Shortcode')) {
+            (new PC_Essentiels_Shortcode())->register();
         }
     }
 }

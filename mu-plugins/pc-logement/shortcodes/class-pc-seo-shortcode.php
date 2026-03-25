@@ -29,12 +29,12 @@ class PC_SEO_Shortcode extends PC_Shortcode_Base
         $a = $this->validate_atts($atts);
         $post = get_post();
 
-        if (!$post || !function_exists('get_field')) {
+        if (!$post) {
             return '';
         }
 
         // 1. Récupération du contenu
-        $html_content = (string) get_field('seo_long_html', $post->ID);
+        $html_content = (string) PCR_Fields::get('seo_long_html', $post->ID);
         if ($html_content === '') {
             return '';
         }
@@ -49,7 +49,7 @@ class PC_SEO_Shortcode extends PC_Shortcode_Base
         // 3. Affichage HTML
         ob_start(); ?>
         <section id="<?php echo esc_attr($id); ?>" class="pc-seo-box" <?php echo $style_attr; ?>>
-            <div class="pc-seo__content" aria-expanded="false"><?php echo $html_content; ?></div>
+            <div class="pc-seo__content" aria-expanded="false"><?php echo wp_kses_post($html_content); ?></div>
             <div class="pc-seo__fade" aria-hidden="true"></div>
             <button type="button" class="pc-seo__toggle" data-more="Voir plus" data-less="Voir moins">Voir plus</button>
             <?php $this->render_inline_script($id); ?>
