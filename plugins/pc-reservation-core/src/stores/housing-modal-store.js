@@ -146,11 +146,22 @@ export const useHousingModalStore = defineStore("housingModal", {
             const prefixedKey =
               isNativeWpField || key.startsWith("acf_") ? key : `acf_${key}`;
 
+            // APRÈS
             if (Array.isArray(fullData[key])) {
-              // WP comprend les arrays si on ajoute [] au nom de la clé
-              fullData[key].forEach((val) =>
-                params.append(`${prefixedKey}[]`, val),
-              );
+              // 🚀 CORRECTION : Si c'est un tableau d'objets (comme la FAQ), il FAUT le stringify !
+              // Sinon FormData le transforme en "[object Object]"
+              if (
+                fullData[key].length > 0 &&
+                typeof fullData[key][0] === "object" &&
+                fullData[key][0] !== null
+              ) {
+                params.append(prefixedKey, JSON.stringify(fullData[key]));
+              } else {
+                // Tableaux simples (strings, IDs) on garde le comportement par défaut
+                fullData[key].forEach((val) =>
+                  params.append(`${prefixedKey}[]`, val),
+                );
+              }
             } else if (typeof fullData[key] === "object") {
               params.append(prefixedKey, JSON.stringify(fullData[key]));
             } else {

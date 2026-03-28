@@ -121,17 +121,12 @@
             margin-bottom: 10px;
             color: #1e293b;
           "
-          >Période de la journée</label
+          >Période</label
         >
         <div style="display: flex; flex-wrap: wrap; gap: 10px">
           <label
-            v-for="periode in [
-              'Matin',
-              'Après-midi',
-              'Soirée',
-              'Journée complète',
-            ]"
-            :key="periode"
+            v-for="option in periodeOptions"
+            :key="option.value"
             style="
               display: flex;
               align-items: center;
@@ -141,15 +136,35 @@
           >
             <input
               type="checkbox"
-              :value="periode.toLowerCase().replace(' ', '_')"
+              :value="option.value"
               v-model="safeArray('exp_periode').value"
             />
-            {{ periode }}
+            {{ option.label }}
           </label>
         </div>
       </div>
     </div>
 
+    <div style="margin-bottom: 30px; padding: 20px; background: #f8fafc; border-radius: 8px;">
+      <h4 style="margin: 0 0 15px 0; font-size: 1.1rem; color: #1e293b;">
+        ♿ Accessibilité et niveau physique
+      </h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+        <label
+          v-for="option in accessibiliteOptions"
+          :key="option.value"
+          style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; color: #475569; font-size: 0.95rem;"
+        >
+          <input
+            type="checkbox"
+            :value="option.value"
+            v-model="safeArray('exp_accessibilite').value"
+            style="cursor: pointer; margin-top: 3px;"
+          />
+          {{ option.label }}
+        </label>
+      </div>
+    </div>
     <div style="margin-bottom: 30px">
       <div
         style="
@@ -443,6 +458,25 @@ const safeArray = (key) =>
       experience.value[key] = val;
     },
   });
+
+// ♿ OPTIONS D'ACCESSIBILITÉ (Récupérées depuis l'export ACF)
+const accessibiliteOptions = [
+  { value: 'accessible_pmr', label: 'Accessible aux personnes âgées ou mobilité réduite' },
+  { value: 'accessible_pmr_f', label: 'Non accessible aux fauteuils roulants' },
+  { value: 'poussettes', label: 'Accessible en poussette' },
+  { value: 'animaux_admis', label: 'Animaux de compagnie admis' },
+  { value: 'accessible_enfants', label: 'Accessible aux enfants' },
+  { value: 'activité_physique', label: 'Activité physique ou sportive intense' },
+  { value: 'activité_physique_m', label: 'Activité physique ou sportive moyenne' },
+  { value: 'activité_physique_l', label: 'Activité physique ou sportive légère' }
+];
+
+// 📅 OPTIONS DE PÉRIODE (Récupérées depuis l'export ACF)
+const periodeOptions = [
+  { value: 'année', label: "toute l'année" },
+  { value: 'saison', label: "en saison" },
+  { value: 'réservation', label: "sur réservation" }
+];
 
 // Actions Lieux
 const addLieu = () => {

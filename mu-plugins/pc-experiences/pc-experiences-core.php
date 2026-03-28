@@ -72,6 +72,10 @@ class PC_Experiences_Core
         require_once PC_EXP_DIR . 'shortcodes/class-pc-experience-shortcode-base.php';
 
         // Shortcodes
+        require_once PC_EXP_DIR . 'shortcodes/class-pc-experience-anchor-menu-shortcode.php';
+        require_once PC_EXP_DIR . 'shortcodes/class-pc-experience-essentiels-shortcode.php';
+        require_once PC_EXP_DIR . 'shortcodes/class-pc-experience-prestation-essentiels-shortcode.php';
+        require_once PC_EXP_DIR . 'shortcodes/class-pc-experience-prestation-inclusions-shortcode.php';
         require_once PC_EXP_DIR . 'shortcodes/class-pc-description-shortcode.php';
         require_once PC_EXP_DIR . 'shortcodes/class-pc-gallery-shortcode.php';
         require_once PC_EXP_DIR . 'shortcodes/class-pc-map-shortcode.php';
@@ -94,6 +98,10 @@ class PC_Experiences_Core
         $asset_manager = new PC_Asset_Manager_Exp();
         $asset_manager->register();
 
+        new PC_Experience_Anchor_Menu_Shortcode();
+        new PC_Experience_Essentiels_Shortcode();
+        new PC_Experience_Prestation_Essentiels_Shortcode();
+        new PC_Experience_Prestation_Inclusions_Shortcode();
         new PC_Experience_Description_Shortcode();
         new PC_Experience_Gallery_Shortcode();
         new PC_Experience_Map_Shortcode();

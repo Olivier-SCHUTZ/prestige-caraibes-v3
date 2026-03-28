@@ -30,14 +30,14 @@ class PC_Logement_FAQ_Shortcode extends PC_FAQ_Shortcode_Base
      */
     protected function render($atts, $content = null)
     {
-        // Sécurité : On s'assure qu'ACF est bien actif
-        if (!function_exists('get_field')) {
+        // Sécurité V3 : On s'assure que notre moteur de champs est actif
+        if (!class_exists('PCR_Fields')) {
             return '';
         }
 
         // Fusion avec les paramètres par défaut
         $atts = shortcode_atts([
-            'title'   => 'Prestige Caraïbes vous réponds',
+            'title'   => 'Prestige Caraïbes vous répond',
             'post_id' => 0,
         ], $atts, $this->get_tag());
 
@@ -49,14 +49,15 @@ class PC_Logement_FAQ_Shortcode extends PC_FAQ_Shortcode_Base
             return '';
         }
 
-        // Récupération des données du repeater ACF
-        $rows = get_field('log_faq', $post_id);
+        // 1. DÉCODEUR V3 : Récupération des données du repeater (Historique ACF + JSON natif Vue.js)
+        $raw_rows = PCR_Fields::get('logement_faq', $post_id);
+        $rows = is_string($raw_rows) ? json_decode($raw_rows, true) : $raw_rows;
 
         if (empty($rows) || !is_array($rows)) {
             return '';
         }
 
-        // Délégation du rendu HTML à notre Helper
+        // Délégation du rendu HTML à notre Helper ultra robuste
         return PC_FAQ_Render_Helper::render_accordion($rows, [
             'title' => $atts['title']
         ]);

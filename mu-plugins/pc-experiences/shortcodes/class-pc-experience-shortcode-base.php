@@ -66,13 +66,12 @@ abstract class PC_Experience_Shortcode_Base
 
     /**
      * Vérifie si l'on se trouve dans le bon contexte pour exécuter le shortcode.
-     * Peut être surchargé si un shortcode spécifique a des besoins différents.
      *
      * @return bool
      */
     protected function validate_experience_context(): bool
     {
-        return is_singular('experience') && function_exists('get_field');
+        return is_singular('experience');
     }
 
     /**

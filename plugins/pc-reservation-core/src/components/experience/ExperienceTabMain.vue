@@ -1,13 +1,11 @@
 <template>
   <div class="pc-tab-main">
     <div class="pc-form-grid" style="display: grid; gap: 15px">
-      <div
-        class="pc-form-group pc-form-group--full"
-        style="margin-bottom: 15px"
-      >
-        <label style="display: block; font-weight: 600; margin-bottom: 5px"
-          >Titre H1 personnalisé</label
-        >
+      
+      <div class="pc-form-group pc-form-group--full" style="margin-bottom: 15px">
+        <label style="display: block; font-weight: 600; margin-bottom: 5px">
+          Titre H1 personnalisé
+        </label>
         <input
           type="text"
           v-model="experience.exp_h1_custom"
@@ -22,6 +20,29 @@
         />
         <small style="color: #64748b; margin-top: 4px; display: block">
           Surcharge le titre principal de l'expérience sur la page.
+        </small>
+      </div>
+
+      <div class="pc-form-group pc-form-group--full" style="margin-bottom: 15px">
+        <label style="display: block; font-weight: 600; margin-bottom: 5px">
+          Description détaillée SEO (Contenu principal)
+        </label>
+        <textarea
+          v-model="experience.content"
+          class="pc-input"
+          rows="8"
+          placeholder="Saisissez la description longue de l'expérience (Le HTML est autorisé)..."
+          style="
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-family: inherit;
+            resize: vertical;
+          "
+        ></textarea>
+        <small style="color: #64748b; margin-top: 4px; display: block">
+          Ce texte correspond au contenu principal de l'annonce. Les balises HTML (&lt;p&gt;, &lt;strong&gt;, &lt;ul&gt;...) sont autorisées.
         </small>
       </div>
 
@@ -42,6 +63,7 @@
           />
         </div>
       </div>
+
     </div>
   </div>
 </template>

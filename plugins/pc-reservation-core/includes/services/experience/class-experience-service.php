@@ -5,28 +5,17 @@ if (!defined('ABSPATH')) {
 
 /**
  * PCR Experience Service - Logique métier des Expériences
- * Orchestre la création et la mise à jour des expériences, 
- * l'enregistrement des données et les repeaters complexes.
+ * Orchestre la création et la mise à jour des expériences.
+ * Sauvegarde 100% Native (Les repeaters complexes sont gérés en JSON par Vue.js).
  * Pattern Singleton.
  * * @since 2.0.0 (Refactoring)
  */
 class PCR_Experience_Service
 {
-    /**
-     * Instance unique de la classe.
-     * @var PCR_Experience_Service|null
-     */
     private static $instance = null;
 
-    /**
-     * Constructeur privé (Singleton).
-     */
     private function __construct() {}
 
-    /**
-     * Récupère l'instance unique.
-     * @return PCR_Experience_Service
-     */
     public static function get_instance()
     {
         if (self::$instance === null) {
@@ -35,13 +24,6 @@ class PCR_Experience_Service
         return self::$instance;
     }
 
-    /**
-     * Met à jour une expérience avec les données fournies.
-     * Accepte ID = 0 pour créer une nouvelle expérience.
-     * * @param int $post_id ID du post (0 pour création)
-     * @param array $data Données à mettre à jour
-     * @return array
-     */
     public function update_experience($post_id, $data)
     {
         $post_id = (int) $post_id;
@@ -50,38 +32,23 @@ class PCR_Experience_Service
         if (!$is_creation) {
             $post = get_post($post_id);
             if (!$post || $post->post_type !== 'experience') {
-                return [
-                    'success' => false,
-                    'message' => 'Expérience introuvable.',
-                ];
+                return ['success' => false, 'message' => 'Expérience introuvable.'];
             }
 
             if (!current_user_can('edit_post', $post_id)) {
-                return [
-                    'success' => false,
-                    'message' => 'Permission insuffisante.',
-                ];
+                return ['success' => false, 'message' => 'Permission insuffisante.'];
             }
         } else {
             if (empty($data['post_type']) || $data['post_type'] !== 'experience') {
-                return [
-                    'success' => false,
-                    'message' => 'Type de post invalide. Doit être "experience".',
-                ];
+                return ['success' => false, 'message' => 'Type de post invalide.'];
             }
 
             if (!current_user_can('publish_posts')) {
-                return [
-                    'success' => false,
-                    'message' => 'Permission insuffisante pour créer une expérience.',
-                ];
+                return ['success' => false, 'message' => 'Permission insuffisante.'];
             }
 
             if (empty($data['title'])) {
-                return [
-                    'success' => false,
-                    'message' => 'Le nom de l\'expérience est obligatoire.',
-                ];
+                return ['success' => false, 'message' => 'Le nom de l\'expérience est obligatoire.'];
             }
         }
 
@@ -105,129 +72,99 @@ class PCR_Experience_Service
                 $post_id = wp_insert_post($new_post_data);
 
                 if (is_wp_error($post_id)) {
-                    throw new Exception('Erreur lors de la création du post : ' . $post_id->get_error_message());
-                }
-
-                if (!$post_id) {
-                    throw new Exception('Échec de la création de l\'expérience.');
+                    throw new Exception('Erreur création : ' . $post_id->get_error_message());
                 }
             } else {
                 $post_data = [];
-                if (isset($data['title'])) {
-                    $post_data['post_title'] = sanitize_text_field($data['title']);
-                }
-                if (isset($data['slug'])) {
-                    $post_data['post_name'] = sanitize_title($data['slug']);
-                }
+                if (isset($data['title'])) $post_data['post_title'] = sanitize_text_field($data['title']);
+                if (isset($data['slug'])) $post_data['post_name'] = sanitize_title($data['slug']);
+                if (isset($data['content'])) $post_data['post_content'] = wp_kses_post($data['content']);
+                if (isset($data['excerpt'])) $post_data['post_excerpt'] = wp_kses_post($data['excerpt']);
                 if (isset($data['status'])) {
                     $status = sanitize_text_field($data['status']);
                     if (in_array($status, ['publish', 'pending', 'draft', 'private'])) {
                         $post_data['post_status'] = $status;
                     }
                 }
-                if (isset($data['content'])) {
-                    $post_data['post_content'] = wp_kses_post($data['content']);
-                }
-                if (isset($data['excerpt'])) {
-                    $post_data['post_excerpt'] = wp_kses_post($data['excerpt']);
-                }
 
                 if (!empty($post_data)) {
                     $post_data['ID'] = $post_id;
-                    $result = wp_update_post($post_data);
-                    if (is_wp_error($result)) {
-                        throw new Exception('Erreur lors de la mise à jour du post : ' . $result->get_error_message());
-                    }
+                    wp_update_post($post_data);
                 }
             }
 
-            // 2. Mise à jour des champs ACF
-            if (function_exists('update_field')) {
-                $updated_fields = 0;
-                $config = PCR_Experience_Config::get_instance();
-                $formatter = PCR_Experience_Formatter::get_instance();
+            // 2. Mise à jour des champs (100% Natif)
+            $updated_fields = 0;
+            $config = PCR_Experience_Config::get_instance();
+            $formatter = PCR_Experience_Formatter::get_instance();
 
-                foreach ($data as $normalized_key => $value) {
-                    if (in_array($normalized_key, ['title', 'slug', 'status', 'content', 'excerpt', 'featured_image_id', 'post_type'])) {
-                        continue;
-                    }
+            // Liste des champs qui sont des tableaux ou objets complexes
+            $complex_fields = [
+                'exp_lieux_horaires_depart',
+                'exp_periodes_fermeture',
+                'exp_types_de_tarifs',
+                'exp_faq',
+                'seasons_data',
+                'promos_data',
+                'exp_a_prevoir',
+                'exp_accessibilite',
+                'exp_periode',
+                'exp_jour',
+                'exp_zone_intervention'
+            ];
 
-                    $clean_key = str_replace('acf_', '', $normalized_key);
-                    $field_config = $config->get_field_config_by_slug($clean_key);
+            foreach ($data as $normalized_key => $value) {
+                if (in_array($normalized_key, ['title', 'slug', 'status', 'content', 'excerpt', 'featured_image_id', 'post_type'])) {
+                    continue;
+                }
 
-                    if (!$field_config) {
-                        continue;
-                    }
+                $clean_key = str_replace('acf_', '', $normalized_key);
 
-                    $clean_value = $formatter->sanitize_field_value($clean_key, $value);
-                    $update_key = $field_config['key'] ?? $field_config['meta_key'];
+                // 🚀 PROTECTION VITALE : Ne pas détruire les tableaux multidimensionnels
+                if (in_array($clean_key, $complex_fields)) {
+                    $clean_value = wp_unslash($value); // On garde l'objet JSON/Array intact
 
-                    $result = update_field($update_key, $clean_value, $post_id);
+                    // SAUVEGARDE NATIVE EXCLUSIVE (Dashboard est le seul maître, on évite ACF)
+                    $result = update_post_meta($post_id, $clean_key, $clean_value);
                     if ($result !== false) {
                         $updated_fields++;
                     }
+                } else {
+                    // Nettoyage classique pour les champs simples et les images
+                    if (is_array($value)) {
+                        $clean_value = array_map('sanitize_text_field', wp_unslash($value));
+                    } else {
+                        $clean_value = $formatter->sanitize_field_value($clean_key, $value);
+                    }
+
+                    // 1. SAUVEGARDE NATIVE (Pour le Dashboard)
+                    $result = update_post_meta($post_id, $clean_key, $clean_value);
+                    if ($result !== false) {
+                        $updated_fields++;
+                    }
+
+                    // 2. SAUVEGARDE ACF (Double Write pour garder les images visibles dans l'admin WP)
+                    $field_config = $config->get_field_config_by_slug($clean_key);
+                    if (function_exists('update_field') && $field_config && isset($field_config['key'])) {
+                        update_field($field_config['key'], $clean_value, $post_id);
+                    }
                 }
-            } else {
-                return [
-                    'success' => false,
-                    'message' => 'ACF non disponible pour la sauvegarde.',
-                ];
             }
 
-            // 3. Mise à jour de l'image à la une
+            // 3. Image à la une
             if (isset($data['featured_image_id'])) {
                 $image_id = (int) $data['featured_image_id'];
-                if ($image_id > 0) {
-                    set_post_thumbnail($post_id, $image_id);
-                } else {
-                    delete_post_thumbnail($post_id);
-                }
+                if ($image_id > 0) set_post_thumbnail($post_id, $image_id);
+                else delete_post_thumbnail($post_id);
             }
 
             return [
                 'success' => true,
-                'message' => $is_creation ? 'Expérience créée avec succès.' : 'Expérience mise à jour avec succès.',
-                'data' => [
-                    'id' => $post_id,
-                    'updated_fields' => $updated_fields ?? 0,
-                ],
+                'message' => $is_creation ? 'Expérience créée.' : 'Expérience mise à jour.',
+                'data' => ['id' => $post_id, 'updated_fields' => $updated_fields],
             ];
         } catch (Exception $e) {
-            error_log('[PCR Experience Service] Erreur mise à jour : ' . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Erreur lors de la sauvegarde : ' . $e->getMessage(),
-            ];
-        }
-    }
-
-    /**
-     * Met à jour un champ Repeater ACF avec les données formatées.
-     * * @param int $post_id ID du post
-     * @param string $field_name Nom du champ repeater
-     * @param array $data Données du repeater
-     * @return bool Succès ou échec
-     */
-    public function update_repeater_field($post_id, $field_name, $data)
-    {
-        if (!function_exists('update_field')) {
-            error_log("[PCR Experience Service] ACF non disponible pour update_repeater_field");
-            return false;
-        }
-
-        error_log("🔧 Mise à jour du Repeater Experience {$field_name} avec " . count($data) . " éléments");
-
-        switch ($field_name) {
-            case 'exp_lieux_horaires_depart':
-            case 'exp_periodes_fermeture':
-            case 'exp_types_de_tarifs':
-            case 'exp_faq':
-                $result = update_field($field_name, $data, $post_id);
-                return $result !== false;
-
-            default:
-                error_log("[PCR Experience Service] Repeater {$field_name} non géré");
-                return false;
+            return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 }

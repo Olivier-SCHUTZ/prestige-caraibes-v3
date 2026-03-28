@@ -66,6 +66,10 @@
                 <TabBooking />
               </div>
 
+              <div v-show="modalStore.activeTab === 'faq'">
+                <TabFaq />
+              </div>
+
               <div v-show="modalStore.activeTab === 'config'">
                 <TabConfig />
               </div>
@@ -117,6 +121,7 @@ import TabAmenities from "./Housing/TabAmenities.vue";
 import TabContent from "./Housing/TabContent.vue";
 import TabBooking from "./Housing/TabBooking.vue";
 import TabConfig from "./Housing/TabConfig.vue";
+import TabFaq from "./Housing/TabFaq.vue"; // 👈 NOUVEAU
 
 const modalStore = useHousingModalStore();
 const listStore = useHousingStore();
@@ -129,6 +134,7 @@ const tabs = [
   { id: "amenities", label: "Équipements" },
   { id: "content", label: "Contenu & SEO" },
   { id: "booking", label: "Réservation & Hôte" },
+  { id: "faq", label: "FAQ" }, // 👈 NOUVEAU
   { id: "config", label: "Configuration" },
 ];
 

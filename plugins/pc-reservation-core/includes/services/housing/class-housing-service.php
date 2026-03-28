@@ -204,14 +204,42 @@ class PCR_Housing_Service
                     $value = $formatter->process_image_field($value);
                 }
 
-                // FIX : Protection vitale pour les tableaux (comme les cases à cocher de la taxe de séjour)
+                // APRÈS
+                // 🚀 GESTION DES CHAMPS COMPLEXES (JSON/Tableaux)
+                if ($clean_key === 'logement_faq') {
+                    $unslashed = wp_unslash($value);
+
+                    // Avec la modif du Store JS, on va recevoir un vrai JSON propre ici.
+                    $raw_array = is_string($unslashed) ? json_decode($unslashed, true) : $unslashed;
+
+                    $clean_faq = [];
+                    if (is_array($raw_array)) {
+                        foreach ($raw_array as $item) {
+                            // On ignore TOUTE donnée corrompue
+                            if (!is_array($item)) continue;
+
+                            $q = isset($item['question']) ? sanitize_text_field($item['question']) : '';
+                            $r = isset($item['reponse']) ? wp_kses_post($item['reponse']) : '';
+
+                            // On ne sauvegarde QUE si l'un des deux champs est rempli (évite les lignes vides en BDD)
+                            if (!empty($q) || !empty($r)) {
+                                $clean_faq[] = ['question' => $q, 'reponse' => $r];
+                            }
+                        }
+                    }
+
+                    // Sauvegarde du tableau propre.
+                    update_post_meta($post_id, $clean_key, $clean_faq);
+                    $updated_fields++;
+                    continue;
+                }
+
                 if (is_array($value)) {
-                    $clean_value = array_map('sanitize_text_field', $value);
+                    $clean_value = array_map('sanitize_text_field', wp_unslash($value));
                 } else {
                     $clean_value = $formatter->sanitize_field_value($clean_key, $value);
                 }
 
-                // SAUVEGARDE NATIVE (On remplace update_field par update_post_meta)
                 $result = update_post_meta($post_id, $clean_key, $clean_value);
                 if ($result !== false) {
                     $updated_fields++;

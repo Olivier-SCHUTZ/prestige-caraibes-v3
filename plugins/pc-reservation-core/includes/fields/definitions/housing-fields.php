@@ -35,6 +35,7 @@ $manager->register_field_group('housing_seo', [
         'highlights'                        => ['type' => 'text'],
         'highlights_custom'                 => ['type' => 'text'],
         'logement_experiences_recommandees' => ['type' => 'text'],
+        'logement_faq'                      => ['type' => 'array', 'label' => 'FAQ du Logement (JSON)'],
         'meta_titre'                        => ['type' => 'text'],
         'meta_description'                  => ['type' => 'textarea'],
         'url_canonique'                     => ['type' => 'text'],

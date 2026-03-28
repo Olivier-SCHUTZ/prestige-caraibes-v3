@@ -54,6 +54,7 @@ class PCR_Housing_Config
             'highlights' => 'highlights',
             'highlights_custom' => 'highlights_custom',
             'logement_experiences_recommandees' => 'logement_experiences_recommandees',
+            'logement_faq' => 'logement_faq',
 
             // === DÉTAILS & CAPACITÉS ===
             'identifiant_lodgify' => 'identifiant_lodgify',

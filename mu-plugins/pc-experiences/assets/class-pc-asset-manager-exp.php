@@ -53,13 +53,8 @@ class PC_Asset_Manager_Exp
             'pc-exp-description'     => 'pc-experience-description.css',
             'pc-exp-gallery'         => 'pc-experience-gallery.css',
             'pc-exp-map'             => 'pc-experience-map.css',
-            'pc-exp-summary'         => 'pc-experience-summary.css',
-            'pc-exp-pricing'         => 'pc-experience-pricing.css',
             'pc-exp-calculator'      => 'pc-booking-calculator.css',
-            'pc-exp-inclusions'      => 'pc-experience-inclusions.css',
-            'pc-exp-recommendations' => 'pc-experience-recommendations.css',
             'pc-exp-modal'           => 'pc-booking-modal.css',
-            'pc-exp-anchor-menu'     => 'pc-anchor-menu.css',
             'pc-exp-booking-fab'     => 'pc-booking-fab.css',
             'pc-exp-booking-sheet'   => 'pc-booking-sheet.css'
         ];

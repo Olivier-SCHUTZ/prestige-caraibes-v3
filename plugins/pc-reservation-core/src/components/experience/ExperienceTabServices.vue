@@ -3,122 +3,79 @@
     <div class="pc-form-grid" style="display: grid; gap: 20px">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
         <div class="pc-form-group">
-          <label style="display: block; font-weight: 600; margin-bottom: 5px"
-            >Type de prestation</label
-          >
-          <select
-            v-model="experience.exp_type_de_prestation"
-            class="pc-select"
-            style="
-              width: 100%;
-              padding: 8px 12px;
-              border: 1px solid #cbd5e0;
-              border-radius: 6px;
-              background: white;
-            "
-          >
-            <option value="">Sélectionner un type...</option>
-            <option value="sur_place">Sur place (Point de rendez-vous)</option>
-            <option value="a_domicile">À domicile / Au logement</option>
-            <option value="avec_transfert">Avec transfert inclus</option>
-          </select>
-        </div>
-
-        <div class="pc-form-group">
-          <label style="display: block; font-weight: 600; margin-bottom: 5px"
-            >Heure limite de commande</label
-          >
-          <input
-            type="time"
-            v-model="experience.exp_heure_limite_de_commande"
-            class="pc-input"
-            style="
-              width: 100%;
-              padding: 8px 12px;
-              border: 1px solid #cbd5e0;
-              border-radius: 6px;
-            "
-          />
-          <small style="color: #64748b; font-size: 0.8rem"
-            >Heure max la veille (ou le jour même selon vos règles)</small
-          >
-        </div>
+        <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+          Type de prestation
+        </label>
+        <input
+          type="text"
+          v-model="experience.exp_type_de_prestation"
+          class="pc-input"
+          placeholder="Ex: Massage relaxant"
+          style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px;"
+        />
+        <small style="color: #64748b; margin-top: 4px; display: block; line-height: 1.4;">
+          Pour un chef à domicile (ex: "Créole, Française"). Pour un massage (ex: "Massage relaxant", "Soin du visage"). Pour un petit-déjeuner (ex: "Continental", "Créole"). Indique si le service à table est compris (ex: "Service à table inclus").
+        </small>
       </div>
 
-      <div
-        class="pc-form-group"
-        style="
-          background: #f8fafc;
-          padding: 15px;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
-        "
-      >
-        <label
-          style="
-            display: block;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #1e293b;
-          "
-          >Délai de réservation requis</label
-        >
-        <div style="display: flex; flex-wrap: wrap; gap: 15px">
+        <div class="pc-form-group">
+        <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+          Heure limite de commande
+        </label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input
+            type="number"
+            min="0"
+            max="23"
+            v-model="experience.exp_heure_limite_de_commande"
+            class="pc-input"
+            placeholder="Ex: 18"
+            style="width: 100px; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px;"
+          />
+          <span style="color: #64748b;">h</span>
+        </div>
+        <small style="color: #64748b; margin-top: 4px; display: block;">
+          Idéal pour les livraisons (ex: entrez "18" pour une commande avant 18h).
+        </small>
+      </div>
+      </div>
+
+      <div class="pc-form-group" style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 10px;">
+          Délai de réservation requis
+        </label>
+        <div style="display: flex; flex-wrap: wrap; gap: 15px;">
           <label
-            v-for="delai in delaisList"
-            :key="delai.value"
-            style="
-              display: flex;
-              align-items: center;
-              gap: 5px;
-              cursor: pointer;
-            "
+            v-for="option in delaiOptions"
+            :key="option.value"
+            style="display: flex; align-items: center; gap: 5px; cursor: pointer;"
           >
             <input
               type="checkbox"
-              :value="delai.value"
+              :value="option.value"
               v-model="safeArray('exp_delai_de_reservation').value"
             />
-            {{ delai.label }}
+            {{ option.label }}
           </label>
         </div>
       </div>
 
-      <div
-        class="pc-form-group"
-        style="
-          background: #f8fafc;
-          padding: 15px;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
-        "
-      >
-        <label
-          style="
-            display: block;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #1e293b;
-          "
-          >Zones d'intervention / Départ</label
-        >
-        <div style="display: flex; flex-wrap: wrap; gap: 15px">
+      <div class="pc-form-group" style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 10px;">
+          Zones d'intervention / Départ
+        </label>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
           <label
-            v-for="zone in zonesList"
-            :key="zone.value"
-            style="
-              display: flex;
-              align-items: center;
-              gap: 5px;
-              cursor: pointer;
-            "
+            v-for="option in zoneOptions"
+            :key="option.value"
+            style="display: flex; align-items: center; gap: 5px; cursor: pointer;"
           >
             <input
               type="checkbox"
-              :value="zone.value"
+              :value="option.value"
               v-model="safeArray('exp_zone_intervention').value"
             />
-            {{ zone.label }}
+            {{ option.label }}
           </label>
         </div>
       </div>
@@ -174,20 +131,28 @@ import { useExperienceStore } from "../../stores/experience-store";
 const store = useExperienceStore();
 const { currentExperience: experience } = storeToRefs(store);
 
-const delaisList = [
-  { label: "Immédiat", value: "immediat" },
-  { label: "24h à l'avance", value: "24h" },
-  { label: "48h à l'avance", value: "48h" },
-  { label: "72h à l'avance", value: "72h" },
-  { label: "1 semaine à l'avance", value: "1_semaine" },
+// ⏳ OPTIONS DÉLAI DE RÉSERVATION
+const delaiOptions = [
+  { value: '24h', label: "24h à l'avance" },
+  { value: '48h', label: "48h à l'avance" },
+  { value: '72h', label: "72h à l'avance" },
+  { value: '1 semaine', label: "1 semaine à l'avance" },
+  { value: 'Avant départ', label: "Avant le départ" }
 ];
 
-const zonesList = [
-  { label: "Grande-Terre", value: "grande_terre" },
-  { label: "Basse-Terre", value: "basse_terre" },
-  { label: "Les Saintes", value: "les_saintes" },
-  { label: "Marie-Galante", value: "marie_galante" },
-  { label: "La Désirade", value: "la_desirade" },
+// 🗺️ OPTIONS ZONES D'INTERVENTION
+const zoneOptions = [
+  { value: 'Guadeloupe', label: "Guadeloupe" },
+  { value: 'Grande-Terre', label: "Grande-Terre" },
+  { value: 'Basse-Terre', label: "Basse-Terre" },
+  { value: 'Saint-François, alentours', label: "Saint-François, alentours" },
+  { value: 'Sainte-Anne, alentours', label: "Sainte-Anne, alentours" },
+  { value: 'Le Gosier, alentours', label: "Le Gosier, alentours" },
+  { value: 'Morne à l\'Eau, alentours', label: "Morne à l'Eau, alentours" },
+  { value: 'Baie-Mahault, alentours', label: "Baie-Mahault, alentours" },
+  { value: 'Deshaies, alentours', label: "Deshaies, alentours" },
+  { value: 'Bouillante, alentours', label: "Bouillante, alentours" },
+  { value: 'Basse-Terre, alentours', label: "Basse-Terre, alentours" }
 ];
 
 // Helper utilitaire pour sécuriser le tableau de checkboxes

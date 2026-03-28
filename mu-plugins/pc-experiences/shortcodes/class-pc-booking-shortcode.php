@@ -37,26 +37,33 @@ class PC_Experience_Booking_Shortcode extends PC_Experience_Shortcode_Base
      *
      * @param array $atts Attributs.
      */
-    protected function render(array $atts): void
+    protected function render(array $atts = []): void
     {
         $experience_id = $this->get_experience_id();
+        if (!$experience_id) return;
 
-        if (!have_rows('exp_types_de_tarifs')) {
+        // --- 1. DÉCODEUR DU RÉPÉTEUR PRINCIPAL ---
+        $raw_tarifs = PCR_Fields::get('exp_types_de_tarifs', $experience_id);
+        $tarifs = is_string($raw_tarifs) ? json_decode($raw_tarifs, true) : $raw_tarifs;
+
+        // S'il n'y a pas de grille tarifaire, on ne peut pas réserver
+        if (empty($tarifs) || !is_array($tarifs)) {
             return;
         }
 
-        // --- 1. Informations de l'entreprise (pour le devis PDF) ---
+        // --- 2. INFORMATIONS ENTREPRISE (Pour le devis PDF) ---
+        // On utilise PCR_Fields avec 'option' comme ID
         $company_info = [
-            'name'    => get_field('pc_org_name', 'option') ?: get_bloginfo('name'),
-            'legal'   => get_field('pc_org_legal_name', 'option'),
-            'address' => get_field('pc_org_address_street', 'option'),
-            'city'    => get_field('pc_org_address_postal', 'option') . ' ' . get_field('pc_org_address_locality', 'option'),
-            'phone'   => get_field('pc_org_phone', 'option'),
-            'email'   => get_field('pc_org_email', 'option'),
-            'vat'     => get_field('pc_org_vat_id', 'option'),
+            'name'    => PCR_Fields::get('pc_org_name', 'option') ?: get_bloginfo('name'),
+            'legal'   => PCR_Fields::get('pc_org_legal_name', 'option'),
+            'address' => PCR_Fields::get('pc_org_address_street', 'option'),
+            'city'    => PCR_Fields::get('pc_org_address_postal', 'option') . ' ' . PCR_Fields::get('pc_org_address_locality', 'option'),
+            'phone'   => PCR_Fields::get('pc_org_phone', 'option'),
+            'email'   => PCR_Fields::get('pc_org_email', 'option'),
+            'vat'     => PCR_Fields::get('pc_org_vat_id', 'option'),
         ];
 
-        // Logo PNG "bleu" (URL publique + base64 OPAQUE pour jsPDF)
+        // Logo PNG "bleu" (Génération Base64 pour le jsPDF)
         $uploads  = wp_get_upload_dir();
         $rel_path = '2025/06/Logo-Prestige-Caraibes-bleu.png';
         $company_info['logo'] = trailingslashit($uploads['baseurl']) . $rel_path;
@@ -88,82 +95,91 @@ class PC_Experience_Booking_Shortcode extends PC_Experience_Shortcode_Base
         }
 
         // CGV
-        $terms_raw  = get_field('cgv_experience', 'option');
+        $terms_raw  = PCR_Fields::get('cgv_experience', 'option');
         $terms_text = $terms_raw ? trim(wp_strip_all_tags(wp_kses_post($terms_raw))) : '';
         $company_info['conditions_generales'] = $terms_text;
 
-        // --- 2. Données de tarification pour le calculateur JS ---
+        // --- 3. DÉCODAGE COMPLEXE DES DONNÉES DE TARIFICATION (Pour le Calculateur JS) ---
         $pricing_data  = [];
-        $field_object  = get_field_object('exp_types_de_tarifs');
-        $exp_type_choices = [];
+        $type_labels = [
+            'adulte_enfant' => 'Tarif Adulte / Enfant',
+            'forfait'       => 'Forfait Privatisé',
+            'sur-devis'     => 'Sur Devis',
+            'personnalise'  => 'Tarif Spécial'
+        ];
 
-        if (!empty($field_object['sub_fields'])) {
-            foreach ($field_object['sub_fields'] as $sf) {
-                if (!empty($sf['name']) && $sf['name'] === 'exp_type' && !empty($sf['choices'])) {
-                    $exp_type_choices = (array)$sf['choices'];
-                    break;
-                }
-            }
-        }
+        foreach ($tarifs as $index => $row) {
+            $type_raw = $row['exp_type'] ?? '';
+            $type_value = is_array($type_raw) ? ($type_raw['value'] ?? reset($type_raw)) : $type_raw;
+            $custom_type = trim((string)($row['exp_type_custom'] ?? ''));
 
-        foreach ((array)$field_object['value'] as $index => $row) {
-            $type_value = $row['exp_type'] ?? '';
-            if (!$type_value) continue;
+            if (!$type_value && !$custom_type) continue;
 
-            // Utilisation de notre Helper PHP propre
-            $type_label = class_exists('PC_Experience_Field_Helper')
-                ? PC_Experience_Field_Helper::resolve_pricing_type_label($row, $exp_type_choices)
-                : $type_value;
+            $type_label = $custom_type ?: ($type_labels[$type_value] ?? ucfirst(str_replace('_', ' ', $type_value)));
+            if (empty($type_label)) $type_label = 'Tarif';
 
+            // A. Options Tarifaires
             $options = [];
-            if (!empty($row['exp_options_tarifaires'])) {
-                foreach ($row['exp_options_tarifaires'] as $opt) {
+            $options_data = $row['exp_options_tarifaires'] ?? [];
+            if (is_string($options_data)) $options_data = json_decode($options_data, true);
+            if (is_array($options_data)) {
+                foreach ($options_data as $opt) {
                     $options[] = [
-                        'label'       => (string)($opt['exp_description_option'] ?? ''),
+                        'label'       => trim((string)($opt['exp_description_option'] ?? '')),
                         'price'       => (float)($opt['exp_tarif_option'] ?? 0),
                         'enable_qty'  => !empty($opt['option_enable_qty']),
                     ];
                 }
             }
 
-            $lines_raw = isset($row['exp_tarifs_lignes']) ? (array)$row['exp_tarifs_lignes'] : [];
+            // B. Lignes Principales
             $lines = [];
             $has_counters = false;
+            $lines_raw = $row['exp_tarifs_lignes'] ?? [];
+            if (is_string($lines_raw)) $lines_raw = json_decode($lines_raw, true);
 
-            foreach ($lines_raw as $ln) {
-                $t = $ln['type_ligne'] ?? 'personnalise';
-                $entry = [
-                    'type'        => $t,
-                    'price'       => (float)($ln['tarif_valeur'] ?? 0),
-                    'label'       => '',
-                    'observation' => trim((string)($ln['tarif_observation'] ?? '')),
-                    'precision'   => '',
-                    'enable_qty'  => false,
-                ];
+            if (is_array($lines_raw)) {
+                foreach ($lines_raw as $ln) {
+                    $t_raw = $ln['type_ligne'] ?? 'personnalise';
+                    $t = is_array($t_raw) ? ($t_raw['value'] ?? reset($t_raw)) : $t_raw;
 
-                if ($t === 'adulte') {
-                    $entry['label'] = __('Adulte', 'pc');
-                    $has_counters = true;
-                } elseif ($t === 'enfant') {
-                    $p = trim((string)($ln['precision_age_enfant'] ?? ''));
-                    $entry['label'] = $p ? sprintf(__('Enfant (%s)', 'pc'), $p) : __('Enfant', 'pc');
-                    $entry['precision'] = $p;
-                    $has_counters = true;
-                } elseif ($t === 'bebe') {
-                    $p = trim((string)($ln['precision_age_bebe'] ?? ''));
-                    $entry['label'] = $p ? sprintf(__('Bébé (%s)', 'pc'), $p) : __('Bébé', 'pc');
-                    $entry['precision'] = $p;
-                    $has_counters = true;
-                } else {
-                    $entry['label'] = trim((string)($ln['tarif_nom_perso'] ?? '')) ?: __('Forfait', 'pc');
-                    $entry['enable_qty'] = !empty($ln['tarif_enable_qty']);
+                    $entry = [
+                        'type'        => $t,
+                        'price'       => (float)($ln['tarif_valeur'] ?? 0),
+                        'label'       => '',
+                        'observation' => trim((string)($ln['tarif_observation'] ?? '')),
+                        'precision'   => '',
+                        'enable_qty'  => false,
+                    ];
+
+                    if ($t === 'adulte') {
+                        $entry['label'] = __('Adulte', 'pc');
+                        $has_counters = true;
+                    } elseif ($t === 'enfant') {
+                        $p = trim((string)($ln['precision_age_enfant'] ?? ''));
+                        $entry['label'] = $p ? sprintf(__('Enfant (%s)', 'pc'), $p) : __('Enfant', 'pc');
+                        $entry['precision'] = $p;
+                        $has_counters = true;
+                    } elseif ($t === 'bebe') {
+                        $p = trim((string)($ln['precision_age_bebe'] ?? ''));
+                        $entry['label'] = $p ? sprintf(__('Bébé (%s)', 'pc'), $p) : __('Bébé', 'pc');
+                        $entry['precision'] = $p;
+                        $has_counters = true;
+                    } else {
+                        $entry['label'] = trim((string)($ln['tarif_nom_perso'] ?? '')) ?: __('Forfait', 'pc');
+                        $entry['enable_qty'] = !empty($ln['tarif_enable_qty']);
+                    }
+                    $lines[] = $entry;
                 }
-                $lines[] = $entry;
             }
 
+            // C. Frais Fixes
             $fixed_fees = [];
-            if (!empty($row['exp-frais-fixes'])) {
-                foreach ((array)$row['exp-frais-fixes'] as $fee_row) {
+            $fees_data = $row['exp-frais-fixes'] ?? $row['exp_frais_fixes'] ?? [];
+            if (is_string($fees_data)) $fees_data = json_decode($fees_data, true);
+
+            if (is_array($fees_data)) {
+                foreach ($fees_data as $fee_row) {
                     $fee_label = trim((string)($fee_row['exp_description_frais_fixe'] ?? ''));
                     $fee_price = (float)($fee_row['exp_tarif_frais_fixe'] ?? 0);
                     if ($fee_label !== '' && $fee_price != 0) {
@@ -175,7 +191,8 @@ class PC_Experience_Booking_Shortcode extends PC_Experience_Shortcode_Base
                 }
             }
 
-            $pricing_key = $type_value . '_' . $index;
+            // D. Compilation
+            $pricing_key = ($type_value ?: 'custom') . '_' . $index;
             $pricing_data[$pricing_key] = [
                 'code'         => $type_value,
                 'label'        => $type_label,
@@ -188,8 +205,9 @@ class PC_Experience_Booking_Shortcode extends PC_Experience_Shortcode_Base
 
         $devis_id = 'exp-devis-' . $experience_id;
 
-        // --- 3. DÉBUT DU RENDU HTML ---
-?>
+        // --- 4. DÉBUT DU RENDU HTML ---
+        ob_start(); ?>
+
         <button type="button" class="exp-booking-fab" id="exp-open-devis-sheet-btn">
             <span id="fab-price-display">Simuler un devis</span>
         </button>
@@ -244,7 +262,7 @@ class PC_Experience_Booking_Shortcode extends PC_Experience_Shortcode_Base
                         </div>
 
                         <div class="exp-devis-company-info" style="display:none;"><?php echo wp_json_encode($company_info); ?></div>
-                        <div class="exp-devis-experience-title" style="display:none;"><?php echo esc_html(get_the_title()); ?></div>
+                        <div class="exp-devis-experience-title" style="display:none;"><?php echo esc_html(get_the_title($experience_id)); ?></div>
                     </div>
                 </div>
             </div>
@@ -267,7 +285,7 @@ class PC_Experience_Booking_Shortcode extends PC_Experience_Shortcode_Base
                     </p>
 
                     <fieldset class="exp-booking-fieldset">
-                        <legend>Votre simulation</legend>
+                        <legend class="exp-booking-fieldset-title">Votre simulation</legend>
                         <div id="modal-quote-summary">
                             <p>Veuillez d'abord faire une simulation avec le calculateur.</p>
                         </div>
@@ -275,7 +293,7 @@ class PC_Experience_Booking_Shortcode extends PC_Experience_Shortcode_Base
                     </fieldset>
 
                     <fieldset class="exp-booking-fieldset">
-                        <legend>Vos coordonnées</legend>
+                        <legend class="exp-booking-fieldset-title">Vos coordonnées</legend>
                         <div class="exp-booking-form-grid">
                             <div class="exp-booking-field">
                                 <label for="booking-prenom">Prénom*</label>
@@ -297,7 +315,7 @@ class PC_Experience_Booking_Shortcode extends PC_Experience_Shortcode_Base
                     </fieldset>
 
                     <fieldset class="exp-booking-fieldset">
-                        <legend>Pouvons-nous vous joindre par WhatsApp ?</legend>
+                        <legend class="exp-booking-fieldset-title">Pouvons-nous vous joindre par WhatsApp ?</legend>
                         <div class="exp-booking-radio-group">
                             <label><input type="radio" name="whatsapp" value="Oui" checked> Oui</label>
                             <label><input type="radio" name="whatsapp" value="Non"> Non</label>
@@ -305,7 +323,7 @@ class PC_Experience_Booking_Shortcode extends PC_Experience_Shortcode_Base
                     </fieldset>
 
                     <fieldset class="exp-booking-fieldset">
-                        <legend>Observations ou demandes particulières</legend>
+                        <legend class="exp-booking-fieldset-title">Observations ou demandes particulières</legend>
                         <div class="exp-booking-field">
                             <label for="booking-message-experience" class="visually-hidden">Votre message</label>
                             <textarea id="booking-message-experience" name="message" rows="3" placeholder="Avez-vous des questions ou des demandes particulières ?"></textarea>
@@ -319,7 +337,7 @@ class PC_Experience_Booking_Shortcode extends PC_Experience_Shortcode_Base
                 </form>
             </div>
         </div>
-<?php
-        // --- FIN DU RENDU ---
+
+<?php echo ob_get_clean();
     }
 }
