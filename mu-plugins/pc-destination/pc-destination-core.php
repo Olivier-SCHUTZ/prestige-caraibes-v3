@@ -57,15 +57,16 @@ class PC_Destination_Core
     private function load_dependencies()
     {
         // 1. Chargement des nouveaux modules (Architecture cible)
-        require_once PC_DEST_DIR . 'assets/class-pc-destination-asset-manager.php';
         require_once PC_DEST_DIR . 'schema/class-pc-destination-schema-manager.php';
-        require_once PC_DEST_DIR . 'shortcodes/class-pc-destination-recommendations-shortcode.php';
         require_once PC_DEST_DIR . 'shortcodes/class-pc-destination-infos-shortcode.php';
         require_once PC_DEST_DIR . 'helpers/class-pc-destination-query-helper.php';
         require_once PC_DEST_DIR . 'helpers/class-pc-destination-render-helper.php';
         require_once PC_DEST_DIR . 'shortcodes/class-pc-destination-logements-shortcode.php';
         require_once PC_DEST_DIR . 'shortcodes/class-pc-destination-experiences-shortcode.php';
         require_once PC_DEST_DIR . 'shortcodes/class-pc-destination-hub-shortcode.php';
+        require_once PC_DEST_DIR . 'shortcodes/class-pc-destination-anchor-menu-shortcode.php';
+        require_once PC_DEST_DIR . 'shortcodes/class-pc-destination-essentiels-shortcode.php';
+        require_once PC_DEST_DIR . 'shortcodes/class-pc-destination-description-shortcode.php';
     }
 
     /**
@@ -73,16 +74,9 @@ class PC_Destination_Core
      */
     private function init_classes()
     {
-        // Initialisation du gestionnaire d'Assets
-        $asset_manager = new PC_Destination_Asset_Manager();
-        $asset_manager->register();
-
         // Initialisation du Schema Manager
         $schema_manager = new PC_Destination_Schema_Manager();
         $schema_manager->register();
-
-        $reco_shortcode = new PC_Destination_Recommendations_Shortcode();
-        $reco_shortcode->register();
 
         $infos_shortcode = new PC_Destination_Infos_Shortcode();
         $infos_shortcode->register();
@@ -95,6 +89,15 @@ class PC_Destination_Core
 
         $hub_shortcode = new PC_Destination_Hub_Shortcode();
         $hub_shortcode->register();
+
+        // Initialisation du menu d'ancres
+        new PC_Destination_Anchor_Menu_Shortcode();
+
+        // Initialisation des essentiels
+        new PC_Destination_Essentiels_Shortcode();
+
+        // Initialisation de la description avec "Voir plus"
+        new PC_Destination_Description_Shortcode();
     }
 }
 

@@ -24,13 +24,14 @@ class PC_Destination_Infos_Shortcode
      */
     public function render($atts)
     {
-        if (!is_singular('destination') || !function_exists('get_field')) {
+        // Plus de dépendance forcée à ACF
+        if (!is_singular('destination')) {
             return '';
         }
 
         $a = shortcode_atts([
             'title'        => 'Informations pratiques',
-            'cols_desktop' => '3',
+            'cols_desktop' => '3', // Conservé pour la rétrocompatibilité mais géré en CSS désormais
             'cols_tablet'  => '2',
             'cols_mobile'  => '1',
             'max'          => '0',
@@ -38,8 +39,26 @@ class PC_Destination_Infos_Shortcode
             'anchor'       => '',
         ], $atts, 'destination_infos');
 
-        $pid   = get_queried_object_id();
-        $rows  = get_field('dest_infos', $pid);
+        $pid = get_queried_object_id();
+
+        // --- 1. DÉCODEUR V3 HYBRIDE (Champs Répéteur) ---
+        $rows = class_exists('PCR_Fields') ? PCR_Fields::get('dest_infos', $pid) : null;
+        if (empty($rows)) {
+            $rows = get_post_meta($pid, 'dest_infos', true);
+        }
+
+        // Nettoyage et désérialisation du champ répéteur Vue.js / WP
+        if (is_string($rows)) {
+            $clean_str = stripslashes(trim($rows));
+            if (strpos($clean_str, '[') === 0) {
+                $decoded = json_decode($clean_str, true);
+                if (is_array($decoded)) {
+                    $rows = $decoded;
+                }
+            } else {
+                $rows = maybe_unserialize($rows);
+            }
+        }
 
         if (empty($rows) || !is_array($rows)) {
             return '';
@@ -79,30 +98,22 @@ class PC_Destination_Infos_Shortcode
         ];
         $fallback_icon = 'fa-solid fa-circle-info';
 
-        // Normalisation (accents/espaces) pour la détection de mots-clés
+        // Normalisation pour la détection de mots-clés
         $normalize = function ($s) {
             $s = remove_accents(wp_strip_all_tags((string)$s));
             $s = strtolower($s);
             return $s;
         };
 
-        // Attributs de grille (data-*)
-        $cols_mobile  = max(1, intval($a['cols_mobile']));
-        $cols_tablet  = max(1, intval($a['cols_tablet']));
-        $cols_desktop = max(1, intval($a['cols_desktop']));
-
-        $section_id   = sanitize_title($a['anchor']);
-        $title        = $a['title'];
+        $section_id = sanitize_title($a['anchor']);
+        $title      = $a['title'];
 
         ob_start();
 ?>
-        <section class="dest-infos-section" role="region" <?php echo $section_id ? 'id="' . esc_attr($section_id) . '"' : ''; ?> aria-labelledby="dest-infos-title">
+        <section class="pc-dest-infos-wrapper pc-equipements-wrapper" <?php echo $section_id ? 'id="' . esc_attr($section_id) . '"' : ''; ?> aria-labelledby="dest-infos-title">
             <h3 id="dest-infos-title" class="dest-infos-title"><?php echo esc_html($title); ?></h3>
 
-            <div class="dest-infos-grid"
-                data-cols-mobile="<?php echo esc_attr($cols_mobile); ?>"
-                data-cols-tablet="<?php echo esc_attr($cols_tablet); ?>"
-                data-cols-desktop="<?php echo esc_attr($cols_desktop); ?>">
+            <div class="pc-equipements-grid">
 
                 <?php foreach ($rows as $row):
                     $titre   = isset($row['titre']) ? trim($row['titre']) : '';
@@ -112,45 +123,148 @@ class PC_Destination_Infos_Shortcode
                     // Ignore si tout est vide
                     if ($titre === '' && trim(wp_strip_all_tags($contenu)) === '') continue;
 
-                    // Icône: ACF > mapping par mots-clés > fallback
+                    // Icône: Vue.js/ACF > mapping par mots-clés > fallback
                     if ($icone === '') {
                         $t = $normalize($titre);
                         $picked = '';
                         foreach ($map_icons as $pattern => $fa) {
-                            $found = false;
                             foreach (explode('|', $pattern) as $needle) {
                                 if ($needle !== '' && strpos($t, $needle) !== false) {
-                                    $found = true;
-                                    break;
+                                    $picked = $fa;
+                                    break 2;
                                 }
-                            }
-                            if ($found) {
-                                $picked = $fa;
-                                break;
                             }
                         }
                         $icone = $picked ?: $fallback_icon;
                     }
                 ?>
-                    <article class="dest-infos-card">
-                        <div class="dest-infos-icon" aria-hidden="true">
-                            <i class="<?php echo esc_attr($icone); ?>"></i>
+                    <div class="pc-equip-box">
+                        <div class="pc-equip-header">
+                            <span class="pc-equip-icon" aria-hidden="true">
+                                <i class="<?php echo esc_attr($icone); ?>"></i>
+                            </span>
+                            <?php if ($titre !== ''): ?>
+                                <h4 class="pc-equip-title"><?php echo esc_html($titre); ?></h4>
+                            <?php endif; ?>
                         </div>
 
-                        <?php if ($titre !== ''): ?>
-                            <h4 class="dest-infos-card-title"><?php echo esc_html($titre); ?></h4>
-                        <?php endif; ?>
-
                         <?php if ($contenu !== ''): ?>
-                            <div class="dest-infos-card-content">
-                                <?php echo wp_kses_post($contenu); ?>
+                            <div class="pc-equip-content pc-v3-content-raw pc-list-standard">
+                                <?php echo wpautop(wp_kses_post($contenu)); ?>
                             </div>
                         <?php endif; ?>
-                    </article>
+                    </div>
                 <?php endforeach; ?>
 
             </div>
         </section>
+
+        <style>
+            /* Base enveloppe & Titre */
+            .pc-dest-infos-wrapper {
+                margin: 3rem 0;
+                scroll-margin-top: 100px;
+            }
+
+            .dest-infos-title {
+                font-family: var(--pc-font-title, inherit);
+                font-size: clamp(1.6rem, 1.2rem + 1vw, 2rem);
+                text-align: left;
+                margin: 0 0 1.5rem 0;
+                color: var(--pc-color-heading, #1b3b5f);
+            }
+
+            /* Grille responsive V3 */
+            .pc-equipements-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            @media (min-width: 768px) {
+                .pc-equipements-grid {
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                }
+            }
+
+            /* Design de la carte (Box) */
+            .pc-equip-box {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: var(--pc-border-radius, 16px);
+                padding: 1.5rem;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                height: 100%;
+                transition: transform 0.22s ease, box-shadow 0.22s ease;
+                will-change: transform;
+            }
+
+            @media (hover: hover) and (pointer: fine) {
+                .pc-equip-box:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+                }
+            }
+
+            /* Header (Icône + Titre) */
+            .pc-equip-header {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                margin-bottom: 1rem;
+            }
+
+            .pc-equip-icon {
+                color: var(--pc-color-primary, #007a92);
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 22px;
+                /* Adapté pour FontAwesome */
+            }
+
+            .pc-equip-title {
+                font-family: var(--pc-font-heading, system-ui);
+                margin: 0;
+                font-size: 1.15rem;
+                font-weight: 600;
+                color: var(--pc-color-heading, #1b3b5f);
+            }
+
+            /* Contenu texte et listes */
+            .pc-equip-content {
+                line-height: 1.6;
+                color: var(--pc-color-text, #3a3a3a);
+            }
+
+            .pc-equip-content p {
+                margin-bottom: 0.75rem;
+            }
+
+            .pc-equip-content ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .pc-equip-content li {
+                position: relative;
+                padding-left: 1.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .pc-list-standard li::before {
+                content: "•";
+                position: absolute;
+                left: 0;
+                top: 0;
+                color: var(--pc-color-primary, #007a92);
+                font-weight: bold;
+                font-size: 1.2rem;
+            }
+        </style>
 <?php
         return ob_get_clean();
     }

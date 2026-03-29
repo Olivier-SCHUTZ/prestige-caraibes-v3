@@ -28,6 +28,7 @@ $modules = [
     'class-pc-seo-manager.php',
     'class-pc-jsonld-manager.php',
     'class-pc-social-manager.php',
+    'class-pc-admin-metaboxes.php',
 ];
 
 foreach ($modules as $module) {

@@ -1,19 +1,21 @@
 /* ==========================================================================
    Destination — Recommandations (Logements & Expériences)
-   (Grille responsive 1 / 2 / 3 colonnes)
+   (Grille responsive 1 / 2 / 3 colonnes) — Raccordé à pc-base.css
    ========================================================================== */
 
 .dest-reco-section {
   padding: 2rem 0;
+  /* ✨ NOUVEAU : Évite que le menu d'ancres collant ne masque le haut de la section au clic */
+  scroll-margin-top: 100px;
 }
 
 /* Titre de section */
 .dest-reco-title {
-  font-family: var(--pc-font-title, inherit);
+  font-family: var(--pc-font-title, inherit); /* Raccordé à pc-base.css */
   font-size: clamp(1.6rem, 1.2rem + 1vw, 2rem);
   text-align: left;
   margin: 0 0 2rem 0;
-  color: var(--pc-color-heading, #111);
+  color: var(--pc-color-heading, #1b3b5f); /* Raccordé à pc-base.css */
 }
 
 /* Grille responsive */
@@ -37,10 +39,13 @@
 
 /* Carte blanche avec relief doux */
 .dest-reco-card {
-  background: #fff;
-  border-radius: 18px;
+  background: #ffffff;
+  border-radius: var(--pc-radius, 10px); /* Raccordé à pc-base.css */
   overflow: hidden;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  box-shadow: var(
+    --pc-shadow-soft,
+    0 8px 24px rgba(0, 0, 0, 0.08)
+  ); /* Raccordé à pc-base.css */
   transition:
     transform 0.22s ease,
     box-shadow 0.22s ease;
@@ -68,7 +73,7 @@
 /* Image : ratio stable + recadrage */
 .dest-reco-card-image {
   aspect-ratio: 16/10;
-  background: #f6f7f9;
+  background: var(--pc-bg-page, #f9f9f9); /* Raccordé à pc-base.css */
 }
 
 .dest-reco-card-image img {
@@ -87,8 +92,8 @@
 }
 
 .dest-reco-card-title {
-  font-family: var(--pc-font-title, inherit);
-  color: var(--pc-color-heading, #111);
+  font-family: var(--pc-font-title, inherit); /* Raccordé à pc-base.css */
+  color: var(--pc-color-heading, #1b3b5f); /* Raccordé à pc-base.css */
   font-size: clamp(1.15rem, 1rem + 0.6vw, 1.5rem);
   line-height: 1.25;
   margin: 0 0 0.5rem 0;
@@ -96,8 +101,8 @@
 
 .dest-reco-card-price {
   margin-top: auto; /* Pousse le prix vers le bas si le titre est court */
-  font-size: 1rem;
-  color: var(--pc-color-primary, #0056b3);
+  font-size: var(--pc-text-size, 1.125rem); /* Raccordé à pc-base.css */
+  color: var(--pc-color-primary, #007a92); /* Raccordé à pc-base.css */
   font-weight: 600;
   opacity: 0.92;
 }

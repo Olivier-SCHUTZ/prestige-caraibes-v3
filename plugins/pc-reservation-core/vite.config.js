@@ -15,6 +15,8 @@ export default defineConfig({
         // ✨ NOUVEAU : On ajoute le module Logements
         housing: resolve(__dirname, "src/modules/housing/main.js"),
         calendar: "src/modules/calendar/main.js",
+        // 🌴 NOUVEAU : On ajoute le module Destinations
+        destination: resolve(__dirname, "src/modules/destination/main.js"),
       },
     },
   },

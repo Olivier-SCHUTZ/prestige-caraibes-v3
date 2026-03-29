@@ -43,6 +43,7 @@ require_once PC_RES_CORE_PATH . 'includes/fields/class-fields.php';
 // Chargement des définitions de champs
 require_once PC_RES_CORE_PATH . 'includes/fields/definitions/housing-fields.php';
 require_once PC_RES_CORE_PATH . 'includes/fields/definitions/experience-fields.php';
+require_once PC_RES_CORE_PATH . 'includes/fields/definitions/destination-fields.php'; // ✨ NOUVEAU
 // require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-housing.php';
 
 // Nouveaux Contrôleurs AJAX (Refactoring v2)
@@ -83,6 +84,15 @@ require_once PC_RES_CORE_PATH . 'includes/services/experience/class-experience-r
 require_once PC_RES_CORE_PATH . 'includes/services/experience/class-experience-service.php';
 // require_once PC_RES_CORE_PATH . 'shortcodes/shortcode-experience.php';
 
+// ============================================================
+// 🎯 MODULE DESTINATION : Chargement des classes PHP
+// ============================================================
+require_once PC_RES_CORE_PATH . 'includes/services/destination/class-destination-config.php';
+require_once PC_RES_CORE_PATH . 'includes/services/destination/class-destination-formatter.php';
+require_once PC_RES_CORE_PATH . 'includes/services/destination/class-destination-repository.php';
+require_once PC_RES_CORE_PATH . 'includes/services/destination/class-destination-service.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-destination-ajax-controller.php';
+
 require_once PC_RES_CORE_PATH . 'includes/class-ical-export.php';
 require_once PC_RES_CORE_PATH . 'includes/services/calendar/class-ical-exporter.php';
 require_once PC_RES_CORE_PATH . 'includes/class-settings.php';
@@ -106,6 +116,7 @@ require_once PC_RES_CORE_PATH . 'includes/api/class-rest-webhook.php';
 
 require_once PC_RES_CORE_PATH . 'includes/migration-logements.php';
 require_once PC_RES_CORE_PATH . 'includes/migration-experience.php';
+require_once PC_RES_CORE_PATH . 'includes/migration-destination.php';
 require_once PC_RES_CORE_PATH . 'includes/class-elementor-pcr-tags.php';
 // controller-forms sera branché plus tard quand tu seras prêt
 if (file_exists(PC_RES_CORE_PATH . 'includes/controller-forms.php')) {
@@ -217,6 +228,13 @@ add_action('plugins_loaded', function () {
     // ============================================================
     if (class_exists('PCR_Experience_Manager')) {
         PCR_Experience_Manager::init();
+    }
+
+    // ============================================================
+    // 🎯 MODULE DESTINATION : Initialisation du contrôleur AJAX
+    // ============================================================
+    if (class_exists('PCR_Destination_Ajax_Controller')) {
+        PCR_Destination_Ajax_Controller::init();
     }
 
     // --- AUTOMATISATION : CRON JOB (Vérification quotidienne des cautions) ---
@@ -417,6 +435,7 @@ add_action('wp_enqueue_scripts', function () {
         PCR_Vite_Loader::enqueue_entry('src/modules/calendar/main.js');
         PCR_Vite_Loader::enqueue_entry('src/modules/experience/main.js');
         PCR_Vite_Loader::enqueue_entry('src/modules/housing/main.js');
+        PCR_Vite_Loader::enqueue_entry('src/modules/destination/main.js');
     }
 }, 100);
 
@@ -434,3 +453,40 @@ add_filter('wp_nav_menu_items', function ($items, $args) {
     }
     return $items;
 }, 10, 2);
+
+// ============================================================
+// 🛡️ BOUCLIER ANTI-ÉCRASEMENT ACF (Protection JSON en Prod)
+// ============================================================
+
+/**
+ * 1. Masquer les champs complexes dans l'interface ACF
+ */
+add_filter('acf/prepare_field', function ($field) {
+    // Liste de tous les anciens répéteurs ACF migrés en tableaux JSON (Destinations & Expériences)
+    $protected_fields = [
+        'dest_infos',
+        'dest_faq',
+        'exp_lieux_horaires_depart',
+        'exp_periodes_fermeture',
+        'exp_types_de_tarifs',
+        'exp_faq'
+    ];
+
+    if (isset($field['name']) && in_array($field['name'], $protected_fields)) {
+        // En retournant false, le champ n'est pas affiché dans le formulaire WP Admin.
+        // Puisqu'il n'est pas soumis, ACF ne l'écrasera jamais !
+        return false;
+    }
+
+    return $field;
+});
+
+/**
+ * 2. Afficher un message d'avertissement pour rassurer l'administrateur
+ */
+add_action('admin_notices', function () {
+    global $typenow;
+    if (in_array($typenow, ['experience', 'destination'])) {
+        echo '<div class="notice notice-warning"><p><strong>🛡️ Protection V2 Active :</strong> Les champs complexes (FAQ, Infos Pratiques, Tarifs, etc.) sont masqués sur cette page classique pour éviter qu\'ACF ne les écrase. <strong>Veuillez utiliser le Dashboard V2</strong> pour modifier les textes.</p></div>';
+    }
+});

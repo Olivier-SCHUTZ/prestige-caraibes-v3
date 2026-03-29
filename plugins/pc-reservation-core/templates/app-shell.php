@@ -523,6 +523,10 @@ do_action('pc_resa_app_enqueue_assets');
                         <span class="pc-nav-icon">🎯</span>
                         <span class="pc-nav-label">Mes Expériences</span>
                     </a>
+                    <a href="#destination" class="pc-nav-item" onclick="switchTab('destination')">
+                        <span class="pc-nav-icon">🌴</span>
+                        <span class="pc-nav-label">Mes Destinations</span>
+                    </a>
                 </nav>
 
                 <div class="pc-sidebar-footer">
@@ -552,6 +556,10 @@ do_action('pc_resa_app_enqueue_assets');
 
                 <div id="view-experience" class="pc-view-section">
                     <div id="pc-experience-v2-app"></div>
+                </div>
+
+                <div id="view-destination" class="pc-view-section">
+                    <div id="pc-destination-v2-app"></div>
                 </div>
             </main>
         </div>

@@ -32,12 +32,7 @@ class PC_Destination_Asset_Manager
         // 1. COMPOSANTS CSS
         // =========================================================================
 
-        $components_css = [
-            'pc-dest-global'          => 'pc-destination-global.css',
-            'pc-dest-recommendations' => 'pc-destination-recommendations.css',
-            'pc-dest-infos'           => 'pc-destination-infos.css',
-            'pc-dest-anchor-menu'     => 'pc-destination-anchor-menu.css'
-        ];
+        $components_css = [];
 
         foreach ($components_css as $handle => $filename) {
             $css_path = PC_DEST_DIR . 'assets/css/components/' . $filename;
