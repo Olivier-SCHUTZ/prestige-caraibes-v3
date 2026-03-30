@@ -12,8 +12,8 @@ if (!defined('ABSPATH')) {
 if (!function_exists('pcseo_get_field')) {
     function pcseo_get_field($key, $post_id = null, $default = '')
     {
-        if (function_exists('get_field')) {
-            $val = get_field($key, $post_id);
+        if (class_exists('PCR_Fields')) {
+            $val = PCR_Fields::get($key, $post_id);
             return ($val === null || $val === '') ? $default : $val;
         }
         if ($post_id && is_numeric($post_id)) {
@@ -71,16 +71,16 @@ if (!function_exists('pcseo_get_meta')) {
         $candidates = [$key_sub, $key_group_sub1, $key_group_sub2];
 
         foreach ($candidates as $k) {
-            if (function_exists('get_field')) {
-                $v = get_field($k, $post_id);
+            if (class_exists('PCR_Fields')) {
+                $v = PCR_Fields::get($k, $post_id);
                 if ($v !== null && $v !== false && $v !== '') return $v;
             }
             $v = get_post_meta($post_id, $k, true);
             if ($v !== '' && $v !== null) return $v;
         }
 
-        if (function_exists('get_field')) {
-            $grp = get_field($group, $post_id);
+        if (class_exists('PCR_Fields')) {
+            $grp = PCR_Fields::get($group, $post_id);
             if (is_array($grp)) {
                 $sub_name = "{$prefix}_{$suffix}";
                 if (array_key_exists($sub_name, $grp) && $grp[$sub_name] !== '') return $grp[$sub_name];

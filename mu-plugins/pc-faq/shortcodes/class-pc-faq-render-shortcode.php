@@ -31,10 +31,7 @@ class PC_FAQ_Render_Shortcode extends PC_FAQ_Shortcode_Base
      */
     protected function render($atts, $content = null)
     {
-        // Sécurité : On s'assure qu'ACF est bien actif
-        if (!function_exists('get_field')) {
-            return '';
-        }
+        // Plus de blocage strict si ACF est désactivé
 
         // Fusion avec les paramètres par défaut
         $atts = shortcode_atts([
@@ -50,11 +47,42 @@ class PC_FAQ_Render_Shortcode extends PC_FAQ_Shortcode_Base
             return '';
         }
 
-        // Récupération des données du repeater ACF (clé spécifique : pc_faq_items)
-        $rows = get_field('pc_faq_items', $post_id);
+        // --- 1. DÉCODEUR V3 HYBRIDE (Champs Répéteur FAQ) ---
+        $raw_rows = get_post_meta($post_id, 'pc_faq_items', true);
+        $rows = [];
+
+        // Scénario A : Ancien format ACF (La valeur est un nombre entier de lignes, ex: 5)
+        if (is_numeric($raw_rows) && intval($raw_rows) > 0) {
+            $count = intval($raw_rows);
+            for ($i = 0; $i < $count; $i++) {
+                $q = get_post_meta($post_id, 'pc_faq_items_' . $i . '_question', true);
+                $a = get_post_meta($post_id, 'pc_faq_items_' . $i . '_answer', true);
+
+                if (!empty($q) || !empty($a)) {
+                    $rows[] = [
+                        'question' => $q,
+                        'answer'   => $a
+                    ];
+                }
+            }
+        }
+        // Scénario B : Nouveau format JSON natif Vue.js
+        elseif (is_string($raw_rows) && strpos(trim(stripslashes($raw_rows)), '[') === 0) {
+            $decoded = json_decode(stripslashes($raw_rows), true);
+            if (is_array($decoded)) {
+                $rows = $decoded;
+            }
+        }
+        // Scénario C : Fallback WP par défaut (tableau sérialisé) ou si appelé via un bouclier qui a déjà décodé
+        else {
+            $unserialized = maybe_unserialize($raw_rows);
+            if (is_array($unserialized)) {
+                $rows = $unserialized;
+            }
+        }
 
         if (empty($rows) || !is_array($rows)) {
-            return '';
+            return ''; // La FAQ est vraiment vide ou invalide, on ne retourne rien silencieusement
         }
 
         // Vérification du paramètre d'ouverture automatique
@@ -63,7 +91,6 @@ class PC_FAQ_Render_Shortcode extends PC_FAQ_Shortcode_Base
         // Gestion des classes CSS additionnelles
         $classes = 'pc-faq-accordion';
         if (!empty($atts['class'])) {
-            // Le nettoyage regex (sanitize) est géré de manière sécurisée par notre Helper
             $classes .= ' ' . $atts['class'];
         }
 

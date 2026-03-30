@@ -92,8 +92,8 @@ class PC_JsonLD_Manager
 
     private function get_field_or_meta($key, $post_id, $default = '', $raw = false)
     {
-        if (function_exists('get_field')) {
-            $v = get_field($key, $post_id);
+        if (class_exists('PCR_Fields')) {
+            $v = PCR_Fields::get($key, $post_id);
             if ($raw) return $v;
             if ($v !== null && $v !== false && $v !== '') return is_string($v) ? trim($v) : $v;
         }
@@ -110,7 +110,7 @@ class PC_JsonLD_Manager
 
     private function get_global_option($key)
     {
-        return function_exists('get_field') ? (get_field($key, 'option') ?: '') : get_option($key, '');
+        return class_exists('PCR_Fields') ? (PCR_Fields::get($key, 'option') ?: '') : get_option($key, '');
     }
 
     private function is_elementor_edit_mode()
