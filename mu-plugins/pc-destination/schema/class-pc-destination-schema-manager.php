@@ -27,12 +27,12 @@ class PC_Destination_Schema_Manager
             return;
         }
 
-        if (!function_exists('get_field')) {
+        if (!class_exists('PCR_Fields')) {
             return;
         }
 
         $pid = get_queried_object_id();
-        $faqs = (array) get_field('dest_faq', $pid);
+        $faqs = (array) PCR_Fields::get('dest_faq', $pid);
 
         if (empty($faqs)) {
             return;

@@ -14,27 +14,32 @@ class PCR_Legacy_Utils
      */
     public static function get_pricing_config($post_id)
     {
-        if (!function_exists('get_field')) return null;
+        // Sécurité : On vérifie si notre nouvelle classe ou ACF est disponible
+        if (!class_exists('PCR_Fields') && !function_exists('get_field')) return null;
 
         $post_id = (int) $post_id;
         if ($post_id <= 0) return null;
 
-        $base_price   = (float) get_field('base_price_from', $post_id);
-        $unit         = (string) get_field('unite_de_prix',   $post_id);
-        $min_nights   = (int)    get_field('min_nights',      $post_id);
-        $max_nights   = (int)    get_field('max_nights',      $post_id);
-        $cap          = (int)    get_field('capacite',        $post_id);
+        // Optimisation : On stocke la condition pour garder un code lisible sur ce gros bloc
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf = function_exists('get_field');
+
+        $base_price   = (float)  ($pcr_exists ? PCR_Fields::get('base_price_from', $post_id) : ($has_acf ? get_field('base_price_from', $post_id) : 0));
+        $unit         = (string) ($pcr_exists ? PCR_Fields::get('unite_de_prix',   $post_id) : ($has_acf ? get_field('unite_de_prix', $post_id) : ''));
+        $min_nights   = (int)    ($pcr_exists ? PCR_Fields::get('min_nights',      $post_id) : ($has_acf ? get_field('min_nights', $post_id) : 0));
+        $max_nights   = (int)    ($pcr_exists ? PCR_Fields::get('max_nights',      $post_id) : ($has_acf ? get_field('max_nights', $post_id) : 0));
+        $cap          = (int)    ($pcr_exists ? PCR_Fields::get('capacite',        $post_id) : ($has_acf ? get_field('capacite', $post_id) : 0));
         if ($cap <= 0) $cap = 1;
 
-        $extra_fee    = (float)  get_field('extra_guest_fee',  $post_id);
-        $extra_from   = (int)    get_field('extra_guest_from', $post_id);
-        $cleaning     = (float)  get_field('frais_menage',      $post_id);
-        $other_fee    = (float)  get_field('autres_frais',      $post_id);
-        $other_label  = (string) get_field('autres_frais_type', $post_id);
-        $taxe_choices = (array)  get_field('taxe_sejour',       $post_id);
+        $extra_fee    = (float)  ($pcr_exists ? PCR_Fields::get('extra_guest_fee',  $post_id) : ($has_acf ? get_field('extra_guest_fee', $post_id) : 0));
+        $extra_from   = (int)    ($pcr_exists ? PCR_Fields::get('extra_guest_from', $post_id) : ($has_acf ? get_field('extra_guest_from', $post_id) : 0));
+        $cleaning     = (float)  ($pcr_exists ? PCR_Fields::get('frais_menage',     $post_id) : ($has_acf ? get_field('frais_menage', $post_id) : 0));
+        $other_fee    = (float)  ($pcr_exists ? PCR_Fields::get('autres_frais',     $post_id) : ($has_acf ? get_field('autres_frais', $post_id) : 0));
+        $other_label  = (string) ($pcr_exists ? PCR_Fields::get('autres_frais_type', $post_id) : ($has_acf ? get_field('autres_frais_type', $post_id) : ''));
+        $taxe_choices = (array)  ($pcr_exists ? PCR_Fields::get('taxe_sejour',      $post_id) : ($has_acf ? get_field('taxe_sejour', $post_id) : []));
         $unit_is_week = (stripos($unit, 'semaine') !== false);
-        $seasons_raw  = (array) get_field('pc_season_blocks', $post_id);
-        $manual_quote = (bool) get_field('pc_manual_quote', $post_id);
+        $seasons_raw  = (array)  ($pcr_exists ? PCR_Fields::get('pc_season_blocks', $post_id) : ($has_acf ? get_field('pc_season_blocks', $post_id) : []));
+        $manual_quote = (bool)   ($pcr_exists ? PCR_Fields::get('pc_manual_quote',  $post_id) : ($has_acf ? get_field('pc_manual_quote', $post_id) : false));
 
         $seasons = [];
         foreach ($seasons_raw as $s) {
@@ -60,7 +65,9 @@ class PCR_Legacy_Utils
         $ics_disable = [];
 
         // 0. Récupération des iCal distants (Airbnb, Booking...)
-        $ical_url = (string) get_field('ical_url', $post_id);
+        $ical_url = (string) (class_exists('PCR_Fields')
+            ? PCR_Fields::get('ical_url', $post_id)
+            : (function_exists('get_field') ? get_field('ical_url', $post_id) : ''));
         if ($ical_url && function_exists('pc_parse_ics_ranges')) {
             $cache_key = 'pc_ics_body_' . md5($ical_url);
             $ics_body  = get_transient($cache_key);

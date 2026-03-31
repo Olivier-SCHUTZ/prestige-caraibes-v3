@@ -81,22 +81,23 @@ class PCR_Experience_Repository
                     'thumbnail' => wp_get_attachment_image_src($thumbnail_id, 'thumbnail')[0] ?? '',
                 ] : ['id' => 0, 'url' => '', 'thumbnail' => ''];
 
-                // ✨ NOUVEAU : Récupération via le wrapper PCR_Fields
-                if (class_exists('PCR_Fields')) {
-                    $item['duree'] = PCR_Fields::get('exp_duree', $post_id, '');
-                    $item['capacite'] = PCR_Fields::get('exp_capacite', $post_id, 0);
-                    $item['availability'] = (bool) PCR_Fields::get('exp_availability', $post_id, true);
-                    $item['type_de_prestation'] = PCR_Fields::get('exp_type_de_prestation', $post_id, '');
-                    $item['zone_intervention'] = PCR_Fields::get('exp_zone_intervention', $post_id, '');
-                    $item['taux_tva'] = PCR_Fields::get('taux_tva', $post_id, '');
+                // ✨ NOUVEAU : Récupération via le wrapper sécurisé avec fallback
+                $pcr_exists = class_exists('PCR_Fields');
+                $has_acf = function_exists('get_field');
 
-                    $lieux = PCR_Fields::get('exp_lieux_horaires_depart', $post_id, []);
-                    // 🛡️ Bouclier Liste
-                    if (is_numeric($lieux) && function_exists('get_field')) {
-                        $lieux = get_field('exp_lieux_horaires_depart', $post_id);
-                    }
-                    $item['lieu_depart'] = (is_array($lieux) && !empty($lieux) && !empty($lieux[0]['exp_lieu_depart'])) ? $lieux[0]['exp_lieu_depart'] : '';
+                $item['duree'] = $pcr_exists ? PCR_Fields::get('exp_duree', $post_id, '') : ($has_acf ? get_field('exp_duree', $post_id) : '');
+                $item['capacite'] = $pcr_exists ? PCR_Fields::get('exp_capacite', $post_id, 0) : ($has_acf ? get_field('exp_capacite', $post_id) : 0);
+                $item['availability'] = (bool) ($pcr_exists ? PCR_Fields::get('exp_availability', $post_id, true) : ($has_acf ? get_field('exp_availability', $post_id) : true));
+                $item['type_de_prestation'] = $pcr_exists ? PCR_Fields::get('exp_type_de_prestation', $post_id, '') : ($has_acf ? get_field('exp_type_de_prestation', $post_id) : '');
+                $item['zone_intervention'] = $pcr_exists ? PCR_Fields::get('exp_zone_intervention', $post_id, '') : ($has_acf ? get_field('exp_zone_intervention', $post_id) : '');
+                $item['taux_tva'] = $pcr_exists ? PCR_Fields::get('taux_tva', $post_id, '') : ($has_acf ? get_field('taux_tva', $post_id) : '');
+
+                $lieux = $pcr_exists ? PCR_Fields::get('exp_lieux_horaires_depart', $post_id, []) : ($has_acf ? get_field('exp_lieux_horaires_depart', $post_id) : []);
+                // 🛡️ Bouclier Liste
+                if (is_numeric($lieux) && $has_acf) {
+                    $lieux = get_field('exp_lieux_horaires_depart', $post_id);
                 }
+                $item['lieu_depart'] = (is_array($lieux) && !empty($lieux) && !empty($lieux[0]['exp_lieu_depart'])) ? $lieux[0]['exp_lieu_depart'] : '';
 
                 $item['exp_availability'] = $item['availability'];
                 $item['status_label'] = $config->get_status_label($item['status']);
@@ -138,7 +139,7 @@ class PCR_Experience_Repository
         $complex_fields = ['exp_lieux_horaires_depart', 'exp_periodes_fermeture', 'exp_types_de_tarifs', 'exp_faq', 'exp_a_prevoir', 'exp_accessibilite', 'exp_periode', 'exp_jour', 'exp_zone_intervention'];
 
         foreach ($mapped_fields as $normalized_key => $meta_key) {
-            $value = PCR_Fields::get($meta_key, $post_id);
+            $value = class_exists('PCR_Fields') ? PCR_Fields::get($meta_key, $post_id) : (function_exists('get_field') ? get_field($meta_key, $post_id) : null);
 
             // 🛡️ BOUCLIER ANTI-CRASH ACF : Si la donnée native a été écrasée par un chiffre (nombre de lignes) via WP Admin
             if (is_numeric($value) && in_array($meta_key, $complex_fields) && function_exists('get_field')) {
@@ -149,19 +150,20 @@ class PCR_Experience_Repository
         }
 
         // =========================================================
-        $details['exp_hero_desktop'] = $formatter->process_image_for_display(PCR_Fields::get('exp_hero_desktop', $post_id));
-        $details['exp_hero_mobile'] = $formatter->process_image_for_display(PCR_Fields::get('exp_hero_mobile', $post_id));
-        $details['photos_experience'] = $formatter->process_gallery_for_display(PCR_Fields::get('photos_experience', $post_id));
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf = function_exists('get_field');
+
+        $details['exp_hero_desktop'] = $formatter->process_image_for_display($pcr_exists ? PCR_Fields::get('exp_hero_desktop', $post_id) : ($has_acf ? get_field('exp_hero_desktop', $post_id) : null));
+        $details['exp_hero_mobile'] = $formatter->process_image_for_display($pcr_exists ? PCR_Fields::get('exp_hero_mobile', $post_id) : ($has_acf ? get_field('exp_hero_mobile', $post_id) : null));
+        $details['photos_experience'] = $formatter->process_gallery_for_display($pcr_exists ? PCR_Fields::get('photos_experience', $post_id) : ($has_acf ? get_field('photos_experience', $post_id) : null));
 
         // SÉCURITÉ ANTI-CRASH TARIFS
-        $seasons_data = PCR_Fields::get('seasons_data', $post_id, []);
-        $promos_data = PCR_Fields::get('promos_data', $post_id, []);
+        $seasons_data = $pcr_exists ? PCR_Fields::get('seasons_data', $post_id, []) : ($has_acf ? get_field('seasons_data', $post_id) : []);
+        $promos_data = $pcr_exists ? PCR_Fields::get('promos_data', $post_id, []) : ($has_acf ? get_field('promos_data', $post_id) : []);
         $details['seasons_data'] = is_array($seasons_data) ? $seasons_data : [];
         $details['promos_data'] = is_array($promos_data) ? $promos_data : [];
 
-        $taux_tva_raw = PCR_Fields::get('taux_tva', $post_id);
-        $details['taux_tva'] = ($taux_tva_raw !== false && $taux_tva_raw !== null) ? $taux_tva_raw : '';
-
+        $taux_tva_raw = $pcr_exists ? PCR_Fields::get('taux_tva', $post_id) : ($has_acf ? get_field('taux_tva', $post_id) : null);
         // Création d'une ligne de tarif par défaut si vide
         if (!is_array($details['exp_types_de_tarifs']) || empty($details['exp_types_de_tarifs'])) {
             $details['exp_types_de_tarifs'] = [[
@@ -174,12 +176,12 @@ class PCR_Experience_Repository
         }
 
         // RÈGLES DE PAIEMENT
-        $details['pc_pay_mode'] = PCR_Fields::get('pc_pay_mode', $post_id, 'acompte_plus_solde');
-        $details['pc_deposit_type'] = PCR_Fields::get('pc_deposit_type', $post_id, 'pourcentage');
-        $details['pc_deposit_value'] = PCR_Fields::get('pc_deposit_value', $post_id, '');
-        $details['pc_balance_delay_days'] = PCR_Fields::get('pc_balance_delay_days', $post_id, '');
-        $details['pc_caution_amount'] = PCR_Fields::get('pc_caution_amount', $post_id, '');
-        $details['pc_caution_mode'] = PCR_Fields::get('pc_caution_mode', $post_id, 'aucune');
+        $details['pc_pay_mode'] = $pcr_exists ? PCR_Fields::get('pc_pay_mode', $post_id, 'acompte_plus_solde') : ($has_acf ? get_field('pc_pay_mode', $post_id) : 'acompte_plus_solde');
+        $details['pc_deposit_type'] = $pcr_exists ? PCR_Fields::get('pc_deposit_type', $post_id, 'pourcentage') : ($has_acf ? get_field('pc_deposit_type', $post_id) : 'pourcentage');
+        $details['pc_deposit_value'] = $pcr_exists ? PCR_Fields::get('pc_deposit_value', $post_id, '') : ($has_acf ? get_field('pc_deposit_value', $post_id) : '');
+        $details['pc_balance_delay_days'] = $pcr_exists ? PCR_Fields::get('pc_balance_delay_days', $post_id, '') : ($has_acf ? get_field('pc_balance_delay_days', $post_id) : '');
+        $details['pc_caution_amount'] = $pcr_exists ? PCR_Fields::get('pc_caution_amount', $post_id, '') : ($has_acf ? get_field('pc_caution_amount', $post_id) : '');
+        $details['pc_caution_mode'] = $pcr_exists ? PCR_Fields::get('pc_caution_mode', $post_id, 'aucune') : ($has_acf ? get_field('pc_caution_mode', $post_id) : 'aucune');
 
         // Initialisation à vide pour les repeaters inexistants
         foreach ($complex_fields as $field_key) {

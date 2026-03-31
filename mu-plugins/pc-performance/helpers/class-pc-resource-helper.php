@@ -32,16 +32,16 @@ class PC_Resource_Helper
     }
 
     /**
-     * Récupère de façon sécurisée une URL d'image depuis ACF
+     * Récupère de façon sécurisée une URL d'image (compatible PCR_Fields/ACF)
      * Gère les retours en Array, ID ou String
      * @param string $acf_key
      * @return string L'URL résolue ou une chaîne vide
      */
     public static function get_acf_image_url($acf_key)
     {
-        if (!function_exists('get_field')) return '';
+        if (!class_exists('PCR_Fields')) return '';
 
-        $v = get_field($acf_key);
+        $v = PCR_Fields::get($acf_key);
 
         if (is_array($v)) {
             if (!empty($v['url'])) {

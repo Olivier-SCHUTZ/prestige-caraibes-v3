@@ -20,10 +20,16 @@ class PCR_Voucher_Renderer extends PCR_Base_Document_Renderer
      */
     public function render($resa, $doc_number, $args = [])
     {
-        $logo_url = get_field('pc_pdf_logo', 'option');
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf = function_exists('get_field');
+
+        $logo_url = get_option('option_pc_pdf_logo') ?: get_option('pc_pdf_logo') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_logo', 'option') : ($has_acf ? get_field('pc_pdf_logo', 'option') : ''));
         $logo = $this->get_image_base64($logo_url);
-        $color = get_field('pc_pdf_primary_color', 'option') ?: '#000000';
-        $adresse_lieu = get_field('adresse_logement', $resa->item_id) ?: 'Adresse non communiquée';
+
+        $color = get_option('option_pc_pdf_primary_color') ?: get_option('pc_pdf_primary_color') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_primary_color', 'option') : ($has_acf ? get_field('pc_pdf_primary_color', 'option') : ''));
+        $color = $color ?: '#000000';
+
+        $adresse_lieu = ($pcr_exists ? PCR_Fields::get('adresse_logement', $resa->item_id) : ($has_acf ? get_field('adresse_logement', $resa->item_id) : '')) ?: 'Adresse non communiquée';
 
         ob_start();
 ?>

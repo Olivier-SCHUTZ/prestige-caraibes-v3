@@ -95,7 +95,7 @@ class PC_Logement_Search_Engine extends PC_Search_Engine_Base
 
                 // Filtre Ville
                 if ($ville) {
-                    $ville_du_logement = get_field('ville', $post_id);
+                    $ville_du_logement = class_exists('PCR_Fields') ? PCR_Fields::get('ville', $post_id) : get_post_meta($post_id, 'ville', true);
                     if (empty($ville_du_logement) || sanitize_title(remove_accents($ville_du_logement)) !== $ville_recherchee_sanitized) {
                         continue;
                     }
@@ -134,8 +134,8 @@ class PC_Logement_Search_Engine extends PC_Search_Engine_Base
                 'title'        => get_the_title($post->ID),
                 'link'         => get_permalink($post->ID),
                 'thumb'        => get_the_post_thumbnail_url($post->ID, 'medium_large') ?: '',
-                'price'        => get_field('base_price_from', $post->ID),
-                'city'         => get_field('ville', $post->ID),
+                'price'        => class_exists('PCR_Fields') ? PCR_Fields::get('base_price_from', $post->ID) : get_post_meta($post->ID, 'base_price_from', true),
+                'city'         => class_exists('PCR_Fields') ? PCR_Fields::get('ville', $post->ID) : get_post_meta($post->ID, 'ville', true),
                 'rating_avg'   => $stats['avg'] ?? 0,
                 'rating_count' => $stats['count'] ?? 0,
             ];
@@ -152,9 +152,9 @@ class PC_Logement_Search_Engine extends PC_Search_Engine_Base
         foreach ($posts as $post) {
             $map_data[] = [
                 'title'     => get_the_title($post->ID),
-                'price'     => get_field('base_price_from', $post->ID),
-                'latitude'  => (float) get_field('latitude', $post->ID),
-                'longitude' => (float) get_field('longitude', $post->ID),
+                'price'     => class_exists('PCR_Fields') ? PCR_Fields::get('base_price_from', $post->ID) : get_post_meta($post->ID, 'base_price_from', true),
+                'latitude'  => (float) (class_exists('PCR_Fields') ? PCR_Fields::get('latitude', $post->ID) : get_post_meta($post->ID, 'latitude', true)),
+                'longitude' => (float) (class_exists('PCR_Fields') ? PCR_Fields::get('longitude', $post->ID) : get_post_meta($post->ID, 'longitude', true)),
                 'link'      => get_permalink($post->ID),
             ];
         }

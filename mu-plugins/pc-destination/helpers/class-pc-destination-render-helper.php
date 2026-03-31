@@ -37,7 +37,7 @@ class PC_Destination_Render_Helper
                 echo '<h3 class="pc-card__title"><a href="' . esc_url($permalink) . '">' . esc_html($title) . '</a></h3>';
 
                 if ($context === 'logement') {
-                    $cap = function_exists('get_field') ? get_field('capacite', $pid) : '';
+                    $cap = class_exists('PCR_Fields') ? PCR_Fields::get('capacite', $pid) : get_post_meta($pid, 'capacite', true);
                     if ($cap) {
                         echo '<div class="pc-card__meta">' . esc_html($cap) . ' pers.</div>';
                     }

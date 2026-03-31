@@ -549,7 +549,8 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
      */
     protected static function get_ical_events(array $logement_ids, $start_date, $end_date)
     {
-        if (!function_exists('get_field')) {
+        // On s'assure que notre nouvelle classe ou ACF est disponible pour ne pas bloquer le processus
+        if (!class_exists('PCR_Fields') && !function_exists('get_field')) {
             return [];
         }
 
@@ -567,7 +568,10 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
                 continue;
             }
 
-            $ical_url = (string) get_field('ical_url', $logement_id);
+            // Utilisation de la nouvelle méthode PCR_Fields avec fallback ACF
+            $ical_url = (string) (class_exists('PCR_Fields')
+                ? PCR_Fields::get('ical_url', $logement_id)
+                : (function_exists('get_field') ? get_field('ical_url', $logement_id) : ''));
             if ($ical_url === '') {
                 continue;
             }

@@ -247,11 +247,10 @@ class PCR_ACF_Fields
      */
     public static function get_housing_promotions($post_id)
     {
-        if (!function_exists('get_field')) {
-            return [];
-        }
-
-        $promotions = get_field('pc_promo_blocks', $post_id);
+        // Utilisation du nouveau wrapper PCR_Fields avec fallback de sécurité
+        $promotions = class_exists('PCR_Fields')
+            ? PCR_Fields::get('pc_promo_blocks', $post_id)
+            : (function_exists('get_field') ? get_field('pc_promo_blocks', $post_id) : []);
 
         if (!is_array($promotions) || empty($promotions)) {
             return [];

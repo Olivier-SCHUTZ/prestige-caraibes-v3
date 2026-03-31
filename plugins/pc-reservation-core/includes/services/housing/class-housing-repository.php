@@ -266,17 +266,22 @@ class PCR_Housing_Repository
         $seasons = [];
         $promos  = [];
 
-        // 2. Fallback ACF (Utile UNIQUEMENT jusqu'à ce qu'on lance le script de migration)
+        // 2. Fallback PCR_Fields puis ACF (Utile UNIQUEMENT jusqu'à ce qu'on lance le script de migration)
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf    = function_exists('get_field');
+
         if (!empty($native_seasons) && is_array($native_seasons)) {
             $seasons = $native_seasons;
-        } else if (function_exists('get_field')) {
-            $seasons = self::format_seasons(get_field('pc_season_blocks', $post_id));
+        } else {
+            $raw_seasons = $pcr_exists ? PCR_Fields::get('pc_season_blocks', $post_id) : ($has_acf ? get_field('pc_season_blocks', $post_id) : []);
+            $seasons = self::format_seasons($raw_seasons);
         }
 
         if (!empty($native_promos) && is_array($native_promos)) {
             $promos = $native_promos;
-        } else if (function_exists('get_field')) {
-            $promos = self::format_promos(get_field('pc_promo_blocks', $post_id));
+        } else {
+            $raw_promos = $pcr_exists ? PCR_Fields::get('pc_promo_blocks', $post_id) : ($has_acf ? get_field('pc_promo_blocks', $post_id) : []);
+            $promos = self::format_promos($raw_promos);
         }
 
         return [

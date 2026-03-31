@@ -66,22 +66,33 @@ class PCR_Payment_Service
 
         // 3. FALLBACK LEGACY (Roue de secours temporaire)
         // Si la meta '_pc_payment_rules' n'existe pas encore (vieux logement non migré), 
-        // on tente une dernière fois de lire l'ancien système ACF pour ne pas bloquer les résas en cours.
-        if (function_exists('get_field')) {
-            $mode = get_field('pc_pay_mode', $item_id);
-            if ($mode) {
-                $rules['mode_pay']       = $mode;
-                $rules['deposit_type']   = get_field('pc_deposit_type', $item_id) ?: $rules['deposit_type'];
-                $rules['deposit_value']  = (float) (get_field('pc_deposit_value', $item_id) ?: $rules['deposit_value']);
-                $rules['delay_days']     = (int) (get_field('pc_balance_delay_days', $item_id) ?: $rules['delay_days']);
-            }
-            // Recherche de l'ancienne caution
-            $caution = get_field('pc_caution_amount', $item_id);
-            if (!$caution) $caution = get_field('caution', $item_id);
+        // on tente de lire via la nouvelle API PCR_Fields puis l'ancien système ACF pour ne pas bloquer les résas.
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf    = function_exists('get_field');
 
-            if (is_numeric($caution)) {
-                $rules['caution_amount'] = (float) $caution;
-            }
+        $mode = $pcr_exists ? PCR_Fields::get('pc_pay_mode', $item_id) : ($has_acf ? get_field('pc_pay_mode', $item_id) : null);
+
+        if ($mode) {
+            $rules['mode_pay']       = $mode;
+
+            $raw_deposit_type        = $pcr_exists ? PCR_Fields::get('pc_deposit_type', $item_id) : ($has_acf ? get_field('pc_deposit_type', $item_id) : null);
+            $rules['deposit_type']   = $raw_deposit_type ?: $rules['deposit_type'];
+
+            $raw_deposit_value       = $pcr_exists ? PCR_Fields::get('pc_deposit_value', $item_id) : ($has_acf ? get_field('pc_deposit_value', $item_id) : null);
+            $rules['deposit_value']  = (float) ($raw_deposit_value ?: $rules['deposit_value']);
+
+            $raw_delay_days          = $pcr_exists ? PCR_Fields::get('pc_balance_delay_days', $item_id) : ($has_acf ? get_field('pc_balance_delay_days', $item_id) : null);
+            $rules['delay_days']     = (int) ($raw_delay_days ?: $rules['delay_days']);
+        }
+
+        // Recherche de l'ancienne caution
+        $caution = $pcr_exists ? PCR_Fields::get('pc_caution_amount', $item_id) : ($has_acf ? get_field('pc_caution_amount', $item_id) : null);
+        if (!$caution) {
+            $caution = $pcr_exists ? PCR_Fields::get('caution', $item_id) : ($has_acf ? get_field('caution', $item_id) : null);
+        }
+
+        if (is_numeric($caution)) {
+            $rules['caution_amount'] = (float) $caution;
         }
 
         return $rules;

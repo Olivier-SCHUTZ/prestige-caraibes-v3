@@ -41,14 +41,15 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 }
 
 // 2. LOGIQUE LOGO
-$logo_url = '';
-if (function_exists('get_field')) {
-    // Priorité 1 : Logo spécifique Dashboard
-    $logo_url = get_field('pc_dashboard_logo', 'option');
-    // Priorité 2 : Logo général du site
-    if (empty($logo_url)) {
-        $logo_url = get_field('pc_general_logo', 'option');
-    }
+$pcr_exists = class_exists('PCR_Fields');
+$has_acf    = function_exists('get_field');
+
+// Priorité 1 : Logo spécifique Dashboard (Règle B)
+$logo_url = get_option('options_pc_dashboard_logo') ?: get_option('pc_dashboard_logo') ?: ($pcr_exists ? PCR_Fields::get('pc_dashboard_logo', 'option') : ($has_acf ? get_field('pc_dashboard_logo', 'option') : ''));
+
+// Priorité 2 : Logo général du site (Règle B)
+if (empty($logo_url)) {
+    $logo_url = get_option('options_pc_general_logo') ?: get_option('pc_general_logo') ?: ($pcr_exists ? PCR_Fields::get('pc_general_logo', 'option') : ($has_acf ? get_field('pc_general_logo', 'option') : ''));
 }
 
 // 3. CHARGEMENT DES ASSETS

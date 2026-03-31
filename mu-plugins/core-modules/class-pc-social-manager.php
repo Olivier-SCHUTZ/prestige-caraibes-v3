@@ -48,8 +48,8 @@ class PC_Social_Manager
     // ==========================================
     private function get_option($key)
     {
-        if (function_exists('get_field')) {
-            $v = get_field($key, 'option');
+        if (class_exists('PCR_Fields')) {
+            $v = PCR_Fields::get($key, 'option');
             if ($v !== null && $v !== false && $v !== '') return $v;
         }
         return get_option($key, '');
@@ -93,8 +93,8 @@ class PC_Social_Manager
                 break;
         }
 
-        if ($acf_key && function_exists('get_field')) {
-            $v = get_field($acf_key, $post_id);
+        if ($acf_key && class_exists('PCR_Fields')) {
+            $v = PCR_Fields::get($acf_key, $post_id);
             if (!empty($v)) return $this->plain_text($v, 300);
         }
 
@@ -130,8 +130,8 @@ class PC_Social_Manager
                 break;
         }
 
-        if ($acf_key && function_exists('get_field')) {
-            $v = get_field($acf_key, $post_id);
+        if ($acf_key && class_exists('PCR_Fields')) {
+            $v = PCR_Fields::get($acf_key, $post_id);
             if (!empty($v)) return $this->plain_text($v, 180);
         }
 
@@ -162,18 +162,18 @@ class PC_Social_Manager
                 }
             }
         } elseif ($pt === 'experience') {
-            $img = function_exists('get_field') ? get_field('exp_hero_desktop', $post_id) : (function_exists('pcseo_get_meta') ? pcseo_get_meta($post_id, 'hero_desktop') : '');
+            $img = class_exists('PCR_Fields') ? PCR_Fields::get('exp_hero_desktop', $post_id) : (function_exists('pcseo_get_meta') ? pcseo_get_meta($post_id, 'hero_desktop') : '');
             if (is_array($img) && !empty($img['url'])) $candidates[] = $img['url'];
             elseif (is_numeric($img)) $candidates[] = wp_get_attachment_url($img);
         } elseif ($pt === 'destination') {
-            $img = function_exists('get_field') ? get_field('dest_hero_desktop', $post_id) : (function_exists('pcseo_get_meta') ? pcseo_get_meta($post_id, 'hero_desktop') : '');
+            $img = class_exists('PCR_Fields') ? PCR_Fields::get('dest_hero_desktop', $post_id) : (function_exists('pcseo_get_meta') ? pcseo_get_meta($post_id, 'hero_desktop') : '');
             if (is_array($img) && !empty($img['url'])) $candidates[] = $img['url'];
             elseif (is_numeric($img)) $candidates[] = wp_get_attachment_url($img);
         }
 
         if ($thumb = get_the_post_thumbnail_url($post_id, 'full')) $candidates[] = $thumb;
 
-        $org_logo = function_exists('get_field') ? get_field('pc_org_logo', 'option') : '';
+        $org_logo = class_exists('PCR_Fields') ? PCR_Fields::get('pc_org_logo', 'option') : '';
         if (is_array($org_logo) && !empty($org_logo['url'])) $candidates[] = $org_logo['url'];
         elseif (is_numeric($org_logo)) $candidates[] = wp_get_attachment_url($org_logo);
 

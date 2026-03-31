@@ -76,10 +76,16 @@ class PCR_Messaging_Service
                 return ['success' => false, 'message' => "Modèle introuvable ($template_identifier)."];
             }
 
-            $subject = get_field('pc_msg_subject', $template_post->ID) ?: $template_post->post_title;
+            $pcr_exists = class_exists('PCR_Fields');
+            $has_acf    = function_exists('get_field');
+
+            $raw_subject = $pcr_exists ? PCR_Fields::get('pc_msg_subject', $template_post->ID) : ($has_acf ? get_field('pc_msg_subject', $template_post->ID) : '');
+            $subject = $raw_subject ?: $template_post->post_title;
+
             $body    = $template_post->post_content;
             $template_code = $template_post->post_name;
-            $attachment_pdf_id = get_field('pc_msg_attachment', $template_post->ID);
+
+            $attachment_pdf_id = $pcr_exists ? PCR_Fields::get('pc_msg_attachment', $template_post->ID) : ($has_acf ? get_field('pc_msg_attachment', $template_post->ID) : 0);
         }
 
         // 2. RÉCUPÉRATION DONNÉES RÉSERVATION
@@ -123,7 +129,12 @@ class PCR_Messaging_Service
         $body    = strtr(wpautop($body), $vars);
 
         if ($channel_source === 'email') {
-            $signature = get_field('pc_email_signature', 'option');
+            $pcr_exists = class_exists('PCR_Fields');
+            $has_acf    = function_exists('get_field');
+
+            // Sécurité maximale : DB native -> PCR_Fields -> Fallback ACF
+            $signature = get_option('options_pc_email_signature') ?: get_option('pc_email_signature') ?: ($pcr_exists ? PCR_Fields::get('pc_email_signature', 'option') : ($has_acf ? get_field('pc_email_signature', 'option') : ''));
+
             if (!empty($signature)) {
                 $body .= "<br><br><div class='pc-signature'>" . wpautop($signature) . "</div>";
             }

@@ -364,14 +364,16 @@ class PCR_Booking_Orchestrator
             'snapshot_politique'    => $pricing['snapshot_politique'] ?: null,
 
             'caution_montant' => (function () use ($item) {
-                if (!function_exists('get_field')) return 0;
-                $rules = get_field('regles_de_paiement', (int)$item['item_id']);
+                $rules = class_exists('PCR_Fields')
+                    ? PCR_Fields::get('regles_de_paiement', (int)$item['item_id'])
+                    : (function_exists('get_field') ? get_field('regles_de_paiement', (int)$item['item_id']) : []);
                 return isset($rules['pc_caution_amount']) ? (float)$rules['pc_caution_amount'] : 0;
             })(),
 
             'caution_mode' => (function () use ($item) {
-                if (!function_exists('get_field')) return 'aucune';
-                $rules = get_field('regles_de_paiement', (int)$item['item_id']);
+                $rules = class_exists('PCR_Fields')
+                    ? PCR_Fields::get('regles_de_paiement', (int)$item['item_id'])
+                    : (function_exists('get_field') ? get_field('regles_de_paiement', (int)$item['item_id']) : []);
                 return (isset($rules['pc_caution_type']) && !empty($rules['pc_caution_type']))
                     ? (string)$rules['pc_caution_type']
                     : 'aucune';

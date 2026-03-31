@@ -43,18 +43,18 @@ class PC_Utils_Shortcodes
     }
 
     /**
-     * [pc_acf field="nom_du_champ"] : Retourne la valeur texte d'un champ ACF du logement
+     * [pc_acf field="nom_du_champ"] : Retourne la valeur texte d'un champ du logement
      */
     public function render_acf($atts)
     {
         $a = shortcode_atts(['field' => '', 'default' => ''], $atts);
         $id = isset($_GET['l']) ? absint($_GET['l']) : 0;
 
-        if (!$id || empty($a['field']) || !function_exists('get_field')) {
+        if (!$id || empty($a['field']) || !class_exists('PCR_Fields')) {
             return esc_html($a['default']);
         }
 
-        $val = get_field($a['field'], $id);
+        $val = PCR_Fields::get($a['field'], $id);
 
         if (is_array($val)) {
             $val = implode(', ', array_map('trim', $val));

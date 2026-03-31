@@ -48,10 +48,13 @@ class PCR_Document_Financial_Calculator
             $lines = [];
         }
 
-        // Récupération des Taux via ACF
+        // Récupération des Taux de manière sécurisée (Natif > ACF)
         $item_id = $resa->item_id;
-        $tva_logement = (float) get_field('taux_tva', $item_id);
-        $tva_menage_val = get_field('taux_tva_menage', $item_id);
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf = function_exists('get_field');
+
+        $tva_logement = (float) ($pcr_exists ? PCR_Fields::get('taux_tva', $item_id) : ($has_acf ? get_field('taux_tva', $item_id) : 0));
+        $tva_menage_val = $pcr_exists ? PCR_Fields::get('taux_tva_menage', $item_id) : ($has_acf ? get_field('taux_tva_menage', $item_id) : '');
         $tva_menage = ($tva_menage_val !== '' && $tva_menage_val !== null) ? (float) $tva_menage_val : 8.5;
         $tva_plus_value = 8.5;
 

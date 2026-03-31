@@ -532,8 +532,10 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
                 'title' => $post->post_title
             ];
 
-            // 🚀 NOUVEAU : On récupère et "traduit" les tarifs ACF pour Vue.js
-            $tarifs = function_exists('get_field') ? get_field('exp_types_de_tarifs', $post->ID) : [];
+            // 🚀 NOUVEAU : On récupère et "traduit" les tarifs (indépendant d'ACF) pour Vue.js
+            $tarifs = class_exists('PCR_Fields')
+                ? PCR_Fields::get('exp_types_de_tarifs', $post->ID)
+                : (function_exists('get_field') ? get_field('exp_types_de_tarifs', $post->ID) : []);
             $formatted_tarifs = [];
 
             if (is_array($tarifs)) {
@@ -820,12 +822,14 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
             return $tarif_type;
         }
 
-        // Sinon, on cherche dans la configuration ACF
-        if (!function_exists('get_field')) {
+        // Sinon, on cherche dans la configuration centralisée
+        if (!class_exists('PCR_Fields') && !function_exists('get_field')) {
             return null;
         }
 
-        $tarifs = get_field('exp_types_de_tarifs', $item_id);
+        $tarifs = class_exists('PCR_Fields')
+            ? PCR_Fields::get('exp_types_de_tarifs', $item_id)
+            : (function_exists('get_field') ? get_field('exp_types_de_tarifs', $item_id) : null);
         if (!is_array($tarifs)) {
             return null;
         }
@@ -861,11 +865,13 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
      */
     private static function get_acf_experience_config($item_id, $tarif_type)
     {
-        if (!function_exists('get_field')) {
+        if (!class_exists('PCR_Fields') && !function_exists('get_field')) {
             return null;
         }
 
-        $tarifs = get_field('exp_types_de_tarifs', $item_id);
+        $tarifs = class_exists('PCR_Fields')
+            ? PCR_Fields::get('exp_types_de_tarifs', $item_id)
+            : (function_exists('get_field') ? get_field('exp_types_de_tarifs', $item_id) : null);
         if (!is_array($tarifs)) {
             return null;
         }
@@ -1051,11 +1057,13 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
      */
     private static function fallback_resolve_tarif_from_quote_lines($item_id, $quote_lines)
     {
-        if (empty($item_id) || !function_exists('get_field') || empty($quote_lines)) {
+        if (empty($item_id) || (!class_exists('PCR_Fields') && !function_exists('get_field')) || empty($quote_lines)) {
             return null;
         }
 
-        $tarifs = get_field('exp_types_de_tarifs', $item_id);
+        $tarifs = class_exists('PCR_Fields')
+            ? PCR_Fields::get('exp_types_de_tarifs', $item_id)
+            : (function_exists('get_field') ? get_field('exp_types_de_tarifs', $item_id) : null);
         if (!is_array($tarifs)) {
             return null;
         }
@@ -1145,11 +1153,13 @@ class PCR_Reservation_Ajax_Controller extends PCR_Base_Ajax_Controller
      */
     private static function get_first_available_tarif($item_id)
     {
-        if (empty($item_id) || !function_exists('get_field')) {
+        if (empty($item_id) || (!class_exists('PCR_Fields') && !function_exists('get_field'))) {
             return null;
         }
 
-        $tarifs = get_field('exp_types_de_tarifs', $item_id);
+        $tarifs = class_exists('PCR_Fields')
+            ? PCR_Fields::get('exp_types_de_tarifs', $item_id)
+            : (function_exists('get_field') ? get_field('exp_types_de_tarifs', $item_id) : null);
         if (!is_array($tarifs) || empty($tarifs)) {
             return null;
         }

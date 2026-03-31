@@ -80,15 +80,15 @@ class PC_Experience_Search_Engine extends PC_Search_Engine_Base
             foreach ($query->posts as $post) {
                 $post_id = $post->ID;
 
-                // Filtre Ville (sous-champ ACF 'exp_lieux_horaires_depart')
+                // Filtre Ville (sous-champ 'exp_lieux_horaires_depart')
                 if (!empty($ville)) {
                     $ville_trouvee = false;
-                    if (have_rows('exp_lieux_horaires_depart', $post_id)) {
-                        while (have_rows('exp_lieux_horaires_depart', $post_id)) {
-                            the_row();
-                            if (get_sub_field('exp_lieu_depart') === $ville) {
+                    $lieux = class_exists('PCR_Fields') ? PCR_Fields::get('exp_lieux_horaires_depart', $post_id) : [];
+                    if (is_array($lieux)) {
+                        foreach ($lieux as $lieu) {
+                            if (isset($lieu['exp_lieu_depart']) && $lieu['exp_lieu_depart'] === $ville) {
                                 $ville_trouvee = true;
-                                break; // Sort de la boucle while
+                                break;
                             }
                         }
                     }
@@ -97,8 +97,8 @@ class PC_Experience_Search_Engine extends PC_Search_Engine_Base
                     }
                 }
 
-                // Filtre Prix (Logique complexe sur les grilles ACF 'exp_types_de_tarifs')
-                $tarifs = get_field('exp_types_de_tarifs', $post_id);
+                // Filtre Prix (Logique complexe sur les grilles 'exp_types_de_tarifs')
+                $tarifs = class_exists('PCR_Fields') ? PCR_Fields::get('exp_types_de_tarifs', $post_id) : [];
                 $base_price = null;
 
                 if ($tarifs) {
@@ -135,11 +135,11 @@ class PC_Experience_Search_Engine extends PC_Search_Engine_Base
             $post_id = $post->ID;
 
             // Appel à l'ancien Helper (temporairement) pour le label de prix
-            $tarifs      = get_field('exp_types_de_tarifs', $post_id);
+            $tarifs      = class_exists('PCR_Fields') ? PCR_Fields::get('exp_types_de_tarifs', $post_id) : [];
             $price_label = function_exists('pc_exp_get_vignette_price_label') ? pc_exp_get_vignette_price_label($tarifs) : '';
 
             // Récupération de la ville principale
-            $lieux     = get_field('exp_lieux_horaires_depart', $post_id);
+            $lieux     = class_exists('PCR_Fields') ? PCR_Fields::get('exp_lieux_horaires_depart', $post_id) : [];
             $city_name = (!empty($lieux) && !empty($lieux[0])) ? ($lieux[0]['exp_lieu_depart'] ?? '') : '';
 
             $vignettes_data[] = [
@@ -162,14 +162,14 @@ class PC_Experience_Search_Engine extends PC_Search_Engine_Base
         $map_data = [];
         foreach ($posts as $post) {
             $post_id = $post->ID;
-            $lieux = get_field('exp_lieux_horaires_depart', $post_id);
+            $lieux = class_exists('PCR_Fields') ? PCR_Fields::get('exp_lieux_horaires_depart', $post_id) : [];
 
             if (!empty($lieux) && !empty($lieux[0])) {
                 $lat = isset($lieux[0]['lat_exp']) ? (float) $lieux[0]['lat_exp'] : null;
                 $lng = isset($lieux[0]['longitude']) ? (float) $lieux[0]['longitude'] : null;
 
                 if ($lat !== null && $lng !== null) {
-                    $tarifs      = get_field('exp_types_de_tarifs', $post_id);
+                    $tarifs      = class_exists('PCR_Fields') ? PCR_Fields::get('exp_types_de_tarifs', $post_id) : [];
                     $price_label = function_exists('pc_exp_get_vignette_price_label') ? pc_exp_get_vignette_price_label($tarifs) : '';
 
                     $map_data[] = [

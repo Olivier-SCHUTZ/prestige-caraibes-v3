@@ -99,21 +99,18 @@ class PC_Experiences_Shortcode extends PC_Shortcode_Base
     }
 
     /**
-     * Helper : Extrait le prix "à partir de" depuis le répéteur ACF des tarifs
-     */
-    /**
-     * Helper : Extrait le prix "à partir de" depuis le répéteur ACF des tarifs
+     * Helper : Extrait le prix "à partir de" depuis le répéteur des tarifs
      */
     private function get_experience_price($exp_id)
     {
         $price = 0;
 
-        // 1. Protection vitale : Si ACF est désactivé, on ne plante pas !
-        if (!function_exists('get_field')) {
+        // 1. Protection vitale : On utilise le système natif PC-Reservation-Core
+        if (!class_exists('PCR_Fields')) {
             return $price;
         }
 
-        $pricing_tiers = get_field('exp_types_de_tarifs', $exp_id);
+        $pricing_tiers = PCR_Fields::get('exp_types_de_tarifs', $exp_id);
 
         if (is_array($pricing_tiers) && !empty($pricing_tiers)) {
             $first_tier = $pricing_tiers[0]; // On prend le premier palier

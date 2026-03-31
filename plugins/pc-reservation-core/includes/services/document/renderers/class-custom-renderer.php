@@ -63,15 +63,21 @@ class PCR_Custom_Renderer extends PCR_Base_Document_Renderer
         $content = wpautop($post->post_content);
         $content = str_replace(array_keys($variables), array_values($variables), $content);
 
-        // 5. Branding
-        $logo_url = get_field('pc_pdf_logo', 'option');
+        // 5. Branding sécurisé
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf = function_exists('get_field');
+
+        $logo_url = get_option('option_pc_pdf_logo') ?: get_option('pc_pdf_logo') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_logo', 'option') : ($has_acf ? get_field('pc_pdf_logo', 'option') : ''));
         $logo = $this->get_image_base64($logo_url);
-        $color = get_field('pc_pdf_primary_color', 'option') ?: '#000000';
+
+        $color = get_option('option_pc_pdf_primary_color') ?: get_option('pc_pdf_primary_color') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_primary_color', 'option') : ($has_acf ? get_field('pc_pdf_primary_color', 'option') : ''));
+        $color = $color ?: '#000000';
+
         $company = [
-            'name'    => get_field('pc_legal_name', 'option'),
-            'siret'   => get_field('pc_legal_siret', 'option'),
-            'address' => get_field('pc_legal_address', 'option'),
-            'email'   => get_field('pc_legal_email', 'option'),
+            'name'    => get_option('option_pc_legal_name') ?: get_option('pc_legal_name') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_name', 'option') : ($has_acf ? get_field('pc_legal_name', 'option') : '')),
+            'siret'   => get_option('option_pc_legal_siret') ?: get_option('pc_legal_siret') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_siret', 'option') : ($has_acf ? get_field('pc_legal_siret', 'option') : '')),
+            'address' => get_option('option_pc_legal_address') ?: get_option('pc_legal_address') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_address', 'option') : ($has_acf ? get_field('pc_legal_address', 'option') : '')),
+            'email'   => get_option('option_pc_legal_email') ?: get_option('pc_legal_email') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_email', 'option') : ($has_acf ? get_field('pc_legal_email', 'option') : '')),
         ];
 
         ob_start();
@@ -143,7 +149,9 @@ class PCR_Custom_Renderer extends PCR_Base_Document_Renderer
             // INJECTION CGV (SI LIÉES DANS L'ADMIN)
             $custom_cgv_content = '';
             if (!empty($template_id) && is_numeric($template_id)) {
-                $custom_cgv_content = get_field('pc_linked_cgv', $template_id);
+                $custom_cgv_content = class_exists('PCR_Fields')
+                    ? PCR_Fields::get('pc_linked_cgv', $template_id)
+                    : (function_exists('get_field') ? get_field('pc_linked_cgv', $template_id) : '');
             }
             if (!empty($custom_cgv_content)) {
                 echo '<div style="page-break-before: always;"></div>';

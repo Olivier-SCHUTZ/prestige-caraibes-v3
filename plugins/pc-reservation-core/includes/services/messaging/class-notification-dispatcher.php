@@ -83,13 +83,16 @@ class PCR_Notification_Dispatcher
      */
     private function wrap_email_html($subject, $content)
     {
-        // 1. Récupération du branding (Logique en cascade)
+        // 1. Récupération du branding (Logique en cascade avec Règle B)
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf    = function_exists('get_field');
+
         // A. Nouveau champ général
-        $logo_url = get_field('pc_general_logo', 'option');
+        $logo_url = get_option('options_pc_general_logo') ?: get_option('pc_general_logo') ?: ($pcr_exists ? PCR_Fields::get('pc_general_logo', 'option') : ($has_acf ? get_field('pc_general_logo', 'option') : ''));
 
         // B. Fallback : Champ PDF
         if (empty($logo_url)) {
-            $logo_url = get_field('pc_pdf_logo', 'option');
+            $logo_url = get_option('options_pc_pdf_logo') ?: get_option('pc_pdf_logo') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_logo', 'option') : ($has_acf ? get_field('pc_pdf_logo', 'option') : ''));
         }
 
         // C. Fallback : Fichier physique spécifique (Hardcodé)
@@ -102,9 +105,13 @@ class PCR_Notification_Dispatcher
             }
         }
 
-        $primary_color = get_field('pc_pdf_primary_color', 'option') ?: '#6366f1'; // Violet par défaut
+        $raw_primary_color = get_option('options_pc_pdf_primary_color') ?: get_option('pc_pdf_primary_color') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_primary_color', 'option') : ($has_acf ? get_field('pc_pdf_primary_color', 'option') : ''));
+        $primary_color = $raw_primary_color ?: '#6366f1'; // Violet par défaut
+
         $bg_color      = '#f3f4f6'; // Gris très clair
-        $legal_name    = get_field('pc_legal_name', 'option') ?: get_bloginfo('name');
+
+        $raw_legal_name = get_option('options_pc_legal_name') ?: get_option('pc_legal_name') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_name', 'option') : ($has_acf ? get_field('pc_legal_name', 'option') : ''));
+        $legal_name    = $raw_legal_name ?: get_bloginfo('name');
 
         // 2. Construction du Template Email
         ob_start();

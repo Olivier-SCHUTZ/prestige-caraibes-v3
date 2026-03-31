@@ -221,7 +221,7 @@ class PCR_Booking_Pricing_Calculator
 
     private function auto_generate_experience_pricing(array $normalized)
     {
-        if (!function_exists('get_field')) return null;
+        if (!class_exists('PCR_Fields') && !function_exists('get_field')) return null;
 
         $item_id = (int) ($normalized['item']['item_id'] ?? 0);
         $identifier = $normalized['item']['experience_tarif_type'] ?? '';
@@ -300,9 +300,12 @@ class PCR_Booking_Pricing_Calculator
 
     private function find_experience_pricing_row($item_id, $identifier)
     {
-        if (!$item_id || !function_exists('get_field')) return null;
+        if (!$item_id || (!class_exists('PCR_Fields') && !function_exists('get_field'))) return null;
 
-        $rows = get_field('exp_types_de_tarifs', $item_id);
+        $rows = class_exists('PCR_Fields')
+            ? PCR_Fields::get('exp_types_de_tarifs', $item_id)
+            : (function_exists('get_field') ? get_field('exp_types_de_tarifs', $item_id) : null);
+
         if (empty($rows)) return null;
 
         $identifier      = (string) $identifier;
@@ -354,8 +357,16 @@ class PCR_Booking_Pricing_Calculator
         if ($this->experience_type_choices !== null) return $this->experience_type_choices;
 
         $choices = [];
-        if (function_exists('get_field_object')) {
+
+        // Sécurisation spéciale : On tente de récupérer l'objet du champ (configuration)
+        $field_object = null;
+        if (class_exists('PCR_Fields') && method_exists('PCR_Fields', 'get_field_object')) {
+            $field_object = PCR_Fields::get_field_object('exp_types_de_tarifs');
+        } elseif (function_exists('get_field_object')) {
             $field_object = get_field_object('exp_types_de_tarifs');
+        }
+
+        if (!empty($field_object)) {
             if (!empty($field_object['sub_fields'])) {
                 foreach ($field_object['sub_fields'] as $sub_field) {
                     if (!empty($sub_field['name']) && $sub_field['name'] === 'exp_type' && !empty($sub_field['choices'])) {

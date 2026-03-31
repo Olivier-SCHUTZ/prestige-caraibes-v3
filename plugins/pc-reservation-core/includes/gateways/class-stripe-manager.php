@@ -15,10 +15,21 @@ class PCR_Stripe_Manager
      */
     private static function get_secret_key()
     {
-        if (!function_exists('get_field')) return '';
+        // Récupération ultra-robuste des options (Natif > PCR_Fields > ACF)
+        $mode = get_option('option_pc_stripe_mode')
+            ?: get_option('pc_stripe_mode')
+            ?: (class_exists('PCR_Fields') ? PCR_Fields::get('pc_stripe_mode', 'option') : (function_exists('get_field') ? get_field('pc_stripe_mode', 'option') : ''));
 
-        $mode = get_field('pc_stripe_mode', 'option');
-        $key = ($mode === 'live') ? get_field('pc_stripe_live_sk', 'option') : get_field('pc_stripe_test_sk', 'option');
+        $key = '';
+        if ($mode === 'live') {
+            $key = get_option('option_pc_stripe_live_sk')
+                ?: get_option('pc_stripe_live_sk')
+                ?: (class_exists('PCR_Fields') ? PCR_Fields::get('pc_stripe_live_sk', 'option') : (function_exists('get_field') ? get_field('pc_stripe_live_sk', 'option') : ''));
+        } else {
+            $key = get_option('option_pc_stripe_test_sk')
+                ?: get_option('pc_stripe_test_sk')
+                ?: (class_exists('PCR_Fields') ? PCR_Fields::get('pc_stripe_test_sk', 'option') : (function_exists('get_field') ? get_field('pc_stripe_test_sk', 'option') : ''));
+        }
 
         // Sanity check : Prévention des incohérences critiques
         if ($mode === 'live' && strpos($key, 'sk_test_') === 0) {

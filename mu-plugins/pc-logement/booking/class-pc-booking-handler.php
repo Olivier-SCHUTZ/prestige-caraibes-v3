@@ -65,8 +65,8 @@ class PC_Booking_Handler
 
         // === DÉTECTION DU MODE DE RÉSERVATION ===
         $mode_reservation = 'demande';
-        if (function_exists('get_field')) {
-            $setting = get_field('mode_reservation', $logement_id);
+        if (class_exists('PCR_Fields')) {
+            $setting = PCR_Fields::get('mode_reservation', $logement_id);
             if (is_array($setting)) $setting = $setting['value'] ?? ($setting[0] ?? '');
             if ($setting === 'log_directe' || $setting === 'log_direct') {
                 $mode_reservation = 'directe';
@@ -77,8 +77,8 @@ class PC_Booking_Handler
         $caution_montant = 0;
         $caution_mode    = 'aucune';
 
-        if (function_exists('get_field')) {
-            $rules = get_field('regles_de_paiement', $logement_id);
+        if (class_exists('PCR_Fields')) {
+            $rules = PCR_Fields::get('regles_de_paiement', $logement_id);
             if (is_array($rules)) {
                 $caution_montant = isset($rules['pc_caution_amount']) ? (float) $rules['pc_caution_amount'] : 0;
                 $raw_mode        = isset($rules['pc_caution_type'])   ? $rules['pc_caution_type']   : '';

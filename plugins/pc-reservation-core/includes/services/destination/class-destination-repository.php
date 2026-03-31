@@ -77,11 +77,9 @@ class PCR_Destination_Repository
                     'thumbnail' => wp_get_attachment_image_src($thumbnail_id, 'thumbnail')[0] ?? '',
                 ] : ['id' => 0, 'url' => '', 'thumbnail' => ''];
 
-                // Récupération des données clés via le pont hybride
-                if (class_exists('PCR_Fields')) {
-                    $item['dest_region'] = PCR_Fields::get('dest_region', $post_id, '');
-                    $item['dest_featured'] = (bool) PCR_Fields::get('dest_featured', $post_id, false);
-                }
+                // Récupération des données clés via le pont hybride avec fallback sécurisé
+                $item['dest_region'] = class_exists('PCR_Fields') ? PCR_Fields::get('dest_region', $post_id, '') : (function_exists('get_field') ? get_field('dest_region', $post_id) : '');
+                $item['dest_featured'] = (bool) (class_exists('PCR_Fields') ? PCR_Fields::get('dest_featured', $post_id, false) : (function_exists('get_field') ? get_field('dest_featured', $post_id) : false));
 
                 $item['status_label'] = $config->get_status_label($item['status']);
                 $item['status_class'] = $config->get_status_class($item['status']);
@@ -124,7 +122,8 @@ class PCR_Destination_Repository
         $complex_fields = ['dest_infos', 'dest_faq'];
 
         foreach ($mapped_fields as $normalized_key => $meta_key) {
-            $value = PCR_Fields::get($meta_key, $post_id);
+            // Sécurité stricte avant d'appeler PCR_Fields
+            $value = class_exists('PCR_Fields') ? PCR_Fields::get($meta_key, $post_id) : (function_exists('get_field') ? get_field($meta_key, $post_id) : null);
 
             // BOUCLIER ANTI-CRASH ACF (comme pour les expériences) : 
             // Si la donnée native a été écrasée par un entier (nombre de lignes) par WP Admin
@@ -137,10 +136,13 @@ class PCR_Destination_Repository
         }
 
         // =========================================================
-        // Traitement spécifique des images pour Vue.js
+        // Traitement spécifique des images pour Vue.js avec fallback
         // =========================================================
-        $details['dest_hero_desktop'] = $formatter->process_image_for_display(PCR_Fields::get('dest_hero_desktop', $post_id));
-        $details['dest_hero_mobile'] = $formatter->process_image_for_display(PCR_Fields::get('dest_hero_mobile', $post_id));
+        $hero_desktop = class_exists('PCR_Fields') ? PCR_Fields::get('dest_hero_desktop', $post_id) : (function_exists('get_field') ? get_field('dest_hero_desktop', $post_id) : null);
+        $details['dest_hero_desktop'] = $formatter->process_image_for_display($hero_desktop);
+
+        $hero_mobile = class_exists('PCR_Fields') ? PCR_Fields::get('dest_hero_mobile', $post_id) : (function_exists('get_field') ? get_field('dest_hero_mobile', $post_id) : null);
+        $details['dest_hero_mobile'] = $formatter->process_image_for_display($hero_mobile);
 
         // Initialisation sécurisée pour les repeaters inexistants
         foreach ($complex_fields as $field_key) {

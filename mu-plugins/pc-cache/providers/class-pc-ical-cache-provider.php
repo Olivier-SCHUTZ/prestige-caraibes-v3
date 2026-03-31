@@ -44,7 +44,7 @@ class PC_Ical_Cache_Provider
         $error_count = 0;
 
         foreach ($logement_ids->posts as $post_id) {
-            $ical_url = get_field('ical_url', $post_id);
+            $ical_url = class_exists('PCR_Fields') ? PCR_Fields::get('ical_url', $post_id) : get_post_meta($post_id, 'ical_url', true);
 
             // Requête HTTP avec timeout conservé à 20s
             $response = wp_remote_get($ical_url, ['timeout' => 20]);

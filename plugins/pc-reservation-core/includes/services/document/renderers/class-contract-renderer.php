@@ -33,12 +33,12 @@ class PCR_Contract_Renderer extends PCR_Base_Document_Renderer
         if ($source === 'abritel') $platform_name = 'Abritel / Vrbo';
 
         // --- SECURISATION RÉCUPÉRATION ACF ---
-        $infos = get_field('information_contrat_location', $item_id);
+        $infos = class_exists('PCR_Fields') ? PCR_Fields::get('information_contrat_location', $item_id) : (function_exists('get_field') ? get_field('information_contrat_location', $item_id) : []);
         if (!is_array($infos)) $infos = [];
 
         $get_val = function ($key) use ($infos, $item_id) {
             if (!empty($infos[$key])) return $infos[$key];
-            return get_field($key, $item_id);
+            return class_exists('PCR_Fields') ? PCR_Fields::get($key, $item_id) : (function_exists('get_field') ? get_field($key, $item_id) : null);
         };
 
         // Infos Propriétaire & Bien
@@ -56,10 +56,10 @@ class PCR_Contract_Renderer extends PCR_Base_Document_Renderer
         $has_guide    = $get_val('has_guide_numerique');
 
         // Politique Annulation (Wysiwyg)
-        $politique_annulation = get_field('politique_dannulation', $item_id) ?: 'Voir conditions sur le site.';
+        $politique_annulation = (class_exists('PCR_Fields') ? PCR_Fields::get('politique_dannulation', $item_id) : (function_exists('get_field') ? get_field('politique_dannulation', $item_id) : '')) ?: 'Voir conditions sur le site.';
 
         // Règles de Paiement
-        $rules_payment = get_field('regles_de_paiement', $item_id);
+        $rules_payment = class_exists('PCR_Fields') ? PCR_Fields::get('regles_de_paiement', $item_id) : (function_exists('get_field') ? get_field('regles_de_paiement', $item_id) : []);
         if (!is_array($rules_payment)) $rules_payment = [];
 
         $pay_mode       = $rules_payment['pc_pay_mode'] ?? 'acompte_plus_solde';
@@ -69,19 +69,24 @@ class PCR_Contract_Renderer extends PCR_Base_Document_Renderer
         $caution_amount = $rules_payment['pc_caution_amount'] ?? 0;
 
         // Agence & Design & Signature
-        $logo_url = get_field('pc_pdf_logo', 'option');
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf = function_exists('get_field');
+
+        $logo_url = get_option('option_pc_pdf_logo') ?: get_option('pc_pdf_logo') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_logo', 'option') : ($has_acf ? get_field('pc_pdf_logo', 'option') : ''));
         $logo = $this->get_image_base64($logo_url);
 
         $signature_url = get_site_url(null, '/wp-content/uploads/2025/12/Responsable.png');
         $signature_img = $this->get_image_base64($signature_url);
 
-        $color = get_field('pc_pdf_primary_color', 'option') ?: '#000000';
+        $color = get_option('option_pc_pdf_primary_color') ?: get_option('pc_pdf_primary_color') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_primary_color', 'option') : ($has_acf ? get_field('pc_pdf_primary_color', 'option') : ''));
+        $color = $color ?: '#000000';
+
         $agency = [
-            'name'    => get_field('pc_legal_name', 'option'),
-            'address' => get_field('pc_legal_address', 'option'),
-            'email'   => get_field('pc_legal_email', 'option'),
-            'phone'   => get_field('pc_legal_phone', 'option'),
-            'siret'   => get_field('pc_legal_siret', 'option'),
+            'name'    => get_option('option_pc_legal_name') ?: get_option('pc_legal_name') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_name', 'option') : ($has_acf ? get_field('pc_legal_name', 'option') : '')),
+            'address' => get_option('option_pc_legal_address') ?: get_option('pc_legal_address') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_address', 'option') : ($has_acf ? get_field('pc_legal_address', 'option') : '')),
+            'email'   => get_option('option_pc_legal_email') ?: get_option('pc_legal_email') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_email', 'option') : ($has_acf ? get_field('pc_legal_email', 'option') : '')),
+            'phone'   => get_option('option_pc_legal_phone') ?: get_option('pc_legal_phone') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_phone', 'option') : ($has_acf ? get_field('pc_legal_phone', 'option') : '')),
+            'siret'   => get_option('option_pc_legal_siret') ?: get_option('pc_legal_siret') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_siret', 'option') : ($has_acf ? get_field('pc_legal_siret', 'option') : '')),
         ];
 
         // 🎯 Appel de notre service financier

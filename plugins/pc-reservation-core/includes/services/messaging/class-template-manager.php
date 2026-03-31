@@ -202,10 +202,16 @@ class PCR_Template_Manager
     {
         $field['choices'] = [];
 
-        if (have_rows('pc_pdf_cgv_library', 'option')) {
-            while (have_rows('pc_pdf_cgv_library', 'option')) {
-                the_row();
-                $title = get_sub_field('cgv_title');
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf    = function_exists('get_field');
+
+        // Règle B : Récupération native du répéteur
+        $cgv_library = get_option('options_pc_pdf_cgv_library') ?: get_option('pc_pdf_cgv_library') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_cgv_library', 'option') : ($has_acf ? get_field('pc_pdf_cgv_library', 'option') : []));
+
+        // Règle C : Itération native PHP
+        if (!empty($cgv_library) && is_array($cgv_library)) {
+            foreach ($cgv_library as $row) {
+                $title = $row['cgv_title'] ?? '';
                 if ($title) {
                     $field['choices'][$title] = $title;
                 }
@@ -243,9 +249,12 @@ class PCR_Template_Manager
 
         if (!empty($templates)) {
             $custom_choices = [];
+            $pcr_exists = class_exists('PCR_Fields');
+            $has_acf    = function_exists('get_field');
 
             foreach ($templates as $template) {
-                $doc_type = get_field('pc_doc_type', $template->ID) ?: 'document';
+                $raw_doc_type = $pcr_exists ? PCR_Fields::get('pc_doc_type', $template->ID) : ($has_acf ? get_field('pc_doc_type', $template->ID) : '');
+                $doc_type = $raw_doc_type ?: 'document';
 
                 $icon = '📄';
                 switch ($doc_type) {
@@ -438,11 +447,16 @@ class PCR_Template_Manager
         }
 
         $formatted_replies = [];
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf    = function_exists('get_field');
 
         foreach ($quick_replies as $reply) {
-            $category = get_field('pc_message_category', $reply->ID);
-            $subject = get_field('pc_msg_subject', $reply->ID) ?: $reply->post_title;
-            $attachment_key = get_field('pc_msg_attachment', $reply->ID);
+            $category = $pcr_exists ? PCR_Fields::get('pc_message_category', $reply->ID) : ($has_acf ? get_field('pc_message_category', $reply->ID) : '');
+
+            $raw_subject = $pcr_exists ? PCR_Fields::get('pc_msg_subject', $reply->ID) : ($has_acf ? get_field('pc_msg_subject', $reply->ID) : '');
+            $subject = $raw_subject ?: $reply->post_title;
+
+            $attachment_key = $pcr_exists ? PCR_Fields::get('pc_msg_attachment', $reply->ID) : ($has_acf ? get_field('pc_msg_attachment', $reply->ID) : '');
             $attachment_name = '';
 
             if ($attachment_key) {
@@ -488,13 +502,18 @@ class PCR_Template_Manager
             return ['success' => false, 'message' => 'Template introuvable.'];
         }
 
-        $category = get_field('pc_message_category', $template_id);
+        $pcr_exists = class_exists('PCR_Fields');
+        $has_acf    = function_exists('get_field');
+
+        $category = $pcr_exists ? PCR_Fields::get('pc_message_category', $template_id) : ($has_acf ? get_field('pc_message_category', $template_id) : '');
         if ($category !== 'quick_reply') {
             return ['success' => false, 'message' => 'Ce template n\'est pas une réponse rapide.'];
         }
 
         $content = wp_strip_all_tags($template->post_content);
-        $subject = get_field('pc_msg_subject', $template_id) ?: $template->post_title;
+
+        $raw_subject = $pcr_exists ? PCR_Fields::get('pc_msg_subject', $template_id) : ($has_acf ? get_field('pc_msg_subject', $template_id) : '');
+        $subject = $raw_subject ?: $template->post_title;
 
         if ($reservation_id) {
             $reservation_id = (int) $reservation_id;
