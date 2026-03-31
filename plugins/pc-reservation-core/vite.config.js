@@ -17,6 +17,8 @@ export default defineConfig({
         calendar: "src/modules/calendar/main.js",
         // 🌴 NOUVEAU : On ajoute le module Destinations
         destination: resolve(__dirname, "src/modules/destination/main.js"),
+        settings: resolve(__dirname, "src/modules/settings/main.js"),
+        templates: resolve(__dirname, "src/modules/templates/main.js"),
       },
     },
   },

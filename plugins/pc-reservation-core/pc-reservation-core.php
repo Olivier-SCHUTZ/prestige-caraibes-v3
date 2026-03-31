@@ -56,6 +56,8 @@ require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-document-ajax-c
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-housing-ajax-controller.php';
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-experience-ajax-controller.php';
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-field-ajax-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-template-api-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-document-template-api-controller.php';
 // ✨ NOUVEAU : API Controller pour l'interface Vue.js (Dashboard)
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-dashboard-api-controller.php';
 require_once PC_RES_CORE_PATH . 'includes/ajax/controllers/class-experience-bridge-controller.php';
@@ -99,6 +101,7 @@ require_once PC_RES_CORE_PATH . 'includes/class-settings.php';
 require_once PC_RES_CORE_PATH . 'includes/services/settings/class-settings-config.php';
 require_once PC_RES_CORE_PATH . 'includes/services/settings/class-webhook-simulator.php';
 require_once PC_RES_CORE_PATH . 'includes/services/settings/class-settings-controller.php';
+require_once PC_RES_CORE_PATH . 'includes/services/settings/class-settings-api.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-manager.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-ajax.php';
 require_once PC_RES_CORE_PATH . 'includes/gateways/class-stripe-webhook.php';
@@ -185,6 +188,20 @@ add_action('plugins_loaded', function () {
     // Initialisation des réglages
     if (class_exists('PCR_Settings')) {
         PCR_Settings::init();
+    }
+
+    if (class_exists('PCR_Settings_API')) {
+        PCR_Settings_API::get_instance();
+    }
+
+    // Initialisation de l'API Templates Vue V2
+    if (class_exists('PCR_Template_API_Controller')) {
+        PCR_Template_API_Controller::get_instance();
+    }
+
+    // Initialisation de l'API Modèles PDF
+    if (class_exists('PCR_Document_Template_API_Controller')) {
+        PCR_Document_Template_API_Controller::get_instance();
     }
 
     // Initialisation AJAX Stripe
@@ -436,6 +453,8 @@ add_action('wp_enqueue_scripts', function () {
         PCR_Vite_Loader::enqueue_entry('src/modules/experience/main.js');
         PCR_Vite_Loader::enqueue_entry('src/modules/housing/main.js');
         PCR_Vite_Loader::enqueue_entry('src/modules/destination/main.js');
+        PCR_Vite_Loader::enqueue_entry('src/modules/settings/main.js');
+        PCR_Vite_Loader::enqueue_entry('src/modules/templates/main.js');
     }
 }, 100);
 

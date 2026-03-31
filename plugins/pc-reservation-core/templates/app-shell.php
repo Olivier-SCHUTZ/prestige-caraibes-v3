@@ -528,6 +528,14 @@ do_action('pc_resa_app_enqueue_assets');
                         <span class="pc-nav-icon">🌴</span>
                         <span class="pc-nav-label">Mes Destinations</span>
                     </a>
+                    <a href="#settings" class="pc-nav-item" onclick="switchTab('settings')">
+                        <span class="pc-nav-icon">⚙️</span>
+                        <span class="pc-nav-label">Configuration</span>
+                    </a>
+                    <a href="#templates" class="pc-nav-item" onclick="switchTab('templates')">
+                        <span class="pc-nav-icon">🤖</span>
+                        <span class="pc-nav-label">Automatisations</span>
+                    </a>
                 </nav>
 
                 <div class="pc-sidebar-footer">
@@ -561,6 +569,14 @@ do_action('pc_resa_app_enqueue_assets');
 
                 <div id="view-destination" class="pc-view-section">
                     <div id="pc-destination-v2-app"></div>
+                </div>
+
+                <div id="view-settings" class="pc-view-section">
+                    <div id="pc-settings-v2-app"></div>
+                </div>
+
+                <div id="view-templates" class="pc-view-section">
+                    <div id="pc-templates-v2-app"></div>
                 </div>
             </main>
         </div>

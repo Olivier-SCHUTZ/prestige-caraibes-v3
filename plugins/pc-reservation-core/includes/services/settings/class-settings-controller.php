@@ -166,7 +166,7 @@ class PCR_Settings_Controller
      */
     public function ajax_handle_simulation()
     {
-        check_ajax_referer('pc_sim_nonce', 'security');
+        check_ajax_referer('pc_resa_manual_create', 'security');
 
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => 'Accès refusé']);

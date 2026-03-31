@@ -65,16 +65,30 @@ class PCR_Field_Manager
     }
 
     /**
-     * Récupérer une valeur brute depuis la base de données (wp_postmeta)
+     * Récupérer une valeur brute depuis la base de données (wp_postmeta ou wp_options)
      */
     public function get_native_field($key, $post_id)
     {
-        // On récupère la meta native de WordPress
-        $value = get_post_meta($post_id, $key, true);
+        // 1. GESTION DES OPTIONS GLOBALES (Configuration V2)
+        // Si le post_id est 'option' ou 'options', c'est un réglage global !
+        if ($post_id === 'option' || $post_id === 'options') {
+            // On va chercher dans la table wp_options avec le préfixe 'options_' 
+            // (pour conserver la compatibilité avec l'ancien comportement d'ACF)
+            $value = get_option('options_' . $key, null);
 
-        // Si la meta n'existe pas, get_post_meta retourne une chaîne vide.
-        // On la convertit en null pour faciliter notre logique de "fallback" vers ACF.
-        return ($value === '') ? null : $value;
+            // get_option retourne false si l'option n'existe pas
+            return ($value !== false && $value !== '') ? $value : null;
+        }
+
+        // 2. GESTION DES POST-METAS CLASSIQUES (Logements, Expériences, Modèles...)
+        if (is_numeric($post_id)) {
+            $value = get_post_meta($post_id, $key, true);
+
+            // Si la meta n'existe pas, get_post_meta retourne une chaîne vide.
+            return ($value === '') ? null : $value;
+        }
+
+        return null;
     }
 
     /**
