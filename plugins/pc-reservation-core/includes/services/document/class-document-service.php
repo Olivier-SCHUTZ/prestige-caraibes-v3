@@ -115,9 +115,7 @@ class PCR_Document_Service
         } else {
             $template_id = (int) $template_id_input;
             if ($template_id > 0) {
-                $type_doc = (class_exists('PCR_Fields')
-                    ? PCR_Fields::get('pc_doc_type', $template_id)
-                    : (function_exists('get_field') ? get_field('pc_doc_type', $template_id) : '')) ?: 'document';
+                $type_doc = PCR_Fields::get('pc_doc_type', $template_id, 'document') ?: 'document';
             }
         }
 
@@ -300,37 +298,22 @@ class PCR_Document_Service
         $has_acf = function_exists('get_field');
 
         if ($type === 'devis') {
-            $prefix = get_option('option_pc_quote_prefix') ?: get_option('pc_quote_prefix') ?: ($pcr_exists ? PCR_Fields::get('pc_quote_prefix', 'option') : ($has_acf ? get_field('pc_quote_prefix', 'option') : ''));
-            $prefix = $prefix ?: 'DEV-' . date('Y') . '-';
+            $prefix = PCR_Fields::get('pc_quote_prefix', 'option', 'DEV-' . date('Y') . '-') ?: 'DEV-' . date('Y') . '-';
             return $prefix . time();
         } elseif ($type === 'avoir') {
-            $prefix = get_option('option_pc_credit_note_prefix') ?: get_option('pc_credit_note_prefix') ?: ($pcr_exists ? PCR_Fields::get('pc_credit_note_prefix', 'option') : ($has_acf ? get_field('pc_credit_note_prefix', 'option') : ''));
-            $prefix = $prefix ?: 'AVOIR-' . date('Y') . '-';
+            $prefix = PCR_Fields::get('pc_credit_note_prefix', 'option', 'AVOIR-' . date('Y') . '-') ?: 'AVOIR-' . date('Y') . '-';
+            $next   = (int) PCR_Fields::get('pc_credit_note_next', 'option', 1) ?: 1;
 
-            $next = (int) (get_option('option_pc_credit_note_next') ?: get_option('pc_credit_note_next') ?: ($pcr_exists ? PCR_Fields::get('pc_credit_note_next', 'option') : ($has_acf ? get_field('pc_credit_note_next', 'option') : 1)));
-            $next = $next ?: 1;
-
-            // Mise à jour de l'option de manière sécurisée (base de données native + ACF si disponible)
-            update_option('options_pc_credit_note_next', $next + 1); // Préfixe typique d'ACF en DB
-            update_option('pc_credit_note_next', $next + 1);
-            if (function_exists('update_field')) {
-                update_field('pc_credit_note_next', $next + 1, 'option');
-            }
+            // Mise à jour sur la source de vérité unique
+            update_option('options_pc_credit_note_next', $next + 1);
 
             return $prefix . str_pad($next, 4, '0', STR_PAD_LEFT);
         } else {
-            $prefix = get_option('option_pc_invoice_prefix') ?: get_option('pc_invoice_prefix') ?: ($pcr_exists ? PCR_Fields::get('pc_invoice_prefix', 'option') : ($has_acf ? get_field('pc_invoice_prefix', 'option') : ''));
-            $prefix = $prefix ?: 'FAC-' . date('Y') . '-';
+            $prefix = PCR_Fields::get('pc_invoice_prefix', 'option', 'FAC-' . date('Y') . '-') ?: 'FAC-' . date('Y') . '-';
+            $next   = (int) PCR_Fields::get('pc_invoice_next', 'option', 1) ?: 1;
 
-            $next = (int) (get_option('option_pc_invoice_next') ?: get_option('pc_invoice_next') ?: ($pcr_exists ? PCR_Fields::get('pc_invoice_next', 'option') : ($has_acf ? get_field('pc_invoice_next', 'option') : 1)));
-            $next = $next ?: 1;
-
-            // Mise à jour de l'option de manière sécurisée (base de données native + ACF si disponible)
+            // Mise à jour sur la source de vérité unique
             update_option('options_pc_invoice_next', $next + 1);
-            update_option('pc_invoice_next', $next + 1);
-            if (function_exists('update_field')) {
-                update_field('pc_invoice_next', $next + 1, 'option');
-            }
 
             return $prefix . str_pad($next, 4, '0', STR_PAD_LEFT);
         }
@@ -365,9 +348,7 @@ class PCR_Document_Service
             ['label' => 'Taxe de séjour', 'amount' => 100, 'price' => 100],
         ]);
 
-        $type_doc = (class_exists('PCR_Fields')
-            ? PCR_Fields::get('pc_doc_type', $template_id)
-            : (function_exists('get_field') ? get_field('pc_doc_type', $template_id) : '')) ?: 'document';
+        $type_doc = PCR_Fields::get('pc_doc_type', $template_id, 'document') ?: 'document';
         $doc_number = 'PREVIEW-' . date('Ymd');
         $html_content = '';
 

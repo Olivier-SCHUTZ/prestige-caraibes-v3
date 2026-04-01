@@ -3,9 +3,9 @@
     <h4 class="block-title">🎨 Identité Générale</h4>
     <div class="pc-form-row">
       <div class="pc-form-group pc-col-12">
-        <label>URL du Logo Principal du site</label>
-        <input type="text" v-model="formData.pc_general_logo" class="pc-input" placeholder="https://votresite.com/wp-content/uploads/logo.png" />
-        <p class="pc-help-text">Ce logo sera utilisé par défaut dans les emails et l'interface.</p>
+        <label>ID du Média (Logo Principal du site)</label>
+        <input type="number" v-model="formData.pc_general_logo" class="pc-input" placeholder="Ex : 125" />
+        <p class="pc-help-text">Saisissez l'ID du média WordPress (et non l'URL). Ce logo sera utilisé par défaut dans les emails et l'interface.</p>
       </div>
     </div>
 
@@ -33,9 +33,9 @@
 
     <div class="pc-form-row">
       <div class="pc-form-group pc-col-12">
-        <label>URL du Logo du Dashboard (Fond Blanc)</label>
-        <input type="text" v-model="formData.pc_dashboard_logo" class="pc-input" placeholder="https://..." />
-        <p class="pc-help-text">Si vide, le logo principal sera utilisé.</p>
+        <label>ID du Média (Logo du Dashboard - Fond Blanc)</label>
+        <input type="number" v-model="formData.pc_dashboard_logo" class="pc-input" placeholder="Ex : 126" />
+        <p class="pc-help-text">Saisissez l'ID du média. Si vide, le logo principal sera utilisé.</p>
       </div>
     </div>
   </div>

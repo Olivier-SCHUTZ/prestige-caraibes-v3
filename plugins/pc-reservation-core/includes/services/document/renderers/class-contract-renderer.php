@@ -72,21 +72,23 @@ class PCR_Contract_Renderer extends PCR_Base_Document_Renderer
         $pcr_exists = class_exists('PCR_Fields');
         $has_acf = function_exists('get_field');
 
-        $logo_url = get_option('option_pc_pdf_logo') ?: get_option('pc_pdf_logo') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_logo', 'option') : ($has_acf ? get_field('pc_pdf_logo', 'option') : ''));
+        // Récupération de l'ID et conversion en URL avant passage en base64
+        $logo_id = PCR_Fields::get('pc_pdf_logo', 'option', '');
+        $logo_url = is_numeric($logo_id) ? wp_get_attachment_url($logo_id) : $logo_id;
+
         $logo = $this->get_image_base64($logo_url);
 
         $signature_url = get_site_url(null, '/wp-content/uploads/2025/12/Responsable.png');
         $signature_img = $this->get_image_base64($signature_url);
 
-        $color = get_option('option_pc_pdf_primary_color') ?: get_option('pc_pdf_primary_color') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_primary_color', 'option') : ($has_acf ? get_field('pc_pdf_primary_color', 'option') : ''));
-        $color = $color ?: '#000000';
+        $color = PCR_Fields::get('pc_pdf_primary_color', 'option', '#000000') ?: '#000000';
 
         $agency = [
-            'name'    => get_option('option_pc_legal_name') ?: get_option('pc_legal_name') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_name', 'option') : ($has_acf ? get_field('pc_legal_name', 'option') : '')),
-            'address' => get_option('option_pc_legal_address') ?: get_option('pc_legal_address') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_address', 'option') : ($has_acf ? get_field('pc_legal_address', 'option') : '')),
-            'email'   => get_option('option_pc_legal_email') ?: get_option('pc_legal_email') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_email', 'option') : ($has_acf ? get_field('pc_legal_email', 'option') : '')),
-            'phone'   => get_option('option_pc_legal_phone') ?: get_option('pc_legal_phone') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_phone', 'option') : ($has_acf ? get_field('pc_legal_phone', 'option') : '')),
-            'siret'   => get_option('option_pc_legal_siret') ?: get_option('pc_legal_siret') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_siret', 'option') : ($has_acf ? get_field('pc_legal_siret', 'option') : '')),
+            'name'    => PCR_Fields::get('pc_legal_name', 'option', ''),
+            'address' => PCR_Fields::get('pc_legal_address', 'option', ''),
+            'email'   => PCR_Fields::get('pc_legal_email', 'option', ''),
+            'phone'   => PCR_Fields::get('pc_legal_phone', 'option', ''),
+            'siret'   => PCR_Fields::get('pc_legal_siret', 'option', ''),
         ];
 
         // 🎯 Appel de notre service financier

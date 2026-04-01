@@ -20,17 +20,13 @@ class PCR_Voucher_Renderer extends PCR_Base_Document_Renderer
      */
     public function render($resa, $doc_number, $args = [])
     {
-        $pcr_exists = class_exists('PCR_Fields');
-        $has_acf = function_exists('get_field');
+        $logo_id  = PCR_Fields::get('pc_pdf_logo', 'option', '');
+        $logo_url = is_numeric($logo_id) ? wp_get_attachment_url($logo_id) : $logo_id;
+        $logo     = $this->get_image_base64($logo_url);
 
-        $logo_url = get_option('option_pc_pdf_logo') ?: get_option('pc_pdf_logo') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_logo', 'option') : ($has_acf ? get_field('pc_pdf_logo', 'option') : ''));
-        $logo = $this->get_image_base64($logo_url);
+        $color = PCR_Fields::get('pc_pdf_primary_color', 'option', '#000000') ?: '#000000';
 
-        $color = get_option('option_pc_pdf_primary_color') ?: get_option('pc_pdf_primary_color') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_primary_color', 'option') : ($has_acf ? get_field('pc_pdf_primary_color', 'option') : ''));
-        $color = $color ?: '#000000';
-
-        $adresse_lieu = ($pcr_exists ? PCR_Fields::get('adresse_logement', $resa->item_id) : ($has_acf ? get_field('adresse_logement', $resa->item_id) : '')) ?: 'Adresse non communiquée';
-
+        $adresse_lieu = PCR_Fields::get('adresse_logement', $resa->item_id, 'Adresse non communiquée') ?: 'Adresse non communiquée';
         ob_start();
 ?>
         <!DOCTYPE html>

@@ -4,8 +4,9 @@
     <h4 class="block-title">📄 Design des Documents PDF</h4>
     <div class="pc-form-row">
       <div class="pc-form-group pc-col-8">
-        <label>URL du Logo pour PDF</label>
-        <input type="text" v-model="formData.pc_pdf_logo" class="pc-input" />
+        <label>ID du Média (Logo pour PDF)</label>
+        <input type="number" v-model="formData.pc_pdf_logo" class="pc-input" placeholder="Ex : 142" />
+        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #64748b;">Saisissez l'ID de l'image (et non l'URL).</p>
       </div>
       <div class="pc-form-group pc-col-4">
         <label>Couleur Principale</label>
@@ -82,6 +83,17 @@
       <div class="pc-form-group pc-col-6">
         <label>CGV - Expériences / Activités</label>
         <textarea v-model="formData.cgv_experience" class="pc-input pc-textarea" rows="4"></textarea>
+      </div>
+    </div>
+
+    <div class="pc-form-row">
+      <div class="pc-form-group pc-col-6">
+        <label>CGV - Séjour</label>
+        <textarea v-model="formData.cgv_sejour" class="pc-input pc-textarea" rows="4"></textarea>
+      </div>
+      <div class="pc-form-group pc-col-6">
+        <label>CGV - Custom</label>
+        <textarea v-model="formData.pc_linked_cgv" class="pc-input pc-textarea" rows="4"></textarea>
       </div>
     </div>
 

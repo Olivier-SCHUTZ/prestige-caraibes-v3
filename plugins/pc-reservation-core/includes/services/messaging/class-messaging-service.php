@@ -133,7 +133,7 @@ class PCR_Messaging_Service
             $has_acf    = function_exists('get_field');
 
             // Sécurité maximale : DB native -> PCR_Fields -> Fallback ACF
-            $signature = get_option('options_pc_email_signature') ?: get_option('pc_email_signature') ?: ($pcr_exists ? PCR_Fields::get('pc_email_signature', 'option') : ($has_acf ? get_field('pc_email_signature', 'option') : ''));
+            $signature = PCR_Fields::get('pc_email_signature', 'option', '');
 
             if (!empty($signature)) {
                 $body .= "<br><br><div class='pc-signature'>" . wpautop($signature) . "</div>";

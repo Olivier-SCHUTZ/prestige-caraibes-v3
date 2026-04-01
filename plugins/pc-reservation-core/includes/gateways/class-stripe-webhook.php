@@ -27,9 +27,7 @@ class PCR_Stripe_Webhook
         $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
 
         // Sécurisation maximale pour la récupération de l'option (Natif > PCR_Fields > ACF)
-        $endpoint_secret = get_option('option_pc_stripe_webhook_secret')
-            ?: get_option('pc_stripe_webhook_secret')
-            ?: (class_exists('PCR_Fields') ? PCR_Fields::get('pc_stripe_webhook_secret', 'option') : (function_exists('get_field') ? get_field('pc_stripe_webhook_secret', 'option') : ''));
+        $endpoint_secret = PCR_Fields::get('pc_stripe_webhook_secret', 'option', '');
 
         if (empty($endpoint_secret)) {
             error_log('[Stripe Webhook] ❌ Erreur : Webhook secret non configuré.');

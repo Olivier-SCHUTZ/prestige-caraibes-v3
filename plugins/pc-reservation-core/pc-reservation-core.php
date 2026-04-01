@@ -357,7 +357,7 @@ add_action('wp_head', function () {
  * 1. Création de la règle de réécriture
  */
 add_action('init', function () {
-    $slug = class_exists('PCR_Fields') ? PCR_Fields::get('pc_dashboard_slug', 'option') : 'espace-proprietaire';
+    $slug = PCR_Fields::get('pc_dashboard_slug', 'option', 'espace-proprietaire');
     if (empty($slug)) $slug = 'espace-proprietaire';
 
     add_rewrite_rule(
@@ -464,8 +464,8 @@ add_action('wp_enqueue_scripts', function () {
 add_filter('wp_nav_menu_items', function ($items, $args) {
     if (!class_exists('PCR_Fields')) return $items;
 
-    if (PCR_Fields::get('pc_dashboard_menu_item', 'option') && isset($args->theme_location) && $args->theme_location == 'primary') {
-        $slug = PCR_Fields::get('pc_dashboard_slug', 'option') ?: 'espace-proprietaire';
+    if (PCR_Fields::get('pc_dashboard_menu_item', 'option', false) && isset($args->theme_location) && $args->theme_location == 'primary') {
+        $slug = PCR_Fields::get('pc_dashboard_slug', 'option', 'espace-proprietaire');
         $url = home_url('/' . $slug);
         $label = is_user_logged_in() ? 'Mon Espace' : 'Espace Propriétaire';
         $items .= '<li class="menu-item pc-app-link"><a href="' . esc_url($url) . '">' . esc_html($label) . '</a></li>';

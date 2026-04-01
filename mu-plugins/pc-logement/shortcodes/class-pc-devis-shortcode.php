@@ -340,9 +340,8 @@ class PC_Devis_Shortcode extends PC_Shortcode_Base
         ];
 
         // CGV
-        $terms_raw = get_option('options_cgv_location');
+        $terms_raw = PCR_Fields::get('cgv_location', 'option', '');
         $info['cgv_location'] = $terms_raw ? trim(wp_strip_all_tags(wp_kses_post($terms_raw))) : '';
-
         // Conversion du logo en Base64 (fond blanc forcé pour jsPDF)
         $uploads  = wp_get_upload_dir();
         $rel_path = '2025/06/Logo-Prestige-Caraibes-bleu.png';

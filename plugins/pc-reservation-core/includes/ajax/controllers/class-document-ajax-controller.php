@@ -123,9 +123,7 @@ class PCR_Document_Ajax_Controller extends PCR_Base_Ajax_Controller
 
         foreach ($templates as $template) {
             // Remplacement pour le champ pc_model_context
-            $model_context = (class_exists('PCR_Fields')
-                ? PCR_Fields::get('pc_model_context', $template->ID)
-                : (function_exists('get_field') ? get_field('pc_model_context', $template->ID) : '')) ?: 'global';
+            $model_context = PCR_Fields::get('pc_model_context', $template->ID, 'global') ?: 'global';
 
             $show_template = false;
             if ($model_context === 'global') {
@@ -138,9 +136,7 @@ class PCR_Document_Ajax_Controller extends PCR_Base_Ajax_Controller
 
             if ($show_template) {
                 // Remplacement pour le champ pc_doc_type
-                $doc_type = (class_exists('PCR_Fields')
-                    ? PCR_Fields::get('pc_doc_type', $template->ID)
-                    : (function_exists('get_field') ? get_field('pc_doc_type', $template->ID) : '')) ?: 'document';
+                $doc_type = PCR_Fields::get('pc_doc_type', $template->ID, 'document') ?: 'document';
 
                 $icon = '📄';
                 switch ($doc_type) {

@@ -253,8 +253,7 @@ class PCR_Template_Manager
             $has_acf    = function_exists('get_field');
 
             foreach ($templates as $template) {
-                $raw_doc_type = $pcr_exists ? PCR_Fields::get('pc_doc_type', $template->ID) : ($has_acf ? get_field('pc_doc_type', $template->ID) : '');
-                $doc_type = $raw_doc_type ?: 'document';
+                $doc_type = PCR_Fields::get('pc_doc_type', $template->ID, 'document') ?: 'document';
 
                 $icon = '📄';
                 switch ($doc_type) {

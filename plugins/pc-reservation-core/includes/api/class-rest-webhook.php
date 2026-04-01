@@ -82,8 +82,8 @@ class PCR_Rest_Webhook
             'endpoint' => 'POST /wp-json/pc-resa/v1/incoming-message',
             'version' => PC_RES_CORE_VERSION,
             'timestamp' => current_time('mysql'),
-            'configured_provider' => get_option('option_pc_api_provider') ?: get_option('pc_api_provider') ?: (class_exists('PCR_Fields') ? PCR_Fields::get('pc_api_provider', 'option') : (function_exists('get_field') ? get_field('pc_api_provider', 'option') : 'none')) ?: 'none',
-            'inbound_enabled' => (bool) (get_option('option_pc_inbound_email_enabled') ?: get_option('pc_inbound_email_enabled') ?: (class_exists('PCR_Fields') ? PCR_Fields::get('pc_inbound_email_enabled', 'option') : (function_exists('get_field') ? get_field('pc_inbound_email_enabled', 'option') : false))),
+            'configured_provider' => PCR_Fields::get('pc_api_provider', 'option', 'none'),
+            'inbound_enabled' => (bool) PCR_Fields::get('pc_inbound_email_enabled', 'option', false),
         ], 200);
     }
 
@@ -93,8 +93,8 @@ class PCR_Rest_Webhook
     public static function handle_webhook($request)
     {
         // 1. Vérification de la configuration (Super-sécurité)
-        $api_provider = get_option('option_pc_api_provider') ?: get_option('pc_api_provider') ?: (class_exists('PCR_Fields') ? PCR_Fields::get('pc_api_provider', 'option') : (function_exists('get_field') ? get_field('pc_api_provider', 'option') : 'none'));
-        $inbound_enabled = get_option('option_pc_inbound_email_enabled') ?: get_option('pc_inbound_email_enabled') ?: (class_exists('PCR_Fields') ? PCR_Fields::get('pc_inbound_email_enabled', 'option') : (function_exists('get_field') ? get_field('pc_inbound_email_enabled', 'option') : false));
+        $api_provider = PCR_Fields::get('pc_api_provider', 'option', 'none');
+        $inbound_enabled = PCR_Fields::get('pc_inbound_email_enabled', 'option', false);
 
         if ($api_provider === 'none' || !$inbound_enabled) {
             return new WP_REST_Response([
@@ -105,7 +105,7 @@ class PCR_Rest_Webhook
         }
 
         // 2. Sécurité : Vérification du secret webhook (Super-sécurité)
-        $webhook_secret = get_option('option_pc_webhook_secret') ?: get_option('pc_webhook_secret') ?: (class_exists('PCR_Fields') ? PCR_Fields::get('pc_webhook_secret', 'option') : (function_exists('get_field') ? get_field('pc_webhook_secret', 'option') : ''));
+        $webhook_secret = PCR_Fields::get('pc_webhook_secret', 'option', '');
         if (!empty($webhook_secret)) {
             $provided_secret = $request->get_header('X-PC-Webhook-Secret') ?:
                 $request->get_param('secret') ?:
@@ -364,7 +364,7 @@ class PCR_Rest_Webhook
         $phone_variants = [$clean_phone];
 
         // Ajouter des variantes selon le préfixe configuré (Super-sécurité)
-        $default_prefix = (get_option('option_pc_default_phone_prefix') ?: get_option('pc_default_phone_prefix') ?: (class_exists('PCR_Fields') ? PCR_Fields::get('pc_default_phone_prefix', 'option') : (function_exists('get_field') ? get_field('pc_default_phone_prefix', 'option') : '+590'))) ?: '+590';
+        $default_prefix = PCR_Fields::get('pc_default_phone_prefix', 'option', '+590');
 
         if (strpos($clean_phone, $default_prefix) !== 0) {
             // Si le numéro ne commence pas par le préfixe, l'ajouter

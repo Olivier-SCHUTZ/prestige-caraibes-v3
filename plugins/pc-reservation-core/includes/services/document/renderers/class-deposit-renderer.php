@@ -75,26 +75,25 @@ class PCR_Deposit_Renderer extends PCR_Base_Document_Renderer
         $dates = "du " . date_i18n('d/m/Y', strtotime($resa->date_arrivee)) . " au " . date_i18n('d/m/Y', strtotime($resa->date_depart));
         $description_ligne = "Acompte ({$label_calcul}) pour la réservation : {$nom_logement} ({$dates})";
 
-        // 6. Récupération Données Visuelles & Légales (Super-sécurité)
-        $pcr_exists = class_exists('PCR_Fields');
-        $has_acf = function_exists('get_field');
+        // 6. Récupération Données Visuelles & Légales (Conversion ID vers URL)
+        $logo_id = PCR_Fields::get('pc_pdf_logo', 'option', '');
+        $logo_url = is_numeric($logo_id) ? wp_get_attachment_url($logo_id) : $logo_id;
 
-        $logo_url = get_option('option_pc_pdf_logo') ?: get_option('pc_pdf_logo') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_logo', 'option') : ($has_acf ? get_field('pc_pdf_logo', 'option') : ''));
         $logo = $this->get_image_base64($logo_url);
 
-        $color = get_option('option_pc_pdf_primary_color') ?: get_option('pc_pdf_primary_color') ?: ($pcr_exists ? PCR_Fields::get('pc_pdf_primary_color', 'option') : ($has_acf ? get_field('pc_pdf_primary_color', 'option') : ''));
-        $color = $color ?: '#000000';
+        $color = PCR_Fields::get('pc_pdf_primary_color', 'option', '#000000') ?: '#000000';
 
         $company = [
-            'name' => get_option('option_pc_legal_name') ?: get_option('pc_legal_name') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_name', 'option') : ($has_acf ? get_field('pc_legal_name', 'option') : '')),
-            'address' => get_option('option_pc_legal_address') ?: get_option('pc_legal_address') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_address', 'option') : ($has_acf ? get_field('pc_legal_address', 'option') : '')),
-            'siret' => get_option('option_pc_legal_siret') ?: get_option('pc_legal_siret') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_siret', 'option') : ($has_acf ? get_field('pc_legal_siret', 'option') : '')),
-            'tva' => get_option('option_pc_legal_tva') ?: get_option('pc_legal_tva') ?: ($pcr_exists ? PCR_Fields::get('pc_legal_tva', 'option') : ($has_acf ? get_field('pc_legal_tva', 'option') : '')),
+            'name'    => PCR_Fields::get('pc_legal_name', 'option', ''),
+            'address' => PCR_Fields::get('pc_legal_address', 'option', ''),
+            'siret'   => PCR_Fields::get('pc_legal_siret', 'option', ''),
+            'tva'     => PCR_Fields::get('pc_legal_tva', 'option', ''),
         ];
+
         $bank = [
-            'name' => get_option('option_pc_bank_name') ?: get_option('pc_bank_name') ?: ($pcr_exists ? PCR_Fields::get('pc_bank_name', 'option') : ($has_acf ? get_field('pc_bank_name', 'option') : '')),
-            'iban' => get_option('option_pc_bank_iban') ?: get_option('pc_bank_iban') ?: ($pcr_exists ? PCR_Fields::get('pc_bank_iban', 'option') : ($has_acf ? get_field('pc_bank_iban', 'option') : '')),
-            'bic'  => get_option('option_pc_bank_bic') ?: get_option('pc_bank_bic') ?: ($pcr_exists ? PCR_Fields::get('pc_bank_bic', 'option') : ($has_acf ? get_field('pc_bank_bic', 'option') : '')),
+            'name' => PCR_Fields::get('pc_bank_name', 'option', ''),
+            'iban' => PCR_Fields::get('pc_bank_iban', 'option', ''),
+            'bic'  => PCR_Fields::get('pc_bank_bic', 'option', ''),
         ];
 
         ob_start();
@@ -198,22 +197,19 @@ class PCR_Deposit_Renderer extends PCR_Base_Document_Renderer
             <?php
             $cgv_content = '';
 
-            // 1. Détection automatique selon le type de réservation (Super-sécurité)
-            $pcr_exists = class_exists('PCR_Fields');
-            $has_acf = function_exists('get_field');
-
+            // 1. Détection automatique selon le type de réservation
             if (isset($resa->type) && $resa->type === 'location') {
-                $cgv_content = get_option('option_cgv_location') ?: get_option('cgv_location') ?: ($pcr_exists ? PCR_Fields::get('cgv_location', 'option') : ($has_acf ? get_field('cgv_location', 'option') : ''));
+                $cgv_content = PCR_Fields::get('cgv_location', 'option', '');
             } elseif (isset($resa->type) && $resa->type === 'experience') {
-                $cgv_content = get_option('option_cgv_experience') ?: get_option('cgv_experience') ?: ($pcr_exists ? PCR_Fields::get('cgv_experience', 'option') : ($has_acf ? get_field('cgv_experience', 'option') : ''));
+                $cgv_content = PCR_Fields::get('cgv_experience', 'option', '');
             } else {
                 // Cas "Mixte" ou "Organisation de séjour"
-                $cgv_content = get_option('option_cgv_sejour') ?: get_option('cgv_sejour') ?: ($pcr_exists ? PCR_Fields::get('cgv_sejour', 'option') : ($has_acf ? get_field('cgv_sejour', 'option') : ''));
+                $cgv_content = PCR_Fields::get('cgv_sejour', 'option', '');
             }
 
             // 2. Fallback : Si c'est un modèle personnalisé (ID numérique) qui force une CGV spécifique
             if (!empty($template_id) && is_numeric($template_id) && $template_id > 0) {
-                $custom_cgv = class_exists('PCR_Fields') ? PCR_Fields::get('pc_linked_cgv', $template_id) : (function_exists('get_field') ? get_field('pc_linked_cgv', $template_id) : '');
+                $custom_cgv = PCR_Fields::get('pc_linked_cgv', $template_id, '');
                 if (!empty($custom_cgv)) {
                     $cgv_content = $custom_cgv;
                 }
