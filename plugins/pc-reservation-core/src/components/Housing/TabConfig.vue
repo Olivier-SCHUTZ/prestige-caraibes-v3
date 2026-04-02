@@ -1,23 +1,65 @@
 <template>
   <div class="v2-tab-content">
-    <h4 class="pc-section-title">Publication & Synchronisation</h4>
-    <div class="pc-form-grid">
-      <div class="pc-form-group">
-        <label>Statut du logement</label>
-        <select v-model="modalStore.formData.status" class="pc-select">
-          <option value="publish">✅ Publié (Visible)</option>
-          <option value="draft">📝 Brouillon (Caché)</option>
-        </select>
+    <h4 class="pc-section-title">Publication & Synchronisation (Channel Manager)</h4>
+    
+    <div class="pc-form-group" style="margin-bottom: 1.5rem;">
+      <label>Statut du logement</label>
+      <select v-model="modalStore.formData.status" class="pc-select" style="max-width: 300px;">
+        <option value="publish">✅ Publié (Visible)</option>
+        <option value="draft">📝 Brouillon (Caché)</option>
+      </select>
+    </div>
+
+    <div class="pc-ical-repeater">
+      <label class="pc-repeater-label">Flux iCal entrants (Importation)</label>
+      <p class="pc-repeater-help">Ajoutez ici les iCals de vos différentes plateformes (Airbnb, Booking...) pour bloquer les dates sur votre site.</p>
+      
+      <div class="pc-ical-item" v-for="(ical, index) in modalStore.formData.icals_sync" :key="index">
+        <div class="pc-ical-inputs">
+          <input
+            type="text"
+            v-model="ical.name"
+            class="pc-input"
+            placeholder="Nom (ex: Airbnb, Booking...)"
+          />
+          <input
+            type="url"
+            v-model="ical.url"
+            class="pc-input"
+            placeholder="URL du flux iCal (https://...)"
+          />
+        </div>
+        <button type="button" class="pc-btn-remove" @click="removeIcal(index)" title="Supprimer ce flux">
+          ❌
+        </button>
+      </div>
+      
+      <button type="button" class="pc-btn-add" @click="addIcal">
+        ➕ Ajouter un flux iCal
+      </button>
+    </div>
+
+    <!-- 🚀 NOUVEAU BLOC : EXPORT ICAL -->
+    <div class="pc-ical-export-box" v-if="modalStore.formData.id">
+      <label class="pc-repeater-label">Flux iCal de sortie (Exportation)</label>
+      <p class="pc-repeater-help">Copiez ces liens pour synchroniser votre site vers les autres plateformes. Cliquez sur le lien pour le copier.</p>
+      
+      <div class="pc-export-item">
+        <div class="pc-export-info">
+          <strong>🔒 iCal Strict (Interne)</strong>
+          <span class="pc-badge pc-badge-airbnb">Pour Airbnb / Booking</span>
+          <p>Ne contient <strong>QUE</strong> les réservations de votre site et vos blocages manuels. Empêche les boucles infinies.</p>
+        </div>
+        <input type="text" readonly :value="getIcalExportUrl('interne')" class="pc-input pc-input-readonly" @click="copyToClipboard($event)" title="Cliquez pour copier" />
       </div>
 
-      <div class="pc-form-group">
-        <label>URL de synchronisation iCal</label>
-        <input
-          type="url"
-          v-model="modalStore.formData.ical_url"
-          class="pc-input"
-          placeholder="https://..."
-        />
+      <div class="pc-export-item mt-3">
+        <div class="pc-export-info">
+          <strong>🌍 iCal Global</strong>
+          <span class="pc-badge pc-badge-proprio">Pour Propriétaires</span>
+          <p>Contient <strong>TOUTES</strong> les dates bloquées (Site + Airbnb + Booking...). Idéal pour un Google Agenda personnel.</p>
+        </div>
+        <input type="text" readonly :value="getIcalExportUrl('global')" class="pc-input pc-input-readonly" @click="copyToClipboard($event)" title="Cliquez pour copier" />
       </div>
     </div>
 
@@ -168,6 +210,55 @@ import { useHousingModalStore } from "../../stores/housing-modal-store.js";
 
 const modalStore = useHousingModalStore();
 
+// --- GESTION ICALS ---
+if (!modalStore.formData.icals_sync || !Array.isArray(modalStore.formData.icals_sync)) {
+  modalStore.formData.icals_sync = [];
+}
+
+const addIcal = () => {
+  modalStore.formData.icals_sync.push({ name: "", url: "" });
+};
+
+const removeIcal = (index) => {
+  modalStore.formData.icals_sync.splice(index, 1);
+};
+
+// Fonction pour générer l'URL de sortie à la volée sécurisée
+const getIcalExportUrl = (type) => {
+  if (!modalStore.formData.ical_export_token) {
+    return "⚠️ Sauvegardez le logement une fois pour générer le lien sécurisé.";
+  }
+  const baseUrl = window.location.origin;
+  return `${baseUrl}/wp-json/pc-resa/v1/ical/${modalStore.formData.id}/${type}?token=${modalStore.formData.ical_export_token}`;
+};
+
+// Fonction moderne pour copier dans le presse-papier avec effet visuel
+const copyToClipboard = async (event) => {
+  const input = event.target;
+  input.select();
+  
+  // Si c'est le message d'avertissement, on ne copie pas
+  if (input.value.startsWith("⚠️")) return;
+
+  try {
+    // API moderne du presse-papier
+    await navigator.clipboard.writeText(input.value);
+    
+    // Petit feedback visuel (clignotement vert)
+    const originalBg = input.style.backgroundColor;
+    input.style.backgroundColor = "#dcfce7"; 
+    
+    setTimeout(() => {
+      input.style.backgroundColor = originalBg;
+    }, 400);
+    
+  } catch (err) {
+    console.error('Erreur lors de la copie (fallback utilisé) :', err);
+    // Fallback ancienne méthode au cas où
+    document.execCommand('copy'); 
+  }
+};
+
 // --- SÉCURITÉ DES DONNÉES ---
 // Initialisation des booléens
 ["log_exclude_sitemap", "log_http_410"].forEach((key) => {
@@ -291,5 +382,133 @@ const googleVrAmenities = [
 
 .pc-checkbox-label input[type="checkbox"] {
   margin-top: 3px;
+}
+
+/* Styles pour le répéteur iCal */
+.pc-ical-repeater {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 2rem;
+}
+
+.pc-repeater-label {
+  display: block;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+}
+
+.pc-repeater-help {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.pc-ical-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  background: white;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+
+.pc-ical-inputs {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+  flex-grow: 1;
+}
+
+.pc-btn-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.5rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.pc-btn-remove:hover {
+  opacity: 1;
+}
+
+.pc-btn-add {
+  background: white;
+  border: 1px dashed #cbd5e1;
+  color: #3b82f6;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.pc-btn-add:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+/* Styles pour l'export iCal */
+.pc-ical-export-box {
+  background: #f0fdf4;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+  margin-bottom: 2rem;
+}
+
+.pc-export-item {
+  background: white;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+
+.mt-3 {
+  margin-top: 1rem;
+}
+
+.pc-export-info p {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.pc-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  font-weight: bold;
+}
+
+.pc-badge-airbnb {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.pc-badge-proprio {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.pc-input-readonly {
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  width: 100%;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.pc-input-readonly:focus {
+  outline: 2px solid #22c55e;
 }
 </style>

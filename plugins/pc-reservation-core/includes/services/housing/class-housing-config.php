@@ -94,7 +94,7 @@ class PCR_Housing_Config
             'regles_maison' => 'regles_maison',
             'horaire_arrivee' => 'horaire_arrivee',
             'horaire_depart' => 'horaire_depart',
-            'ical_url' => 'ical_url',
+            'icals_sync' => 'icals_sync',
             'lodgify_widget_embed' => 'lodgify_widget_embed',
 
             // === TARIFS ===
@@ -139,6 +139,7 @@ class PCR_Housing_Config
             'taux_tva' => 'taux_tva',
             'taux_tva_menage' => 'taux_tva_menage',
             'mode_reservation' => 'mode_reservation',
+            'ical_export_token' => 'ical_export_token',
 
             // === RÈGLES DE PAIEMENT (APLATIES) ===
             'pc_pay_mode' => 'pc_pay_mode',
@@ -189,7 +190,7 @@ class PCR_Housing_Config
             'base_price_from' => 'field_pc_prix_base',
             'prix_nuit' => 'field_pc_prix_nuit',
             'mode_reservation' => 'field_692986ddcf6e3',
-            'ical_url' => 'field_pc_ical_url',
+            'icals_sync' => 'icals_sync',
             'identifiant_lodgify' => 'identifiant_lodgify',
             'superficie' => 'superficie',
             'nombre_de_chambres' => 'nombre_de_chambres',

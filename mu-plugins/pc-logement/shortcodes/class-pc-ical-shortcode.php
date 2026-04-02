@@ -32,14 +32,25 @@ class PC_ICal_Shortcode extends PC_Shortcode_Base
             return '';
         }
 
-        // 1. Détermination de l'URL iCal (si non fournie en attribut)
-        // 🚀 CORRECTION : On a supprimé la dépendance à ACF (&& function_exists('get_field'))
-        if (empty($a['url'])) {
-            $a['url'] = (string) PCR_Fields::get('ical_url', $post->ID);
+        // 1. Détermination de la présence d'iCals
+        $has_icals = false;
+        $icals_sync = PCR_Fields::get('icals_sync', $post->ID);
+
+        if (is_string($icals_sync)) {
+            $icals_sync = json_decode($icals_sync, true);
+        }
+
+        if (is_array($icals_sync) && !empty($icals_sync)) {
+            foreach ($icals_sync as $ical) {
+                if (!empty($ical['url'])) {
+                    $has_icals = true;
+                    break;
+                }
+            }
         }
 
         // Sécurité propriétaire : Si pas d'iCal configuré, on cache le calendrier
-        if (!$a['url']) {
+        if (!$has_icals) {
             $message = 'Faites votre demande, nous vous renseignerons sur les disponibilités de ce logement.';
             return '<div class="pc-cal-missing">' . esc_html($message) . '</div>';
         }

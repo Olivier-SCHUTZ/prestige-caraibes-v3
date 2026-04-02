@@ -204,8 +204,30 @@ class PCR_Housing_Service
                     $value = $formatter->process_image_field($value);
                 }
 
-                // APRÈS
                 // 🚀 GESTION DES CHAMPS COMPLEXES (JSON/Tableaux)
+                if ($clean_key === 'icals_sync') {
+                    $unslashed = wp_unslash($value);
+                    $raw_array = is_string($unslashed) ? json_decode($unslashed, true) : $unslashed;
+
+                    $clean_icals = [];
+                    if (is_array($raw_array)) {
+                        foreach ($raw_array as $item) {
+                            if (!is_array($item)) continue;
+
+                            $name = isset($item['name']) ? sanitize_text_field($item['name']) : '';
+                            $url = isset($item['url']) ? esc_url_raw($item['url']) : '';
+
+                            if (!empty($name) && !empty($url)) {
+                                $clean_icals[] = ['name' => $name, 'url' => $url];
+                            }
+                        }
+                    }
+
+                    update_post_meta($post_id, $clean_key, $clean_icals);
+                    $updated_fields++;
+                    continue;
+                }
+
                 if ($clean_key === 'logement_faq') {
                     $unslashed = wp_unslash($value);
 
@@ -254,6 +276,26 @@ class PCR_Housing_Service
                 } else {
                     delete_post_thumbnail($post_id);
                 }
+            }
+
+            /// 🚀 NETTOYAGE LÉGACY & CACHE (Destruction des fantômes)
+            delete_post_meta($post_id, 'ical_url');
+            delete_post_meta($post_id, 'field_pc_ical_url');
+            delete_post_meta($post_id, '_booked_dates_cache');
+
+            // 🚀 SYNCHRONISATION IMMÉDIATE DU CACHE ICAL
+            if (class_exists('PC_Ical_Cache_Provider')) {
+                $cache_provider = new PC_Ical_Cache_Provider();
+                if (method_exists($cache_provider, 'sync_single_logement')) {
+                    $cache_provider->sync_single_logement($post_id);
+                }
+            }
+
+            // 🚀 SÉCURITÉ : Génération automatique du token iCal s'il n'existe pas
+            $existing_token = get_post_meta($post_id, 'ical_export_token', true);
+            if (empty($existing_token)) {
+                $new_token = wp_generate_password(24, false);
+                update_post_meta($post_id, 'ical_export_token', $new_token);
             }
 
             return [

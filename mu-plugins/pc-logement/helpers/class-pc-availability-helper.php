@@ -21,12 +21,22 @@ class PC_Availability_Helper
         $ranges = [];
         $today = current_time('Y-m-d');
 
-        // 1. External iCals (via le champ ACF ical_url)
-        $ical_url = PCR_Fields::get('ical_url', $logement_id) ?: '';
-        if ($ical_url) {
-            $ext_ranges = json_decode(self::get_ics_disabled_ranges($ical_url, 24), true);
-            if (is_array($ext_ranges)) {
-                $ranges = array_merge($ranges, $ext_ranges);
+        // 1. External iCals (via le nouveau champ ACF icals_sync)
+        $icals_sync = PCR_Fields::get('icals_sync', $logement_id);
+
+        // On s'assure qu'on a bien un tableau à parcourir
+        if (is_string($icals_sync)) {
+            $icals_sync = json_decode($icals_sync, true);
+        }
+
+        if (is_array($icals_sync) && !empty($icals_sync)) {
+            foreach ($icals_sync as $ical) {
+                if (!empty($ical['url'])) {
+                    $ext_ranges = json_decode(self::get_ics_disabled_ranges($ical['url'], 24), true);
+                    if (is_array($ext_ranges)) {
+                        $ranges = array_merge($ranges, $ext_ranges);
+                    }
+                }
             }
         }
 

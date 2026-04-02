@@ -170,7 +170,6 @@ class PCR_Housing_Formatter
                 $numeric_value = (float) $value;
                 return $numeric_value >= 1 ? $numeric_value : '';
 
-            case 'ical_url':
             case 'url_canonique':
                 return esc_url_raw($value);
 

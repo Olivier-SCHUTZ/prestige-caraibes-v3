@@ -64,26 +64,40 @@ class PCR_Legacy_Utils
 
         $ics_disable = [];
 
-        // 0. Récupération des iCal distants (Airbnb, Booking...)
-        $ical_url = (string) (class_exists('PCR_Fields')
-            ? PCR_Fields::get('ical_url', $post_id)
-            : (function_exists('get_field') ? get_field('ical_url', $post_id) : ''));
-        if ($ical_url && function_exists('pc_parse_ics_ranges')) {
-            $cache_key = 'pc_ics_body_' . md5($ical_url);
-            $ics_body  = get_transient($cache_key);
-            if ($ics_body === false) {
-                $resp = wp_remote_get($ical_url, ['timeout' => 10]);
-                if (! is_wp_error($resp) && 200 === wp_remote_retrieve_response_code($resp)) {
-                    $ics_body = (string) wp_remote_retrieve_body($resp);
-                    if ($ics_body !== '') {
-                        set_transient($cache_key, $ics_body, 2 * HOUR_IN_SECONDS);
+        // 0. Récupération des iCal distants (Airbnb, Booking...) via le nouveau tableau icals_sync
+        $icals_sync = class_exists('PCR_Fields')
+            ? PCR_Fields::get('icals_sync', $post_id)
+            : (function_exists('get_field') ? get_field('icals_sync', $post_id) : []);
+
+        if (is_string($icals_sync)) {
+            $icals_sync = json_decode($icals_sync, true);
+        }
+
+        if (is_array($icals_sync) && function_exists('pc_parse_ics_ranges')) {
+            foreach ($icals_sync as $ical) {
+                if (empty($ical['url'])) continue;
+
+                $cache_key = 'pc_ics_body_' . md5($ical['url']);
+                $ics_body  = get_transient($cache_key);
+
+                if ($ics_body === false) {
+                    $resp = wp_remote_get($ical['url'], ['timeout' => 10]);
+                    if (!is_wp_error($resp) && 200 === wp_remote_retrieve_response_code($resp)) {
+                        $ics_body = (string) wp_remote_retrieve_body($resp);
+                        if ($ics_body !== '') {
+                            set_transient($cache_key, $ics_body, 2 * HOUR_IN_SECONDS);
+                        }
+                    } else {
+                        $ics_body = '';
                     }
-                } else {
-                    $ics_body = '';
                 }
-            }
-            if ($ics_body !== '') {
-                $ics_disable = pc_parse_ics_ranges($ics_body);
+
+                if ($ics_body !== '') {
+                    $parsed_ranges = pc_parse_ics_ranges($ics_body);
+                    if (is_array($parsed_ranges)) {
+                        $ics_disable = array_merge($ics_disable, $parsed_ranges);
+                    }
+                }
             }
         }
 

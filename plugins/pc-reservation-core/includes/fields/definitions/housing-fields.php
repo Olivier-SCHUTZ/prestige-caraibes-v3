@@ -103,11 +103,12 @@ $manager->register_field_group('housing_booking', [
     'post_types' => $post_types,
     'fields'     => [
         'mode_reservation'      => ['type' => 'select'],
+        'ical_export_token'     => ['type' => 'text'],
         'politique_dannulation' => ['type' => 'textarea'],
         'regles_maison'         => ['type' => 'textarea'],
         'horaire_arrivee'       => ['type' => 'text'],
         'horaire_depart'        => ['type' => 'text'],
-        'ical_url'              => ['type' => 'text'],
+        'icals_sync'            => ['type' => 'array', 'label' => 'Flux iCal de synchronisation'],
         'lodgify_widget_embed'  => ['type' => 'textarea'],
         'pc_manual_quote'       => ['type' => 'checkbox'],
     ]

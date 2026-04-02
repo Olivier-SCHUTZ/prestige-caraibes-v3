@@ -37,6 +37,13 @@ class PCR_Rest_Webhook
             'callback' => [__CLASS__, 'handle_test_request'],
             'permission_callback' => '__return_true',
         ]);
+
+        // 🚀 NOUVELLES ROUTES : Flux iCal de sortie (Export)
+        register_rest_route('pc-resa/v1', '/ical/(?P<id>\d+)/(?P<type>interne|global)', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'export_ical_feed'],
+            'permission_callback' => '__return_true', // Doit être public pour Airbnb/Booking
+        ]);
     }
 
     /**
@@ -412,5 +419,141 @@ class PCR_Rest_Webhook
         }
 
         return $clean;
+    }
+
+    /**
+     * 🚀 GÉNÉRATEUR DE FLUX ICAL (EXPORT)
+     * Construit le fichier .ics à la volée selon le type demandé (interne ou global)
+     */
+    public static function export_ical_feed($request)
+    {
+        $logement_id = (int) $request->get_param('id');
+        $type = $request->get_param('type'); // 'interne' ou 'global'
+        $token = $request->get_param('token'); // 🚀 Le fameux jeton
+
+        // Sécurité 1 : Vérification du type de post
+        if (!in_array(get_post_type($logement_id), ['villa', 'appartement', 'logement'])) {
+            return new WP_REST_Response('Logement introuvable.', 404);
+        }
+
+        // Sécurité 2 : Vérification stricte du jeton d'accès
+        $valid_token = get_post_meta($logement_id, 'ical_export_token', true);
+        if (empty($valid_token) || $token !== $valid_token) {
+            return new WP_REST_Response('Accès refusé. Jeton de sécurité manquant ou invalide.', 403);
+        }
+
+        global $wpdb;
+        $events = [];
+        $now = current_time('Y-m-d'); // On n'exporte pas le passé pour alléger le flux
+
+        // 1. RÉSERVATIONS INTERNES (Toujours incluses)
+        $table_res = $wpdb->prefix . 'pc_reservations';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_res'") === $table_res) {
+            $internal_res = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, date_arrivee, date_depart FROM {$table_res} 
+                 WHERE item_id = %d AND statut_reservation IN ('reservee', 'attente', 'confirmee', 'en_cours') 
+                 AND date_depart >= %s",
+                $logement_id,
+                $now
+            ));
+            foreach ($internal_res as $res) {
+                $events[] = [
+                    'uid' => 'resa-' . $res->id,
+                    'start' => $res->date_arrivee,
+                    'end' => $res->date_depart,
+                    'summary' => 'Prestige Caraïbes - Réservation'
+                ];
+            }
+        }
+
+        // 2. BLOCAGES MANUELS (Toujours inclus)
+        $table_unv = $wpdb->prefix . 'pc_unavailabilities';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_unv'") === $table_unv) {
+            $manual_blocks = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, date_debut, date_fin, motif FROM {$table_unv} 
+                 WHERE item_id = %d AND date_fin >= %s",
+                $logement_id,
+                $now
+            ));
+            foreach ($manual_blocks as $blk) {
+                $events[] = [
+                    'uid' => 'block-' . $blk->id,
+                    'start' => $blk->date_debut,
+                    'end' => date('Y-m-d', strtotime($blk->date_fin . ' +1 day')), // La date de fin en iCal est exclusive (+1 jour)
+                    'summary' => 'Blocage manuel: ' . ($blk->motif ?: 'Indisponible')
+                ];
+            }
+        }
+
+        // 3. SYNCHRONISATIONS EXTERNES (Uniquement pour le mode "Global")
+        if ($type === 'global') {
+            $cached_dates = get_post_meta($logement_id, '_booked_dates_cache', true);
+            if (is_array($cached_dates) && !empty($cached_dates)) {
+                sort($cached_dates);
+                $range_start = null;
+                $range_end = null;
+
+                // On regroupe les dates individuelles en plages pour alléger le fichier iCal
+                foreach ($cached_dates as $date) {
+                    if ($date < $now) continue;
+
+                    if ($range_start === null) {
+                        $range_start = $date;
+                        $range_end = $date;
+                        continue;
+                    }
+
+                    $expected = date('Y-m-d', strtotime($range_end . ' +1 day'));
+                    if ($date === $expected) {
+                        $range_end = $date;
+                    } else {
+                        $events[] = [
+                            'uid' => 'ext-' . md5($range_start . $range_end),
+                            'start' => $range_start,
+                            'end' => date('Y-m-d', strtotime($range_end . ' +1 day')),
+                            'summary' => 'Sync Externe (Airbnb, Booking...)'
+                        ];
+                        $range_start = $date;
+                        $range_end = $date;
+                    }
+                }
+                if ($range_start !== null) {
+                    $events[] = [
+                        'uid' => 'ext-' . md5($range_start . $range_end),
+                        'start' => $range_start,
+                        'end' => date('Y-m-d', strtotime($range_end . ' +1 day')),
+                        'summary' => 'Sync Externe (Airbnb, Booking...)'
+                    ];
+                }
+            }
+        }
+
+        // --- GÉNÉRATION DU FICHIER .ICS ---
+        $ical = "BEGIN:VCALENDAR\r\n";
+        $ical .= "VERSION:2.0\r\n";
+        $ical .= "PRODID:-//Prestige Caraibes//PC Reservation V3//FR\r\n";
+        $ical .= "CALSCALE:GREGORIAN\r\n";
+        $ical .= "METHOD:PUBLISH\r\n";
+        $ical .= "X-WR-CALNAME:" . get_the_title($logement_id) . ($type === 'global' ? ' (Global)' : ' (Strict)') . "\r\n";
+        $ical .= "X-WR-TIMEZONE:America/Guadeloupe\r\n";
+
+        foreach ($events as $event) {
+            $ical .= "BEGIN:VEVENT\r\n";
+            $ical .= "UID:" . $event['uid'] . "@" . $_SERVER['HTTP_HOST'] . "\r\n";
+            $ical .= "DTSTAMP:" . gmdate('Ymd\THis\Z') . "\r\n";
+            $ical .= "DTSTART;VALUE=DATE:" . date('Ymd', strtotime($event['start'])) . "\r\n";
+            $ical .= "DTEND;VALUE=DATE:" . date('Ymd', strtotime($event['end'])) . "\r\n";
+            $ical .= "SUMMARY:" . $event['summary'] . "\r\n";
+            $ical .= "STATUS:CONFIRMED\r\n";
+            $ical .= "END:VEVENT\r\n";
+        }
+
+        $ical .= "END:VCALENDAR\r\n";
+
+        // --- ENVOI DE LA RÉPONSE AU BON FORMAT (TEXTE BRUT) ---
+        header('Content-Type: text/calendar; charset=utf-8');
+        header('Content-Disposition: attachment; filename="ical-' . $logement_id . '-' . $type . '.ics"');
+        echo $ical;
+        exit;
     }
 }

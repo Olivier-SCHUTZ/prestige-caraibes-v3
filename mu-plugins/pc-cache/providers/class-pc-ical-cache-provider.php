@@ -23,20 +23,14 @@ class PC_Ical_Cache_Provider
         $args = [
             'post_type'      => ['logement', 'villa', 'appartement'],
             'posts_per_page' => -1,
-            'meta_query'     => [
-                [
-                    'key'     => 'ical_url',
-                    'value'   => '',
-                    'compare' => '!=',
-                ],
-            ],
+            // On enlève la meta_query stricte car on veut potentiellement checker tous les logements
             'fields' => 'ids',
         ];
 
         $logement_ids = new WP_Query($args);
 
         if (!$logement_ids->have_posts()) {
-            PC_Cache_Helper::log("Aucun logement avec une URL iCal trouvée. Fin de la tâche.", "WARNING");
+            PC_Cache_Helper::log("Aucun logement trouvé pour la synchronisation iCal. Fin de la tâche.", "WARNING");
             return;
         }
 
@@ -44,35 +38,101 @@ class PC_Ical_Cache_Provider
         $error_count = 0;
 
         foreach ($logement_ids->posts as $post_id) {
-            $ical_url = class_exists('PCR_Fields') ? PCR_Fields::get('ical_url', $post_id) : get_post_meta($post_id, 'ical_url', true);
+            $icals_sync = class_exists('PCR_Fields') ? PCR_Fields::get('icals_sync', $post_id) : get_post_meta($post_id, 'icals_sync', true);
 
-            // Requête HTTP avec timeout conservé à 20s
-            $response = wp_remote_get($ical_url, ['timeout' => 20]);
+            if (is_string($icals_sync)) {
+                $icals_sync = json_decode($icals_sync, true);
+            }
+
+            // Si le logement n'a aucun flux iCal, on passe au suivant
+            if (!is_array($icals_sync) || empty($icals_sync)) {
+                continue;
+            }
+
+            $all_booked_dates = [];
+
+            // On boucle sur toutes les URLs du répéteur
+            foreach ($icals_sync as $ical) {
+                if (empty($ical['url'])) continue;
+
+                // Requête HTTP avec timeout conservé à 20s
+                $response = wp_remote_get($ical['url'], ['timeout' => 20]);
+
+                if (is_wp_error($response) || wp_remote_retrieve_response_code($response) != 200) {
+                    // NOUVEAU : On loggue l'erreur pour savoir quel logement pose problème
+                    $error_msg = is_wp_error($response) ? $response->get_error_message() : 'Code HTTP ' . wp_remote_retrieve_response_code($response);
+                    PC_Cache_Helper::log("Échec de synchronisation pour le logement ID {$post_id}. Erreur : {$error_msg}", "ERROR");
+                    $error_count++;
+                    continue;
+                }
+
+                $ical_data = wp_remote_retrieve_body($response);
+
+                // Parsing exact (Zéro régression)
+                $booked_dates = $this->parse_ical_data($ical_data);
+
+                if (!empty($booked_dates)) {
+                    $all_booked_dates = array_merge($all_booked_dates, $booked_dates);
+                }
+            } // Fin de la boucle foreach ($icals_sync as $ical)
+
+            // On dédoublonne les dates et on sauvegarde
+            if (!empty($all_booked_dates)) {
+                $all_booked_dates = array_unique($all_booked_dates);
+                update_post_meta($post_id, '_booked_dates_cache', $all_booked_dates);
+                $success_count++;
+            } else {
+                delete_post_meta($post_id, '_booked_dates_cache');
+                PC_Cache_Helper::log("Le calendrier du logement ID {$post_id} a été vidé (0 réservation trouvée sur tous les flux).", "INFO");
+            }
+        } // Fin de la boucle foreach ($logement_ids->posts)
+
+        PC_Cache_Helper::log("Fin de la synchronisation. Logements traités avec succès : {$success_count} | Erreurs de flux : {$error_count}.", "INFO");
+    }
+
+    /**
+     * Synchronise immédiatement un logement spécifique (Appelé lors de la sauvegarde)
+     */
+    public function sync_single_logement($post_id)
+    {
+        $icals_sync = class_exists('PCR_Fields') ? PCR_Fields::get('icals_sync', $post_id) : get_post_meta($post_id, 'icals_sync', true);
+
+        if (is_string($icals_sync)) {
+            $icals_sync = json_decode($icals_sync, true);
+        }
+
+        if (!is_array($icals_sync) || empty($icals_sync)) {
+            delete_post_meta($post_id, '_booked_dates_cache');
+            return false;
+        }
+
+        $all_booked_dates = [];
+        foreach ($icals_sync as $ical) {
+            if (empty($ical['url'])) continue;
+
+            // Timeout à 10s pour ne pas bloquer l'interface de sauvegarde trop longtemps
+            $response = wp_remote_get($ical['url'], ['timeout' => 10]);
 
             if (is_wp_error($response) || wp_remote_retrieve_response_code($response) != 200) {
-                // NOUVEAU : On loggue l'erreur pour savoir quel logement pose problème
-                $error_msg = is_wp_error($response) ? $response->get_error_message() : 'Code HTTP ' . wp_remote_retrieve_response_code($response);
-                PC_Cache_Helper::log("Échec de synchronisation pour le logement ID {$post_id}. Erreur : {$error_msg}", "ERROR");
-                $error_count++;
                 continue;
             }
 
             $ical_data = wp_remote_retrieve_body($response);
-
-            // Parsing exact (Zéro régression)
             $booked_dates = $this->parse_ical_data($ical_data);
 
             if (!empty($booked_dates)) {
-                update_post_meta($post_id, '_booked_dates_cache', $booked_dates);
-                $success_count++;
-            } else {
-                delete_post_meta($post_id, '_booked_dates_cache');
-                // On loggue un calendrier vide car cela peut être normal (vide) ou anormal (erreur de fichier source)
-                PC_Cache_Helper::log("Le calendrier du logement ID {$post_id} a été vidé (0 réservation trouvée).", "INFO");
+                $all_booked_dates = array_merge($all_booked_dates, $booked_dates);
             }
         }
 
-        PC_Cache_Helper::log("Fin de la synchronisation. Succès : {$success_count} | Échecs : {$error_count}.", "INFO");
+        if (!empty($all_booked_dates)) {
+            $all_booked_dates = array_unique($all_booked_dates);
+            update_post_meta($post_id, '_booked_dates_cache', $all_booked_dates);
+            return true;
+        } else {
+            delete_post_meta($post_id, '_booked_dates_cache');
+            return false;
+        }
     }
 
     /**

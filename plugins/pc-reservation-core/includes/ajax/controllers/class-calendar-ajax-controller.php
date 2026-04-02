@@ -568,20 +568,35 @@ class PCR_Calendar_Ajax_Controller extends PCR_Base_Ajax_Controller
                 continue;
             }
 
-            // Utilisation de la nouvelle méthode PCR_Fields avec fallback ACF
-            $ical_url = (string) (class_exists('PCR_Fields')
-                ? PCR_Fields::get('ical_url', $logement_id)
-                : (function_exists('get_field') ? get_field('ical_url', $logement_id) : ''));
-            if ($ical_url === '') {
+            // Lecture du nouveau champ icals_sync
+            $icals_sync = class_exists('PCR_Fields')
+                ? PCR_Fields::get('icals_sync', $logement_id)
+                : (function_exists('get_field') ? get_field('icals_sync', $logement_id) : []);
+
+            if (is_string($icals_sync)) {
+                $icals_sync = json_decode($icals_sync, true);
+            }
+
+            if (!is_array($icals_sync) || empty($icals_sync)) {
                 continue;
             }
 
-            $ranges = self::fetch_ical_ranges($ical_url);
-            if (empty($ranges)) {
+            $all_ranges = [];
+            // On boucle sur toutes les URLs pour récupérer les plages bloquées
+            foreach ($icals_sync as $ical) {
+                if (empty($ical['url'])) continue;
+
+                $ranges = self::fetch_ical_ranges($ical['url']);
+                if (is_array($ranges) && !empty($ranges)) {
+                    $all_ranges = array_merge($all_ranges, $ranges);
+                }
+            }
+
+            if (empty($all_ranges)) {
                 continue;
             }
 
-            foreach ($ranges as $range) {
+            foreach ($all_ranges as $range) {
                 $start = isset($range['start']) ? substr($range['start'], 0, 10) : '';
                 $end   = isset($range['end']) ? substr($range['end'], 0, 10) : '';
                 if (!self::range_overlaps($start, $end, $start_date, $end_date)) {
