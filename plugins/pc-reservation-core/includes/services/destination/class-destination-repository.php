@@ -131,6 +131,22 @@ class PCR_Destination_Repository
                 $value = get_field($meta_key, $post_id);
             }
 
+            // FALLBACK NATIF ABSOLU & RÉCUPÉRATION DES ANCIENS PRÉFIXES ACF :
+            if ($value === null || $value === '' || $value === false) {
+                // 1. On cherche avec la clé normale
+                $native_value = get_post_meta($post_id, $meta_key, true);
+
+                // 2. Si vide et que c'est un champ SEO, on cherche avec l'ancien préfixe du groupe ACF
+                if ($native_value === '' && strpos($meta_key, 'dest_meta_') === 0) {
+                    $legacy_key = str_replace('dest_meta_', 'dest_seo_overrides_dest_meta_', $meta_key);
+                    $native_value = get_post_meta($post_id, $legacy_key, true);
+                }
+
+                if ($native_value !== '') {
+                    $value = $native_value;
+                }
+            }
+
             // Traitement strict des types de données
             $details[$normalized_key] = $formatter->process_field_value($normalized_key, $value);
         }

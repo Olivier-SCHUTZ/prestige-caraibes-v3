@@ -1,6 +1,6 @@
 <template>
   <div class="pc-rates-calendar-wrapper">
-    <FullCalendar :options="calendarOptions" />
+    <FullCalendar :key="componentKey" :options="calendarOptions" />
   </div>
 </template>
 
@@ -20,176 +20,167 @@ onMounted(() => {
   }, 150);
 });
 
-// Utilitaire pour ajouter des jours (FullCalendar a des dates de fin exclusives)
-const addDays = (dateStr, days) => {
-  let d = new Date(dateStr);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split("T")[0];
-};
+// On crée un dictionnaire exact des jours (Map) au lieu d'un tableau d'événements
+const calendarDataMap = computed(() => {
+  const map = {};
 
-// Transformer les données du Store en événements FullCalendar
-const calendarEvents = computed(() => {
-  let events = [];
+  const getLocalString = (dateObj) => {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
 
-  // Saisons
+  // 1. Saisons
   store.formData.rates.seasons.forEach((s) => {
     if (s.periods && Array.isArray(s.periods)) {
       s.periods.forEach((p, index) => {
-        events.push({
-          title: s.name,
-          start: p.start,
-          end: addDays(p.end, 1),
-          backgroundColor: s.color,
-          borderColor: s.color,
-          classNames: ["pc-event-season"],
-          // Utilisation de zIndex via les extendedProps pour le tri ou CSS
-          extendedProps: {
+        let current = new Date(p.start + 'T00:00:00');
+        const end = new Date(p.end + 'T00:00:00');
+        while (current <= end) {
+          const dateStr = getLocalString(current);
+          map[dateStr] = {
             type: "season",
             entityId: s.id,
             periodIndex: index,
+            title: s.name,
+            color: s.color,
             price: s.price,
-            zIndex: 10,
-          },
-        });
+            basePriceForPromo: s.price
+          };
+          current.setDate(current.getDate() + 1);
+        }
       });
     }
   });
 
-  // Promos
+  // 2. Promos (Elles écrasent la saison en cours sur le dictionnaire)
   store.formData.rates.promos.forEach((p) => {
-    if (p.periods && Array.isArray(p.periods)) {
+    if (p.periods && Array.isArray(p.periods) && p.periods.length > 0) {
       p.periods.forEach((period, index) => {
-        events.push({
-          title: p.name,
-          start: period.start,
-          end: addDays(period.end, 1),
-          backgroundColor: "transparent",
-          borderColor: p.color,
-          classNames: ["pc-event-promo"],
-          extendedProps: {
+        // Sécurité vitale : ignorer les périodes vides créées par l'UI
+        if (!period.start || !period.end) return;
+        
+        let current = new Date(period.start + 'T00:00:00');
+        const end = new Date(period.end + 'T00:00:00');
+        
+        while (current <= end) {
+          const dateStr = getLocalString(current);
+          const basePrice = (map[dateStr] && map[dateStr].basePriceForPromo) 
+                              ? map[dateStr].basePriceForPromo 
+                              : store.basePrice;
+          
+          let calculatedPrice = basePrice;
+          const promoValue = parseFloat(p.value) || 0;
+          if (p.promo_type === "percent") {
+            calculatedPrice = basePrice - (basePrice * (promoValue / 100));
+          } else {
+            calculatedPrice = basePrice - promoValue;
+          }
+          calculatedPrice = Math.max(0, calculatedPrice);
+
+          map[dateStr] = {
             type: "promo",
             entityId: p.id,
             periodIndex: index,
-            value: p.value,
+            title: p.name || "Promo",
+            color: p.color || "#ef4444",
             promoType: p.promo_type || "percent",
-            zIndex: 50,
-          },
-        });
+            value: p.value,
+            calculatedPrice: calculatedPrice
+          };
+          current.setDate(current.getDate() + 1);
+        }
       });
     }
   });
 
-  return events;
+  return map;
 });
+
+// Fonction réutilisable pour dessiner/mettre à jour une case
+const renderCell = (frame, dateStr) => {
+  if (!frame) return;
+  const existingData = frame.querySelector('.pc-injected-cell');
+  if (existingData) existingData.remove();
+
+  const dayData = calendarDataMap.value[dateStr];
+
+  if (dayData) {
+    const contentEl = document.createElement("div");
+    contentEl.className = `pc-injected-cell ${dayData.type === 'season' ? 'pc-event-season' : 'pc-event-promo'}`;
+    
+    if (dayData.type === "season") {
+      contentEl.style.backgroundColor = dayData.color;
+      contentEl.title = `Saison : ${dayData.title}\nTarif : ${dayData.price}€ (Cliquez pour supprimer)`;
+      
+      // On remet le texte, mais ultra-compact
+      contentEl.innerHTML = `
+        <div class="pc-evt-title">${dayData.title}</div>
+        <div class="pc-evt-price">${dayData.price}€</div>
+      `;
+    } else if (dayData.type === "promo") {
+      contentEl.style.borderColor = dayData.color;
+      const valDisplay = dayData.promoType === "percent" ? `-${dayData.value}%` : `-${dayData.value}€`;
+      contentEl.title = `Promo : ${dayData.title}\nTarif final : ${dayData.calculatedPrice.toFixed(2)}€\nRéduction appliquée : ${valDisplay} (Cliquez pour supprimer)`;
+      
+      // Affichage compact pour que tout rentre
+      contentEl.innerHTML = `
+        <div class="pc-evt-title">${dayData.title}</div>
+        <div class="pc-evt-price">${dayData.calculatedPrice.toFixed(2)}€</div>
+        <div class="pc-evt-promo-badge">${valDisplay}</div>
+      `;
+    }
+    frame.appendChild(contentEl);
+  } else if (store.basePrice > 0) {
+    const priceEl = document.createElement("div");
+    priceEl.className = "pc-base-price pc-injected-cell";
+    priceEl.textContent = store.basePrice + "€";
+    priceEl.title = `Prix de base : ${store.basePrice}€`;
+    frame.appendChild(priceEl);
+  }
+};
+
+const componentKey = ref(0);
+
+// Watcher : On écoute directement les tarifs du Store.
+// Dès qu'une promo ou saison est ajoutée/supprimée, on incrémente la clé.
+// Cela force FullCalendar à se reconstruire instantanément avec les bonnes priorités.
+watch(
+  () => store.formData.rates,
+  () => {
+    componentKey.value += 1;
+  },
+  { deep: true }
+);
 
 // Configuration de FullCalendar
 const calendarOptions = computed(() => ({
   plugins: [multiMonthPlugin, interactionPlugin],
   initialView: "multiMonthYear",
-  height: 650, // FIX : Hauteur obligatoire pour la vue multiMonth
-  multiMonthMaxColumns: 1, // Vue verticale type Airbnb
+  height: "auto", 
+  multiMonthMaxColumns: 1, 
   locale: "fr",
   firstDay: 1,
-  editable: true,
-  droppable: true,
-  eventOverlap: true,
-  eventOrder: "extendedProps.zIndex",
-  events: calendarEvents.value,
+  editable: false, 
+  droppable: false,
+  events: [], 
 
-  // Personnalisation du contenu HTML des événements
-  eventContent: (arg) => {
-    const props = arg.event.extendedProps;
-    let html = `<div class="pc-evt-title">${arg.event.title}</div>`;
-
-    if (props.type === "season") {
-      html += `<div class="pc-evt-price">${props.price}€</div>`;
-    } else if (props.type === "promo") {
-      const valDisplay =
-        props.promoType === "percent" ? `-${props.value}%` : `-${props.value}€`;
-      html += `<div class="pc-evt-promo-badge">${valDisplay}</div>`;
-    }
-
-    return { html: `<div class="pc-event-body">${html}</div>` };
-  },
-
-  // Injection du prix de base sur les jours vides
   dayCellDidMount: (arg) => {
     const frame = arg.el.querySelector(".fc-daygrid-day-frame");
-    if (frame && store.basePrice > 0) {
-      const cellDate = arg.date.toISOString().split("T")[0];
-      const hasSeasonEvent = store.formData.rates.seasons.some((season) => {
-        return (
-          season.periods &&
-          season.periods.some((period) => {
-            return cellDate >= period.start && cellDate <= period.end;
-          })
-        );
-      });
+    const cellDate = arg.date.toISOString().split("T")[0];
+    renderCell(frame, cellDate);
+  },
 
-      if (!hasSeasonEvent) {
-        const priceEl = document.createElement("div");
-        priceEl.className = "pc-base-price";
-        priceEl.textContent = store.basePrice + "€";
-        frame.appendChild(priceEl);
+  dateClick: (info) => {
+    const dayData = calendarDataMap.value[info.dateStr];
+    if (dayData) {
+      if (confirm("Supprimer cette période du calendrier ?")) {
+        store.removeRatePeriod(dayData.type, dayData.entityId, dayData.periodIndex);
       }
     }
-  },
-
-  // Événements d'interaction
-  eventReceive: (info) => {
-    const type = info.event.extendedProps.type;
-    const entityId = info.event.extendedProps.entityId;
-    const start = info.event.startStr;
-
-    let end = info.event.endStr;
-    if (!end) {
-      end = start;
-    } else {
-      // Ajustement exclusif -> inclusif
-      let d = new Date(end);
-      d.setDate(d.getDate() - 1);
-      end = d.toISOString().split("T")[0];
-    }
-
-    store.addRatePeriod(type, entityId, start, end);
-    info.event.remove(); // Le store gère la réactivité, on supprime le ghost
-  },
-
-  eventDrop: (info) => handleEventChange(info),
-  eventResize: (info) => handleEventChange(info),
-
-  eventClick: (info) => {
-    if (confirm("Supprimer cette période du calendrier ?")) {
-      store.removeRatePeriod(
-        info.event.extendedProps.type,
-        info.event.extendedProps.entityId,
-        info.event.extendedProps.periodIndex,
-      );
-    }
-  },
-}));
-
-const handleEventChange = (info) => {
-  const props = info.event.extendedProps;
-  const start = info.event.startStr;
-
-  let end = info.event.endStr;
-  if (!end) {
-    end = start;
-  } else {
-    let d = new Date(end);
-    d.setDate(d.getDate() - 1);
-    end = d.toISOString().split("T")[0];
   }
-
-  store.updateRatePeriod(
-    props.type,
-    props.entityId,
-    props.periodIndex,
-    start,
-    end,
-  );
-};
+}));
 </script>
 
 <style scoped>
@@ -199,7 +190,7 @@ const handleEventChange = (info) => {
   border-radius: 16px;
   padding: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  overflow: visible; /* CRUCIAL : "hidden" bloquait totalement le fonctionnement de "position: sticky" */
   position: relative;
   min-height: 600px;
 }
@@ -208,6 +199,13 @@ const handleEventChange = (info) => {
 :deep(.fc) {
   font-family: inherit;
   font-size: 13px;
+}
+/* === En-tête FullCalendar standard === */
+:deep(.fc-header-toolbar) {
+  position: relative;
+  background: transparent;
+  padding: 0 0 15px 0;
+  border-bottom: none;
 }
 :deep(.fc-toolbar-title) {
   font-size: 18px;
@@ -262,37 +260,17 @@ const handleEventChange = (info) => {
   z-index: 10 !important;
   pointer-events: none;
 }
+/* Suppression totale de l'affichage des événements natifs FullCalendar */
 :deep(.fc-daygrid-day-events) {
-  position: absolute;
-  top: 32px;
-  bottom: 10px;
-  left: 6px;
-  right: 6px;
-  margin: 0;
-  padding: 0;
-}
-:deep(.fc-daygrid-event-harness) {
-  margin: 0 !important;
-}
-:deep(.fc-daygrid-event) {
-  margin: 0 !important;
-  width: 100% !important;
-  position: relative;
+  display: none !important;
 }
 
-/* Événements Saisons */
+/* Événements Saisons (Héritent du positionnement de .pc-injected-cell) */
 :deep(.pc-event-season) {
   border: none !important;
-  border-radius: 12px !important;
-  padding: 12px 14px !important;
-  min-height: 64px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
   box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.35) !important;
   color: #fff !important;
-  z-index: 2 !important;
+  z-index: 2;
 }
 
 /* Événements Promos - Fond hachuré */
@@ -305,42 +283,81 @@ const handleEventChange = (info) => {
     rgba(239, 68, 68, 0.6) 20px
   ) !important;
   border: 2px solid #b91c1c !important;
-  border-radius: 12px !important;
-  padding: 12px 14px !important;
-  min-height: 64px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
-  color: #fff !important;
-  z-index: 100 !important;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+  color: #fff !important;
+  z-index: 100;
 }
 
-/* Contenu injecté via eventContent */
-:deep(.pc-event-body) {
-  line-height: 1.3;
-  font-size: 14px;
-  font-weight: 700;
-}
+/* === TYPOGRAPHIE COMPACTE POUR LES CASES === */
 :deep(.pc-evt-title) {
   font-weight: 700;
   color: #fff;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  font-size: 11px; /* Réduit pour rentrer dans la case */
+  line-height: 1.1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Coupe le texte après 2 lignes avec "..." */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-wrap: break-word;
+  width: 100%;
+  padding: 0 2px;
 }
 :deep(.pc-evt-price) {
-  font-weight: 700;
+  font-weight: 800;
   color: #fff;
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1;
 }
 :deep(.pc-evt-promo-badge) {
   background: #fff;
   color: #ef4444;
   font-weight: 800;
   border-radius: 4px;
-  padding: 2px 6px;
+  padding: 2px 4px;
   display: inline-block;
-  margin-top: 4px;
-  font-size: 0.9em;
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* === NOTRE NOUVEAU CONTENEUR INJECTÉ MANUELLEMENT === */
+:deep(.pc-injected-cell) {
+  position: absolute;
+  top: 26px; /* Remonté pour gagner un peu de hauteur */
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 5;
+  box-sizing: border-box;
+  padding: 2px;
+  overflow: hidden;
+  cursor: pointer; /* Indique qu'on peut cliquer pour supprimer */
+  transition: transform 0.1s;
+}
+
+/* Petit effet au survol pour montrer que c'est cliquable */
+:deep(.pc-injected-cell:hover) {
+  transform: scale(0.98);
+}
+
+:deep(.pc-injected-cell.pc-base-price) {
+  top: auto;
+  bottom: 12px;
+  right: 12px;
+  left: auto;
+  display: block;
+  z-index: 1;
+}
+
+/* Optionnel : cacher définitivement le conteneur d'événements natif pour faire propre */
+:deep(.fc-daygrid-day-events) {
+  display: none !important;
 }
 </style>

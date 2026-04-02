@@ -454,7 +454,16 @@ if (!Array.isArray(modalStore.formData.taxe_sejour)) {
   display: flex;
   gap: 20px;
   margin-top: 20px;
-  align-items: flex-start; /* Permet à la sidebar de ne pas s'étirer si le calendrier grandit */
+  align-items: flex-start; 
+  position: relative;
+}
+
+/* On force la sidebar à rester collée en haut de l'écran (ou de son conteneur) */
+:deep(.pc-rates-sidebar) { 
+  position: sticky;
+  top: 20px; /* L'écart depuis le haut de la fenêtre lors du scroll */
+  align-self: flex-start; /* Empêche la sidebar de s'étirer verticalement */
+  /* Ajuste la largeur si nécessaire, par exemple : min-width: 250px; */
 }
 
 /* Fallback responsive */
@@ -465,6 +474,10 @@ if (!Array.isArray(modalStore.formData.taxe_sejour)) {
 
   .pc-rates-container > * {
     width: 100% !important;
+  }
+  
+  :deep(.pc-rates-sidebar) {
+    position: static; /* On désactive le sticky sur mobile */
   }
 }
 </style>

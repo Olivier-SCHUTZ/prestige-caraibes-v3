@@ -64,9 +64,11 @@
                 class="pc-select"
                 style="
                   width: 100%;
-                  padding: 8px;
+                  padding: 8px 12px;
                   border: 1px solid #cbd5e0;
                   border-radius: 6px;
+                  min-height: 40px;
+                  box-sizing: border-box;
                 "
               >
                 <option value="unique">Unique / Forfaitaire</option>
@@ -130,9 +132,11 @@
               v-model="ligne.type_ligne"
               class="pc-select"
               style="
-                padding: 6px;
+                padding: 6px 10px;
                 border-radius: 4px;
                 border: 1px solid #cbd5e0;
+                min-height: 38px;
+                box-sizing: border-box;
               "
             >
               <option value="adulte">Adulte</option>

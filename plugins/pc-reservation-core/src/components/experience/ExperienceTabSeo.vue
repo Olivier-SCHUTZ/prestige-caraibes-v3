@@ -66,6 +66,8 @@
               border: 1px solid #cbd5e0;
               border-radius: 6px;
               background: white;
+              min-height: 40px;
+              box-sizing: border-box;
             "
           >
             <option value="index,follow">Index, Follow (Par défaut)</option>

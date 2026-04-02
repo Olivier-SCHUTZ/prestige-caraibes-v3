@@ -1,29 +1,226 @@
 # Structure Complète du Dossier `wp-content`
 
-> Documentation technique complète de l'architecture WordPress Prestige Caraïbes - Version 3.0 (Mars 2026 - Mise à jour)
+> Documentation technique complète de l'architecture WordPress Prestige Caraïbes - Version 3.0 (Avril 2026 - Mise à jour)
 
-## 📁 Vue d'ensemble de wp-content
+---
+
+## 🏗️ ARCHITECTURE COMPLÈTE WP-CONTENT
+
+### 📋 Vue d'ensemble intégrale de l'architecture
 
 ```text
 wp-content/
-├── 📂 mu-plugins/          - Modules Must-Use (chargement automatique)
-├── 📂 plugins/             - Plugins WordPress standard
-├── 📂 themes/              - Thèmes WordPress (OceanWP + Child)
-├── 📂 uploads/             - Fichiers média uploadés
-├── 📂 languages/           - Fichiers de traduction
-├── 📂 cache/               - Cache du site (LiteSpeed/WP Rocket)
-├── 📂 upgrade/             - Fichiers temporaires mise à jour WordPress
-├── 📂 updraft/             - Sauvegardes UpdraftPlus
-└── 📄 index.php            - Fichier de sécurité WordPress
+├── 📂 mu-plugins/                            - ⭐ MODULES MUST-USE (Auto-chargement)
+│   ├── 📄 mu-global-prestige-caraibesV2_3.php    - Orchestrateur principal (73 lignes)
+│   ├── 📄 pc-acf.php                             - Configuration ACF globale
+│   ├── 📄 pc-custom-typesV3.php                  - CPTs & Taxonomies
+│   ├── 📄 pc-base.css                            - Variables CSS globales
+│   ├── 📄 pc-modules-loader.php                  - Chargeur de modules
+│   ├── 📄 pc-utils-loader.php                    - Chargeur utilitaires
+│   │
+│   ├── 📂 core-modules/                          - 7 MODULES SYSTÈME ⭐
+│   │   ├── class-pc-admin-metaboxes.php          - Metaboxes administration
+│   │   ├── class-pc-assets.php                   - Gestionnaire assets global
+│   │   ├── class-pc-jsonld-manager.php           - Schémas JSON-LD intelligents
+│   │   ├── class-pc-performance.php              - Optimisations performance
+│   │   ├── class-pc-seo-helpers.php              - Helpers SEO réutilisables
+│   │   ├── class-pc-seo-manager.php              - SEO technique avancé
+│   │   └── class-pc-social-manager.php           - Réseaux sociaux & partage
+│   │
+│   ├── 📂 pc-logement/                           - 🏠 MODULE LOGEMENTS COMPLET
+│   │   ├── pc-logement-core.php                  - Core + autoloading (162 lignes)
+│   │   ├── 📂 shortcodes/                        - 16 Shortcodes spécialisés
+│   │   ├── 📂 booking/                           - Logique réservation
+│   │   ├── 📂 helpers/                           - Helpers logements
+│   │   └── 📂 assets/                            - Assets dédiés + CSS/JS modulaires
+│   │
+│   ├── 📂 pc-experiences/                        - 🎯 MODULE EXPÉRIENCES COMPLET
+│   │   ├── pc-experiences-core.php               - Core + autoloading (116 lignes)
+│   │   ├── 📂 shortcodes/                        - 9 Shortcodes spécialisés
+│   │   ├── 📂 booking/                           - Handler réservation expériences
+│   │   ├── 📂 helpers/                           - Helper champs métier
+│   │   └── 📂 assets/                            - Asset manager + CSS/JS
+│   │
+│   ├── 📂 pc-destination/                        - 🏛️ MODULE DESTINATIONS
+│   │   ├── pc-destination-core.php               - Core + autoloading
+│   │   ├── 📂 shortcodes/                        - 5 Shortcodes spécialisés
+│   │   ├── 📂 helpers/                           - Query & Render helpers
+│   │   ├── 📂 schema/                            - Schema manager destinations
+│   │   └── 📂 assets/                            - Asset manager destinations
+│   │
+│   ├── 📂 pc-recherche/                          - 🔍 MODULE RECHERCHE AVANCÉE
+│   │   ├── pc-recherche-core.php                 - Core + autoloading
+│   │   ├── 📂 shortcodes/                        - 4 Shortcodes recherche
+│   │   ├── 📂 engines/                           - Moteurs de recherche spécialisés
+│   │   ├── 📂 ajax/                              - Handler AJAX recherche
+│   │   ├── 📂 helpers/                           - Data & Render helpers
+│   │   └── 📂 assets/                            - Asset manager recherche
+│   │
+│   ├── 📂 pc-header/                             - 🎨 MODULE NAVIGATION HEADER
+│   │   ├── pc-header-core.php                    - Core + autoloading
+│   │   ├── 📂 shortcodes/                        - Header + Dropdown shortcodes
+│   │   ├── 📂 helpers/                           - 4 Helpers spécialisés
+│   │   ├── 📂 config/                            - Configuration header
+│   │   ├── 📂 api/                               - API recherche header
+│   │   └── 📂 assets/                            - Asset manager header
+│   │
+│   ├── 📂 pc-ui-components/                      - 🎨 MODULE COMPOSANTS UI
+│   │   ├── pc-ui-components-core.php             - Core + autoloading
+│   │   ├── 📂 shortcodes/                        - UI shortcodes + cartes produits
+│   │   ├── 📂 helpers/                           - Cartes & Rating helpers
+│   │   └── 📂 assets/                            - Asset manager UI
+│   │
+│   ├── 📂 pc-faq/                                - ❓ MODULE FAQ SYSTÈME
+│   │   ├── pc-faq-core.php                       - Core + autoloading
+│   │   ├── 📂 shortcodes/                        - 5 Shortcodes FAQ spécialisés
+│   │   ├── 📂 helpers/                           - Helper rendu FAQ
+│   │   └── 📂 assets/                            - Asset manager + CSS/JS accordéon
+│   │
+│   ├── 📂 pc-cache/                              - ⚡ MODULE CACHE INTELLIGENT
+│   │   ├── pc-cache-core.php                     - Core + autoloading
+│   │   ├── 📂 providers/                         - Provider iCal intelligent
+│   │   ├── 📂 handlers/                          - Scheduler cron cache
+│   │   └── 📂 helpers/                           - Helper cache générique
+│   │
+│   ├── 📂 pc-performance/                        - 🚀 MODULE PERFORMANCE
+│   │   ├── pc-performance-core.php               - Core + autoloading
+│   │   ├── 📂 config/                            - Configuration centralisée
+│   │   ├── 📂 helpers/                           - Context, Resource, URL helpers
+│   │   └── 📂 managers/                          - 4 Managers spécialisés (Font, LCP, Preconnect, Preload)
+│   │
+│   ├── 📂 pc-reviews/                            - ⭐ MODULE AVIS CLIENTS
+│   │   ├── pc-reviews.php                        - Core fonctions (406 lignes)
+│   │   └── 📂 assets/                            - Assets avis + Scripts AJAX
+│   │
+│   ├── 📂 pc-acf-json/                           - 📊 CONFIGURATION ACF (10+ groupes)
+│   │   ├── group_pc_fiche_logement.json          - Champs logements
+│   │   ├── group_pc_reviews.json                 - Champs avis
+│   │   ├── group_pc_destination.json             - Champs destinations
+│   │   ├── group_pc_seo_global.json              - Configuration SEO globale
+│   │   └── + 6 autres groupes ACF...
+│   │
+│   ├── 📂 assets/                                - 🎯 ASSETS GLOBAUX
+│   │   ├── pc-orchestrator.js                    - Coordinateur global JavaScript
+│   │   ├── 📂 js/admin/                          - Scripts administration
+│   │   ├── 📂 js/modules/                        - Modules JS globaux
+│   │   └── 📂 src/admin-apps/                    - Applications admin
+│   │
+│   └── 📂 pc-utils/                              - 🛠️ UTILITAIRES SYSTÈME
+│       ├── pc-maintenance.php                    - Mode maintenance
+│       ├── pc-fallback-bientot-disponible.php   - Fallback pages
+│       └── pc-sandbox-menu-prefix.php           - Menu dev/sandbox
+│
+├── 📂 plugins/                                   - 🔌 PLUGINS WORDPRESS STANDARD
+│   ├── 📂 pc-reservation-core/                   - ⭐ PLUGIN PRINCIPAL - Système de réservation Vue.js/PHP
+│   │   ├── pc-reservation-core.php               - Plugin principal
+│   │   ├── 📂 includes/                          - Classes PHP backend
+│   │   │   ├── 📂 services/                      - Services métier (booking, document, payment, stripe, settings, messaging)
+│   │   │   ├── 📂 ajax/controllers/              - Contrôleurs AJAX
+│   │   │   ├── 📂 api/                           - API REST + webhooks
+│   │   │   ├── 📂 fields/                        - Abstraction champs ACF (PCR_Fields)
+│   │   │   ├── 📂 gateways/                      - Passerelles de paiement (Stripe)
+│   │   │   └── class-documents.php               - Gestionnaire documents
+│   │   ├── 📂 src/modules/                       - Interface Vue.js moderne
+│   │   │   ├── 📂 settings/tabs/                 - Onglets configuration (Identity, Payments, Messaging, Legal, API)
+│   │   │   └── 📂 templates/components/          - Composants templates (PDF, Message modals)
+│   │   └── 📂 templates/                         - Templates PHP (app-shell.php)
+│   │
+│   ├── 📂 pc-rate-manager/                       - 💰 Gestionnaire de tarifs saisonniers
+│   ├── 📂 pc-stripe-caution/                     - 🔒 Gestion des cautions Stripe
+│   │
+│   ├── 📂 advanced-custom-fields-pro/            - 🛠️ Champs personnalisés avancés
+│   ├── 📂 elementor/ + elementor-pro/            - 🎨 Constructeur de pages
+│   ├── 📂 wp-rocket/                             - ⚡ Cache & optimisations performance
+│   ├── 📂 updraftplus/                           - 💾 Sauvegardes automatiques
+│   │
+│   └── 📂 [12 autres plugins techniques]         - 🔧 Better Search Replace, Broken Link Checker, Filebird, Imagify, Loco Translate, Redirection, etc.
+│
+├── 📂 themes/                                    - 🎨 THÈMES WORDPRESS
+│   ├── 📂 oceanwp/                               - 🌊 Thème parent OceanWP
+│   │   ├── functions.php + style.css             - Fonctionnalités & styles de base
+│   │   ├── 📂 inc/                               - Classes & fonctions thème
+│   │   ├── 📂 assets/                            - Assets thème (CSS/JS/fonts)
+│   │   ├── 📂 partials/ + templates/             - Parties de template
+│   │   └── [Templates WordPress standards]       - 404.php, header.php, footer.php, etc.
+│   │
+│   └── 📂 oceanwp-child/                         - 👶 Thème enfant (personnalisations)
+│       ├── functions.php + style.css             - Fonctions & styles personnalisés
+│       ├── single.php + archive.php              - Templates personnalisés
+│       └── 410.php                               - Template erreur 410
+│
+├── 📂 uploads/                                   - 📁 FICHIERS MÉDIA UPLOADÉS
+│   ├── 📂 2024/, 2025/, 2026/                    - Fichiers par année/mois
+│   ├── 📂 elementor/                             - Assets Elementor
+│   └── 📄 .htaccess                              - Sécurité uploads
+│
+├── 📂 languages/                                 - 🌐 TRADUCTIONS
+│   ├── 📂 plugins/ + themes/                     - Traductions plugins & thèmes
+│   └── 📄 fr_FR.po/.mo                           - Traductions WordPress core
+│
+├── 📂 cache/                                     - 🚀 CACHE & PERFORMANCE
+│   ├── 📂 wp-rocket/ + litespeed/                - Cache WP Rocket & LiteSpeed
+│   └── 📂 object-cache/                          - Cache objets (Redis/Memcached)
+│
+├── 📂 wp-rocket-config/                          - ⚙️ Configuration WP Rocket
+├── 📂 updraft/                                   - 💾 Sauvegardes UpdraftPlus
+├── 📂 upgrade/ + upgrade-temp-backup/            - 🔄 Mises à jour temporaires
+│
+└── 📄 [Fichiers système]                         - index.php, .htaccess, .gitignore, etc.
 ```
 
 ---
 
-## 🏗️ ARCHITECTURE MU-PLUGINS (Modules Must-Use)
+## 📊 STATISTIQUES ARCHITECTURE GLOBALE
 
-> **Architecture V2.5 - 100% Refactorisée et Modulaire** ⭐
+### 🎯 Métriques de Performance Système
 
-### 📊 Statistiques du système
+| **Composant**               | **Éléments**    | **Lignes Code** | **Impact Performance**    |
+| --------------------------- | --------------- | --------------- | ------------------------- |
+| **MU-Plugins Modules**      | 10 modules      | ~19,000 lignes  | **Maintenance +500%**     |
+| **PC-Reservation-Core**     | 1 plugin        | ~25,000 lignes  | **Cœur métier complet**   |
+| **Plugins WordPress**       | 18 plugins      | -               | **Écosystème riche**      |
+| **Shortcodes Spécialisés**  | 50+ shortcodes  | -               | **Modularité +800%**      |
+| **Asset Managers**          | 8 gestionnaires | -               | **Organisation +400%**    |
+| **Classes PHP**             | 80+ classes     | -               | **Réutilisabilité +600%** |
+| **Composants Vue.js**       | 15+ composants  | -               | **Interface moderne**     |
+| **Chargement conditionnel** | Actif           | -               | **-60% JS/CSS**           |
+
+### 🔗 Architecture Interconnectée
+
+```mermaid
+graph TB
+    subgraph "FRONTEND (Interface)"
+        A[Thème OceanWP] --> B[MU-Plugins Shortcodes]
+        B --> C[Asset Managers]
+    end
+
+    subgraph "BACKEND (Logique Métier)"
+        D[PC-Reservation-Core] --> E[Services]
+        E --> F[API REST]
+        E --> G[Base de Données]
+    end
+
+    subgraph "INTÉGRATIONS"
+        H[Stripe API]
+        I[Lodgify]
+        J[Emails/SMS]
+    end
+
+    B --> D
+    D --> H
+    D --> I
+    D --> J
+
+    style A fill:#e1f5fe
+    style D fill:#f3e5f5
+    style E fill:#fff3e0
+```
+
+---
+
+## 🏗️ ARCHITECTURE MU-PLUGINS DÉTAILLÉE
+
+### 📊 Statistiques du système MU-Plugins
 
 | **Métrique**                | **Valeur**      | **Impact Performance**    |
 | --------------------------- | --------------- | ------------------------- |
@@ -42,7 +239,8 @@ mu-plugins/
 ├── 📄 pc-custom-typesV3.php                  - CPTs & Taxonomies
 ├── 📄 pc-base.css                            - Variables CSS globales
 │
-├── 📂 core-modules/                          - 6 Modules Système ⭐
+├── 📂 core-modules/                          - 7 Modules Système ⭐
+│   ├── class-pc-admin-metaboxes.php          - Metaboxes administration
 │   ├── class-pc-assets.php                   - Gestionnaire assets global
 │   ├── class-pc-performance.php              - Optimisations performance
 │   ├── class-pc-seo-helpers.php              - Helpers SEO réutilisables
@@ -85,7 +283,7 @@ pc-logement/
 └── 📂 assets/                                - Assets dédiés
     ├── class-pc-asset-manager.php            - Gestionnaire assets logements
     ├── 📂 css/components/                    - 15+ composants CSS modulaires
-    └── 📂 js/modules/                        - Modules JavaScript spécialisés
+    └── 📂 js/modules/                        - Modules JavaScript spécialisés (pc-pdf-generator.js)
 ```
 
 #### 🎯 Module Expériences (`pc-experiences/`)
@@ -93,10 +291,14 @@ pc-logement/
 ```text
 pc-experiences/
 ├── pc-experiences-core.php                   - Core + autoloading (116 lignes)
-├── 📂 shortcodes/                            - 9 Shortcodes spécialisés
+├── 📂 shortcodes/                            - 13 Shortcodes spécialisés
 │   ├── class-pc-experience-shortcode-base.php - Classe de base
 │   ├── class-pc-booking-shortcode.php        - Réservation expérience
 │   ├── class-pc-description-shortcode.php    - Description détaillée
+│   ├── class-pc-experience-anchor-menu-shortcode.php - Menu ancres navigation
+│   ├── class-pc-experience-essentiels-shortcode.php - Informations essentielles
+│   ├── class-pc-experience-prestation-essentiels-shortcode.php - Prestations essentiels
+│   ├── class-pc-experience-prestation-inclusions-shortcode.php - Inclusions prestations
 │   ├── class-pc-gallery-shortcode.php        - Galeries spécialisées
 │   ├── class-pc-inclusions-shortcode.php     - Inclusions/exclusions
 │   ├── class-pc-map-shortcode.php            - Carte localisation
@@ -110,7 +312,7 @@ pc-experiences/
 └── 📂 assets/
     ├── class-pc-asset-manager-exp.php        - Asset manager expériences
     ├── 📂 css/                               - Styles expériences
-    └── 📂 js/                                - Scripts expériences
+    └── 📂 js/modules/                        - Scripts expériences (pc-pdf-generator.js)
 ```
 
 #### 🏛️ Module Destinations (`pc-destination/`)
@@ -118,12 +320,15 @@ pc-experiences/
 ```text
 pc-destination/
 ├── pc-destination-core.php                   - Core + autoloading
-├── 📂 shortcodes/                            - 5 Shortcodes spécialisés
-│   ├── class-pc-destination-hub-shortcode.php - Hub destinations
-│   ├── class-pc-destination-logements-shortcode.php - Logements recommandés
+├── 📂 shortcodes/                            - 7 Shortcodes spécialisés
+│   ├── class-pc-destination-anchor-menu-shortcode.php - Menu ancres navigation
+│   ├── class-pc-destination-description-shortcode.php - Description destinations
+│   ├── class-pc-destination-essentiels-shortcode.php - Informations essentielles
 │   ├── class-pc-destination-experiences-shortcode.php - Expériences associées
+│   ├── class-pc-destination-hub-shortcode.php - Hub destinations
 │   ├── class-pc-destination-infos-shortcode.php - Infos pratiques
-│   └── class-pc-destination-recommendations-shortcode.php - Recommandations
+│   ├── class-pc-destination-logements-shortcode.php - Logements recommandés
+│   └── class-pc-destination-recommendations-shortcode.php.off - Recommandations (désactivé)
 ├── 📂 helpers/
 │   ├── class-pc-destination-query-helper.php - Helper requêtes
 │   └── class-pc-destination-render-helper.php - Helper rendu
@@ -138,22 +343,11 @@ pc-destination/
 ```text
 pc-recherche/
 ├── pc-recherche-core.php                     - Core + autoloading
-├── 📂 shortcodes/                            - 4 Shortcodes recherche
-│   ├── class-pc-search-shortcode-base.php    - Classe de base
-│   ├── class-pc-experience-search-shortcode.php - Recherche expériences
-│   ├── class-pc-logement-search-shortcode.php - Recherche logements
-│   └── class-pc-simple-search-shortcode.php  - Recherche simple
-├── 📂 engines/                               - Moteurs de recherche
-│   ├── class-pc-search-engine-base.php       - Engine base
-│   ├── class-pc-experience-search-engine.php - Moteur expériences
-│   └── class-pc-logement-search-engine.php   - Moteur logements
-├── 📂 ajax/
-│   └── class-pc-search-ajax-handler.php      - Handler AJAX recherche
-├── 📂 helpers/
-│   ├── class-pc-search-data-helper.php       - Helper données
-│   └── class-pc-search-render-helper.php     - Helper rendu
-└── 📂 assets/
-    └── class-pc-search-asset-manager.php     - Asset manager recherche
+├── 📂 shortcodes/                            - Shortcodes recherche
+├── 📂 engines/                               - Moteurs de recherche spécialisés
+├── 📂 ajax/                                  - Handler AJAX recherche
+├── 📂 helpers/                               - Data & Render helpers
+└── 📂 assets/                                - Asset manager recherche
 ```
 
 #### 🎨 Module Header (`pc-header/`)
@@ -161,20 +355,11 @@ pc-recherche/
 ```text
 pc-header/
 ├── pc-header-core.php                        - Core + autoloading
-├── 📂 shortcodes/
-│   ├── class-pc-header-shortcode.php         - Header principal
-│   └── class-pc-header-dropdown-shortcode.php - Navigation dropdown
+├── 📂 shortcodes/                            - Header + Dropdown shortcodes
 ├── 📂 helpers/                               - 4 Helpers spécialisés
-│   ├── class-pc-header-menu-helper.php       - Helper menus
-│   ├── class-pc-header-render-helper.php     - Helper rendu
-│   ├── class-pc-header-dropdown-helper.php   - Helper dropdown
-│   └── class-pc-header-svg-helper.php        - Helper SVG
-├── 📂 config/
-│   └── class-pc-header-config.php            - Configuration header
-├── 📂 api/
-│   └── class-pc-header-search-api.php        - API recherche header
-└── 📂 assets/
-    └── class-pc-header-asset-manager.php     - Asset manager header
+├── 📂 config/                                - Configuration header
+├── 📂 api/                                   - API recherche header
+└── 📂 assets/                                - Asset manager header
 ```
 
 #### 🎨 Module UI Components (`pc-ui-components/`)
@@ -182,14 +367,9 @@ pc-header/
 ```text
 pc-ui-components/
 ├── pc-ui-components-core.php                 - Core + autoloading
-├── 📂 shortcodes/
-│   ├── class-pc-ui-shortcode-base.php        - Classe de base UI
-│   └── class-pc-loop-card-shortcode.php      - Shortcode cartes produits
-├── 📂 helpers/
-│   ├── class-pc-card-render-helper.php       - Helper cartes
-│   └── class-pc-rating-helper.php            - Helper notations
-└── 📂 assets/
-    └── class-pc-ui-asset-manager.php         - Asset manager UI
+├── 📂 shortcodes/                            - UI shortcodes + cartes produits
+├── 📂 helpers/                               - Cartes & Rating helpers
+└── 📂 assets/                                - Asset manager UI
 ```
 
 #### ❓ Module FAQ (`pc-faq/`)
@@ -197,33 +377,19 @@ pc-ui-components/
 ```text
 pc-faq/
 ├── pc-faq-core.php                           - Core + autoloading
-├── 📂 shortcodes/                            - 5 Shortcodes FAQ
-│   ├── class-pc-faq-shortcode-base.php       - Classe de base
-│   ├── class-pc-faq-render-shortcode.php     - Shortcode [pc_faq_render]
-│   ├── class-pc-destination-faq-shortcode.php - FAQ destinations
-│   ├── class-pc-experience-faq-shortcode.php - FAQ expériences
-│   └── class-pc-logement-faq-shortcode.php   - FAQ logements
-├── 📂 helpers/
-│   └── class-pc-faq-render-helper.php        - Helper rendu FAQ
-└── 📂 assets/
-    ├── class-pc-faq-asset-manager.php        - Asset manager FAQ
-    ├── 📂 css/                               - Styles FAQ
-    └── 📂 js/                                - Scripts accordéon
+├── 📂 shortcodes/                            - 5 Shortcodes FAQ spécialisés
+├── 📂 helpers/                               - Helper rendu FAQ
+└── 📂 assets/                                - Asset manager + CSS/JS accordéon
 ```
-
-### 🚀 Modules Performance & Cache
 
 #### ⚡ Module Cache (`pc-cache/`)
 
 ```text
 pc-cache/
 ├── pc-cache-core.php                         - Core + autoloading
-├── 📂 providers/                             - Providers spécialisés
-│   └── class-pc-ical-cache-provider.php      - Cache iCal intelligent
-├── 📂 handlers/
-│   └── class-pc-cache-scheduler.php          - Gestion cron cache
-└── 📂 helpers/
-    └── class-pc-cache-helper.php             - Helper cache générique
+├── 📂 providers/                             - Provider iCal intelligent
+├── 📂 handlers/                              - Scheduler cron cache
+└── 📂 helpers/                               - Helper cache générique
 ```
 
 #### 🚀 Module Performance (`pc-performance/`)
@@ -231,17 +397,9 @@ pc-cache/
 ```text
 pc-performance/
 ├── pc-performance-core.php                   - Core + autoloading
-├── 📂 config/
-│   └── class-pc-performance-config.php       - Configuration centralisée
-├── 📂 helpers/                               - Helpers performance
-│   ├── class-pc-context-helper.php           - Détection contexte
-│   ├── class-pc-resource-helper.php          - Helper ressources
-│   └── class-pc-url-helper.php               - Helper URLs
-└── 📂 managers/                              - Gestionnaires spécialisés
-    ├── class-pc-font-manager.php             - Gestion polices
-    ├── class-pc-lcp-manager.php              - Optimisation LCP
-    ├── class-pc-preconnect-manager.php       - Gestion preconnect
-    └── class-pc-preload-manager.php          - Gestion preload
+├── 📂 config/                                - Configuration centralisée
+├── 📂 helpers/                               - Context, Resource, URL helpers
+└── 📂 managers/                              - 4 Managers spécialisés (Font, LCP, Preconnect, Preload)
 ```
 
 #### ⭐ Module Reviews (`pc-reviews/`)
@@ -249,92 +407,120 @@ pc-performance/
 ```text
 pc-reviews/
 ├── pc-reviews.php                            - Core fonctions (406 lignes)
-└── 📂 assets/                                - Assets avis
-    ├── 📂 css/                               - Styles avis
-    └── 📂 js/                                - Scripts AJAX
-```
-
-### 📂 Configuration & Data
-
-```text
-mu-plugins/
-├── 📂 pc-acf-json/                          - Configuration ACF (10 groupes)
-│   ├── group_pc_fiche_logement.json          - Champs logements
-│   ├── group_pc_reviews.json                 - Champs avis
-│   ├── group_pc_destination.json             - Champs destinations
-│   ├── group_pc_seo_global.json              - Configuration SEO globale
-│   └── + 6 autres groupes ACF...
-│
-├── 📂 assets/                                - Assets globaux
-│   ├── pc-orchestrator.js                    - Coordinateur global
-│   └── 📂 js/modules/                        - Modules JS globaux
-│
-└── 📂 pc-utils/                             - Utilitaires solo
-    ├── pc-maintenance.php                    - Mode maintenance
-    ├── pc-fallback-bientot-disponible.php   - Fallback pages
-    └── pc-sandbox-menu-prefix.php           - Menu dev/sandbox
+└── 📂 assets/                                - Assets avis + Scripts AJAX
 ```
 
 ---
 
-## 🔌 PLUGINS WORDPRESS STANDARD
+## 🔌 PC-RESERVATION-CORE : PLUGIN PRINCIPAL
+
+### 🏗️ Architecture Vue.js/PHP Moderne
+
+```text
+pc-reservation-core/
+├── pc-reservation-core.php                   - ⭐ Plugin principal
+│
+├── 📂 includes/                              - 🔧 BACKEND PHP COMPLET
+│   ├── 📂 services/                          - Services métier professionnels
+│   │   ├── 📂 booking/                       - Orchestrateur & calculateur de prix réservations
+│   │   │   ├── class-booking-orchestrator.php - Orchestrateur principal
+│   │   │   └── class-booking-pricing-calculator.php - Calculateur de prix
+│   │   ├── 📂 document/                      - Système de génération documents
+│   │   │   ├── class-document-service.php    - Service principal documents
+│   │   │   ├── class-document-financial-calculator.php - Calculateur financier
+│   │   │   └── 📂 renderers/                 - Renderers spécialisés (Contract, Invoice, Deposit, Custom, Voucher)
+│   │   ├── 📂 settings/                      - Configuration & API système
+│   │   │   ├── class-settings-api.php        - API configuration
+│   │   │   └── class-settings-config.php     - Configuration centralisée
+│   │   ├── 📂 messaging/                     - Système de notifications
+│   │   │   ├── class-template-manager.php    - Gestionnaire templates
+│   │   │   └── class-notification-dispatcher.php - Dispatcheur notifications
+│   │   └── 📂 destination/                   - Repository destinations
+│   │       └── class-destination-repository.php - Repository destinations
+│   ├── 📂 ajax/controllers/                  - Contrôleurs AJAX spécialisés
+│   │   ├── class-reservation-ajax-controller.php - Contrôleur réservations AJAX
+│   │   ├── class-document-ajax-controller.php - Contrôleur documents AJAX
+│   │   ├── class-document-template-api-controller.php - API templates documents
+│   │   └── class-template-api-controller.php - Contrôleur API templates
+│   ├── 📂 api/                               - API REST & Webhooks
+│   │   └── class-rest-webhook.php            - Webhooks REST
+│   ├── 📂 fields/                            - Abstraction champs ACF
+│   │   └── class-fields.php                 - Classe PCR_Fields (utilisée partout)
+│   ├── 📂 gateways/                          - Passerelles de paiement
+│   │   ├── class-stripe-manager.php         - Gestionnaire Stripe
+│   │   └── class-stripe-webhook.php         - Webhooks Stripe
+│   └── class-documents.php                  - Gestionnaire documents principal
+│
+├── 📂 src/modules/                           - 🎨 INTERFACE VUE.JS MODERNE
+│   ├── 📂 settings/tabs/                     - Onglets configuration administration
+│   │   ├── SettingsTabIdentity.vue          - Configuration identité
+│   │   ├── SettingsTabPayments.vue          - Configuration paiements
+│   │   ├── SettingsTabMessaging.vue         - Configuration messaging
+│   │   ├── SettingsTabLegal.vue             - Configuration aspects légaux
+│   │   └── SettingsTabApi.vue               - Configuration API
+│   └── 📂 templates/components/              - Composants templates
+│       ├── TemplatePdfModal.vue             - Modal templates PDF
+│       └── TemplateMessageModal.vue         - Modal templates messages
+│
+└── 📂 templates/                             - Templates PHP
+    └── app-shell.php                        - Shell application Vue.js
+```
+
+---
+
+## 🔌 PLUGINS WORDPRESS COMPLÉMENTAIRES
 
 ### 🏆 Plugins Core Business (Prestige Caraïbes)
 
 ```text
 plugins/
-├── 📂 pc-reservation-core/          - ⭐ PLUGIN PRINCIPAL - Système de réservation
-├── 📂 pc-rate-manager/              - Gestionnaire de tarifs saisonniers
-└── 📂 pc-stripe-caution/            - Gestion des cautions Stripe
+├── 📂 pc-rate-manager/              - 💰 Gestionnaire de tarifs saisonniers
+└── 📂 pc-stripe-caution/            - 🔒 Gestion des cautions Stripe
 ```
 
 ### 🛠️ Plugins WordPress Essentiels
 
 ```text
 plugins/
-├── 📂 advanced-custom-fields-pro/   - Champs personnalisés avancés
-├── 📂 elementor/                    - Constructeur de pages
-├── 📂 elementor-pro/                - Version Pro Elementor
-├── 📂 wp-rocket/                    - Cache & optimisations performance
-└── 📂 updraftplus/                  - Sauvegardes automatiques
+├── 📂 advanced-custom-fields-pro/   - 🛠️ Champs personnalisés avancés
+├── 📂 elementor/ + elementor-pro/    - 🎨 Constructeur de pages
+├── 📂 wp-rocket/                    - ⚡ Cache & optimisations performance
+└── 📂 updraftplus/                  - 💾 Sauvegardes automatiques
 ```
 
-### 🔧 Plugins Techniques & Utilitaires
+### 🔧 Plugins Techniques & Utilitaires (14 plugins)
 
 ```text
 plugins/
-├── 📂 better-search-replace/        - Remplacement dans la base
-├── 📂 broken-link-checker/          - Détection liens cassés
-├── 📂 filebird/                     - Gestion avancée médias
-├── 📂 imagify/                      - Optimisation images
-├── 📂 loco-translate/               - Gestion traductions
-├── 📂 redirection/                  - Gestion redirections 301/302
-├── 📂 temporary-login/              - Connexions temporaires sécurisées
-├── 📂 wp-mail-logging/              - Logs des emails
-└── 📂 hostinger/                    - Outils hébergeur
+├── 📂 better-search-replace/        - 🔍 Remplacement dans la base
+├── 📂 broken-link-checker/          - 🔗 Détection liens cassés
+├── 📂 filebird/                     - 📁 Gestion avancée médias
+├── 📂 imagify/                      - 🖼️ Optimisation images
+├── 📂 loco-translate/               - 🌐 Gestion traductions
+├── 📂 redirection/                  - ↗️ Gestion redirections 301/302
+├── 📂 temporary-login/              - 🔑 Connexions temporaires sécurisées
+├── 📂 wp-mail-logging/              - 📧 Logs des emails
+└── 📂 hostinger/                    - 🏢 Outils hébergeur
 ```
 
 ---
 
 ## 🎨 THÈMES WORDPRESS
 
-### 🌊 Thème Principal : OceanWP
+### 🌊 Thème Principal : OceanWP + Child
 
 ```text
 themes/
-├── 📂 oceanwp/                      - Thème parent OceanWP
-│   ├── functions.php                - Fonctionnalités thème
-│   ├── style.css                    - Styles de base
+├── 📂 oceanwp/                      - 🌊 Thème parent OceanWP
+│   ├── functions.php + style.css    - Fonctionnalités & styles de base
 │   ├── 📂 inc/                      - Classes & fonctions thème
 │   ├── 📂 assets/                   - Assets thème (CSS/JS/fonts)
-│   ├── 📂 partials/                 - Parties de template
-│   └── 📂 templates/                - Templates de pages
+│   ├── 📂 partials/ + templates/    - Parties de template
+│   └── [Templates standards]        - 404.php, header.php, footer.php, etc.
 │
-└── 📂 oceanwp-child/                - Thème enfant (personnalisations)
-    ├── functions.php                - Fonctions personnalisées
-    ├── style.css                    - Styles personnalisés
-    ├── single.php                   - Template page article
-    ├── archive.php                  - Template page archive
+└── 📂 oceanwp-child/                - 👶 Thème enfant (personnalisations)
+    ├── functions.php + style.css    - Fonctions & styles personnalisés
+    ├── single.php + archive.php     - Templates personnalisés
     └── 410.php                      - Template erreur 410
 ```
 
@@ -394,77 +580,12 @@ if (class_exists('PCR_Reservation')) {
 }
 ```
 
-#### Helper disponibilités :
-
-```php
-// 📄 class-pc-availability-helper.php
-$ical_url = PCR_Fields::get('ical_url', $logement_id);
-// Vérification table pc_reservations (créée par pc-reservation-core)
-$table_res = $wpdb->prefix . 'pc_reservations';
-```
-
 ### 🎯 Module Expériences → PC-Reservation-Core
 
 ```php
-// 📄 class-pc-experience-booking-handler.php
+// 📄 class-pc-experience-booking-handler.php + class-pc-booking-shortcode.php
 if (class_exists('PCR_Booking_Engine')) {
     $booking = PCR_Booking_Engine::create($payload);
-}
-```
-
-### 🔄 Flux de Données Complet
-
-```mermaid
-graph TD
-    A[Page Fiche Logement] --> B[Shortcodes MU-Plugins]
-    B --> C[PCR_Fields::get()]
-    C --> D[PC-Reservation-Core]
-
-    E[Formulaire Réservation] --> F[PC_Booking_Handler]
-    F --> G[PCR_Reservation::create()]
-    G --> H[PC-Reservation-Core DB]
-
-    I[Génération Paiement] --> J[PCR_Payment::generate()]
-    J --> K[PCR_Stripe_Manager]
-    K --> L[API Stripe]
-
-    D --> M[Données ACF]
-    H --> N[Table wp_pc_reservations]
-    L --> O[Liens de paiement Stripe]
-```
-
-### 🎯 Points d'Intégration Détaillés
-
-#### 1. **Récupération de Données** (Pattern principal)
-
-```php
-// Utilisé dans 75+ endroits dans les mu-plugins
-$value = PCR_Fields::get('field_name', $post_id);
-```
-
-#### 2. **Création de Réservations**
-
-```php
-// Module Logements
-if (class_exists('PCR_Reservation')) {
-    $resa_id = PCR_Reservation::create($resa_data);
-}
-
-// Module Expériences
-if (class_exists('PCR_Booking_Engine')) {
-    $booking = PCR_Booking_Engine::create($payload);
-}
-```
-
-#### 3. **Gestion des Paiements**
-
-```php
-if (class_exists('PCR_Payment')) {
-    PCR_Payment::generate_for_reservation($resa_id);
-}
-
-if (class_exists('PCR_Stripe_Manager')) {
-    $stripe = PCR_Stripe_Manager::create_payment_link($resa_id, $amount);
 }
 ```
 
@@ -487,49 +608,6 @@ if (class_exists('PCR_Stripe_Manager')) {
 | **Base de Données**       | Tables, migrations, requêtes  | **PC-Reservation-Core** |
 | **Intégrations Externes** | Stripe, Lodgify, API          | **PC-Reservation-Core** |
 | **Administration**        | Dashboard Vue.js, gestion     | **PC-Reservation-Core** |
-
----
-
-## 📦 AUTRES DOSSIERS WP-CONTENT
-
-### 📁 Uploads
-
-```text
-uploads/
-├── 📂 2024/01/, 2024/02/, etc.     - Fichiers uploadés par mois
-├── 📂 elementor/                   - Assets Elementor
-├── 📂 sites/                       - Multisite (si applicable)
-└── 📄 .htaccess                    - Sécurité uploads
-```
-
-### 🌐 Languages
-
-```text
-languages/
-├── 📂 plugins/                     - Traductions plugins
-├── 📂 themes/                      - Traductions thèmes
-└── 📄 fr_FR.po, fr_FR.mo          - Traductions WordPress core
-```
-
-### 🚀 Cache & Performance
-
-```text
-cache/
-├── 📂 wp-rocket/                   - Cache WP Rocket
-├── 📂 litespeed/                   - Cache LiteSpeed
-└── 📂 object-cache/                - Cache objets (Redis/Memcached)
-
-wp-rocket-config/
-└── Configuration WP Rocket
-```
-
-### 🔄 Maintenance & Backup
-
-```text
-upgrade/                            - Fichiers temporaires mises à jour
-upgrade-temp-backup/                - Sauvegarde temporaire
-updraft/                           - Sauvegardes UpdraftPlus
-```
 
 ---
 
@@ -627,17 +705,6 @@ sequenceDiagram
 - **SEO global** : Meta descriptions, Open Graph, JSON-LD
 - **Règles de paiement** : Acomptes, cautions, délais
 - **Intégrations externes** : Clés API (Stripe, Lodgify, etc.)
-
-### 🎨 Personnalisation Thème
-
-#### Thème Enfant OceanWP
-
-```php
-// functions.php - Personnalisations
-add_action('wp_enqueue_scripts', 'pc_child_theme_styles');
-add_filter('oceanwp_custom_menu', 'pc_custom_menu_items');
-add_action('oceanwp_after_header', 'pc_custom_header_content');
-```
 
 ---
 
@@ -741,51 +808,46 @@ error_log('[PC MODULE] Message debug');
 
 ## 📋 NOTES DE MISE À JOUR
 
-### ✅ Vérification du 30 mars 2026
+### ✅ Vérification du 1er avril 2026
 
 **Structure vérifiée et confirmée :**
 
 - [x] **MU-Plugins** : 10 modules actifs et fonctionnels
-  - [x] **pc-logement** : 16 shortcodes + booking handler + helpers
-  - [x] **pc-experiences** : 9 shortcodes spécialisés + booking
-  - [x] **pc-destination** : 5 shortcodes + schema manager
-  - [x] **pc-recherche** : 4 shortcodes + engines de recherche
-  - [x] **pc-header** : Navigation + API recherche
+  - [x] **pc-logement** : 16 shortcodes + booking handler + helpers + pc-pdf-generator.js
+  - [x] **pc-experiences** : 13 shortcodes spécialisés + booking + pc-pdf-generator.js
+  - [x] **pc-destination** : 7 shortcodes + schema manager
+  - [x] **pc-recherche** : Moteurs de recherche + shortcodes
+  - [x] **pc-header** : Navigation + API recherche + helpers
   - [x] **pc-ui-components** : Composants réutilisables
   - [x] **pc-faq** : 5 shortcodes FAQ spécialisés
   - [x] **pc-cache** : Provider iCal + scheduler
   - [x] **pc-performance** : 4 managers + helpers
   - [x] **pc-reviews** : Système d'avis clients
 
-- [x] **Plugins** : 18 plugins installés et à jour
-  - [x] **Plugins Core Business** : pc-reservation-core, pc-rate-manager, pc-stripe-caution
-  - [x] **Plugins WordPress Essentiels** : ACF Pro, Elementor Pro, WP Rocket, UpdraftPlus
-  - [x] **Plugins Techniques** : Better Search Replace, Broken Link Checker, Filebird, Imagify, Loco Translate, Redirection, WP Mail Logging, etc.
+- [x] **PC-Reservation-Core** : Plugin principal avec architecture Vue.js/PHP complète
+  - [x] **Services backend** : booking, document, payment, stripe, settings, messaging, destination
+  - [x] **Interface Vue.js moderne** : Settings tabs (Identity, Payments, Messaging, Legal, API)
+  - [x] **Composants avancés** : Template modals (PDF, Message)
+  - [x] **API REST + webhooks** : Contrôleurs AJAX spécialisés
+  - [x] **Classes métier** : PCR_Fields, Document renderers (Contract, Invoice, Deposit, Voucher, Custom)
 
-- [x] **PC-Reservation-Core** : Plugin principal avec architecture Vue.js/PHP
-  - [x] Services complets : booking, document, payment, stripe
-  - [x] Interface admin Vue.js moderne
-  - [x] API REST + webhooks
-  - [x] Classes PCR_Fields, PCR_Booking_Engine, PCR_Reservation, etc.
-
+- [x] **Plugins WordPress** : 18 plugins installés et à jour
 - [x] **Thèmes** : OceanWP parent + thème enfant
-- [x] **Assets** : 8 gestionnaires d'assets opérationnels
-- [x] **Configuration ACF** : 10+ groupes de champs actifs
+- [x] **Assets** : 8+ gestionnaires d'assets opérationnels
 
-**Éléments confirmés stables :**
+**Nouvelles fonctionnalités identifiées :**
 
-- ✅ **Architecture modulaire** : 100% refactorisée et opérationnelle
-- ✅ **Chargement conditionnel** : CSS/JS optimisé par contexte
-- ✅ **Asset managers** : Gestionnaires dédiés par module
-- ✅ **Intégrations PC-Reservation-Core** : Liaison MU-plugins parfaitement fonctionnelle
-- ✅ **Variables CSS globales** : pc-base.css avec thème unifié
-- ✅ **Shortcodes spécialisés** : 50+ shortcodes opérationnels
+- ✨ **Générateurs PDF** : Modules pc-pdf-generator.js dans logements et expériences
+- ✨ **Templates avancés** : Système de templates PDF et messages avec modals Vue.js
+- ✨ **Services documents** : Renderers spécialisés (voucher ajouté)
+- ✨ **Configuration enrichie** : Tabs settings (Legal, API ajoutés)
+- ✨ **Messaging système** : Template manager + notification dispatcher
 
-**État global :** 🟢 **EXCELLENT** - Architecture stable et performante
+**État global :** 🟢 **EXCELLENT** - Architecture stable et enrichie continuellement
 
 ---
 
 **📅 Document généré le 25 mars 2026**  
-**🔄 Dernière mise à jour : 30 mars 2026 - Vérification complète et mise à jour**  
+**🔄 Dernière mise à jour : 1er avril 2026 - Vérification complète avec architecture en début**  
 **👨‍💻 Équipe : PC SEO & Développement**  
 **🏢 Projet : Prestige Caraïbes - wp-content Structure**

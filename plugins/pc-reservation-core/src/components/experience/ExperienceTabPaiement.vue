@@ -34,6 +34,8 @@
             border: 1px solid #cbd5e0;
             border-radius: 6px;
             background: white;
+            min-height: 40px;
+            box-sizing: border-box;
           "
         >
           <option value="totalite">
@@ -74,10 +76,12 @@
               class="pc-select"
               style="
                 flex: 1;
-                padding: 8px;
+                padding: 8px 12px;
                 border: 1px solid #fcd34d;
                 border-radius: 6px;
                 background: white;
+                min-height: 40px;
+                box-sizing: border-box;
               "
             >
               <option value="pourcentage">Pourcentage (%)</option>
@@ -165,6 +169,8 @@
                 border: 1px solid #cbd5e0;
                 border-radius: 6px;
                 background: white;
+                min-height: 40px;
+                box-sizing: border-box;
               "
             >
               <option value="aucune">Aucune caution</option>

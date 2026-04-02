@@ -218,6 +218,8 @@ onMounted(() => {
   border-radius: 8px;
   background: white;
   font-size: 0.95rem;
+  min-height: 42px;
+  box-sizing: border-box;
 }
 
 .table-responsive {
