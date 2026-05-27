@@ -104,6 +104,9 @@ class PC_Header_Core
         if (class_exists('PC_Header_Search_API')) {
             (new PC_Header_Search_API())->register();
         }
+        if (class_exists('PC_Header_Menu_API')) {
+            (new PC_Header_Menu_API())->register();
+        }
         // NOUVEAU : On active le shortcode !
         if (class_exists('PC_Header_Shortcode')) {
             (new PC_Header_Shortcode())->register();
